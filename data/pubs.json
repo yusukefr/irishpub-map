@@ -1,0 +1,44 @@
+[
+  {
+    "id": "tokyo-dubliners-shinjuku",
+    "name": "The Dubliners' Irish Pub Shinjuku",
+    "prefecture": "東京都",
+    "city": "新宿区",
+    "address": "東京都新宿区新宿3丁目",
+    "latitude": 35.6909,
+    "longitude": 139.704,
+    "websiteUrl": "https://www.dubliners.jp/",
+    "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=The%20Dubliners%20Irish%20Pub%20Shinjuku",
+    "instagramUrl": null,
+    "tags": ["guinness", "food", "station-area"],
+    "status": "unknown"
+  },
+  {
+    "id": "tokyo-warrior-celt",
+    "name": "The Warrior Celt",
+    "prefecture": "東京都",
+    "city": "台東区",
+    "address": "東京都台東区上野6丁目",
+    "latitude": 35.709,
+    "longitude": 139.7754,
+    "websiteUrl": "https://www.warriorcelt.jp/",
+    "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=The%20Warrior%20Celt%20Tokyo",
+    "instagramUrl": null,
+    "tags": ["guinness", "craft-beer", "food"],
+    "status": "unknown"
+  },
+  {
+    "id": "osaka-the-blarney-stone",
+    "name": "The Blarney Stone Shinsaibashi",
+    "prefecture": "大阪府",
+    "city": "大阪市",
+    "address": "大阪府大阪市中央区東心斎橋",
+    "latitude": 34.6719,
+    "longitude": 135.5022,
+    "websiteUrl": "https://www.the-blarney-stone.com/",
+    "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=The%20Blarney%20Stone%20Shinsaibashi",
+    "instagramUrl": null,
+    "tags": ["guinness", "live-music", "food"],
+    "status": "unknown"
+  }
+]
