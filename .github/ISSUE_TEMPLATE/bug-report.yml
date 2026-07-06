@@ -1,0 +1,61 @@
+name: バグ報告
+description: 不具合や期待と異なる挙動を報告するためのテンプレート
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        不具合の再現条件と期待する挙動を具体的に書いてください。
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+      description: どのような不具合かを簡潔に書いてください。
+      placeholder: 例）店舗一覧のリンクをクリックしてもGoogle Mapsが開かない。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 不具合を再現するための手順を書いてください。
+      placeholder: |
+        1. npm run dev で起動する
+        2. トップページを開く
+        3. 店舗一覧のGoogle Mapsリンクをクリックする
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する挙動
+      description: 本来どう動いてほしいかを書いてください。
+      placeholder: 例）新しいタブで対象店舗のGoogle Mapsページが開く。
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の挙動
+      description: 実際に起きたことを書いてください。
+      placeholder: 例）クリックしても何も起きない。
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 環境
+      description: OS、ブラウザ、Node.jsバージョンなどを書いてください。
+      placeholder: 例）macOS / Chrome / Node.js 22
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: ログ・スクリーンショット
+      description: エラーログ、スクリーンショット、関連URLなどがあれば貼ってください。
+      render: shell
+    validations:
+      required: false

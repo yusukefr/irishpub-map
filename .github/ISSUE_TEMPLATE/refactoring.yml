@@ -1,0 +1,57 @@
+name: リファクタリング
+description: 挙動を変えずにコード構造や保守性を改善するためのテンプレート
+title: "[Refactor]: "
+labels:
+  - refactoring
+body:
+  - type: markdown
+    attributes:
+      value: |
+        リファクタリングは、原則として既存の挙動を変えない改善として扱います。
+  - type: textarea
+    id: target
+    attributes:
+      label: 対象
+      description: リファクタリングしたいファイル、機能、責務を書いてください。
+      placeholder: 例）apps/web/app/components/pub-map.tsx の地図初期化処理
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 現状の課題
+      description: 読みにくい、責務が混ざっている、重複しているなど、改善したい理由を書いてください。
+      placeholder: 例）地図初期化、マーカー生成、ポップアップHTML生成が1つのuseEffectにまとまっている。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 改善案
+      description: 具体的な方針があれば書いてください。未定なら「提案から」と書いてください。
+      placeholder: 例）ポップアップ生成処理を小さな関数に切り出し、地図初期化処理を読みやすくする。
+    validations:
+      required: false
+  - type: textarea
+    id: constraints
+    attributes:
+      label: 制約
+      description: 変えてはいけない挙動、避けたい変更、触らない範囲を書いてください。
+      placeholder: |
+        - UIの見た目は変えない
+        - 店舗データ形式は変えない
+        - 依存関係は追加しない
+    validations:
+      required: false
+  - type: textarea
+    id: verification
+    attributes:
+      label: 検証方法
+      description: リファクタリング後に確認すべきコマンドや画面操作を書いてください。
+      placeholder: |
+        - npm run typecheck
+        - npm run lint
+        - npm run build
+        - 地図と店舗一覧が従来通り表示される
+    validations:
+      required: true
