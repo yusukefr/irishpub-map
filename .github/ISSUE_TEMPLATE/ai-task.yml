@@ -1,0 +1,59 @@
+name: AI作業依頼
+description: CodexなどのAI Agentに実装・調査・整理を依頼するためのテンプレート
+title: "[AI Task]: "
+labels:
+  - ai-task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        AI Agentに作業を依頼するIssueです。目的、期待する成果物、制約を具体的に書いてください。
+  - type: textarea
+    id: objective
+    attributes:
+      label: 目的
+      description: 何を達成したいかを簡潔に書いてください。
+      placeholder: 例）店舗検索機能を追加して、都道府県と店舗名で絞り込めるようにする。
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 作業範囲
+      description: 変更してよい範囲、触ってほしくない範囲を書いてください。
+      placeholder: |
+        変更してよい: apps/web/app, packages/shared
+        変更しない: デプロイ設定、依存関係の大幅更新
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: 要件
+      description: 必須要件を箇条書きで書いてください。
+      placeholder: |
+        - 店舗名で検索できる
+        - 都道府県で絞り込める
+        - スマホ幅でも表示が崩れない
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 完了条件
+      description: 何ができていれば完了と判断するかを書いてください。
+      placeholder: |
+        - npm run typecheck が通る
+        - npm run lint が通る
+        - npm run build が通る
+        - READMEの必要箇所が更新されている
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: 補足・制約
+      description: 実装方針、避けたいこと、参考URLなどがあれば書いてください。
+      placeholder: 例）まずWeb版を優先し、モバイル対応は共通データ構造を壊さない範囲で考慮する。
+    validations:
+      required: false

@@ -9,3 +9,7 @@ coverage
 .DS_Store
 npm-debug.log*
 *.tsbuildinfo
+
+!.github/
+!.github/ISSUE_TEMPLATE/
+!.github/ISSUE_TEMPLATE/*.yml
