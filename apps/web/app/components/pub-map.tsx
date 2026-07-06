@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
@@ -11,53 +11,94 @@ type PubMapProps = {
 
 export function PubMap({ pubs }: PubMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [mapUnavailable, setMapUnavailable] = useState(false);
 
   useEffect(() => {
-    if (!containerRef.current) {
+    const container = containerRef.current;
+
+    if (!container) {
       return;
     }
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            attribution: "© OpenStreetMap contributors"
-          }
+    const showFallback = () => {
+      window.setTimeout(() => setMapUnavailable(true), 0);
+    };
+
+    if (!canCreateWebglContext()) {
+      showFallback();
+      return;
+    }
+
+    let map: maplibregl.Map;
+
+    try {
+      map = new maplibregl.Map({
+        container,
+        style: {
+          version: 8,
+          sources: {
+            osm: {
+              type: "raster",
+              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+              tileSize: 256,
+              attribution: "© OpenStreetMap contributors"
+            }
+          },
+          layers: [
+            {
+              id: "osm",
+              type: "raster",
+              source: "osm"
+            }
+          ]
         },
-        layers: [
-          {
-            id: "osm",
-            type: "raster",
-            source: "osm"
-          }
-        ]
-      },
-      center: [139.767, 35.681],
-      zoom: 5
-    });
+        center: [139.767, 35.681],
+        zoom: 5
+      });
 
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
-    pubs.forEach((pub) => {
-      const popup = new maplibregl.Popup({ offset: 18 }).setHTML(
-        `<strong>${pub.name}</strong><br>${pub.prefecture}${pub.city ? ` / ${pub.city}` : ""}`
-      );
+      pubs.forEach((pub) => {
+        const popup = new maplibregl.Popup({ offset: 18 }).setHTML(
+          `<strong>${pub.name}</strong><br>${pub.prefecture}${pub.city ? ` / ${pub.city}` : ""}`
+        );
 
-      new maplibregl.Marker({ color: "#0f7b54" })
-        .setLngLat([pub.longitude, pub.latitude])
-        .setPopup(popup)
-        .addTo(map);
-    });
+        new maplibregl.Marker({ color: "#0f7b54" })
+          .setLngLat([pub.longitude, pub.latitude])
+          .setPopup(popup)
+          .addTo(map);
+      });
+    } catch (error) {
+      console.error("Failed to initialize the map.", error);
+      showFallback();
+      return;
+    }
 
     return () => {
       map.remove();
     };
   }, [pubs]);
 
-  return <div className="map-canvas" ref={containerRef} aria-label="Irish Pub locations" />;
+  return (
+    <div className="map-canvas" ref={containerRef} aria-label="Irish Pub locations">
+      {mapUnavailable ? (
+        <div className="map-fallback" role="status">
+          <h2>地図を表示できませんでした</h2>
+          <p>
+            このブラウザ環境ではWebGLが無効、または利用できないため地図を初期化できません。
+            右側または下部の店舗一覧からIrish Pubを確認してください。
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function canCreateWebglContext() {
+  const canvas = document.createElement("canvas");
+
+  return Boolean(
+    canvas.getContext("webgl", { failIfMajorPerformanceCaveat: false }) ??
+      canvas.getContext("experimental-webgl", { failIfMajorPerformanceCaveat: false })
+  );
 }
