@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --background: #f6f4ef;
+  --surface: #ffffff;
+  --ink: #17211d;
+  --muted: #60706a;
+  --line: #d7ddd7;
+  --accent: #0f7b54;
+  --accent-strong: #0b553e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--ink);
+  font-family: Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+}
+
+a {
+  color: var(--accent-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.page-shell {
+  min-height: 100vh;
+}
+
+.masthead {
+  display: flex;
+  align-items: flex-end;
+  min-height: 260px;
+  padding: 48px clamp(20px, 5vw, 72px) 32px;
+  background: linear-gradient(135deg, #0d3d2e 0%, #126047 48%, #f0c05a 100%);
+  color: #fffdf7;
+}
+
+.masthead > div {
+  max-width: 780px;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 6vw, 4.8rem);
+  line-height: 1.04;
+}
+
+.lead {
+  max-width: 640px;
+  margin: 18px 0 0;
+  color: #fff7dd;
+  font-size: 1.06rem;
+  line-height: 1.8;
+}
+
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  padding: 24px clamp(16px, 4vw, 48px) 48px;
+}
+
+.map-canvas {
+  width: 100%;
+  min-height: 620px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #dce6e1;
+}
+
+.pub-list {
+  min-width: 0;
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.list-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.list-header span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.pub-items {
+  display: grid;
+  gap: 12px;
+}
+
+.pub-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.pub-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.pub-card p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.pub-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .masthead {
+    min-height: 220px;
+  }
+
+  .map-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .map-canvas {
+    min-height: 460px;
+  }
+}
