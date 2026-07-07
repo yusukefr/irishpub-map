@@ -86,12 +86,37 @@ h1 {
 }
 
 .map-canvas {
+  position: relative;
   width: 100%;
   min-height: 620px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #dce6e1;
+}
+
+
+.map-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  padding: 32px;
+  background: #dce6e1;
+  color: var(--ink);
+  text-align: center;
+}
+
+.map-fallback h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.map-fallback p {
+  max-width: 520px;
+  margin: 12px auto 0;
+  color: var(--muted);
+  line-height: 1.8;
 }
 
 .pub-list {
