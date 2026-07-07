@@ -10,9 +10,18 @@
     "dev": "npm run dev -w apps/web",
     "build": "npm run build -w apps/web",
     "lint": "npm run lint -w apps/web",
-    "typecheck": "npm run typecheck -w apps/web"
+    "typecheck": "npm run typecheck -w apps/web",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest"
   },
   "overrides": {
     "postcss": "8.5.10"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@vitest/coverage-v8": "^4.1.10",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.10"
   }
 }
