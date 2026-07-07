@@ -1,6 +1,5 @@
 import pubs from "../../../data/pubs.json";
-import { PubMap } from "./components/pub-map";
-import { PubList } from "./components/pub-list";
+import { PubExplorer } from "./components/pub-explorer";
 import { asPubs } from "@irishpub-map/shared/pub";
 
 const pubList = asPubs(pubs);
@@ -18,10 +17,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="map-layout" aria-label="Irish Pub map and list">
-        <PubMap pubs={pubList} />
-        <PubList pubs={pubList} />
-      </section>
+      <PubExplorer pubs={pubList} />
     </main>
   );
 }
