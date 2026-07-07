@@ -38,6 +38,7 @@ npm install
 通常の検証コマンド:
 
 ```bash
+npm test
 npm run typecheck
 npm run lint
 npm run build
@@ -60,7 +61,7 @@ npm run dev
 - 変更前に `git status --short --branch` を確認してください。
 - ユーザーや他の agent の未コミット変更を勝手に戻さないでください。
 - Issue の作業範囲に書かれたファイル・ディレクトリ以外は、必要性が明確な場合だけ変更してください。
-- アプリ本体を変更した場合は、原則として typecheck / lint / build を実行してください。
+- アプリ本体を変更した場合は、原則として test / typecheck / lint / build を実行してください。
 - 依存関係を変更した場合は、`npm audit --omit=dev` も確認してください。
 - GitHub 操作は `yf AI Agent` の git/GitHub 認証設定を使ってください。
 
