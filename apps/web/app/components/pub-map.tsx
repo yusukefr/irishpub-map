@@ -5,6 +5,24 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 
+const PUB_MARKER_COLORS = {
+  open: "#0f7b54",
+  closed: "#d92d20",
+  other: "#6b7280"
+} as const;
+
+function getMarkerColor(status: Pub["status"]) {
+  if (status === "open") {
+    return PUB_MARKER_COLORS.open;
+  }
+
+  if (status === "closed") {
+    return PUB_MARKER_COLORS.closed;
+  }
+
+  return PUB_MARKER_COLORS.other;
+}
+
 type PubMapProps = {
   pubs: Pub[];
 };
@@ -63,7 +81,7 @@ export function PubMap({ pubs }: PubMapProps) {
           `<strong>${pub.name}</strong><br>${pub.prefecture}${pub.city ? ` / ${pub.city}` : ""}`
         );
 
-        new maplibregl.Marker({ color: "#0f7b54" })
+        new maplibregl.Marker({ color: getMarkerColor(pub.status) })
           .setLngLat([pub.longitude, pub.latitude])
           .setPopup(popup)
           .addTo(map);
