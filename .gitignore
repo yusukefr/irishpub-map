@@ -13,3 +13,5 @@ npm-debug.log*
 !.github/
 !.github/ISSUE_TEMPLATE/
 !.github/ISSUE_TEMPLATE/*.yml
+!.github/workflows/
+!.github/workflows/*.yml
