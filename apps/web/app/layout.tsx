@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "日本の Irish Pub マップ",
+  title: "Irish Pub Map in Japan",
   description: "日本国内の Irish Pub を地図から探せるサービス"
 };
 

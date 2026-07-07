@@ -11,7 +11,7 @@ export default function Home() {
       <section className="masthead">
         <div>
           <p className="eyebrow">Irish Pub Finder</p>
-          <h1>日本の Irish Pub マップ</h1>
+          <h1>Irish Pub Map in Japan</h1>
           <p className="lead">
             地図から日本国内の Irish Pub を探せる Web アプリです。まずはサンプルデータで地図表示と店舗詳細の土台を作っています。
           </p>
