@@ -31,6 +31,19 @@ const pubs: Pub[] = [
     instagramUrl: null,
     tags: [],
     status: "unknown"
+  },
+  {
+    id: "closed-sample",
+    name: "Closed Sample Pub",
+    prefecture: "京都府",
+    address: "京都府京都市1-1-1",
+    latitude: 35.011,
+    longitude: 135.768,
+    websiteUrl: null,
+    googleMapsUrl: null,
+    instagramUrl: null,
+    tags: [],
+    status: "closed"
   }
 ];
 
@@ -70,8 +83,13 @@ describe("PubMap", () => {
     expect(maplibreMock.mapAddControl).toHaveBeenCalledTimes(1);
     expect(maplibreMock.markerSetLngLat).toHaveBeenNthCalledWith(1, [139.767, 35.681]);
     expect(maplibreMock.markerSetLngLat).toHaveBeenNthCalledWith(2, [135.502, 34.693]);
+    expect(maplibreMock.markerSetLngLat).toHaveBeenNthCalledWith(3, [135.768, 35.011]);
+    expect(maplibreMock.markerConstructor).toHaveBeenNthCalledWith(1, { color: "#0f7b54" });
+    expect(maplibreMock.markerConstructor).toHaveBeenNthCalledWith(2, { color: "#6b7280" });
+    expect(maplibreMock.markerConstructor).toHaveBeenNthCalledWith(3, { color: "#d92d20" });
     expect(maplibreMock.popupSetHTML).toHaveBeenCalledWith("<strong>Tokyo Sample Pub</strong><br>東京都 / 千代田区");
     expect(maplibreMock.popupSetHTML).toHaveBeenCalledWith("<strong>Osaka Sample Pub</strong><br>大阪府");
+    expect(maplibreMock.popupSetHTML).toHaveBeenCalledWith("<strong>Closed Sample Pub</strong><br>京都府");
     expect(screen.queryByText("地図を表示できませんでした")).not.toBeInTheDocument();
 
     unmount();
