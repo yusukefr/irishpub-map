@@ -69,6 +69,19 @@ npm run dev
 - 関連 Issue がある場合は `Closes #<issue-number>` を含めてください。
 - 実行した検証コマンドと結果を PR 本文に記載してください。
 - 検証を省略した場合は、理由を明記してください。
+- PR 作成時は `scripts/create-pr.sh` を使ってください。
+- Issue をもとに PR を作成する場合は、`scripts/create-pr.sh --issue <issue-number>` を指定してください。Issue の labels を PR にコピーします。
+- Issue をもとにしない PR の場合は、PR に `ai-agent` label を設定してください。
+- PR には reviewer として `yusukefr`、assignee として `yf-ai-agent` を設定してください。
+
+PR 作成例:
+
+```bash
+scripts/create-pr.sh \
+  --issue 10 \
+  --title "Add PR metadata automation" \
+  --body-file pr-body.md
+```
 
 ## Notes
 
