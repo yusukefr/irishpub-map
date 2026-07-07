@@ -11,7 +11,7 @@
     "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=The%20Dubliners%20Irish%20Pub%20Shinjuku",
     "instagramUrl": null,
     "tags": ["guinness", "food", "station-area"],
-    "status": "unknown"
+    "status": "closed"
   },
   {
     "id": "tokyo-warrior-celt",
@@ -26,6 +26,34 @@
     "instagramUrl": null,
     "tags": ["guinness", "craft-beer", "food"],
     "status": "unknown"
+  },
+  {
+    "id": "tokyo-little-gang",
+    "name": "PUBLIC HOUSE Little GANG 日比谷 OKUROJI",
+    "prefecture": "東京都",
+    "city": "千代田区",
+    "address": "東京都千代田区内幸町１丁目７−１ 日比谷OKUROJI H11",
+    "latitude": 35.673153,
+    "longitude": 139.7604712,
+    "websiteUrl": "https://publichouselittlegang.owst.jp/",
+    "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=PUBLIC%20HOUSE%20Little%20GANG",
+    "instagramUrl": "https://www.instagram.com/public_house_little_gang/",
+    "tags": ["guinness", "craft-beer"],
+    "status": "open"
+  },
+  {
+    "id": "tokyo-irish-pub-craic",
+    "name": "Irish Pub Craic",
+    "prefecture": "東京都",
+    "city": "港区",
+    "address": "東京都港区赤坂２丁目６−１４ 変なホテル東京赤坂 １階",
+    "latitude": 35.6835643,
+    "longitude": 139.7251366,
+    "websiteUrl": "https://craic-akasaka.gorp.jp/",
+    "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Irish%20Pub%20Craic",
+    "instagramUrl": "https://www.instagram.com/irish.pub.craic/",
+    "tags": ["guinness", "food"],
+    "status": "open"
   },
   {
     "id": "osaka-the-blarney-stone",
