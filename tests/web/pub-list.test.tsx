@@ -30,6 +30,20 @@ const pubs: Pub[] = [
     instagramUrl: null,
     tags: [],
     status: "unknown"
+  },
+  {
+    id: "kyoto-closed",
+    name: "Kyoto Closed Pub",
+    prefecture: "京都府",
+    city: "京都市",
+    address: "京都府京都市1-1-1",
+    latitude: 35.011,
+    longitude: 135.768,
+    websiteUrl: null,
+    googleMapsUrl: null,
+    instagramUrl: null,
+    tags: [],
+    status: "closed"
   }
 ];
 
@@ -38,11 +52,22 @@ describe("PubList", () => {
     render(<PubList pubs={pubs} />);
 
     expect(screen.getByRole("heading", { name: "掲載店舗" })).toBeInTheDocument();
-    expect(screen.getByText("2件")).toBeInTheDocument();
+    expect(screen.getByText("3件")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
     expect(screen.getByText("東京都 / 千代田区")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
     expect(screen.getByText("大阪府")).toBeInTheDocument();
+  });
+
+  it("styles only closed pub cards as closed", () => {
+    render(<PubList pubs={pubs} />);
+
+    const cards = screen.getAllByRole("article");
+    expect(cards[0]).toHaveClass("pub-card");
+    expect(cards[0]).not.toHaveClass("pub-card-closed");
+    expect(cards[1]).toHaveClass("pub-card");
+    expect(cards[1]).not.toHaveClass("pub-card-closed");
+    expect(cards[2]).toHaveClass("pub-card", "pub-card-closed");
   });
 
   it("renders external links only when URLs exist", () => {

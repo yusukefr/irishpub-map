@@ -13,7 +13,7 @@ export function PubList({ pubs }: PubListProps) {
       </div>
       <div className="pub-items">
         {pubs.map((pub) => (
-          <article className="pub-card" key={pub.id}>
+          <article className={pub.status === "closed" ? "pub-card pub-card-closed" : "pub-card"} key={pub.id}>
             <div>
               <h3>{pub.name}</h3>
               <p>{[pub.prefecture, pub.city].filter(Boolean).join(" / ")}</p>
