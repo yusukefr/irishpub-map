@@ -86,6 +86,10 @@ describe("PubList", () => {
     expect(within(cards[2]).getByText("food")).toBeInTheDocument();
     expect(within(cards[3]).getByText("閉業")).toHaveClass("pub-status-closed");
     expect(within(cards[3]).getByText("craft-beer")).toBeInTheDocument();
+    expect(cards[0]).not.toHaveClass("pub-card-closed");
+    expect(cards[1]).not.toHaveClass("pub-card-closed");
+    expect(cards[2]).not.toHaveClass("pub-card-closed");
+    expect(cards[3]).toHaveClass("pub-card", "pub-card-closed");
   });
 
   it("renders external links only when URLs exist", () => {

@@ -222,6 +222,20 @@ h1 {
   background: var(--surface);
 }
 
+.pub-card-closed {
+  border-color: #8f9a94;
+  background: #dde2df;
+  color: #2f3734;
+}
+
+.pub-card-closed p {
+  color: #3f4a46;
+}
+
+.pub-card-closed a {
+  color: #26302c;
+}
+
 .pub-card-header {
   display: flex;
   align-items: flex-start;
