@@ -10,7 +10,7 @@
 
 ## Tech Stack
 
-- Node.js 22 系
+- Node.js 24 系
 - npm workspaces
 - Next.js 16
 - React
