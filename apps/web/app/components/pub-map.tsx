@@ -77,9 +77,7 @@ export function PubMap({ pubs }: PubMapProps) {
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
       pubs.forEach((pub) => {
-        const popup = new maplibregl.Popup({ offset: 18 }).setHTML(
-          `<strong>${pub.name}</strong><br>${pub.prefecture}${pub.city ? ` / ${pub.city}` : ""}`
-        );
+        const popup = new maplibregl.Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
 
         new maplibregl.Marker({ color: getMarkerColor(pub.status) })
           .setLngLat([pub.longitude, pub.latitude])
@@ -119,4 +117,16 @@ function canCreateWebglContext() {
     canvas.getContext("webgl", { failIfMajorPerformanceCaveat: false }) ??
       canvas.getContext("experimental-webgl", { failIfMajorPerformanceCaveat: false })
   );
+}
+
+function createPopupContent(pub: Pub) {
+  const content = document.createElement("div");
+  const name = document.createElement("strong");
+  name.textContent = pub.name;
+  const location = document.createElement("span");
+  location.textContent = `${pub.prefecture}${pub.city ? ` / ${pub.city}` : ""}`;
+
+  content.append(name, document.createElement("br"), location);
+
+  return content;
 }

@@ -87,14 +87,40 @@ describe("PubMap", () => {
     expect(maplibreMock.markerConstructor).toHaveBeenNthCalledWith(1, { color: "#0f7b54" });
     expect(maplibreMock.markerConstructor).toHaveBeenNthCalledWith(2, { color: "#6b7280" });
     expect(maplibreMock.markerConstructor).toHaveBeenNthCalledWith(3, { color: "#d92d20" });
-    expect(maplibreMock.popupSetHTML).toHaveBeenCalledWith("<strong>Tokyo Sample Pub</strong><br>東京都 / 千代田区");
-    expect(maplibreMock.popupSetHTML).toHaveBeenCalledWith("<strong>Osaka Sample Pub</strong><br>大阪府");
-    expect(maplibreMock.popupSetHTML).toHaveBeenCalledWith("<strong>Closed Sample Pub</strong><br>京都府");
+    expect(maplibreMock.popupSetHTML).not.toHaveBeenCalled();
+    expect(maplibreMock.popupSetDOMContent).toHaveBeenCalledTimes(3);
+    expect((maplibreMock.popupSetDOMContent.mock.calls[0][0] as HTMLElement).textContent).toBe(
+      "Tokyo Sample Pub東京都 / 千代田区"
+    );
+    expect((maplibreMock.popupSetDOMContent.mock.calls[1][0] as HTMLElement).textContent).toBe("Osaka Sample Pub大阪府");
+    expect((maplibreMock.popupSetDOMContent.mock.calls[2][0] as HTMLElement).textContent).toBe("Closed Sample Pub京都府");
     expect(screen.queryByText("地図を表示できませんでした")).not.toBeInTheDocument();
 
     unmount();
 
     expect(maplibreMock.mapRemove).toHaveBeenCalledTimes(1);
+  });
+
+  it("treats popup pub data as text content instead of HTML", () => {
+    const htmlLikePub: Pub = {
+      ...pubs[0],
+      id: "html-like-sample",
+      name: '<img src=x onerror="alert(1)">',
+      prefecture: "<script>prefecture</script>",
+      city: "中央区<script>alert(1)</script>"
+    };
+
+    render(<PubMap pubs={[htmlLikePub]} />);
+
+    expect(maplibreMock.popupSetHTML).not.toHaveBeenCalled();
+    expect(maplibreMock.popupSetDOMContent).toHaveBeenCalledTimes(1);
+
+    const popupContent = maplibreMock.popupSetDOMContent.mock.calls[0][0] as HTMLElement;
+    expect(popupContent.textContent).toBe(
+      '<img src=x onerror="alert(1)"><script>prefecture</script> / 中央区<script>alert(1)</script>'
+    );
+    expect(popupContent.querySelector("img")).toBeNull();
+    expect(popupContent.querySelector("script")).toBeNull();
   });
 
   it("shows a fallback message when WebGL is unavailable", async () => {
