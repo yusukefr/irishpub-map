@@ -223,17 +223,17 @@ h1 {
 }
 
 .pub-card-closed {
-  border-color: #aeb6b1;
-  background: #ecefed;
+  border-color: #8f9a94;
+  background: #dde2df;
   color: #2f3734;
 }
 
 .pub-card-closed p {
-  color: #4d5a55;
+  color: #3f4a46;
 }
 
 .pub-card-closed a {
-  color: #37443f;
+  color: #26302c;
 }
 
 .pub-card h3 {
