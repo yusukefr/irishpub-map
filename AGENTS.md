@@ -55,6 +55,7 @@ npm run dev
 
 - `main` ブランチへ直接コミットしないでください。
 - Issue 対応時は、Issue の内容を読んだ後、実装前に設計方針・影響範囲・検証方針を Issue コメントに投稿してください。
+- GitHub Issue のタイトルは日本語で作成してください。`[AI Task]` や `[Bug]` など `[]` 内の接頭辞は英語のままで構いません。
 - Issue コメントの投稿には `scripts/comment-issue-design.sh --issue <issue-number> --body-file <file>` を使ってください。
 - Issue 対応時は `origin/main` 起点で作業ブランチを作成してください。
 - ブランチ名は `ai/<short-description>` を基本にしてください。
