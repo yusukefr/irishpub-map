@@ -11,6 +11,10 @@ const PUB_MARKER_COLORS = {
   other: "#6b7280"
 } as const;
 
+const DEFAULT_MAP_CENTER: [number, number] = [139.767, 35.681];
+const DEFAULT_MAP_ZOOM = 5;
+const CURRENT_LOCATION_ZOOM = 12;
+
 function getMarkerColor(status: Pub["status"]) {
   if (status === "open") {
     return PUB_MARKER_COLORS.open;
@@ -70,11 +74,12 @@ export function PubMap({ pubs }: PubMapProps) {
             }
           ]
         },
-        center: [139.767, 35.681],
-        zoom: 5
+        center: DEFAULT_MAP_CENTER,
+        zoom: DEFAULT_MAP_ZOOM
       });
 
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+      moveToCurrentLocation(map);
 
       pubs.forEach((pub) => {
         const popup = new maplibregl.Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
@@ -129,4 +134,27 @@ function createPopupContent(pub: Pub) {
   content.append(name, document.createElement("br"), location);
 
   return content;
+}
+
+function moveToCurrentLocation(map: maplibregl.Map) {
+  const geolocation = navigator.geolocation;
+
+  if (!geolocation) {
+    return;
+  }
+
+  geolocation.getCurrentPosition(
+    ({ coords }) => {
+      map.jumpTo({
+        center: [coords.longitude, coords.latitude],
+        zoom: CURRENT_LOCATION_ZOOM
+      });
+    },
+    () => undefined,
+    {
+      enableHighAccuracy: false,
+      maximumAge: 300000,
+      timeout: 5000
+    }
+  );
 }
