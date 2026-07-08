@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Irish Pub Map icon">
+  <rect width="512" height="512" rx="112" fill="#0b3d2e" />
+  <path d="M256 60C178 60 115 123 115 201c0 101 141 251 141 251s141-150 141-251C397 123 334 60 256 60Z" fill="#16a34a" />
+  <path d="M256 88c-62 0-113 50-113 113 0 35 22 78 50 120 25 37 51 68 63 82 12-14 38-45 63-82 28-42 50-85 50-120 0-63-51-113-113-113Z" fill="#f8fafc" />
+  <path d="M198 185h116l-13 115a38 38 0 0 1-38 34h-14a38 38 0 0 1-38-34l-13-115Z" fill="#fbbf24" />
+  <path d="M208 185h96l-3 31h-90l-3-31Z" fill="#f8fafc" />
+  <path d="M311 216h22c22 0 40 18 40 40s-18 40-40 40h-31l4-34h27a6 6 0 0 0 0-12h-25l3-34Z" fill="#f8fafc" />
+  <path d="M221 350h70v28h-70z" fill="#0b3d2e" />
+  <path d="M203 378h106v28H203z" fill="#0b3d2e" />
+  <path d="M168 140 92 114M344 140l76-26M256 88V28" stroke="#f8fafc" stroke-width="28" stroke-linecap="round" opacity="0.95" />
+</svg>
