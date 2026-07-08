@@ -49,6 +49,26 @@ describe("asPubs", () => {
     expect(() => asPubs([{ ...basePub, longitude: "139" }])).toThrow("Invalid pub data found.");
   });
 
+  it("rejects duplicate ids", () => {
+    expect(() => asPubs([basePub, { ...basePub, name: "Duplicate Pub" }])).toThrow("Invalid pub data found.");
+  });
+
+  it("rejects invalid optional fields", () => {
+    expect(() => asPubs([{ ...basePub, city: 123 }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, websiteUrl: 123 }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, googleMapsUrl: 123 }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, instagramUrl: 123 }])).toThrow("Invalid pub data found.");
+  });
+
+  it("rejects non-finite and out-of-range coordinates", () => {
+    expect(() => asPubs([{ ...basePub, latitude: Number.NaN }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, longitude: Number.POSITIVE_INFINITY }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, latitude: 91 }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, latitude: -91 }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, longitude: 181 }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, longitude: -181 }])).toThrow("Invalid pub data found.");
+  });
+
   it("rejects invalid tags and status", () => {
     expect(() => asPubs([{ ...basePub, tags: "guinness" }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, tags: ["guinness", 1] }])).toThrow("Invalid pub data found.");
