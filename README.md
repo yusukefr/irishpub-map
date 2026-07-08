@@ -3,6 +3,10 @@
 日本国内の Irish Pub を地図上で探せる Web アプリです。
 まずは Web 版として公開し、店舗データや検索体験を固めたあと、同じデータ構造を使ってモバイルアプリへ展開します。
 
+## 公開 URL
+
+- https://irishpub-map-ltarenfqa-yf5.vercel.app/
+
 ## ドキュメント
 
 詳細は `docs/` 配下に分割しています。

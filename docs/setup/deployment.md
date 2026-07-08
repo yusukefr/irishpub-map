@@ -6,6 +6,14 @@ Web アプリは Vercel にデプロイします。`main` ブランチを Produc
 
 このリポジトリは npm workspaces 構成で、Next.js アプリは `apps/web` にあります。Vercel ではリポジトリ root をプロジェクト root として扱い、root の `vercel.json` から install / build / output を制御します。
 
+## 公開 URL
+
+現在の Vercel デプロイ先は以下です。
+
+- https://irishpub-map-ltarenfqa-yf5.vercel.app/
+
+この URL は Vercel の Production Deployment として、`main` ブランチへの merge 後に更新される想定です。
+
 ## Vercel プロジェクト設定
 
 Vercel で GitHub リポジトリ `yusukefr/irishpub-map` を Import します。
