@@ -3,6 +3,7 @@ import { vi } from "vitest";
 export const maplibreMock = {
   mapRemove: vi.fn(),
   mapAddControl: vi.fn(),
+  mapJumpTo: vi.fn(),
   markerConstructor: vi.fn(),
   markerSetLngLat: vi.fn(),
   markerSetPopup: vi.fn(),
@@ -19,6 +20,7 @@ export function resetMaplibreMock() {
   maplibreMock.mapRemove.mockClear();
   maplibreMock.markerConstructor.mockClear();
   maplibreMock.mapAddControl.mockClear();
+  maplibreMock.mapJumpTo.mockClear();
   maplibreMock.markerSetLngLat.mockClear();
   maplibreMock.markerSetPopup.mockClear();
   maplibreMock.markerAddTo.mockClear();
@@ -38,6 +40,7 @@ class MapMock {
   }
 
   addControl = maplibreMock.mapAddControl;
+  jumpTo = maplibreMock.mapJumpTo;
   remove = maplibreMock.mapRemove;
 }
 

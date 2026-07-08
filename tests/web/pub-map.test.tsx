@@ -48,6 +48,7 @@ const pubs: Pub[] = [
 ];
 
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
+const originalGeolocation = navigator.geolocation;
 
 function mockWebglContext(context: object | null) {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((contextId: string) => {
@@ -59,15 +60,24 @@ function mockWebglContext(context: object | null) {
   });
 }
 
+function mockGeolocation(geolocation: Partial<Geolocation> | undefined) {
+  Object.defineProperty(navigator, "geolocation", {
+    configurable: true,
+    value: geolocation
+  });
+}
+
 describe("PubMap", () => {
   beforeEach(() => {
     resetMaplibreMock();
     mockWebglContext({});
+    mockGeolocation(undefined);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     HTMLCanvasElement.prototype.getContext = originalGetContext;
+    mockGeolocation(originalGeolocation);
   });
 
   it("initializes a MapLibre map and markers when WebGL is available", () => {
@@ -81,6 +91,7 @@ describe("PubMap", () => {
     );
     expect(maplibreMock.navigationControl).toHaveBeenCalledWith({ visualizePitch: true });
     expect(maplibreMock.mapAddControl).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
     expect(maplibreMock.markerSetLngLat).toHaveBeenNthCalledWith(1, [139.767, 35.681]);
     expect(maplibreMock.markerSetLngLat).toHaveBeenNthCalledWith(2, [135.502, 34.693]);
     expect(maplibreMock.markerSetLngLat).toHaveBeenNthCalledWith(3, [135.768, 35.011]);
@@ -99,6 +110,49 @@ describe("PubMap", () => {
     unmount();
 
     expect(maplibreMock.mapRemove).toHaveBeenCalledTimes(1);
+  });
+
+  it("moves the map to the current location when geolocation succeeds", () => {
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((success) => {
+      success({
+        coords: {
+          latitude: 35.658,
+          longitude: 139.701,
+          accuracy: 20,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null
+        },
+        timestamp: Date.now()
+      });
+    });
+    mockGeolocation({ getCurrentPosition });
+
+    render(<PubMap pubs={pubs} />);
+
+    expect(getCurrentPosition).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), {
+      enableHighAccuracy: false,
+      maximumAge: 300000,
+      timeout: 5000
+    });
+    expect(maplibreMock.mapJumpTo).toHaveBeenCalledWith({
+      center: [139.701, 35.658],
+      zoom: 12
+    });
+  });
+
+  it("keeps the default map view when geolocation fails", () => {
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((_success, error) => {
+      error?.({ code: 1, message: "denied", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 });
+    });
+    mockGeolocation({ getCurrentPosition });
+
+    render(<PubMap pubs={pubs} />);
+
+    expect(getCurrentPosition).toHaveBeenCalled();
+    expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
+    expect(screen.queryByText("地図を表示できませんでした")).not.toBeInTheDocument();
   });
 
   it("treats popup pub data as text content instead of HTML", () => {
