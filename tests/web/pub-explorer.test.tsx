@@ -16,7 +16,7 @@ const pubs: Pub[] = [
     websiteUrl: "https://example.com",
     googleMapsUrl: "https://maps.example.com",
     instagramUrl: null,
-    tags: ["guinness"],
+    tags: ["guinness", "food"],
     status: "open"
   },
   {
@@ -30,7 +30,7 @@ const pubs: Pub[] = [
     websiteUrl: null,
     googleMapsUrl: null,
     instagramUrl: null,
-    tags: [],
+    tags: ["live-music"],
     status: "unknown"
   },
   {
@@ -43,7 +43,7 @@ const pubs: Pub[] = [
     websiteUrl: null,
     googleMapsUrl: null,
     instagramUrl: null,
-    tags: [],
+    tags: ["food"],
     status: "closed"
   }
 ];
@@ -91,6 +91,38 @@ describe("PubExplorer", () => {
 
     fireEvent.change(searchInput, { target: { value: "大阪市" } });
     expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+  });
+
+  it("filters the displayed pubs by tag", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    fireEvent.change(screen.getByLabelText("タグ"), { target: { value: "live-music" } });
+
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+  });
+
+  it("filters the displayed pubs by status", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "closed" } });
+
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Kyoto Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+  });
+
+  it("combines search, tag, and status filters", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "京都府" } });
+    fireEvent.change(screen.getByLabelText("タグ"), { target: { value: "food" } });
+    fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "closed" } });
+
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Kyoto Sample Pub" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
   });
 
