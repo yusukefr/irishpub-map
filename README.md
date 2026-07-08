@@ -11,6 +11,7 @@
 - [店舗データ仕様](docs/specs/data.md)
 - [API 方針](docs/specs/api.md)
 - [開発環境・セットアップ手順](docs/setup/development.md)
+- [デプロイ手順](docs/setup/deployment.md)
 
 ## 使用技術
 
