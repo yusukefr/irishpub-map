@@ -2,7 +2,7 @@
 
 ## 必要環境
 
-- Node.js 22 系
+- Node.js 24 系
 - npm
 - nvm 推奨
 

@@ -26,7 +26,7 @@
 - OpenStreetMap tiles
 - Tailwind CSS + global CSS
 - npm workspaces
-- Node.js 22 系
+- Node.js 24 系
 
 ## クイックスタート
 
