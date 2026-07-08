@@ -8,6 +8,7 @@ export const maplibreMock = {
   markerSetPopup: vi.fn(),
   markerAddTo: vi.fn(),
   popupSetHTML: vi.fn(),
+  popupSetDOMContent: vi.fn(),
   navigationControl: vi.fn(),
   mapConstructor: vi.fn(),
   shouldThrowMapConstructor: false
@@ -22,6 +23,7 @@ export function resetMaplibreMock() {
   maplibreMock.markerSetPopup.mockClear();
   maplibreMock.markerAddTo.mockClear();
   maplibreMock.popupSetHTML.mockClear();
+  maplibreMock.popupSetDOMContent.mockClear();
   maplibreMock.navigationControl.mockClear();
   maplibreMock.mapConstructor.mockClear();
 }
@@ -51,6 +53,7 @@ class MarkerMock {
 
 class PopupMock {
   setHTML = maplibreMock.popupSetHTML.mockReturnThis();
+  setDOMContent = maplibreMock.popupSetDOMContent.mockReturnThis();
 }
 
 const maplibregl = {
