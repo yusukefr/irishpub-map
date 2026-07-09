@@ -186,6 +186,74 @@ h1 {
   line-height: 1.8;
 }
 
+.pub-map-marker {
+  width: 34px;
+  height: 42px;
+  transform: translateY(-2px);
+}
+
+.pub-map-marker-guinness {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 2px solid #0b2f23;
+  border-radius: 18px 18px 18px 4px;
+  background: #0f7b54;
+  box-shadow: 0 2px 8px rgb(23 33 29 / 28%);
+  transform: translateY(-2px) rotate(-45deg);
+}
+
+.pub-map-marker-guinness::after {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  content: "";
+  opacity: 0.18;
+}
+
+.pub-map-marker-glass {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 20px;
+  overflow: hidden;
+  border: 2px solid #f8fafc;
+  border-top-width: 4px;
+  border-radius: 4px 4px 6px 6px;
+  background: #1f1710;
+  transform: rotate(45deg);
+}
+
+.pub-map-marker-glass::after {
+  position: absolute;
+  top: 6px;
+  right: -7px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #f8fafc;
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
+  content: "";
+}
+
+.pub-map-marker-foam {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 7px;
+  background: #f8fafc;
+}
+
+.pub-map-marker-stout {
+  position: absolute;
+  inset: 7px 2px 2px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(180deg, #2d2116 0%, #0c0906 100%);
+}
+
 .pub-list {
   min-width: 0;
 }
