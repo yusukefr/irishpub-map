@@ -43,6 +43,16 @@ a:hover {
   min-height: 100vh;
 }
 
+.app-version {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 14px;
+  padding: 18px clamp(16px, 4vw, 48px) 28px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .masthead {
   display: flex;
   align-items: flex-end;

@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { AppVersionFooter } from "./components/app-version-footer";
 import { PubExplorer } from "./components/pub-explorer";
 import { getValidatedPubs } from "./lib/pub-data";
 import { asPubs } from "@irishpub-map/shared/pub";
@@ -67,6 +68,8 @@ export default async function Home() {
       </section>
 
       <PubExplorer pubs={pubList} />
+
+      <AppVersionFooter />
     </main>
   );
 }
