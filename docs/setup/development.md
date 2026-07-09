@@ -26,6 +26,18 @@ npm run dev
 
 Web アプリは `apps/web` の Next.js アプリとして起動します。
 
+## 環境変数
+
+`.env.example` を参考に `.env.local` を作成できます。
+
+```bash
+cp .env.example .env.local
+```
+
+`IRISHPUB_MAP_API_KEY` は `GET /api/pubs` の任意の API key です。未設定または空の場合、ローカル開発では API key チェックは無効です。値を設定した場合、API へ直接アクセスするには `x-api-key` ヘッダーが必要です。Web アプリのトップページはサーバー側で同じ値を付与して API を呼び出します。
+
+`VERCEL_AUTOMATION_BYPASS_SECRET` は Vercel の Deployment Protection を有効にした Preview 環境で、サーバー側から同じ Preview URL の API を fetch するための任意設定です。Vercel の Protection Bypass for Automation secret を設定すると、`x-vercel-protection-bypass` ヘッダーとして送信します。
+
 ## テスト
 
 単体テストは Vitest で実行します。
