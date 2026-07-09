@@ -388,7 +388,72 @@ h1 {
   font-size: 0.92rem;
 }
 
+.pub-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pub-detail-toggle {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--accent-strong);
+  border-radius: 8px;
+  background: var(--accent-strong);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.pub-detail-toggle:hover {
+  background: var(--accent);
+}
+
 .pub-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.9rem;
+}
+
+.pub-details {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7faf8;
+}
+
+.pub-details dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.pub-details dl > div {
+  display: grid;
+  gap: 4px;
+}
+
+.pub-details dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.pub-details dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.pub-detail-links {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
