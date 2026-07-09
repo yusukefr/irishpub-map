@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { filterPubs, filterPubsByQuery, getAvailableStatuses, getAvailableTags } from "../../apps/web/app/lib/pub-search";
+import {
+  filterPubs,
+  filterPubsByQuery,
+  getAvailablePrefectures,
+  getAvailableStatuses,
+  getAvailableTags
+} from "../../apps/web/app/lib/pub-search";
 import type { Pub } from "../../packages/shared/src/pub";
 
 const pubs: Pub[] = [
@@ -59,6 +65,10 @@ describe("filterPubsByQuery", () => {
     expect(filterPubsByQuery(pubs, "大阪市").map((pub) => pub.id)).toEqual(["osaka-sample"]);
   });
 
+  it("filters pubs by selected prefecture", () => {
+    expect(filterPubs(pubs, { prefecture: "京都府" }).map((pub) => pub.id)).toEqual(["kyoto-sample"]);
+  });
+
   it("filters pubs by tag", () => {
     expect(filterPubs(pubs, { tag: "food" }).map((pub) => pub.id)).toEqual(["tokyo-sample", "kyoto-sample"]);
   });
@@ -67,17 +77,18 @@ describe("filterPubsByQuery", () => {
     expect(filterPubs(pubs, { status: "closed" }).map((pub) => pub.id)).toEqual(["kyoto-sample"]);
   });
 
-  it("combines search, tag, and status filters", () => {
-    expect(filterPubs(pubs, { query: "京都府", tag: "food", status: "closed" }).map((pub) => pub.id)).toEqual([
-      "kyoto-sample"
-    ]);
+  it("combines search, prefecture, tag, and status filters", () => {
+    expect(
+      filterPubs(pubs, { query: "京都府", prefecture: "京都府", tag: "food", status: "closed" }).map((pub) => pub.id)
+    ).toEqual(["kyoto-sample"]);
   });
 
   it("returns all pubs when the query is blank", () => {
     expect(filterPubsByQuery(pubs, "  ")).toEqual(pubs);
   });
 
-  it("returns sorted available tags and statuses", () => {
+  it("returns sorted available prefectures, tags, and statuses", () => {
+    expect(getAvailablePrefectures(pubs)).toEqual(["京都府", "大阪府", "東京都"]);
     expect(getAvailableTags(pubs)).toEqual(["food", "guinness", "live-music"]);
     expect(getAvailableStatuses(pubs)).toEqual(["closed", "open", "unknown"]);
   });

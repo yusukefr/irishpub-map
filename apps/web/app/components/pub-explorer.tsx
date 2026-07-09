@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
-import { filterPubs, getAvailableStatuses, getAvailableTags } from "../lib/pub-search";
+import { filterPubs, getAvailablePrefectures, getAvailableStatuses, getAvailableTags } from "../lib/pub-search";
 import { PubList } from "./pub-list";
 import { PubMap } from "./pub-map";
 
@@ -19,13 +19,15 @@ const STATUS_LABELS: Record<PubStatus, string> = {
 
 export function PubExplorer({ pubs }: PubExplorerProps) {
   const [query, setQuery] = useState("");
+  const [selectedPrefecture, setSelectedPrefecture] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<PubStatus | "">("");
+  const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
   const availableTags = useMemo(() => getAvailableTags(pubs), [pubs]);
   const availableStatuses = useMemo(() => getAvailableStatuses(pubs), [pubs]);
   const filteredPubs = useMemo(
-    () => filterPubs(pubs, { query, tag: selectedTag, status: selectedStatus }),
-    [pubs, query, selectedTag, selectedStatus]
+    () => filterPubs(pubs, { query, prefecture: selectedPrefecture, tag: selectedTag, status: selectedStatus }),
+    [pubs, query, selectedPrefecture, selectedTag, selectedStatus]
   );
 
   return (
@@ -47,6 +49,21 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
           ) : null}
         </div>
         <div className="filter-row">
+          <label htmlFor="pub-prefecture-filter">
+            都道府県
+            <select
+              id="pub-prefecture-filter"
+              value={selectedPrefecture}
+              onChange={(event) => setSelectedPrefecture(event.target.value)}
+            >
+              <option value="">すべての都道府県</option>
+              {availablePrefectures.map((prefecture) => (
+                <option value={prefecture} key={prefecture}>
+                  {prefecture}
+                </option>
+              ))}
+            </select>
+          </label>
           <label htmlFor="pub-tag-filter">
             タグ
             <select id="pub-tag-filter" value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)}>
