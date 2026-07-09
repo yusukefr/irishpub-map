@@ -48,6 +48,15 @@ npm run build
 npm audit --omit=dev
 ```
 
+## バージョン情報の更新
+
+アプリの表示バージョンは `app-version.json` で管理します。リリース時は以下を更新してください。
+
+- `version`: 公開するアプリのバージョン番号
+- `releaseDate`: 公開日。`YYYY-MM-DD` 形式で記載します。
+
+Web アプリの下部には、このファイルの `version` と `releaseDate` が表示されます。更新後は `npm run build` で表示用データを含めてビルドできることを確認してください。
+
 ## リポジトリ構成
 
 ```text
