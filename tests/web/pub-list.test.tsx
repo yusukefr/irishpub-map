@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { PubList } from "../../apps/web/app/components/pub-list";
 import type { Pub } from "../../packages/shared/src/pub";
@@ -14,7 +14,7 @@ const pubs: Pub[] = [
     longitude: 139.767,
     websiteUrl: "https://example.com",
     googleMapsUrl: "https://maps.example.com",
-    instagramUrl: null,
+    instagramUrl: "https://instagram.example.com/tokyo",
     tags: ["guinness", "live-music"],
     status: "open"
   },
@@ -90,6 +90,49 @@ describe("PubList", () => {
     expect(cards[1]).not.toHaveClass("pub-card-closed");
     expect(cards[2]).not.toHaveClass("pub-card-closed");
     expect(cards[3]).toHaveClass("pub-card", "pub-card-closed");
+  });
+
+  it("opens and closes pub details from a detail button", () => {
+    render(<PubList pubs={pubs} />);
+
+    expect(screen.queryByRole("region", { name: "Tokyo Sample Pub の詳細" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "詳細" })[0]);
+
+    const details = screen.getByRole("region", { name: "Tokyo Sample Pub の詳細" });
+    expect(details).toHaveTextContent("店舗名");
+    expect(details).toHaveTextContent("Tokyo Sample Pub");
+    expect(details).toHaveTextContent("住所");
+    expect(details).toHaveTextContent("東京都千代田区1-1-1");
+    expect(details).toHaveTextContent("東京都 / 千代田区");
+    expect(details).toHaveTextContent("営業中");
+    expect(details).toHaveTextContent("guinness / live-music");
+    expect(within(details).getByRole("link", { name: "公式サイト" })).toHaveAttribute("href", "https://example.com");
+    expect(within(details).getByRole("link", { name: "Google Maps" })).toHaveAttribute("href", "https://maps.example.com");
+    expect(within(details).getByRole("link", { name: "Instagram" })).toHaveAttribute(
+      "href",
+      "https://instagram.example.com/tokyo"
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: "詳細" })[0]);
+
+    expect(screen.queryByRole("region", { name: "Tokyo Sample Pub の詳細" })).not.toBeInTheDocument();
+  });
+
+  it("opens pub details with keyboard operation", () => {
+    render(<PubList pubs={pubs} />);
+
+    fireEvent.keyDown(screen.getAllByRole("button", { name: "詳細" })[1], { key: "Enter" });
+
+    expect(screen.getByRole("region", { name: "Osaka Sample Pub の詳細" })).toHaveTextContent("未設定");
+  });
+
+  it("does not open details when an external link is clicked", () => {
+    render(<PubList pubs={pubs} />);
+
+    fireEvent.click(screen.getAllByRole("link", { name: "公式サイト" })[0]);
+
+    expect(screen.queryByRole("region", { name: "Tokyo Sample Pub の詳細" })).not.toBeInTheDocument();
   });
 
   it("renders external links only when URLs exist", () => {
