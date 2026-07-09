@@ -5,7 +5,7 @@
 
 ## 公開 URL
 
-- https://irishpub-map-ltarenfqa-yf5.vercel.app/
+- https://irishpub-map-web.vercel.app/
 
 ## ドキュメント
 
