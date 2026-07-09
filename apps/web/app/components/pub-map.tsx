@@ -6,7 +6,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 
 const PUB_MARKER_COLORS = {
-  open: "#0f7b54",
   closed: "#d92d20",
   other: "#6b7280"
 } as const;
@@ -16,15 +15,19 @@ const DEFAULT_MAP_ZOOM = 5;
 const CURRENT_LOCATION_ZOOM = 12;
 
 function getMarkerColor(status: Pub["status"]) {
-  if (status === "open") {
-    return PUB_MARKER_COLORS.open;
-  }
-
   if (status === "closed") {
     return PUB_MARKER_COLORS.closed;
   }
 
   return PUB_MARKER_COLORS.other;
+}
+
+function createMarker(pub: Pub) {
+  if (pub.status === "open") {
+    return new maplibregl.Marker({ element: createGuinnessMarkerElement(), anchor: "bottom" });
+  }
+
+  return new maplibregl.Marker({ color: getMarkerColor(pub.status) });
 }
 
 type PubMapProps = {
@@ -84,7 +87,7 @@ export function PubMap({ pubs }: PubMapProps) {
       pubs.forEach((pub) => {
         const popup = new maplibregl.Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
 
-        new maplibregl.Marker({ color: getMarkerColor(pub.status) })
+        createMarker(pub)
           .setLngLat([pub.longitude, pub.latitude])
           .setPopup(popup)
           .addTo(map);
@@ -134,6 +137,26 @@ function createPopupContent(pub: Pub) {
   content.append(name, document.createElement("br"), location);
 
   return content;
+}
+
+function createGuinnessMarkerElement() {
+  const marker = document.createElement("div");
+  marker.className = "pub-map-marker pub-map-marker-guinness";
+  marker.setAttribute("aria-label", "営業中 Irish Pub");
+
+  const glass = document.createElement("span");
+  glass.className = "pub-map-marker-glass";
+
+  const foam = document.createElement("span");
+  foam.className = "pub-map-marker-foam";
+
+  const stout = document.createElement("span");
+  stout.className = "pub-map-marker-stout";
+
+  glass.append(foam, stout);
+  marker.append(glass);
+
+  return marker;
 }
 
 function moveToCurrentLocation(map: maplibregl.Map) {

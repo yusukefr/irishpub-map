@@ -95,7 +95,15 @@ describe("PubMap", () => {
     expect(maplibreMock.markerSetLngLat).toHaveBeenNthCalledWith(1, [139.767, 35.681]);
     expect(maplibreMock.markerSetLngLat).toHaveBeenNthCalledWith(2, [135.502, 34.693]);
     expect(maplibreMock.markerSetLngLat).toHaveBeenNthCalledWith(3, [135.768, 35.011]);
-    expect(maplibreMock.markerConstructor).toHaveBeenNthCalledWith(1, { color: "#0f7b54" });
+    const openMarkerOptions = maplibreMock.markerConstructor.mock.calls[0][0] as {
+      anchor: string;
+      element: HTMLElement;
+    };
+    expect(openMarkerOptions.anchor).toBe("bottom");
+    expect(openMarkerOptions.element).toHaveClass("pub-map-marker", "pub-map-marker-guinness");
+    expect(openMarkerOptions.element).toHaveAccessibleName("営業中 Irish Pub");
+    expect(openMarkerOptions.element.querySelector(".pub-map-marker-foam")).not.toBeNull();
+    expect(openMarkerOptions.element.querySelector(".pub-map-marker-stout")).not.toBeNull();
     expect(maplibreMock.markerConstructor).toHaveBeenNthCalledWith(2, { color: "#6b7280" });
     expect(maplibreMock.markerConstructor).toHaveBeenNthCalledWith(3, { color: "#d92d20" });
     expect(maplibreMock.popupSetHTML).not.toHaveBeenCalled();
