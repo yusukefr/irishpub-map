@@ -1,5 +1,4 @@
-import pubs from "../../../../../data/pubs.json";
-import { asPubs } from "@irishpub-map/shared/pub";
+import { getValidatedPubs } from "../../lib/pub-data";
 
 const API_KEY_HEADER = "x-api-key";
 
@@ -10,5 +9,5 @@ export function GET(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  return Response.json({ pubs: asPubs(pubs) });
+  return Response.json({ pubs: getValidatedPubs() });
 }

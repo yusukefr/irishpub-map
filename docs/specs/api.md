@@ -44,6 +44,8 @@ curl -H "x-api-key: $IRISHPUB_MAP_API_KEY" http://localhost:3000/api/pubs
 
 Web アプリのトップページはサーバー側で `/api/pubs` を fetch します。API key はサーバー側のヘッダーとして付与され、ブラウザには露出しません。
 
+Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL_AUTOMATION_BYPASS_SECRET` に Protection Bypass for Automation secret を設定してください。設定されている場合、サーバー側 fetch は `x-vercel-protection-bypass` ヘッダーを送信します。未設定で SSO リダイレクトされた場合、トップページは server error を避けるため同じ検証処理を通した店舗データへフォールバックします。
+
 ## 今後の拡張候補
 
 - `GET /api/pubs/:id`: 店舗詳細を返す

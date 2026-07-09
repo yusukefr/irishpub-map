@@ -1,23 +1,54 @@
 import { headers } from "next/headers";
 import { PubExplorer } from "./components/pub-explorer";
+import { getValidatedPubs } from "./lib/pub-data";
 import { asPubs } from "@irishpub-map/shared/pub";
+
+const API_KEY_HEADER = "x-api-key";
+const VERCEL_PROTECTION_BYPASS_HEADER = "x-vercel-protection-bypass";
+
+function createPubsApiHeaders() {
+  const apiHeaders: Record<string, string> = {};
+
+  if (process.env.IRISHPUB_MAP_API_KEY) {
+    apiHeaders[API_KEY_HEADER] = process.env.IRISHPUB_MAP_API_KEY;
+  }
+
+  if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+    apiHeaders[VERCEL_PROTECTION_BYPASS_HEADER] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  }
+
+  return apiHeaders;
+}
+
+function isVercelSsoRedirect(response: Response) {
+  return (
+    response.status >= 300 &&
+    response.status < 400 &&
+    response.headers.get("location")?.startsWith("https://vercel.com/sso-api")
+  );
+}
 
 async function getPubs() {
   const requestHeaders = await headers();
   const host = requestHeaders.get("host") ?? "localhost:3000";
   const protocol = process.env.VERCEL ? "https" : "http";
   const response = await fetch(`${protocol}://${host}/api/pubs`, {
-    headers: process.env.IRISHPUB_MAP_API_KEY ? { "x-api-key": process.env.IRISHPUB_MAP_API_KEY } : undefined,
+    headers: createPubsApiHeaders(),
+    redirect: "manual",
     cache: "no-store"
   });
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch pubs.");
+  if (response.ok) {
+    const data = (await response.json()) as { pubs: unknown };
+
+    return asPubs(data.pubs);
   }
 
-  const data = (await response.json()) as { pubs: unknown };
+  if (process.env.VERCEL && isVercelSsoRedirect(response)) {
+    return getValidatedPubs();
+  }
 
-  return asPubs(data.pubs);
+  throw new Error("Failed to fetch pubs.");
 }
 
 export default async function Home() {
