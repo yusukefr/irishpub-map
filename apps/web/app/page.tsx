@@ -1,10 +1,28 @@
-import pubs from "../../../data/pubs.json";
+import { headers } from "next/headers";
 import { PubExplorer } from "./components/pub-explorer";
 import { asPubs } from "@irishpub-map/shared/pub";
 
-const pubList = asPubs(pubs);
+async function getPubs() {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("host") ?? "localhost:3000";
+  const protocol = process.env.VERCEL ? "https" : "http";
+  const response = await fetch(`${protocol}://${host}/api/pubs`, {
+    headers: process.env.IRISHPUB_MAP_API_KEY ? { "x-api-key": process.env.IRISHPUB_MAP_API_KEY } : undefined,
+    cache: "no-store"
+  });
 
-export default function Home() {
+  if (!response.ok) {
+    throw new Error("Failed to fetch pubs.");
+  }
+
+  const data = (await response.json()) as { pubs: unknown };
+
+  return asPubs(data.pubs);
+}
+
+export default async function Home() {
+  const pubList = await getPubs();
+
   return (
     <main className="page-shell">
       <section className="masthead">

@@ -41,7 +41,9 @@ Production Domain / Alias の確認項目:
 
 ## 環境変数
 
-現時点の Web アプリは外部 API キーや秘密情報を必要としません。そのため、Vercel に必須の Environment Variables はありません。
+Web アプリは店舗一覧 API `GET /api/pubs` を利用します。Production 環境では API key として `IRISHPUB_MAP_API_KEY` を Vercel の Environment Variables に設定してください。
+
+`IRISHPUB_MAP_API_KEY` はサーバー側で `/api/pubs` へ渡され、ブラウザには露出しません。値を設定すると、API に直接アクセスする外部クライアントは `x-api-key` ヘッダーが必要になります。
 
 今後、地図 API、管理画面、外部データ保存先などを追加する場合は、Vercel の Project Settings から環境変数を追加し、README または docs に用途と必要な環境を追記します。秘密値そのものはリポジトリにコミットしません。
 
