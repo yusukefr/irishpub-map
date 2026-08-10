@@ -1,0 +1,4 @@
+interface:
+  display_name: "Web Test Workflow"
+  short_description: "Test and verify Irish Pub Map web changes."
+  default_prompt: "Use $web-test-workflow to add or update tests for this change."
