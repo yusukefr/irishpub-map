@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
+import type { Coordinates } from "../lib/pub-search";
 
 const PUB_MARKER_COLORS = {
   closed: "#d92d20",
@@ -13,6 +14,10 @@ const PUB_MARKER_COLORS = {
 const DEFAULT_MAP_CENTER: [number, number] = [139.767, 35.681];
 const DEFAULT_MAP_ZOOM = 5;
 const CURRENT_LOCATION_ZOOM = 12;
+const PREFECTURE_MAP_ZOOM = 10;
+const PREFECTURE_MAP_PADDING = 48;
+
+const EMPTY_FOCUS_PUBS: Pub[] = [];
 
 function getMarkerColor(status: Pub["status"]) {
   if (status === "closed") {
@@ -32,9 +37,11 @@ function createMarker(pub: Pub) {
 
 type PubMapProps = {
   pubs: Pub[];
+  focusPubs?: Pub[];
+  currentLocation?: Coordinates | null;
 };
 
-export function PubMap({ pubs }: PubMapProps) {
+export function PubMap({ pubs, focusPubs = EMPTY_FOCUS_PUBS, currentLocation = null }: PubMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [mapUnavailable, setMapUnavailable] = useState(false);
 
@@ -82,7 +89,7 @@ export function PubMap({ pubs }: PubMapProps) {
       });
 
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
-      moveToCurrentLocation(map);
+      focusMap(map, focusPubs, currentLocation);
 
       pubs.forEach((pub) => {
         const popup = new maplibregl.Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
@@ -101,7 +108,7 @@ export function PubMap({ pubs }: PubMapProps) {
     return () => {
       map.remove();
     };
-  }, [pubs]);
+  }, [currentLocation, focusPubs, pubs]);
 
   return (
     <div className="map-canvas" ref={containerRef} aria-label="Irish Pub locations">
@@ -159,25 +166,34 @@ function createGuinnessMarkerElement() {
   return marker;
 }
 
-function moveToCurrentLocation(map: maplibregl.Map) {
-  const geolocation = navigator.geolocation;
-
-  if (!geolocation) {
+function focusMap(map: maplibregl.Map, focusPubs: Pub[], currentLocation: Coordinates | null) {
+  if (focusPubs.length === 1) {
+    const [pub] = focusPubs;
+    map.jumpTo({
+      center: [pub.longitude, pub.latitude],
+      zoom: PREFECTURE_MAP_ZOOM
+    });
     return;
   }
 
-  geolocation.getCurrentPosition(
-    ({ coords }) => {
-      map.jumpTo({
-        center: [coords.longitude, coords.latitude],
-        zoom: CURRENT_LOCATION_ZOOM
-      });
-    },
-    () => undefined,
-    {
-      enableHighAccuracy: false,
-      maximumAge: 300000,
-      timeout: 5000
-    }
-  );
+  if (focusPubs.length > 1) {
+    const longitudes = focusPubs.map((pub) => pub.longitude);
+    const latitudes = focusPubs.map((pub) => pub.latitude);
+
+    map.fitBounds(
+      [
+        [Math.min(...longitudes), Math.min(...latitudes)],
+        [Math.max(...longitudes), Math.max(...latitudes)]
+      ],
+      { maxZoom: PREFECTURE_MAP_ZOOM, padding: PREFECTURE_MAP_PADDING }
+    );
+    return;
+  }
+
+  if (currentLocation) {
+    map.jumpTo({
+      center: [currentLocation.longitude, currentLocation.latitude],
+      zoom: CURRENT_LOCATION_ZOOM
+    });
+  }
 }

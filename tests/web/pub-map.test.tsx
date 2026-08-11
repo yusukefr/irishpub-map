@@ -48,7 +48,6 @@ const pubs: Pub[] = [
 ];
 
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
-const originalGeolocation = navigator.geolocation;
 
 function mockWebglContext(context: object | null) {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((contextId: string) => {
@@ -60,24 +59,15 @@ function mockWebglContext(context: object | null) {
   });
 }
 
-function mockGeolocation(geolocation: Partial<Geolocation> | undefined) {
-  Object.defineProperty(navigator, "geolocation", {
-    configurable: true,
-    value: geolocation
-  });
-}
-
 describe("PubMap", () => {
   beforeEach(() => {
     resetMaplibreMock();
     mockWebglContext({});
-    mockGeolocation(undefined);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     HTMLCanvasElement.prototype.getContext = originalGetContext;
-    mockGeolocation(originalGeolocation);
   });
 
   it("initializes a MapLibre map and markers when WebGL is available", () => {
@@ -120,47 +110,41 @@ describe("PubMap", () => {
     expect(maplibreMock.mapRemove).toHaveBeenCalledTimes(1);
   });
 
-  it("moves the map to the current location when geolocation succeeds", () => {
-    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((success) => {
-      success({
-        coords: {
-          latitude: 35.658,
-          longitude: 139.701,
-          accuracy: 20,
-          altitude: null,
-          altitudeAccuracy: null,
-          heading: null,
-          speed: null
-        },
-        timestamp: Date.now()
-      });
-    });
-    mockGeolocation({ getCurrentPosition });
+  it("moves the map to the provided current location", () => {
+    render(<PubMap pubs={pubs} currentLocation={{ latitude: 35.658, longitude: 139.701 }} />);
 
-    render(<PubMap pubs={pubs} />);
-
-    expect(getCurrentPosition).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), {
-      enableHighAccuracy: false,
-      maximumAge: 300000,
-      timeout: 5000
-    });
     expect(maplibreMock.mapJumpTo).toHaveBeenCalledWith({
       center: [139.701, 35.658],
       zoom: 12
     });
   });
 
-  it("keeps the default map view when geolocation fails", () => {
-    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((_success, error) => {
-      error?.({ code: 1, message: "denied", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 });
+  it("moves the map to a prefecture with one pub", () => {
+    render(<PubMap pubs={[pubs[1]]} focusPubs={[pubs[1]]} />);
+
+    expect(maplibreMock.mapJumpTo).toHaveBeenCalledWith({
+      center: [135.502, 34.693],
+      zoom: 10
     });
-    mockGeolocation({ getCurrentPosition });
+  });
 
-    render(<PubMap pubs={pubs} />);
+  it("fits the map to a prefecture with multiple pubs", () => {
+    const secondTokyoPub: Pub = {
+      ...pubs[0],
+      id: "tokyo-second",
+      latitude: 35.72,
+      longitude: 139.81
+    };
 
-    expect(getCurrentPosition).toHaveBeenCalled();
-    expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
-    expect(screen.queryByText("地図を表示できませんでした")).not.toBeInTheDocument();
+    render(<PubMap pubs={[pubs[0], secondTokyoPub]} focusPubs={[pubs[0], secondTokyoPub]} />);
+
+    expect(maplibreMock.mapFitBounds).toHaveBeenCalledWith(
+      [
+        [139.767, 35.681],
+        [139.81, 35.72]
+      ],
+      { maxZoom: 10, padding: 48 }
+    );
   });
 
   it("treats popup pub data as text content instead of HTML", () => {
