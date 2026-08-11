@@ -48,6 +48,21 @@ npm run build
 npm audit --omit=dev
 ```
 
+## Codex Skills
+
+Codex はリポジトリ配下の `.agents/skills` を自動検出します。個人の
+グローバル設定に依存せず、チームで同じ手順を使えるよう、次の Skills を
+管理しています。明示的に使う場合は、Codex のプロンプトで `$<skill-name>` を
+指定してください。
+
+- `gh-fix-ci`: GitHub Actions の失敗ログを調査し、修正方針を作成します。修正は承認後に実施します。
+- `gh-address-comments`: 現在のブランチの Pull Request にあるレビューコメントを確認し、対応対象を選んでから修正します。
+- `vercel-deploy`: Vercel へのデプロイを行います。明示的な依頼がない限りプレビューとしてデプロイし、本番デプロイはユーザーの明示指示が必要です。
+- `web-test-workflow`: このリポジトリの Vitest、Testing Library、MapLibre モックを使ったテスト実装と検証を案内します。
+
+Skills は繰り返し実行する手順を補助するものであり、リポジトリ固有の作業
+ルール・変更範囲・承認要件は常に [AGENTS.md](AGENTS.md) を優先します。
+
 ## バージョン情報の更新
 
 アプリの表示バージョンは `app-version.json` で管理します。リリース時は以下を更新してください。
