@@ -176,6 +176,8 @@ describe("PubExplorer", () => {
   it("filters the displayed pubs by tag", () => {
     render(<PubExplorer pubs={pubs} />);
 
+    expect(screen.getByRole("option", { name: "ライブ音楽" })).toHaveValue("live-music");
+
     fireEvent.change(screen.getByLabelText("タグ"), { target: { value: "live-music" } });
 
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();

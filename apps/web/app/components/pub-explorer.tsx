@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
+import { getTagLabel } from "@irishpub-map/shared/tag";
 import {
   filterPubs,
   getAvailablePrefectures,
@@ -129,7 +130,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
               <option value="">すべてのタグ</option>
               {availableTags.map((tag) => (
                 <option value={tag} key={tag}>
-                  {tag}
+                  {getTagLabel(tag)}
                 </option>
               ))}
             </select>

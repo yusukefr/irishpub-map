@@ -15,7 +15,7 @@ const pubs: Pub[] = [
     websiteUrl: "https://example.com",
     googleMapsUrl: "https://maps.example.com",
     instagramUrl: "https://instagram.example.com/tokyo",
-    tags: ["guinness", "live-music"],
+    tags: ["guinness", "live-music", "seasonal-event"],
     status: "open"
   },
   {
@@ -78,14 +78,15 @@ describe("PubList", () => {
 
     const cards = screen.getAllByRole("article");
     expect(within(cards[0]).getByText("営業中")).toHaveClass("pub-status-open");
-    expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub tags" })).toHaveTextContent("guinness");
-    expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub tags" })).toHaveTextContent("live-music");
+    expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("ギネス");
+    expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("ライブ音楽");
+    expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("seasonal-event");
     expect(within(cards[1]).getByText("不明")).toHaveClass("pub-status-unknown");
-    expect(within(cards[1]).queryByRole("list", { name: "Osaka Sample Pub tags" })).not.toBeInTheDocument();
+    expect(within(cards[1]).queryByRole("list", { name: "Osaka Sample Pub のタグ" })).not.toBeInTheDocument();
     expect(within(cards[2]).getByText("一時休業")).toHaveClass("pub-status-temporarily-closed");
-    expect(within(cards[2]).getByText("food")).toBeInTheDocument();
+    expect(within(cards[2]).getByText("食事あり")).toBeInTheDocument();
     expect(within(cards[3]).getByText("閉業")).toHaveClass("pub-status-closed");
-    expect(within(cards[3]).getByText("craft-beer")).toBeInTheDocument();
+    expect(within(cards[3]).getByText("クラフトビール")).toBeInTheDocument();
     expect(cards[0]).not.toHaveClass("pub-card-closed");
     expect(cards[1]).not.toHaveClass("pub-card-closed");
     expect(cards[2]).not.toHaveClass("pub-card-closed");
@@ -106,7 +107,7 @@ describe("PubList", () => {
     expect(details).toHaveTextContent("東京都千代田区1-1-1");
     expect(details).toHaveTextContent("東京都 / 千代田区");
     expect(details).toHaveTextContent("営業中");
-    expect(details).toHaveTextContent("guinness / live-music");
+    expect(details).toHaveTextContent("ギネス / ライブ音楽 / seasonal-event");
     expect(within(details).getByRole("link", { name: "公式サイト" })).toHaveAttribute("href", "https://example.com");
     expect(within(details).getByRole("link", { name: "Google Maps" })).toHaveAttribute("href", "https://maps.example.com");
     expect(within(details).getByRole("link", { name: "Instagram" })).toHaveAttribute(
