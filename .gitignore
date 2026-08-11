@@ -9,6 +9,7 @@ coverage
 .DS_Store
 npm-debug.log*
 *.tsbuildinfo
+.vercel
 
 !.github/
 !.github/ISSUE_TEMPLATE/
