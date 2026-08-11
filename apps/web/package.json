@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "@irishpub-map/shared": "*",
     "maplibre-gl": "3.6.2",
     "next": "16.2.11",

@@ -75,3 +75,23 @@ npm audit --omit=dev
 - Vercel Project Configuration: https://vercel.com/docs/project-configuration
 - Vercel Monorepos: https://vercel.com/docs/monorepos
 - Next.js on Vercel: https://vercel.com/docs/frameworks/full-stack/nextjs
+## 管理画面と Neon Postgres
+
+管理画面は /admin です。Vercel Marketplace から Neon を追加し、Production / Preview 環境に DATABASE_URL を設定してください。初回のデータ取得時に pubs テーブルを作成し、既存の data/pubs.json を初期投入します。
+
+管理者認証には次の環境変数を設定します。値はリポジトリやブラウザへ保存しません。
+
+| 変数 | 用途 |
+| --- | --- |
+| ADMIN_USERNAME | 管理者 ID |
+| ADMIN_PASSWORD_HASH | salt:base64-hash 形式の scrypt パスワードハッシュ |
+| ADMIN_SESSION_SECRET | 十分に長いランダムな Cookie 署名用秘密鍵 |
+| DATABASE_URL | Neon の接続文字列（Marketplace 連携で自動設定） |
+
+パスワードハッシュは、ローカルで生成して Vercel の環境変数にだけ登録します。例:
+
+```bash
+node -e 'const { randomBytes, scryptSync } = require("crypto"); const password = process.argv[1]; const salt = randomBytes(16).toString("base64"); console.log(salt + ":" + scryptSync(password, salt, 64).toString("base64"))' '設定したいパスワード'
+```
+
+Neon Free は小規模な管理用途から開始できますが、使用量と上限は Neon のダッシュボードで監視してください。
