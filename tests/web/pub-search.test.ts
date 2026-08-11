@@ -4,7 +4,8 @@ import {
   filterPubsByQuery,
   getAvailablePrefectures,
   getAvailableStatuses,
-  getAvailableTags
+  getAvailableTags,
+  getNearestAvailablePrefecture
 } from "../../apps/web/app/lib/pub-search";
 import type { Pub } from "../../packages/shared/src/pub";
 
@@ -85,6 +86,12 @@ describe("filterPubsByQuery", () => {
 
   it("returns all pubs when the query is blank", () => {
     expect(filterPubsByQuery(pubs, "  ")).toEqual(pubs);
+  });
+
+  it("finds the nearest available prefecture from coordinates", () => {
+    expect(getNearestAvailablePrefecture(pubs, { latitude: 35.69, longitude: 139.7 })).toBe("東京都");
+    expect(getNearestAvailablePrefecture(pubs, { latitude: 34.7, longitude: 135.5 })).toBe("大阪府");
+    expect(getNearestAvailablePrefecture([], { latitude: 35.69, longitude: 139.7 })).toBe("");
   });
 
   it("returns sorted available prefectures, tags, and statuses", () => {

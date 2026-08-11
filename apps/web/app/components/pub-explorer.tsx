@@ -1,8 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
-import { filterPubs, getAvailablePrefectures, getAvailableStatuses, getAvailableTags } from "../lib/pub-search";
+import {
+  filterPubs,
+  getAvailablePrefectures,
+  getAvailableStatuses,
+  getAvailableTags,
+  getNearestAvailablePrefecture,
+  type Coordinates
+} from "../lib/pub-search";
 import { PubList } from "./pub-list";
 import { PubMap } from "./pub-map";
 
@@ -17,11 +24,22 @@ const STATUS_LABELS: Record<PubStatus, string> = {
   unknown: "不明"
 };
 
+const GEOLOCATION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: false,
+  maximumAge: 300000,
+  timeout: 5000
+};
+
+const EMPTY_FOCUS_PUBS: Pub[] = [];
+
 export function PubExplorer({ pubs }: PubExplorerProps) {
   const [query, setQuery] = useState("");
   const [selectedPrefecture, setSelectedPrefecture] = useState("");
+  const [currentPrefecture, setCurrentPrefecture] = useState("");
+  const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
   const [selectedTag, setSelectedTag] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<PubStatus | "">("");
+  const hasSelectedPrefecture = useRef(false);
   const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
   const availableTags = useMemo(() => getAvailableTags(pubs), [pubs]);
   const availableStatuses = useMemo(() => getAvailableStatuses(pubs), [pubs]);
@@ -29,6 +47,44 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
     () => filterPubs(pubs, { query, prefecture: selectedPrefecture, tag: selectedTag, status: selectedStatus }),
     [pubs, query, selectedPrefecture, selectedTag, selectedStatus]
   );
+  const prefecturePubs = useMemo(
+    () => (selectedPrefecture ? filterPubs(pubs, { prefecture: selectedPrefecture }) : []),
+    [pubs, selectedPrefecture]
+  );
+  const mapFocusPubs = selectedPrefecture === currentPrefecture ? EMPTY_FOCUS_PUBS : prefecturePubs;
+
+  useEffect(() => {
+    const geolocation = navigator.geolocation;
+
+    if (!geolocation) {
+      return;
+    }
+
+    let isMounted = true;
+
+    geolocation.getCurrentPosition(
+      ({ coords }) => {
+        if (!isMounted) {
+          return;
+        }
+
+        const location = { latitude: coords.latitude, longitude: coords.longitude };
+        const nearestPrefecture = getNearestAvailablePrefecture(pubs, location);
+        setCurrentLocation(location);
+        setCurrentPrefecture(nearestPrefecture);
+
+        if (!hasSelectedPrefecture.current) {
+          setSelectedPrefecture(nearestPrefecture);
+        }
+      },
+      () => undefined,
+      GEOLOCATION_OPTIONS
+    );
+
+    return () => {
+      isMounted = false;
+    };
+  }, [pubs]);
 
   return (
     <>
@@ -54,7 +110,10 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
             <select
               id="pub-prefecture-filter"
               value={selectedPrefecture}
-              onChange={(event) => setSelectedPrefecture(event.target.value)}
+              onChange={(event) => {
+                hasSelectedPrefecture.current = true;
+                setSelectedPrefecture(event.target.value);
+              }}
             >
               <option value="">すべての都道府県</option>
               {availablePrefectures.map((prefecture) => (
@@ -95,7 +154,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
       </section>
 
       <section className="map-layout" aria-label="Irish Pub map and list">
-        <PubMap pubs={filteredPubs} />
+        <PubMap pubs={filteredPubs} focusPubs={mapFocusPubs} currentLocation={currentLocation} />
         <PubList pubs={filteredPubs} />
       </section>
     </>
