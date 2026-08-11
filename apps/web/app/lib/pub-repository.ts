@@ -1,0 +1,68 @@
+import { randomUUID } from "node:crypto";
+import { neon } from "@neondatabase/serverless";
+import { asPubs, type Pub } from "@irishpub-map/shared/pub";
+import { getValidatedPubs } from "./pub-data";
+
+type PubRow = { data: unknown };
+let sqlClient: ReturnType<typeof neon> | null = null;
+
+export function isDatabaseConfigured() {
+  return Boolean(process.env.DATABASE_URL);
+}
+
+export async function getPubs() {
+  if (!isDatabaseConfigured()) return getValidatedPubs();
+
+  const sql = getSql();
+  await ensureTable(sql);
+  const rows = (await sql`SELECT data FROM pubs ORDER BY data->>'prefecture', data->>'name'`) as PubRow[];
+  return asPubs(rows.map((row) => row.data));
+}
+
+export async function createPub(value: unknown) {
+  const pub = toPub(value, randomUUID());
+  const sql = getRequiredSql();
+  await ensureTable(sql);
+  await sql`INSERT INTO pubs (id, data) VALUES (${pub.id}, ${JSON.stringify(pub)}::jsonb)`;
+  return pub;
+}
+
+export async function updatePub(id: string, value: unknown) {
+  const pub = toPub(value, id);
+  const sql = getRequiredSql();
+  await ensureTable(sql);
+  const rows = (await sql`UPDATE pubs SET data = ${JSON.stringify(pub)}::jsonb, updated_at = NOW() WHERE id = ${id} RETURNING data`) as PubRow[];
+  return rows.length === 1 ? asPubs([rows[0].data])[0] : null;
+}
+
+export async function deletePub(id: string) {
+  const sql = getRequiredSql();
+  await ensureTable(sql);
+  const rows = (await sql`DELETE FROM pubs WHERE id = ${id} RETURNING id`) as Array<{ id: string }>;
+  return rows.length === 1;
+}
+
+function getRequiredSql() {
+  if (!isDatabaseConfigured()) throw new Error("Database is not configured.");
+  return getSql();
+}
+
+function getSql() {
+  if (!sqlClient) sqlClient = neon(process.env.DATABASE_URL!);
+  return sqlClient;
+}
+
+async function ensureTable(sql: ReturnType<typeof neon>) {
+  await sql`CREATE TABLE IF NOT EXISTS pubs (id TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
+  const rows = (await sql`SELECT COUNT(*)::int AS count FROM pubs`) as Array<{ count: number }>;
+  if (rows[0]?.count === 0) {
+    for (const pub of getValidatedPubs()) {
+      await sql`INSERT INTO pubs (id, data) VALUES (${pub.id}, ${JSON.stringify(pub)}::jsonb) ON CONFLICT (id) DO NOTHING`;
+    }
+  }
+}
+
+function toPub(value: unknown, id: string): Pub {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid pub data.");
+  return asPubs([{ ...(value as Record<string, unknown>), id }])[0];
+}
