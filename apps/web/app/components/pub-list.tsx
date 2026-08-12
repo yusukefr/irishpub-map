@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
+import { getTagLabel } from "@irishpub-map/shared/tag";
 
 type PubListProps = {
   pubs: Pub[];
@@ -51,9 +52,9 @@ export function PubList({ pubs }: PubListProps) {
                 </span>
               </div>
               {pub.tags.length > 0 ? (
-                <ul className="pub-tags" aria-label={pub.name + " tags"}>
+                <ul className="pub-tags" aria-label={`${pub.name} のタグ`}>
                   {pub.tags.map((tag) => (
-                    <li key={tag}>{tag}</li>
+                    <li key={tag}>{getTagLabel(tag)}</li>
                   ))}
                 </ul>
               ) : null}
@@ -122,7 +123,7 @@ function PubDetails({ pub, detailsId }: PubDetailsProps) {
         </div>
         <div>
           <dt>タグ</dt>
-          <dd>{pub.tags.length > 0 ? pub.tags.join(" / ") : "未設定"}</dd>
+          <dd>{pub.tags.length > 0 ? pub.tags.map(getTagLabel).join(" / ") : "未設定"}</dd>
         </div>
       </dl>
       <div className="pub-detail-links" aria-label={`${pub.name} external links`}>

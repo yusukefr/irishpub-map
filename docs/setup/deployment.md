@@ -8,15 +8,11 @@ Web アプリは Vercel にデプロイします。`main` ブランチを Produc
 
 ## 公開 URL
 
-現在の Vercel Production URL は以下です。
-
-- https://irishpub-map-web.vercel.app/
-
-この URL を正式な公開 URL として扱います。Vercel の Production Domain / Alias でも `irishpub-map-web.vercel.app` が Production Deployment に紐づいていることを確認してください。
+公開 URL は README に記載します。Production URL とカスタムドメインの設定変更は Vercel の Project Settings で管理してください。
 
 ## Vercel プロジェクト設定
 
-Vercel で GitHub リポジトリ `yusukefr/irishpub-map` を Import します。
+Vercel で対象の GitHub リポジトリを Import します。
 
 推奨設定:
 
@@ -34,28 +30,46 @@ Vercel で GitHub リポジトリ `yusukefr/irishpub-map` を Import します�
 
 Production Domain / Alias の確認項目:
 
-- Domains に `irishpub-map-web.vercel.app` が登録されている
-- `main` ブランチの Production Deployment が `irishpub-map-web.vercel.app` に紐づいている
-- 旧 Preview 風 URL をドキュメントや外部導線で案内していない
+- Domains に承認済みの Production Domain が登録されている
+- `main` ブランチの Production Deployment が Production Domain に紐づいている
 - Preview Deployment の URL と Production URL を混同しない
 
 ## 環境変数
 
-Web アプリは店舗一覧 API `GET /api/pubs` を利用します。Production 環境では API key として `IRISHPUB_MAP_API_KEY` を Vercel の Environment Variables に設定してください。
+Vercel の Production / Preview 環境には、用途に応じて次の変数を設定します。秘密値はリポジトリにコミットしません。
+
+| 変数 | 必要な場面 | 用途 |
+| --- | --- | --- |
+| `IRISHPUB_MAP_API_KEY` | 任意 | `GET /api/pubs` の API key |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | Preview の Deployment Protection を使う場合 | サーバー側 fetch 用の Protection Bypass secret |
+| `DATABASE_URL` | 管理画面で永続化する場合 | Neon の接続文字列 |
+| `ADMIN_USERNAME` | 管理画面を有効にする場合 | 管理者 ID |
+| `ADMIN_PASSWORD_HASH` | 管理画面を有効にする場合 | scrypt パスワードハッシュ |
+| `ADMIN_SESSION_SECRET` | 管理画面を有効にする場合 | セッション Cookie 署名用秘密鍵 |
 
 `IRISHPUB_MAP_API_KEY` はサーバー側で `/api/pubs` へ渡され、ブラウザには露出しません。値を設定すると、API に直接アクセスする外部クライアントは `x-api-key` ヘッダーが必要になります。
 
 Preview Deployment Protection を有効にしている場合、サーバー側から同じ Preview URL の `/api/pubs` を fetch すると Vercel SSO へリダイレクトされることがあります。その場合は Vercel の Protection Bypass for Automation secret を `VERCEL_AUTOMATION_BYPASS_SECRET` として Preview 環境にも設定してください。アプリはこの値を `x-vercel-protection-bypass` ヘッダーとして送信します。未設定でも SSO リダイレクト時は検証済み店舗データへフォールバックし、ページ全体が server error にならないようにしています。
 
-今後、地図 API、管理画面、外部データ保存先などを追加する場合は、Vercel の Project Settings から環境変数を追加し、README または docs に用途と必要な環境を追記します。秘密値そのものはリポジトリにコミットしません。
+管理画面のログインには `ADMIN_USERNAME`、`ADMIN_PASSWORD_HASH`、`ADMIN_SESSION_SECRET` のすべてが必要です。更新操作には、さらに `DATABASE_URL` が必要です。
+
+## GitHub Actions の設定
+
+CI の Slack 通知は Vercel の環境変数ではなく GitHub の Actions 設定を参照します。通知を有効にする場合は、リポジトリの **Settings → Secrets and variables → Actions** で次を設定します。
+
+| 種別 | 名前 | 用途 |
+| --- | --- | --- |
+| Variable | `SLACK_CICD_CHANNEL` | 任意。通知先チャンネル |
+| Secret | `SLACK_CICD_WEBHOOK_URL` | Slack Incoming Webhook URL |
 
 ## デプロイの流れ
 
 1. GitHub と Vercel を連携し、このリポジトリを Vercel Project として Import します。
 2. Root Directory が `.`、Production Branch が `main` になっていることを確認します。
 3. Node.js Version を 24.x に設定します。
-4. `main` ブランチへ PR を merge します。
-5. Vercel の Deployments で Production Deployment が成功していることを確認します。
+4. 必要な Vercel 環境変数と、必要に応じて GitHub Actions の Slack 通知設定を追加します。
+5. `main` ブランチへ PR を merge します。
+6. Vercel の Deployments で Production Deployment が成功していることを確認します。
 
 ## ローカルでの事前確認
 
@@ -75,3 +89,17 @@ npm audit --omit=dev
 - Vercel Project Configuration: https://vercel.com/docs/project-configuration
 - Vercel Monorepos: https://vercel.com/docs/monorepos
 - Next.js on Vercel: https://vercel.com/docs/frameworks/full-stack/nextjs
+
+## 管理画面と Neon Postgres
+
+管理画面は `/admin` です。Vercel Marketplace から Neon を追加し、Production / Preview 環境に `DATABASE_URL` を設定してください。初回のデータ取得時に `pubs` テーブルを作成し、既存の `data/pubs.json` を初期投入します。`DATABASE_URL` が未設定の場合、管理画面は初期データを閲覧できますが書き込みはできません。
+
+パスワードハッシュは、ローカルで生成して Vercel の環境変数にだけ登録します。例:
+
+```bash
+node -e 'const { randomBytes, scryptSync } = require("crypto"); const password = process.argv[1]; const salt = randomBytes(16).toString("base64"); console.log(salt + ":" + scryptSync(password, salt, 64).toString("base64"))' '設定したいパスワード'
+```
+
+Neon Free は小規模な管理用途から開始できますが、使用量と上限は Neon のダッシュボードで監視してください。
+
+API の認証・更新条件は[API 方針](../specs/api.md)、全体構成は[システム構成](../architecture/system-overview.md)を参照してください。

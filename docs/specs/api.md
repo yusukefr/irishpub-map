@@ -2,9 +2,9 @@
 
 ## 現状
 
-Next.js Route Handler で店舗一覧 API を提供します。Web アプリは `data/pubs.json` を直接参照せず、サーバー側から API 経由で店舗データを取得します。
+Next.js Route Handler で公開 API と管理 API を提供します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境では Neon を読み書きし、未設定時は `data/pubs.json` をフォールバックとして使います。
 
-## エンドポイント
+## 公開 API
 
 ### `GET /api/pubs`
 
@@ -46,12 +46,26 @@ Web アプリのトップページはサーバー側で `/api/pubs` を fetch �
 
 Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL_AUTOMATION_BYPASS_SECRET` に Protection Bypass for Automation secret を設定してください。設定されている場合、サーバー側 fetch は `x-vercel-protection-bypass` ヘッダーを送信します。未設定で SSO リダイレクトされた場合、トップページは server error を避けるため同じ検証処理を通した店舗データへフォールバックします。
 
+検索・絞り込みは、取得済みの店舗データに対してブラウザで実行します。そのため `prefecture` や `query` のクエリパラメーターは現在の公開 API では受け付けません。
+
+## 管理 API
+
+管理 API は有効な管理者セッション Cookie を必要とします。ログイン用の環境変数が未設定の場合、ログイン API は `503` を返します。`DATABASE_URL` が未設定の場合、管理画面での一覧取得はできますが、更新系 API は `503` を返します。
+
+| メソッド | パス | 成功時 | 主な失敗時 |
+| --- | --- | --- | --- |
+| `POST` | `/api/admin/login` | `200` と `Set-Cookie` | 資格情報不一致は `401`、管理者設定なしは `503` |
+| `POST` | `/api/admin/logout` | `200` と期限切れの Cookie | なし |
+| `GET` | `/api/admin/pubs` | `200` と `{ pubs, databaseConfigured }` | 未認証は `401` |
+| `POST` | `/api/admin/pubs` | `201` と `{ pub }` | 未認証は `401`、不正データは `400`、DB 未設定は `503` |
+| `PUT` | `/api/admin/pubs/:id` | `200` と `{ pub }` | 未認証は `401`、不正データは `400`、対象なしは `404`、DB 未設定は `503` |
+| `DELETE` | `/api/admin/pubs/:id` | `200` と `{ ok: true }` | 未認証は `401`、対象なしは `404`、DB 未設定は `503` |
+
+`POST` と `PUT` の JSON 本文は `Pub` と同じフィールドを使います。新規作成時の `id` はサーバーで生成され、更新時は URL の `:id` が使われます。フィールドの詳細は[店舗データ仕様](data.md)を参照してください。
+
 ## 今後の拡張候補
 
 - `GET /api/pubs/:id`: 店舗詳細を返す
-- `GET /api/pubs?prefecture=東京都`: 絞り込み検索
-- `GET /api/pubs?query=dublin`: テキスト検索
-- DB や管理画面からのデータ更新
 - モバイルアプリからの API 利用
 
 ## 注意点

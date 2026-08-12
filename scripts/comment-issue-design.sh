@@ -5,14 +5,13 @@ usage() {
   cat <<'USAGE'
 Usage:
   scripts/comment-issue-design.sh --issue 13 --body-file design.md
-  scripts/comment-issue-design.sh --issue 13 --body "Design comment"
 
 Posts the implementation plan and impact scope to the source issue before implementation.
 
 Options:
   --issue NUMBER    Issue number to comment on. Required.
-  --body BODY       Comment body text. Required unless --body-file is provided.
-  --body-file FILE  Comment body file. Required unless --body is provided.
+  --body BODY       Single-line comment body text. Required unless --body-file is provided.
+  --body-file FILE  Comment body file. Required unless --body is provided; required for multi-line comments.
   -h, --help        Show this help.
 USAGE
 }
@@ -69,6 +68,11 @@ if [[ -n "$body_file" && ! -f "$body_file" ]]; then
   echo "Body file not found: $body_file" >&2
   exit 2
 fi
+if [[ "$body" == *$'\n'* || "$body" == *'\n'* ]]; then
+  echo "Use --body-file for multi-line issue comments." >&2
+  exit 2
+fi
+
 
 if [[ -n "$body_file" ]]; then
   gh issue comment "$issue_number" --body-file "$body_file"

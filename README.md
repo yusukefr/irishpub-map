@@ -3,19 +3,23 @@
 日本国内の Irish Pub を地図上で探せる Web アプリです。
 まずは Web 版として公開し、店舗データや検索体験を固めたあと、同じデータ構造を使ってモバイルアプリへ展開します。
 
-## 公開 URL
+## 公開環境
 
-- https://irishpub-map-web.vercel.app/
+公開 URL: https://irishpub-map-web.vercel.app
 
 ## ドキュメント
 
-詳細は `docs/` 配下に分割しています。
+設計、開発、運用の詳細は `docs/` 配下に分割しています。
 
 - [プロダクト仕様](docs/specs/product.md)
 - [店舗データ仕様](docs/specs/data.md)
 - [API 方針](docs/specs/api.md)
+- [システム構成図](docs/architecture/system-overview.md)
+- [シーケンス図](docs/architecture/sequences.md)
 - [開発環境・セットアップ手順](docs/setup/development.md)
+- [コード規約・開発規約](docs/development/conventions.md)
 - [デプロイ手順](docs/setup/deployment.md)
+- [リポジトリ設定の保守手順](docs/repository-settings/README.md)
 
 ## 使用技術
 
@@ -47,6 +51,17 @@ npm run lint
 npm run build
 npm audit --omit=dev
 ```
+
+## コードとドキュメントの同期
+
+コードとドキュメントは同じ変更単位で保守します。
+
+- コードを変更したときは、仕様、API、データ形式、環境変数、セットアップ・デプロイ手順、構成図・シーケンス図への反映要否を確認します。
+- ドキュメントを変更したときは、記載した仕様、API、画面挙動、運用手順が実装と一致することを確認します。
+- どちらかに差分がある場合は、もう一方も同じ Pull Request で更新します。
+- Pull Request には、コードとドキュメントの同期を確認した結果を記載します。
+
+詳細な実装・レビューの基準は[コード規約・開発規約](docs/development/conventions.md)、AI agent の必須ルールは[AGENTS.md](AGENTS.md)を参照してください。
 
 ## Codex Skills
 

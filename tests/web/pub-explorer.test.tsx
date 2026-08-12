@@ -1,8 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PubExplorer } from "../../apps/web/app/components/pub-explorer";
 import type { Pub } from "../../packages/shared/src/pub";
-import { resetMaplibreMock } from "../mocks/maplibre-gl";
+import { maplibreMock, resetMaplibreMock } from "../mocks/maplibre-gl";
 
 const pubs: Pub[] = [
   {
@@ -49,6 +49,7 @@ const pubs: Pub[] = [
 ];
 
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
+const originalGeolocation = navigator.geolocation;
 
 function mockWebglContext() {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((contextId: string) => {
@@ -60,15 +61,24 @@ function mockWebglContext() {
   });
 }
 
+function mockGeolocation(geolocation: Partial<Geolocation> | undefined) {
+  Object.defineProperty(navigator, "geolocation", {
+    configurable: true,
+    value: geolocation
+  });
+}
+
 describe("PubExplorer", () => {
   beforeEach(() => {
     resetMaplibreMock();
     mockWebglContext();
+    mockGeolocation(undefined);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     HTMLCanvasElement.prototype.getContext = originalGetContext;
+    mockGeolocation(originalGeolocation);
   });
 
   it("filters the displayed pubs by pub name", () => {
@@ -94,8 +104,79 @@ describe("PubExplorer", () => {
     expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
   });
 
+  it("defaults to the nearest available prefecture when geolocation succeeds", async () => {
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((success) => {
+      success({
+        coords: {
+          latitude: 35.658,
+          longitude: 139.701,
+          accuracy: 20,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null
+        },
+        timestamp: Date.now()
+      });
+    });
+    mockGeolocation({ getCurrentPosition });
+
+    render(<PubExplorer pubs={pubs} />);
+
+    await waitFor(() => expect(screen.getByLabelText("都道府県")).toHaveValue("東京都"));
+    expect(getCurrentPosition).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), {
+      enableHighAccuracy: false,
+      maximumAge: 300000,
+      timeout: 5000
+    });
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
+    expect(maplibreMock.mapJumpTo).toHaveBeenLastCalledWith({
+      center: [139.701, 35.658],
+      zoom: 12
+    });
+  });
+
+  it("keeps all prefectures selected when geolocation fails", () => {
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((_success, error) => {
+      error?.({
+        code: 1,
+        message: "denied",
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3
+      });
+    });
+    mockGeolocation({ getCurrentPosition });
+
+    render(<PubExplorer pubs={pubs} />);
+
+    expect(screen.getByLabelText("都道府県")).toHaveValue("");
+    expect(screen.getByText("3件のPubが見つかりました")).toBeInTheDocument();
+    expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
+  });
+
+  it("filters the displayed pubs by selected prefecture", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    expect(screen.getByRole("option", { name: "すべての都道府県" })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "大阪府" } });
+
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+    expect(maplibreMock.mapJumpTo).toHaveBeenLastCalledWith({
+      center: [135.502, 34.693],
+      zoom: 10
+    });
+  });
+
   it("filters the displayed pubs by tag", () => {
     render(<PubExplorer pubs={pubs} />);
+
+    expect(screen.getByRole("option", { name: "ライブ音楽" })).toHaveValue("live-music");
 
     fireEvent.change(screen.getByLabelText("タグ"), { target: { value: "live-music" } });
 
@@ -114,10 +195,11 @@ describe("PubExplorer", () => {
     expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
   });
 
-  it("combines search, tag, and status filters", () => {
+  it("combines search, prefecture, tag, and status filters", () => {
     render(<PubExplorer pubs={pubs} />);
 
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "京都府" } });
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "京都府" } });
     fireEvent.change(screen.getByLabelText("タグ"), { target: { value: "food" } });
     fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "closed" } });
 

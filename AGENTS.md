@@ -6,7 +6,7 @@
 
 - 日本国内の Irish Pub を地図上で探せる Web アプリです。
 - まず Web 版を優先し、将来的に同じデータ構造を使ってモバイルアプリへ展開します。
-- 店舗データは `data/pubs.json`、共通型は `packages/shared` で管理します。
+- `data/pubs.json` は初期データとフォールバック、共通型は `packages/shared` で管理します。Neon を設定した環境では店舗データを永続化します。
 
 ## Tech Stack
 
@@ -23,7 +23,7 @@
 
 - `apps/web`: Next.js Web アプリ
 - `packages/shared`: Web/モバイルで共通利用する型やロジック
-- `data/pubs.json`: 店舗データ
+- `data/pubs.json`: 店舗データの初期データ・フォールバック
 - `.github`: Issue / Pull Request テンプレートなど GitHub 設定
 
 ## Standard Commands
@@ -51,20 +51,25 @@ npm audit --omit=dev
 npm run dev
 ```
 
+## コード規約・開発規約
+
+コード規約・開発規約は [docs/development/conventions.md](docs/development/conventions.md) を参照してください。この AGENTS.md の必須ルールと矛盾する場合は、AGENTS.md を優先します。
+
 ## Working Rules
 
 - `main` ブランチへ直接コミットしないでください。
 - Issue 対応時は、Issue の内容を読んだ後、実装前に設計方針・影響範囲・検証方針を Issue コメントに投稿してください。
 - GitHub Issue のタイトルは日本語で作成してください。`[AI Task]` や `[Bug]` など `[]` 内の接頭辞は英語のままで構いません。
-- Issue コメントの投稿には `scripts/comment-issue-design.sh --issue <issue-number> --body-file <file>` を使ってください。
+- Issue の設計コメントは `scripts/comment-issue-design.sh --issue <issue-number> --body-file <file>` を使ってください。複数行の本文を `--body` に渡したり、`\n` などのエスケープ文字列で改行を表現してはいけません。
 - Issue 対応時は `origin/main` 起点で作業ブランチを作成してください。
 - ブランチ名は `ai/<short-description>` を基本にしてください。
 - 変更前に `git status --short --branch` を確認してください。
 - ユーザーや他の agent の未コミット変更を勝手に戻さないでください。
 - Issue の作業範囲に書かれたファイル・ディレクトリ以外は、必要性が明確な場合だけ変更してください。
 - アプリ本体を変更した場合は、原則として test / typecheck / lint / build を実行してください。
+- コードまたはドキュメントを変更した場合は、対応するもう一方に更新が必要かを必ず確認してください。仕様、API、データ形式、環境変数、運用手順、画面挙動に差分がある場合は、コードとドキュメントを同じ作業で更新し、PR 本文に確認結果を記載してください。
 - 依存関係を変更した場合は、`npm audit --omit=dev` も確認してください。
-- GitHub 操作は `yf AI Agent` の git/GitHub 認証設定を使ってください。
+- GitHub 操作は、作業環境に設定された専用の git/GitHub 認証を使ってください。アカウント名はリポジトリへ記録しないでください。
 
 ## Pull Request Rules
 
@@ -74,9 +79,18 @@ npm run dev
 - 実行した検証コマンドと結果を PR 本文に記載してください。
 - 検証を省略した場合は、理由を明記してください。
 - PR 作成時は `scripts/create-pr.sh` を使ってください。
+- 複数行の PR 本文は必ず `--body-file` で渡してください。`--body` に `\n` などのエスケープ文字列を渡して改行を表現してはいけません。
 - Issue をもとに PR を作成する場合は、`scripts/create-pr.sh --issue <issue-number>` を指定してください。Issue の labels を PR にコピーします。
 - Issue をもとにしない PR の場合は、PR に `ai-agent` label を設定してください。
-- PR には reviewer として `yusukefr`、assignee として `yf-ai-agent` を設定してください。
+- PR の reviewer と assignee は、必要に応じて PR_REVIEWER と PR_ASSIGNEE の環境変数で指定してください。
+
+## Sensitive Information Rules
+
+- 個人名、メールアドレス、アカウント名、Preview URL、トークン、秘密鍵をコードやドキュメントへ記録しないでください。公開用の Production URL は README に記載できます。
+- リポジトリ・reviewer・assignee など環境固有の値は環境変数または認証済み CLI から取得してください。
+- 追加の検出対象は `SENSITIVE_IDENTIFIERS` にカンマ区切りで指定してください。
+- コミット前に `npm run check:sensitive-data` を実行してください。
+- 検出を回避するためにフックを無効化したり、値を分割・難読化したりしないでください。
 
 PR 作成例:
 

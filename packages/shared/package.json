@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./pub": "./src/pub.ts"
+    "./pub": "./src/pub.ts",
+    "./tag": "./src/tag.ts"
   }
 }
