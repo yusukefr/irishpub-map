@@ -6,6 +6,8 @@ import { getTagLabel } from "@irishpub-map/shared/tag";
 
 type PubListProps = {
   pubs: Pub[];
+  selectedPubId?: string | null;
+  onSelectPub?: (pubId: string) => void;
 };
 
 const STATUS_LABELS: Record<PubStatus, string> = {
@@ -22,11 +24,12 @@ const STATUS_BADGE_CLASSES: Record<PubStatus, string> = {
   unknown: "pub-status-unknown"
 };
 
-export function PubList({ pubs }: PubListProps) {
-  const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
+export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefined }: PubListProps) {
+  const [expandedPubId, setExpandedPubId] = useState<string | null>(null);
 
   const togglePubDetails = (pubId: string) => {
-    setSelectedPubId((currentPubId) => (currentPubId === pubId ? null : pubId));
+    onSelectPub(pubId);
+    setExpandedPubId((currentPubId) => (currentPubId === pubId ? null : pubId));
   };
 
   return (
@@ -42,9 +45,19 @@ export function PubList({ pubs }: PubListProps) {
         {pubs.map((pub) => {
           const detailsId = `pub-details-${pub.id}`;
           const isSelected = selectedPubId === pub.id;
+          const isExpanded = expandedPubId === pub.id;
 
           return (
-            <article className={pub.status === "closed" ? "pub-card pub-card-closed" : "pub-card"} key={pub.id}>
+            <article
+              className={[
+                "pub-card",
+                pub.status === "closed" ? "pub-card-closed" : "",
+                isSelected ? "pub-card-selected" : ""
+              ].filter(Boolean).join(" ")}
+              data-selected={isSelected || undefined}
+              key={pub.id}
+              onClick={() => onSelectPub(pub.id)}
+            >
               <div className="pub-card-header">
                 <div>
                   <h3>{pub.name}</h3>
@@ -65,7 +78,7 @@ export function PubList({ pubs }: PubListProps) {
                 <button
                   type="button"
                   className="pub-detail-toggle"
-                  aria-expanded={isSelected}
+                  aria-expanded={isExpanded}
                   aria-controls={detailsId}
                   onClick={() => togglePubDetails(pub.id)}
                   onKeyDown={(event) => {
@@ -90,7 +103,7 @@ export function PubList({ pubs }: PubListProps) {
                   ) : null}
                 </div>
               </div>
-              {isSelected ? <PubDetails pub={pub} detailsId={detailsId} /> : null}
+              {isExpanded ? <PubDetails pub={pub} detailsId={detailsId} /> : null}
             </article>
           );
         })}

@@ -173,6 +173,41 @@ describe("PubExplorer", () => {
     });
   });
 
+  it("links selected pub cards and map markers in both directions", () => {
+    render(<PubExplorer pubs={pubs} />);
+    const osakaCard = screen.getByRole("heading", { name: "Osaka Sample Pub" }).closest("article");
+    const tokyoMarker = (maplibreMock.markerConstructor.mock.calls[0][0] as { element: HTMLButtonElement }).element;
+
+    expect(osakaCard).not.toBeNull();
+    fireEvent.click(osakaCard as HTMLElement);
+
+    const osakaMarker = (maplibreMock.markerConstructor.mock.calls[1][0] as { element: HTMLButtonElement }).element;
+    expect(osakaCard).toHaveClass("pub-card-selected");
+    expect(osakaMarker).toHaveClass("pub-map-marker-selected");
+    expect(osakaMarker).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(tokyoMarker);
+
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" }).closest("article")).toHaveClass("pub-card-selected");
+    expect(osakaCard).not.toHaveClass("pub-card-selected");
+    expect(tokyoMarker).toHaveClass("pub-map-marker-selected");
+    expect(tokyoMarker).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("clears the selected pub when filters hide it", () => {
+    render(<PubExplorer pubs={pubs} />);
+    const tokyoCard = screen.getByRole("heading", { name: "Tokyo Sample Pub" }).closest("article");
+
+    expect(tokyoCard).not.toBeNull();
+    fireEvent.click(tokyoCard as HTMLElement);
+    expect(tokyoCard).toHaveClass("pub-card-selected");
+
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "大阪府" } });
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "" } });
+
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" }).closest("article")).not.toHaveClass("pub-card-selected");
+  });
+
   it("filters the displayed pubs by tag", () => {
     render(<PubExplorer pubs={pubs} />);
 

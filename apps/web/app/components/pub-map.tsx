@@ -27,23 +27,29 @@ function getMarkerColor(status: Pub["status"]) {
   return PUB_MARKER_COLORS.other;
 }
 
-function createMarker(pub: Pub) {
-  if (pub.status === "open") {
-    return new Marker({ element: createGuinnessMarkerElement(), anchor: "bottom" });
-  }
-
-  return new Marker({ color: getMarkerColor(pub.status) });
-}
-
 type PubMapProps = {
   pubs: Pub[];
   focusPubs?: Pub[];
   currentLocation?: Coordinates | null;
+  selectedPubId?: string | null;
+  onSelectPub?: (pubId: string) => void;
 };
 
-export function PubMap({ pubs, focusPubs = EMPTY_FOCUS_PUBS, currentLocation = null }: PubMapProps) {
+export function PubMap({
+  pubs,
+  focusPubs = EMPTY_FOCUS_PUBS,
+  currentLocation = null,
+  selectedPubId = null,
+  onSelectPub = () => undefined
+}: PubMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const markerElementsRef = useRef(new globalThis.Map<string, HTMLButtonElement>());
+  const onSelectPubRef = useRef(onSelectPub);
   const [mapUnavailable, setMapUnavailable] = useState(false);
+
+  useEffect(() => {
+    onSelectPubRef.current = onSelectPub;
+  }, [onSelectPub]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -62,6 +68,7 @@ export function PubMap({ pubs, focusPubs = EMPTY_FOCUS_PUBS, currentLocation = n
     }
 
     let map: Map;
+    markerElementsRef.current.clear();
 
     try {
       map = new Map({
@@ -93,8 +100,10 @@ export function PubMap({ pubs, focusPubs = EMPTY_FOCUS_PUBS, currentLocation = n
 
       pubs.forEach((pub) => {
         const popup = new Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
+        const markerElement = createMarkerElement(pub, false, () => onSelectPubRef.current(pub.id));
+        markerElementsRef.current.set(pub.id, markerElement);
 
-        createMarker(pub)
+        new Marker({ element: markerElement, anchor: "bottom" })
           .setLngLat([pub.longitude, pub.latitude])
           .setPopup(popup)
           .addTo(map);
@@ -109,6 +118,14 @@ export function PubMap({ pubs, focusPubs = EMPTY_FOCUS_PUBS, currentLocation = n
       map.remove();
     };
   }, [currentLocation, focusPubs, pubs]);
+
+  useEffect(() => {
+    markerElementsRef.current.forEach((marker, pubId) => {
+      const isSelected = pubId === selectedPubId;
+      marker.classList.toggle("pub-map-marker-selected", isSelected);
+      marker.setAttribute("aria-pressed", String(isSelected));
+    });
+  }, [pubs, selectedPubId]);
 
   return (
     <div className="map-canvas" ref={containerRef} aria-label="Irish Pub locations">
@@ -146,10 +163,25 @@ function createPopupContent(pub: Pub) {
   return content;
 }
 
-function createGuinnessMarkerElement() {
-  const marker = document.createElement("div");
-  marker.className = "pub-map-marker pub-map-marker-guinness";
-  marker.setAttribute("aria-label", "営業中 Irish Pub");
+function createMarkerElement(pub: Pub, isSelected: boolean, onSelect: () => void) {
+  const marker = document.createElement("button");
+  marker.type = "button";
+  marker.className = [
+    "pub-map-marker",
+    `pub-map-marker-${pub.status}`,
+    pub.status === "open" ? "pub-map-marker-guinness" : "",
+    isSelected ? "pub-map-marker-selected" : ""
+  ].filter(Boolean).join(" ");
+  marker.setAttribute("aria-label", `店舗を選択: ${pub.name}`);
+  marker.setAttribute("aria-pressed", String(isSelected));
+  marker.addEventListener("click", onSelect);
+
+  if (pub.status !== "open") {
+    marker.style.setProperty("--pub-marker-color", getMarkerColor(pub.status));
+    marker.append(document.createElement("span"));
+
+    return marker;
+  }
 
   const glass = document.createElement("span");
   glass.className = "pub-map-marker-glass";
