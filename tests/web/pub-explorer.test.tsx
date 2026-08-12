@@ -208,6 +208,24 @@ describe("PubExplorer", () => {
     expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
   });
 
+  it("resets all active search conditions", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "京都府" } });
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "京都府" } });
+    fireEvent.change(screen.getByLabelText("タグ"), { target: { value: "food" } });
+    fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "closed" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "条件をリセット" }));
+
+    expect(screen.getByLabelText("店舗を検索")).toHaveValue("");
+    expect(screen.getByLabelText("都道府県")).toHaveValue("");
+    expect(screen.getByLabelText("タグ")).toHaveValue("");
+    expect(screen.getByLabelText("営業状況")).toHaveValue("");
+    expect(screen.getByText("3件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "条件をリセット" })).not.toBeInTheDocument();
+  });
+
   it("clears the search query", () => {
     render(<PubExplorer pubs={pubs} />);
 

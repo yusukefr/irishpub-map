@@ -53,6 +53,15 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
     [pubs, selectedPrefecture]
   );
   const mapFocusPubs = selectedPrefecture === currentPrefecture ? EMPTY_FOCUS_PUBS : prefecturePubs;
+  const hasActiveFilters = Boolean(query || selectedPrefecture || selectedTag || selectedStatus);
+
+  const resetFilters = () => {
+    hasSelectedPrefecture.current = false;
+    setQuery("");
+    setSelectedPrefecture("");
+    setSelectedTag("");
+    setSelectedStatus("");
+  };
 
   useEffect(() => {
     const geolocation = navigator.geolocation;
@@ -88,10 +97,22 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
   }, [pubs]);
 
   return (
-    <>
-      <section className="search-panel" aria-label="Irish Pub search">
-        <label htmlFor="pub-search">店舗を検索</label>
+    <div className="pub-explorer">
+      <section className="search-panel" aria-labelledby="pub-search-heading">
+        <div className="search-panel-heading">
+          <div>
+            <p className="section-kicker">Find a pub</p>
+            <h2 id="pub-search-heading">地図と条件から探す</h2>
+          </div>
+          <p className="search-result-count" aria-live="polite">{filteredPubs.length}件のPubが見つかりました</p>
+        </div>
+        <label className="search-label" htmlFor="pub-search">
+          店舗を検索
+        </label>
         <div className="search-row">
+          <span className="search-icon" aria-hidden="true">
+            ⌕
+          </span>
           <input
             id="pub-search"
             type="search"
@@ -150,14 +171,19 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
               ))}
             </select>
           </label>
+          {hasActiveFilters ? (
+            <button type="button" className="filter-reset" onClick={resetFilters}>
+              条件をリセット
+            </button>
+          ) : null}
         </div>
-        <p>{filteredPubs.length}件のPubが見つかりました</p>
+        <p className="search-help">店舗名・エリア・タグ・営業状況を組み合わせて絞り込めます。</p>
       </section>
 
       <section className="map-layout" aria-label="Irish Pub map and list">
         <PubMap pubs={filteredPubs} focusPubs={mapFocusPubs} currentLocation={currentLocation} />
         <PubList pubs={filteredPubs} />
       </section>
-    </>
+    </div>
   );
 }

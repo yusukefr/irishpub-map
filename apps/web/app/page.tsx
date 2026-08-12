@@ -58,13 +58,33 @@ export default async function Home() {
   return (
     <main className="page-shell">
       <section className="masthead">
-        <div>
-          <p className="eyebrow">Irish Pub Finder</p>
-          <h1>Irish Pub Map in Japan</h1>
+        <div className="masthead-copy">
+          <p className="eyebrow">Irish Pub Finder / Japan</p>
+          <h1>
+            Irish Pub Map
+            <span>in Japan</span>
+          </h1>
           <p className="lead">
-            地図から日本国内の Irish Pub を探せる Web アプリです。まずはサンプルデータで地図表示と店舗詳細の土台を作っています。
+            現在地や都道府県、好きな過ごし方から。今日の一杯に合う Irish Pub を、地図から探せます。
           </p>
+          <a className="masthead-link" href="#pub-search">
+            パブを探す
+            <span aria-hidden="true">↓</span>
+          </a>
         </div>
+        <dl className="masthead-stats" aria-label="掲載情報">
+          <div>
+            <dt>掲載店舗</dt>
+            <dd>
+              {pubList.length}
+              <span> pubs</span>
+            </dd>
+          </div>
+          <div>
+            <dt>探し方</dt>
+            <dd>地図・条件</dd>
+          </div>
+        </dl>
       </section>
 
       <PubExplorer pubs={pubList} />

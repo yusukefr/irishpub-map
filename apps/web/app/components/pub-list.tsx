@@ -32,8 +32,11 @@ export function PubList({ pubs }: PubListProps) {
   return (
     <aside className="pub-list" aria-label="Irish Pub list">
       <div className="list-header">
-        <h2>掲載店舗</h2>
-        <span>{pubs.length}件</span>
+        <div>
+          <p className="section-kicker">Search results</p>
+          <h2>掲載店舗</h2>
+        </div>
+        <span className="list-count">{pubs.length}件</span>
       </div>
       <div className="pub-items">
         {pubs.map((pub) => {
