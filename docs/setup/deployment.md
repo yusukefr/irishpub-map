@@ -8,15 +8,11 @@ Web アプリは Vercel にデプロイします。`main` ブランチを Produc
 
 ## 公開 URL
 
-現在の Vercel Production URL は以下です。
-
-- https://irishpub-map-web.vercel.app/
-
-この URL を正式な公開 URL として扱います。Vercel の Production Domain / Alias でも `irishpub-map-web.vercel.app` が Production Deployment に紐づいていることを確認してください。
+公開 URL は README に記載します。Production URL とカスタムドメインの設定変更は Vercel の Project Settings で管理してください。
 
 ## Vercel プロジェクト設定
 
-Vercel で GitHub リポジトリ `yusukefr/irishpub-map` を Import します。
+Vercel で対象の GitHub リポジトリを Import します。
 
 推奨設定:
 
@@ -34,8 +30,8 @@ Vercel で GitHub リポジトリ `yusukefr/irishpub-map` を Import します�
 
 Production Domain / Alias の確認項目:
 
-- Domains に `irishpub-map-web.vercel.app` が登録されている
-- `main` ブランチの Production Deployment が `irishpub-map-web.vercel.app` に紐づいている
+- Domains に承認済みの Production Domain が登録されている
+- `main` ブランチの Production Deployment が Production Domain に紐づいている
 - 旧 Preview 風 URL をドキュメントや外部導線で案内していない
 - Preview Deployment の URL と Production URL を混同しない
 
