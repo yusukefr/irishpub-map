@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
+import { Map, Marker, NavigationControl, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 
@@ -24,10 +24,10 @@ function getMarkerColor(status: Pub["status"]) {
 
 function createMarker(pub: Pub) {
   if (pub.status === "open") {
-    return new maplibregl.Marker({ element: createGuinnessMarkerElement(), anchor: "bottom" });
+    return new Marker({ element: createGuinnessMarkerElement(), anchor: "bottom" });
   }
 
-  return new maplibregl.Marker({ color: getMarkerColor(pub.status) });
+  return new Marker({ color: getMarkerColor(pub.status) });
 }
 
 type PubMapProps = {
@@ -54,10 +54,10 @@ export function PubMap({ pubs }: PubMapProps) {
       return;
     }
 
-    let map: maplibregl.Map;
+    let map: Map;
 
     try {
-      map = new maplibregl.Map({
+      map = new Map({
         container,
         style: {
           version: 8,
@@ -81,11 +81,11 @@ export function PubMap({ pubs }: PubMapProps) {
         zoom: DEFAULT_MAP_ZOOM
       });
 
-      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+      map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
       moveToCurrentLocation(map);
 
       pubs.forEach((pub) => {
-        const popup = new maplibregl.Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
+        const popup = new Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
 
         createMarker(pub)
           .setLngLat([pub.longitude, pub.latitude])
@@ -159,7 +159,7 @@ function createGuinnessMarkerElement() {
   return marker;
 }
 
-function moveToCurrentLocation(map: maplibregl.Map) {
+function moveToCurrentLocation(map: Map) {
   const geolocation = navigator.geolocation;
 
   if (!geolocation) {
