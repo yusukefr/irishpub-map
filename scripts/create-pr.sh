@@ -14,8 +14,8 @@ Creates a pull request and applies the project-required metadata:
 Options:
   --issue NUMBER       Source issue number. Its labels are copied to the PR.
   --title TITLE        Pull request title. Required.
-  --body BODY          Single-line pull request body text. Required unless --body-file is provided.
-  --body-file FILE     Pull request body file. Required unless --body is provided; required for multi-line bodies.
+  --body BODY          Deprecated. Pull request bodies must be provided with --body-file.
+  --body-file FILE     Pull request body file based on .github/pull_request_template.md. Required.
   --base BRANCH        Base branch. Defaults to main.
   --head BRANCH        Head branch. Defaults to the current branch.
   -h, --help           Show this help.
@@ -76,27 +76,39 @@ if [[ -z "$title" ]]; then
   exit 2
 fi
 
-if [[ -n "$body" && -n "$body_file" ]]; then
-  echo "Use either --body or --body-file, not both." >&2
+if [[ -n "$body" ]]; then
+  echo "Use --body-file based on .github/pull_request_template.md for pull request bodies." >&2
+  exit 2
+fi
+
+if [[ -z "$body_file" ]]; then
+  echo "--body-file based on .github/pull_request_template.md is required." >&2
   usage >&2
   exit 2
 fi
 
-if [[ -z "$body" && -z "$body_file" ]]; then
-  echo "Either --body or --body-file is required." >&2
-  usage >&2
-  exit 2
-fi
-
-if [[ "$body" == *$'\n'* || "$body" == *'\n'* ]]; then
-  echo "Use --body-file for multi-line pull request bodies." >&2
-  exit 2
-fi
-
-if [[ -n "$body_file" && ! -f "$body_file" ]]; then
+if [[ ! -f "$body_file" ]]; then
   echo "Body file not found: $body_file" >&2
   exit 2
 fi
+
+template_sections=("## Summary" "## Issue" "## Changes" "## Verification" "## Notes")
+
+for section in "${template_sections[@]}"; do
+  if ! grep -Fqx -- "$section" "$body_file"; then
+    echo "PR body file must include the template section: $section" >&2
+    exit 2
+  fi
+done
+
+verification_commands=("npm run typecheck" "npm run lint" "npm run build" "npm audit --omit=dev")
+
+for command in "${verification_commands[@]}"; do
+  if ! grep -Fq -- "\`$command\`" "$body_file"; then
+    echo "PR body file must include the template verification item: $command" >&2
+    exit 2
+  fi
+done
 
 if [[ -z "$head_branch" ]]; then
   head_branch="$(git branch --show-current)"
@@ -119,11 +131,7 @@ fi
 
 create_args=(--base "$base_branch" --head "$head_branch" --title "$title")
 
-if [[ -n "$body_file" ]]; then
-  create_args+=(--body-file "$body_file")
-else
-  create_args+=(--body "$body")
-fi
+create_args+=(--body-file "$body_file")
 
 pr_url="$(gh pr create "${create_args[@]}")"
 

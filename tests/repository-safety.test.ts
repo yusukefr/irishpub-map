@@ -52,11 +52,8 @@ describe("repository safety check", () => {
     }
   });
 
-  it("requires body files for multi-line GitHub text", () => {
-    const cases = [
-      ["scripts/create-pr.sh", ["--title", "Test", "--body"], "pull request bodies"],
-      ["scripts/comment-issue-design.sh", ["--issue", "1", "--body"], "issue comments"]
-    ] as const;
+  it("requires body files for multi-line issue comments", () => {
+    const cases = [["scripts/comment-issue-design.sh", ["--issue", "1", "--body"], "issue comments"]] as const;
 
     for (const [script, argumentsBeforeBody, kind] of cases) {
       for (const body of ["first\\nsecond", "first\nsecond"]) {
@@ -68,6 +65,30 @@ describe("repository safety check", () => {
         expect(result.status).toBe(2);
         expect(result.stderr).toContain(`Use --body-file for multi-line ${kind}.`);
       }
+    }
+  });
+
+  it("requires template-based body files for pull requests", () => {
+    const bodyResult = spawnSync("bash", ["scripts/create-pr.sh", "--title", "Test", "--body", "summary"], {
+      cwd: process.cwd(),
+      encoding: "utf8"
+    });
+
+    expect(bodyResult.status).toBe(2);
+    expect(bodyResult.stderr).toContain("Use --body-file based on .github/pull_request_template.md");
+
+    const directory = mkdtempSync(`${tmpdir()}/pull-request-body-`);
+    try {
+      writeFileSync(`${directory}/body.md`, "## Summary");
+      const fileResult = spawnSync("bash", ["scripts/create-pr.sh", "--title", "Test", "--body-file", `${directory}/body.md`], {
+        cwd: process.cwd(),
+        encoding: "utf8"
+      });
+
+      expect(fileResult.status).toBe(2);
+      expect(fileResult.stderr).toContain("PR body file must include the template section: ## Issue");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
     }
   });
 });
