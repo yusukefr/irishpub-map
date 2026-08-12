@@ -5,7 +5,6 @@ usage() {
   cat <<'USAGE'
 Usage:
   scripts/create-pr.sh --title "PR title" --body-file pr-body.md [--issue 10] [--base main] [--head branch]
-  scripts/create-pr.sh --title "PR title" --body "PR body" [--issue 10] [--base main] [--head branch]
 
 Creates a pull request and applies the project-required metadata:
 - Labels: copied from the source issue when --issue is provided, otherwise "ai-agent"
@@ -15,8 +14,8 @@ Creates a pull request and applies the project-required metadata:
 Options:
   --issue NUMBER       Source issue number. Its labels are copied to the PR.
   --title TITLE        Pull request title. Required.
-  --body BODY          Pull request body text. Required unless --body-file is provided.
-  --body-file FILE     Pull request body file. Required unless --body is provided.
+  --body BODY          Single-line pull request body text. Required unless --body-file is provided.
+  --body-file FILE     Pull request body file. Required unless --body is provided; required for multi-line bodies.
   --base BRANCH        Base branch. Defaults to main.
   --head BRANCH        Head branch. Defaults to the current branch.
   -h, --help           Show this help.
@@ -86,6 +85,11 @@ fi
 if [[ -z "$body" && -z "$body_file" ]]; then
   echo "Either --body or --body-file is required." >&2
   usage >&2
+  exit 2
+fi
+
+if [[ "$body" == *$'\n'* || "$body" == *'\n'* ]]; then
+  echo "Use --body-file for multi-line pull request bodies." >&2
   exit 2
 fi
 

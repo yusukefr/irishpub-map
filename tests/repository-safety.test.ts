@@ -50,4 +50,23 @@ describe("repository safety check", () => {
       rmSync(directory, { recursive: true, force: true });
     }
   });
+
+  it("requires body files for multi-line GitHub text", () => {
+    const cases = [
+      ["scripts/create-pr.sh", ["--title", "Test", "--body"], "pull request bodies"],
+      ["scripts/comment-issue-design.sh", ["--issue", "1", "--body"], "issue comments"]
+    ] as const;
+
+    for (const [script, argumentsBeforeBody, kind] of cases) {
+      for (const body of ["first\\nsecond", "first\nsecond"]) {
+        const result = spawnSync("bash", [script, ...argumentsBeforeBody, body], {
+          cwd: process.cwd(),
+          encoding: "utf8"
+        });
+
+        expect(result.status).toBe(2);
+        expect(result.stderr).toContain(`Use --body-file for multi-line ${kind}.`);
+      }
+    }
+  });
 });

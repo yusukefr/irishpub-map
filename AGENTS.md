@@ -56,7 +56,7 @@ npm run dev
 - `main` ブランチへ直接コミットしないでください。
 - Issue 対応時は、Issue の内容を読んだ後、実装前に設計方針・影響範囲・検証方針を Issue コメントに投稿してください。
 - GitHub Issue のタイトルは日本語で作成してください。`[AI Task]` や `[Bug]` など `[]` 内の接頭辞は英語のままで構いません。
-- Issue コメントの投稿には `scripts/comment-issue-design.sh --issue <issue-number> --body-file <file>` を使ってください。
+- Issue の設計コメントは `scripts/comment-issue-design.sh --issue <issue-number> --body-file <file>` を使ってください。複数行の本文を `--body` に渡したり、`\n` などのエスケープ文字列で改行を表現してはいけません。
 - Issue 対応時は `origin/main` 起点で作業ブランチを作成してください。
 - ブランチ名は `ai/<short-description>` を基本にしてください。
 - 変更前に `git status --short --branch` を確認してください。
@@ -74,6 +74,7 @@ npm run dev
 - 実行した検証コマンドと結果を PR 本文に記載してください。
 - 検証を省略した場合は、理由を明記してください。
 - PR 作成時は `scripts/create-pr.sh` を使ってください。
+- 複数行の PR 本文は必ず `--body-file` で渡してください。`--body` に `\n` などのエスケープ文字列を渡して改行を表現してはいけません。
 - Issue をもとに PR を作成する場合は、`scripts/create-pr.sh --issue <issue-number>` を指定してください。Issue の labels を PR にコピーします。
 - Issue をもとにしない PR の場合は、PR に `ai-agent` label を設定してください。
 - PR の reviewer と assignee は、必要に応じて PR_REVIEWER と PR_ASSIGNEE の環境変数で指定してください。
