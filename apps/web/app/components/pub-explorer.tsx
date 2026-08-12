@@ -40,6 +40,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
   const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
   const [selectedTag, setSelectedTag] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<PubStatus | "">("");
+  const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
   const hasSelectedPrefecture = useRef(false);
   const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
   const availableTags = useMemo(() => getAvailableTags(pubs), [pubs]);
@@ -61,6 +62,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
     setSelectedPrefecture("");
     setSelectedTag("");
     setSelectedStatus("");
+    setSelectedPubId(null);
   };
 
   useEffect(() => {
@@ -117,11 +119,17 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
             id="pub-search"
             type="search"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelectedPubId(null);
+            }}
             placeholder="店舗名、都道府県、エリア"
           />
           {query ? (
-            <button type="button" onClick={() => setQuery("")}>
+            <button type="button" onClick={() => {
+              setQuery("");
+              setSelectedPubId(null);
+            }}>
               クリア
             </button>
           ) : null}
@@ -135,6 +143,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
               onChange={(event) => {
                 hasSelectedPrefecture.current = true;
                 setSelectedPrefecture(event.target.value);
+                setSelectedPubId(null);
               }}
             >
               <option value="">すべての都道府県</option>
@@ -147,7 +156,10 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
           </label>
           <label htmlFor="pub-tag-filter">
             タグ
-            <select id="pub-tag-filter" value={selectedTag} onChange={(event) => setSelectedTag(event.target.value)}>
+            <select id="pub-tag-filter" value={selectedTag} onChange={(event) => {
+              setSelectedTag(event.target.value);
+              setSelectedPubId(null);
+            }}>
               <option value="">すべてのタグ</option>
               {availableTags.map((tag) => (
                 <option value={tag} key={tag}>
@@ -161,7 +173,10 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
             <select
               id="pub-status-filter"
               value={selectedStatus}
-              onChange={(event) => setSelectedStatus(event.target.value as PubStatus | "")}
+              onChange={(event) => {
+                setSelectedStatus(event.target.value as PubStatus | "");
+                setSelectedPubId(null);
+              }}
             >
               <option value="">すべての営業状況</option>
               {availableStatuses.map((status) => (
@@ -181,8 +196,14 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
       </section>
 
       <section className="map-layout" aria-label="Irish Pub map and list">
-        <PubMap pubs={filteredPubs} focusPubs={mapFocusPubs} currentLocation={currentLocation} />
-        <PubList pubs={filteredPubs} />
+        <PubMap
+          pubs={filteredPubs}
+          focusPubs={mapFocusPubs}
+          currentLocation={currentLocation}
+          selectedPubId={selectedPubId}
+          onSelectPub={setSelectedPubId}
+        />
+        <PubList pubs={filteredPubs} selectedPubId={selectedPubId} onSelectPub={setSelectedPubId} />
       </section>
     </div>
   );

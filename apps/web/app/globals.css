@@ -201,7 +201,40 @@ h1 {
 .pub-map-marker {
   width: 34px;
   height: 42px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
   transform: translateY(-2px);
+}
+
+.pub-map-marker * {
+  pointer-events: none;
+}
+
+.pub-map-marker:not(.pub-map-marker-open) {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #fffdf8;
+  border-radius: 50% 50% 50% 0;
+  background: var(--pub-marker-color);
+  box-shadow: 0 2px 8px rgb(23 33 29 / 28%);
+  transform: translateY(-2px) rotate(-45deg);
+}
+
+.pub-map-marker:not(.pub-map-marker-open) span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fffdf8;
+}
+
+.pub-map-marker-selected {
+  filter: drop-shadow(0 0 0.35rem #f3c968);
+  outline: 3px solid #f3c968;
+  outline-offset: 3px;
 }
 
 .pub-map-marker-guinness {
@@ -213,6 +246,14 @@ h1 {
   background: #0f7b54;
   box-shadow: 0 2px 8px rgb(23 33 29 / 28%);
   transform: translateY(-4px);
+}
+
+.pub-map-marker-open {
+  border: 2px solid #0b2f23;
+}
+
+.pub-map-marker-open.pub-map-marker-selected {
+  border-color: #f3c968;
 }
 
 .pub-map-marker-guinness::before {
@@ -890,6 +931,11 @@ body {
 
 .pub-card-closed:hover {
   border-color: #8f9a94;
+}
+
+.pub-card-selected {
+  border-color: #0f7b54;
+  box-shadow: 0 0 0 3px rgb(15 123 84 / 20%), 0 10px 22px rgb(22 35 28 / 10%);
 }
 
 .pub-card h3 {
