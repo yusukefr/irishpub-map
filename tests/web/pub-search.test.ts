@@ -94,8 +94,8 @@ describe("filterPubsByQuery", () => {
     expect(getNearestAvailablePrefecture([], { latitude: 35.69, longitude: 139.7 })).toBe("");
   });
 
-  it("returns sorted available prefectures, tags, and statuses", () => {
-    expect(getAvailablePrefectures(pubs)).toEqual(["京都府", "大阪府", "東京都"]);
+  it("returns available prefectures in JIS code order", () => {
+    expect(getAvailablePrefectures(pubs)).toEqual(["東京都", "京都府", "大阪府"]);
     expect(getAvailableTags(pubs)).toEqual(["food", "guinness", "live-music"]);
     expect(getAvailableStatuses(pubs)).toEqual(["closed", "open", "unknown"]);
   });
