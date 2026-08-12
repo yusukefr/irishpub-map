@@ -9,8 +9,8 @@ Usage:
 
 Creates a pull request and applies the project-required metadata:
 - Labels: copied from the source issue when --issue is provided, otherwise "ai-agent"
-- Reviewers: yusukefr
-- Assignees: yf-ai-agent
+- Reviewers: optional via PR_REVIEWER
+- Assignees: optional via PR_ASSIGNEE
 
 Options:
   --issue NUMBER       Source issue number. Its labels are copied to the PR.
@@ -29,8 +29,8 @@ body=""
 body_file=""
 base_branch="main"
 head_branch=""
-reviewer="yusukefr"
-assignee="yf-ai-agent"
+reviewer="${PR_REVIEWER:-}"
+assignee="${PR_ASSIGNEE:-}"
 default_label="ai-agent"
 
 while [[ $# -gt 0 ]]; do
@@ -123,9 +123,14 @@ fi
 
 pr_url="$(gh pr create "${create_args[@]}")"
 
-gh pr edit "$pr_url" \
-  --add-label "$labels" \
-  --add-reviewer "$reviewer" \
-  --add-assignee "$assignee"
+gh pr edit "$pr_url" --add-label "$labels"
+
+if [[ -n "$reviewer" ]]; then
+  gh pr edit "$pr_url" --add-reviewer "$reviewer"
+fi
+
+if [[ -n "$assignee" ]]; then
+  gh pr edit "$pr_url" --add-assignee "$assignee"
+fi
 
 echo "$pr_url"

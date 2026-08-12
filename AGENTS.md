@@ -64,7 +64,7 @@ npm run dev
 - Issue の作業範囲に書かれたファイル・ディレクトリ以外は、必要性が明確な場合だけ変更してください。
 - アプリ本体を変更した場合は、原則として test / typecheck / lint / build を実行してください。
 - 依存関係を変更した場合は、`npm audit --omit=dev` も確認してください。
-- GitHub 操作は `yf AI Agent` の git/GitHub 認証設定を使ってください。
+- GitHub 操作は、作業環境に設定された専用の git/GitHub 認証を使ってください。アカウント名はリポジトリへ記録しないでください。
 
 ## Pull Request Rules
 
@@ -76,7 +76,15 @@ npm run dev
 - PR 作成時は `scripts/create-pr.sh` を使ってください。
 - Issue をもとに PR を作成する場合は、`scripts/create-pr.sh --issue <issue-number>` を指定してください。Issue の labels を PR にコピーします。
 - Issue をもとにしない PR の場合は、PR に `ai-agent` label を設定してください。
-- PR には reviewer として `yusukefr`、assignee として `yf-ai-agent` を設定してください。
+- PR の reviewer と assignee は、必要に応じて PR_REVIEWER と PR_ASSIGNEE の環境変数で指定してください。
+
+## Sensitive Information Rules
+
+- 個人名、メールアドレス、アカウント名、個別の公開 URL、トークン、秘密鍵をコードやドキュメントへ記録しないでください。
+- リポジトリ・reviewer・assignee など環境固有の値は環境変数または認証済み CLI から取得してください。
+- 追加の検出対象は `SENSITIVE_IDENTIFIERS` にカンマ区切りで指定してください。
+- コミット前に `npm run check:sensitive-data` を実行してください。
+- 検出を回避するためにフックを無効化したり、値を分割・難読化したりしないでください。
 
 PR 作成例:
 

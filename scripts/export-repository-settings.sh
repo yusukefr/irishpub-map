@@ -4,26 +4,26 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  scripts/export-repository-settings.sh [--output FILE]
+  scripts/export-repository-settings.sh --output FILE
 
 Exports the repository settings used by the project documentation.
 Requires an authenticated gh CLI with read access to the repository.
 USAGE
 }
 
-repository="${GH_REPO:-yusukefr/irishpub-map}"
-output_file="${1:-docs/repository-settings/repository-settings.json}"
-
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   usage
   exit 0
 fi
 
+repository="${GH_REPO:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
+output_file=""
+
 if [[ "${1:-}" == "--output" ]]; then
   output_file="${2:-}"
 fi
 
-if [[ -z "$output_file" || ( "${1:-}" == "--output" && $# -ne 2 ) || ( "${1:-}" != "--output" && $# -gt 1 ) ]]; then
+if [[ -z "$output_file" || "${1:-}" != "--output" || $# -ne 2 ]]; then
   echo "Invalid arguments." >&2
   usage >&2
   exit 2
