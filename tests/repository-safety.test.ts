@@ -1,3 +1,4 @@
+// 機密情報検出とGitHub操作スクリプトの安全条件を保証するテストです。
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+/** 管理者ログインAPIを呼び出し、認証結果を画面へ反映するフォームです。 */
 export function LoginForm() {
   const [error, setError] = useState("");
   const router = useRouter();

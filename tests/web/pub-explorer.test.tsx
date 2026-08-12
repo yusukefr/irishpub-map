@@ -1,3 +1,4 @@
+// 検索・絞り込み・位置情報・カードとピンの共有状態を保証する結合テストです。
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PubExplorer } from "../../apps/web/app/components/pub-explorer";
@@ -51,6 +52,7 @@ const pubs: Pub[] = [
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
 const originalGeolocation = navigator.geolocation;
 
+/** JSDOMにWebGL利用可能なブラウザ環境を再現します。 */
 function mockWebglContext() {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((contextId: string) => {
     if (contextId === "webgl" || contextId === "experimental-webgl") {
@@ -61,6 +63,7 @@ function mockWebglContext() {
   });
 }
 
+/** テストごとに位置情報APIの成功・失敗条件を差し替えます。 */
 function mockGeolocation(geolocation: Partial<Geolocation> | undefined) {
   Object.defineProperty(navigator, "geolocation", {
     configurable: true,

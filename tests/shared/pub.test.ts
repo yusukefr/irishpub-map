@@ -1,3 +1,4 @@
+// 店舗データ境界で、不正値と重複IDが拒否されることを保証するテストです。
 import { describe, expect, it } from "vitest";
 import { asPubs, type Pub } from "../../packages/shared/src/pub";
 

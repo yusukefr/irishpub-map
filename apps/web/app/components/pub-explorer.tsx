@@ -32,6 +32,7 @@ const GEOLOCATION_OPTIONS: PositionOptions = {
 
 const EMPTY_FOCUS_PUBS: Pub[] = [];
 
+/** 検索条件、地図、店舗一覧で共有する探索状態を一元管理します。 */
 export function PubExplorer({ pubs }: PubExplorerProps) {
   const [query, setQuery] = useState("");
   const [selectedPrefecture, setSelectedPrefecture] = useState("");
@@ -83,6 +84,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
         setCurrentLocation(location);
         setCurrentPrefecture(nearestPrefecture);
 
+        // 利用者が既に都道府県を選んだ場合は、遅れて返った位置情報で上書きしません。
         if (!hasSelectedPrefecture.current) {
           setSelectedPrefecture(nearestPrefecture);
         }

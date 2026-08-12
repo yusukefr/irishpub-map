@@ -5,6 +5,7 @@ function authorized(request: Request) {
   return Boolean(getAdminSession(request.headers.get("cookie")));
 }
 
+/** 指定IDの店舗を検証済み入力で更新します。 */
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
   if (!authorized(request)) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (!isDatabaseConfigured()) return Response.json({ error: "Database is not configured." }, { status: 503 });
@@ -16,6 +17,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   }
 }
 
+/** 指定IDの店舗を削除し、存在しない場合は404を返します。 */
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   if (!authorized(request)) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (!isDatabaseConfigured()) return Response.json({ error: "Database is not configured." }, { status: 503 });

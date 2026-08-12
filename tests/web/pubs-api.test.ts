@@ -1,3 +1,4 @@
+// 公開店舗APIのレスポンスと任意APIキー認証を保証するテストです。
 import { afterEach, describe, expect, it } from "vitest";
 import { GET } from "../../apps/web/app/api/pubs/route";
 

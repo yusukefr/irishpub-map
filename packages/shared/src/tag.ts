@@ -6,6 +6,7 @@ const TAG_LABELS: Record<string, string> = {
   "live-music": "ライブ音楽"
 };
 
+/** 既知のタグIDを日本語表示名へ変換し、未知のタグはIDをそのまま返します。 */
 export function getTagLabel(tagId: string) {
   return TAG_LABELS[tagId] ?? tagId;
 }

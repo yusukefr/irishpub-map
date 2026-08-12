@@ -1,3 +1,4 @@
+// 実際のWebGLを使わず、MapLibreへの命令と失敗経路を観測するモックです。
 import { vi } from "vitest";
 
 export const maplibreMock = {
@@ -16,6 +17,7 @@ export const maplibreMock = {
   shouldThrowMapConstructor: false
 };
 
+/** テスト間でMapLibreの呼び出し履歴と失敗フラグを初期化します。 */
 export function resetMaplibreMock() {
   maplibreMock.shouldThrowMapConstructor = false;
   maplibreMock.mapRemove.mockClear();

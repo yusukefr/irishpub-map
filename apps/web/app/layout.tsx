@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   }
 };
 
+/** 日本語ページ全体のメタデータと共通HTML構造を定義します。 */
 export default function RootLayout({
   children
 }: Readonly<{

@@ -1,3 +1,4 @@
+// 検索条件の組み合わせ、都道府県順、現在地判定を保証する単体テストです。
 import { describe, expect, it } from "vitest";
 import {
   filterPubs,

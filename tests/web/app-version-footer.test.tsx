@@ -1,3 +1,4 @@
+// リリース情報がフッターへ正しく表示されることを保証するテストです。
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import appVersion from "../../app-version.json";
