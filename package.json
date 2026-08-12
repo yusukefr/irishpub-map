@@ -17,7 +17,7 @@
     "check:sensitive-data": "node scripts/check-sensitive-data.mjs --tracked"
   },
   "overrides": {
-    "postcss": "8.5.10"
+    "postcss": "8.5.26"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
