@@ -222,25 +222,32 @@ describe("PubExplorer", () => {
 
   it("filters the displayed pubs by status", () => {
     render(<PubExplorer pubs={pubs} />);
+    const statusFilter = screen.getByLabelText("営業状況");
 
-    fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "closed" } });
+    expect(statusFilter.querySelectorAll("option")).toHaveLength(2);
+    expect(screen.getAllByRole("option", { name: "すべての営業状況" })).toHaveLength(1);
+    expect(screen.getAllByRole("option", { name: "営業中" })).toHaveLength(1);
+    expect(statusFilter).toHaveValue("");
+
+    fireEvent.change(statusFilter, { target: { value: "open" } });
 
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Kyoto Sample Pub" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
   });
 
   it("combines search, prefecture, tag, and status filters", () => {
     render(<PubExplorer pubs={pubs} />);
 
-    fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "京都府" } });
-    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "京都府" } });
+    fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "東京都" } });
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
     fireEvent.change(screen.getByLabelText("タグ"), { target: { value: "food" } });
-    fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "closed" } });
+    fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "open" } });
 
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Kyoto Sample Pub" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
   });
 
   it("resets all active search conditions", () => {

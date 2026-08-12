@@ -6,7 +6,6 @@ import { getTagLabel } from "@irishpub-map/shared/tag";
 import {
   filterPubs,
   getAvailablePrefectures,
-  getAvailableStatuses,
   getAvailableTags,
   getNearestAvailablePrefecture,
   type Coordinates
@@ -44,7 +43,6 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
   const hasSelectedPrefecture = useRef(false);
   const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
   const availableTags = useMemo(() => getAvailableTags(pubs), [pubs]);
-  const availableStatuses = useMemo(() => getAvailableStatuses(pubs), [pubs]);
   const filteredPubs = useMemo(
     () => filterPubs(pubs, { query, prefecture: selectedPrefecture, tag: selectedTag, status: selectedStatus }),
     [pubs, query, selectedPrefecture, selectedTag, selectedStatus]
@@ -179,11 +177,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
               }}
             >
               <option value="">すべての営業状況</option>
-              {availableStatuses.map((status) => (
-                <option value={status} key={status}>
-                  {STATUS_LABELS[status]}
-                </option>
-              ))}
+              <option value="open">{STATUS_LABELS.open}</option>
             </select>
           </label>
           {hasActiveFilters ? (
