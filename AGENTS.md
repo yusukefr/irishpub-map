@@ -6,7 +6,7 @@
 
 - 日本国内の Irish Pub を地図上で探せる Web アプリです。
 - まず Web 版を優先し、将来的に同じデータ構造を使ってモバイルアプリへ展開します。
-- 店舗データは `data/pubs.json`、共通型は `packages/shared` で管理します。
+- `data/pubs.json` は初期データとフォールバック、共通型は `packages/shared` で管理します。Neon を設定した環境では店舗データを永続化します。
 
 ## Tech Stack
 
@@ -23,7 +23,7 @@
 
 - `apps/web`: Next.js Web アプリ
 - `packages/shared`: Web/モバイルで共通利用する型やロジック
-- `data/pubs.json`: 店舗データ
+- `data/pubs.json`: 店舗データの初期データ・フォールバック
 - `.github`: Issue / Pull Request テンプレートなど GitHub 設定
 
 ## Standard Commands
@@ -50,6 +50,10 @@ npm audit --omit=dev
 ```bash
 npm run dev
 ```
+
+## コード規約・開発規約
+
+コード規約・開発規約は [docs/development/conventions.md](docs/development/conventions.md) を参照してください。この AGENTS.md の必須ルールと矛盾する場合は、AGENTS.md を優先します。
 
 ## Working Rules
 
@@ -81,7 +85,7 @@ npm run dev
 
 ## Sensitive Information Rules
 
-- 個人名、メールアドレス、アカウント名、個別の公開 URL、トークン、秘密鍵をコードやドキュメントへ記録しないでください。
+- 個人名、メールアドレス、アカウント名、Preview URL、トークン、秘密鍵をコードやドキュメントへ記録しないでください。公開用の Production URL は README に記載できます。
 - リポジトリ・reviewer・assignee など環境固有の値は環境変数または認証済み CLI から取得してください。
 - 追加の検出対象は `SENSITIVE_IDENTIFIERS` にカンマ区切りで指定してください。
 - コミット前に `npm run check:sensitive-data` を実行してください。

@@ -9,13 +9,17 @@
 
 ## ドキュメント
 
-詳細は `docs/` 配下に分割しています。
+設計、開発、運用の詳細は `docs/` 配下に分割しています。
 
 - [プロダクト仕様](docs/specs/product.md)
 - [店舗データ仕様](docs/specs/data.md)
 - [API 方針](docs/specs/api.md)
+- [システム構成図](docs/architecture/system-overview.md)
+- [シーケンス図](docs/architecture/sequences.md)
 - [開発環境・セットアップ手順](docs/setup/development.md)
+- [コード規約・開発規約](docs/development/conventions.md)
 - [デプロイ手順](docs/setup/deployment.md)
+- [リポジトリ設定の保守手順](docs/repository-settings/README.md)
 
 ## 使用技術
 
