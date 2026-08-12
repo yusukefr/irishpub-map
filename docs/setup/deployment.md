@@ -53,6 +53,30 @@ Preview Deployment Protection を有効にしている場合、サーバー側�
 
 管理画面のログインには `ADMIN_USERNAME`、`ADMIN_PASSWORD_HASH`、`ADMIN_SESSION_SECRET` のすべてが必要です。更新操作には、さらに `DATABASE_URL` が必要です。
 
+## Neon Preview ブランチ上限対策
+
+Vercel の Neon 連携で `Create database branch for deployment` の Preview 設定を有効にすると、Preview デプロイごとに Neon のブランチが作成されます。Neon Free のブランチ上限に達すると、アプリのビルドが始まる前に `Provisioning integrations failed`、`Branch limit reached` でデプロイが失敗します。
+
+このリポジトリでは、無料枠を安定して使うため、Preview は専用の固定 Neon ブランチを共有します。Production の Neon ブランチは Preview と共有しません。
+
+### 初回または上限到達時の設定
+
+1. Neon Console の対象プロジェクトで、未使用の `preview/*` ブランチを確認し、不要なものだけ削除します。Production で使用しているブランチと、現在利用中の Preview ブランチは削除しません。
+2. Neon Console で専用の Preview ブランチを1つ作成し、その接続文字列を取得します。接続文字列は秘密情報として扱い、リポジトリへ記録しません。
+3. Vercel Project の **Storage → neon-irishpub-map** の連携設定を開き、**Create database branch for deployment → Preview** を無効にします。これが有効なままだと、Preview ごとのブランチ作成が続きます。
+4. Vercel Project の **Settings → Environment Variables** で、専用 Preview ブランチの接続文字列を `DATABASE_URL` の **Preview** 環境へ登録または更新します。Production 環境の `DATABASE_URL` は変更しません。
+5. 失敗したデプロイを **Redeploy** するか、作業ブランチへ新しいコミットを push します。
+
+Vercel CLIで環境変数を登録する場合も、値をコマンドラインやシェル履歴へ残さないよう標準入力から渡します。
+
+```bash
+printf '%s' "$NEON_PREVIEW_DATABASE_URL" | vercel env add DATABASE_URL preview
+```
+
+`NEON_PREVIEW_DATABASE_URL` はシェルへ安全に読み込んだ一時的な値を想定し、`.env` やリポジトリへ追加しません。設定後は Vercel の次の Preview Deployment で、Provisioning Integrations のブランチ作成が実行されず、通常の Build ログが開始することを確認します。
+
+この連携アクションの有効・無効は Vercel Dashboard 側の設定であり、`vercel.json` では管理できません。Neon のブランチ分離が必要になった場合は、ブランチ上限と削除運用を確認したうえで Preview の自動作成を再度有効にしてください。
+
 ## GitHub Actions の設定
 
 CI の Slack 通知は Vercel の環境変数ではなく GitHub の Actions 設定を参照します。通知を有効にする場合は、リポジトリの **Settings → Secrets and variables → Actions** で次を設定します。
@@ -67,7 +91,7 @@ CI の Slack 通知は Vercel の環境変数ではなく GitHub の Actions 設
 1. GitHub と Vercel を連携し、このリポジトリを Vercel Project として Import します。
 2. Root Directory が `.`、Production Branch が `main` になっていることを確認します。
 3. Node.js Version を 24.x に設定します。
-4. 必要な Vercel 環境変数と、必要に応じて GitHub Actions の Slack 通知設定を追加します。
+4. 必要な Vercel 環境変数、Neon Preview の固定ブランチ設定、必要に応じて GitHub Actions の Slack 通知設定を追加します。
 5. `main` ブランチへ PR を merge します。
 6. Vercel の Deployments で Production Deployment が成功していることを確認します。
 
@@ -92,7 +116,7 @@ npm audit --omit=dev
 
 ## 管理画面と Neon Postgres
 
-管理画面は `/admin` です。Vercel Marketplace から Neon を追加し、Production / Preview 環境に `DATABASE_URL` を設定してください。初回のデータ取得時に `pubs` テーブルを作成し、既存の `data/pubs.json` を初期投入します。`DATABASE_URL` が未設定の場合、管理画面は初期データを閲覧できますが書き込みはできません。
+管理画面は `/admin` です。Vercel Marketplace から Neon を追加し、Production 環境には本番ブランチ、Preview 環境には[Neon Preview ブランチ上限対策](#neon-preview-ブランチ上限対策)で作成した固定ブランチの `DATABASE_URL` を設定してください。初回のデータ取得時に `pubs` テーブルを作成し、既存の `data/pubs.json` を初期投入します。`DATABASE_URL` が未設定の場合、管理画面は初期データを閲覧できますが書き込みはできません。
 
 パスワードハッシュは、ローカルで生成して Vercel の環境変数にだけ登録します。例:
 
@@ -101,5 +125,7 @@ node -e 'const { randomBytes, scryptSync } = require("crypto"); const password =
 ```
 
 Neon Free は小規模な管理用途から開始できますが、使用量と上限は Neon のダッシュボードで監視してください。
+
+参考: [Neon の Vercel Native Integration](https://neon.com/blog/neon-vercel-native-integration)、[Vercel の Deployment integration actions](https://vercel.com/docs/integrations/create-integration/deployment-integration-action)
 
 API の認証・更新条件は[API 方針](../specs/api.md)、全体構成は[システム構成](../architecture/system-overview.md)を参照してください。
