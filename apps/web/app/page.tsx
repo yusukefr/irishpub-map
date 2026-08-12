@@ -29,6 +29,7 @@ function isVercelSsoRedirect(response: Response) {
   );
 }
 
+/** 同一オリジンの公開APIから店舗を取得し、レスポンスを共有型で検証します。 */
 async function getPubs() {
   const requestHeaders = await headers();
   const host = requestHeaders.get("host") ?? "localhost:3000";
@@ -45,6 +46,7 @@ async function getPubs() {
     return asPubs(data.pubs);
   }
 
+  // Preview ProtectionのSSOへ転送された場合も、公開画面自体はJSONデータで表示します。
   if (process.env.VERCEL && isVercelSsoRedirect(response)) {
     return getValidatedPubs();
   }
@@ -52,6 +54,7 @@ async function getPubs() {
   throw new Error("Failed to fetch pubs.");
 }
 
+/** 公開トップページをサーバー描画し、取得済み店舗を探索UIへ渡します。 */
 export default async function Home() {
   const pubList = await getPubs();
 

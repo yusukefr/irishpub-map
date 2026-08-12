@@ -35,6 +35,7 @@ type PubMapProps = {
   onSelectPub?: (pubId: string) => void;
 };
 
+/** 店舗ピン、選択状態、表示範囲をMapLibre上へ同期します。 */
 export function PubMap({
   pubs,
   focusPubs = EMPTY_FOCUS_PUBS,
@@ -44,6 +45,7 @@ export function PubMap({
 }: PubMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markerElementsRef = useRef(new globalThis.Map<string, HTMLButtonElement>());
+  // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
   const onSelectPubRef = useRef(onSelectPub);
   const [mapUnavailable, setMapUnavailable] = useState(false);
 
@@ -58,6 +60,7 @@ export function PubMap({
       return;
     }
 
+    // MapLibre初期化中の同期的なstate更新を避け、フォールバックを次のタスクで表示します。
     const showFallback = () => {
       window.setTimeout(() => setMapUnavailable(true), 0);
     };
@@ -142,6 +145,7 @@ export function PubMap({
   );
 }
 
+/** MapLibreを初期化する前に、ブラウザがWebGLコンテキストを作成できるか確認します。 */
 function canCreateWebglContext() {
   const canvas = document.createElement("canvas");
 
@@ -198,6 +202,7 @@ function createMarkerElement(pub: Pub, isSelected: boolean, onSelect: () => void
   return marker;
 }
 
+/** 絞り込み対象または現在地に応じて、地図の初期表示範囲を調整します。 */
 function focusMap(map: Map, focusPubs: Pub[], currentLocation: Coordinates | null) {
   if (focusPubs.length === 1) {
     const [pub] = focusPubs;

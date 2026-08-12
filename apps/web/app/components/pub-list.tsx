@@ -24,6 +24,7 @@ const STATUS_BADGE_CLASSES: Record<PubStatus, string> = {
   unknown: "pub-status-unknown"
 };
 
+/** 絞り込み済み店舗をカード表示し、選択状態を地図と共有します。 */
 export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefined }: PubListProps) {
   const [expandedPubId, setExpandedPubId] = useState<string | null>(null);
 

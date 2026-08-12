@@ -15,6 +15,7 @@ export type Pub = {
   status: PubStatus;
 };
 
+/** 未検証の値を店舗配列として検証し、重複IDを含む不正データを拒否します。 */
 export function asPubs(value: unknown): Pub[] {
   if (!Array.isArray(value)) {
     throw new Error("Pub data must be an array.");

@@ -8,10 +8,12 @@ type Props = { initialPubs: Pub[]; databaseConfigured: boolean };
 const statuses: PubStatus[] = ["open", "temporarily_closed", "closed", "unknown"];
 const emptyPub = { name: "", prefecture: "", city: "", address: "", latitude: "", longitude: "", websiteUrl: "", googleMapsUrl: "", instagramUrl: "", tags: "", status: "open" };
 
+/** フォーム値をAPI入力形式へ変換し、未入力の任意項目を正規化します。 */
 function toBody(form: FormData) {
   return { name: form.get("name"), prefecture: form.get("prefecture"), city: form.get("city") || undefined, address: form.get("address"), latitude: Number(form.get("latitude")), longitude: Number(form.get("longitude")), websiteUrl: form.get("websiteUrl") || null, googleMapsUrl: form.get("googleMapsUrl") || null, instagramUrl: form.get("instagramUrl") || null, tags: String(form.get("tags") || "").split(",").map((tag) => tag.trim()).filter(Boolean), status: form.get("status") };
 }
 
+/** 管理者向けの店舗追加・編集・削除とローカル一覧状態を管理します。 */
 export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
   const [pubs, setPubs] = useState(initialPubs);
   const [editing, setEditing] = useState<Pub | null>(null);

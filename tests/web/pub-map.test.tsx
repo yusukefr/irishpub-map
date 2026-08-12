@@ -1,3 +1,4 @@
+// MapLibre初期化、ピン、表示範囲、WebGLフォールバックを保証するテストです。
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PubMap } from "../../apps/web/app/components/pub-map";
@@ -49,6 +50,7 @@ const pubs: Pub[] = [
 
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
 
+/** WebGLの利用可否を切り替え、通常表示とフォールバックを再現します。 */
 function mockWebglContext(context: object | null) {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((contextId: string) => {
     if (contextId === "webgl" || contextId === "experimental-webgl") {

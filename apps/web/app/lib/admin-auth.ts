@@ -11,10 +11,12 @@ type SessionPayload = {
   username: string;
 };
 
+/** 管理画面の認証に必要な環境変数がすべて設定されているかを返します。 */
 export function isAdminConfigured() {
   return Boolean(process.env.ADMIN_USERNAME && process.env.ADMIN_PASSWORD_HASH && process.env.ADMIN_SESSION_SECRET);
 }
 
+/** 入力された認証情報を、環境変数に設定された管理者情報と定数時間で照合します。 */
 export async function verifyAdminCredentials(username: string, password: string) {
   const expectedUsername = process.env.ADMIN_USERNAME;
   const passwordHash = process.env.ADMIN_PASSWORD_HASH;
@@ -27,12 +29,14 @@ export async function verifyAdminCredentials(username: string, password: string)
   return safeEqual(Buffer.from(expectedHash, "base64"), derivedKey);
 }
 
+/** ユーザー名と有効期限を署名した、サーバー検証可能なセッショントークンを生成します。 */
 export function createAdminSession(username: string) {
   const payload: SessionPayload = { expiresAt: Date.now() + SESSION_MAX_AGE_SECONDS * 1000, username };
   const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${encodedPayload}.${sign(encodedPayload, getSessionSecret())}`;
 }
 
+/** Cookieヘッダーから管理者セッションを読み取り、署名と有効期限を検証します。 */
 export function getAdminSession(cookieHeader: string | null) {
   const secret = process.env.ADMIN_SESSION_SECRET;
   const token = readCookie(cookieHeader, ADMIN_SESSION_COOKIE);
@@ -49,10 +53,12 @@ export function getAdminSession(cookieHeader: string | null) {
   }
 }
 
+/** 署名済みセッションをブラウザへ保存するためのCookie文字列を返します。 */
 export function sessionCookie(session: string) {
   return `${ADMIN_SESSION_COOKIE}=${session}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}; Secure`;
 }
 
+/** 管理者セッションを即時失効させるCookie文字列を返します。 */
 export function expiredSessionCookie() {
   return `${ADMIN_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Secure`;
 }
@@ -70,6 +76,7 @@ function readCookie(cookieHeader: string | null, name: string) {
   return cookieHeader?.split(";").map((value) => value.trim()).find((value) => value.startsWith(`${name}=`))?.slice(name.length + 1);
 }
 
+// 長さが異なる場合も先に判定し、timingSafeEqualへ不正な長さを渡さないようにします。
 function safeEqual(left: string | Buffer, right: string | Buffer) {
   const leftBuffer = Buffer.isBuffer(left) ? left : Buffer.from(left);
   const rightBuffer = Buffer.isBuffer(right) ? right : Buffer.from(right);

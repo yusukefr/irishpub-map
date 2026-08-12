@@ -1,3 +1,4 @@
+// 既知・未知のタグが利用者向け表示名へ変換されることを保証するテストです。
 import { describe, expect, it } from "vitest";
 import { getTagLabel } from "../../packages/shared/src/tag";
 

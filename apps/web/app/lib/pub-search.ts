@@ -62,6 +62,7 @@ const PREFECTURES_IN_JIS_ORDER = [
   "沖縄県"
 ] as const;
 
+/** 指定された検索・絞り込み条件をすべて満たす店舗を返します。 */
 export function filterPubs(pubs: Pub[], filters: PubFilters) {
   const normalizedQuery = normalizeSearchText(filters.query ?? "");
 
@@ -77,16 +78,19 @@ export function filterPubs(pubs: Pub[], filters: PubFilters) {
   });
 }
 
+/** 店舗名・都道府県・市区町村を対象に、入力文字列で店舗を検索します。 */
 export function filterPubsByQuery(pubs: Pub[], query: string) {
   return filterPubs(pubs, { query });
 }
 
+/** 店舗が登録されている都道府県だけをJIS都道府県コード順で返します。 */
 export function getAvailablePrefectures(pubs: Pub[]) {
   const availablePrefectures = new Set(pubs.map((pub) => pub.prefecture));
 
   return PREFECTURES_IN_JIS_ORDER.filter((prefecture) => availablePrefectures.has(prefecture));
 }
 
+/** 現在地との近似距離が最短になる、登録店舗の都道府県を返します。 */
 export function getNearestAvailablePrefecture(pubs: Pub[], coordinates: Coordinates) {
   let nearestPrefecture = "";
   let shortestDistance = Number.POSITIVE_INFINITY;
@@ -103,10 +107,12 @@ export function getNearestAvailablePrefecture(pubs: Pub[], coordinates: Coordina
   return nearestPrefecture;
 }
 
+/** 登録店舗で利用されているタグを重複なく並べて返します。 */
 export function getAvailableTags(pubs: Pub[]) {
   return [...new Set(pubs.flatMap((pub) => pub.tags))].sort((a, b) => a.localeCompare(b));
 }
 
+/** 登録店舗で利用されている営業状態を重複なく並べて返します。 */
 export function getAvailableStatuses(pubs: Pub[]) {
   return [...new Set(pubs.map((pub) => pub.status))].sort((a, b) => a.localeCompare(b));
 }
@@ -117,6 +123,7 @@ function normalizeSearchText(value: string | undefined) {
 
 function getSquaredDistance(origin: Coordinates, destination: Coordinates) {
   const latitudeDifference = destination.latitude - origin.latitude;
+  // 経度1度の距離は緯度で変わるため、現在地の緯度で簡易補正します。
   const longitudeScale = Math.cos((origin.latitude * Math.PI) / 180);
   const longitudeDifference = (destination.longitude - origin.longitude) * longitudeScale;
 

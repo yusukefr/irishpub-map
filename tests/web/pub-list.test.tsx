@@ -1,3 +1,4 @@
+// 店舗カードの状態表示、詳細開閉、外部リンクを保証するテストです。
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { PubList } from "../../apps/web/app/components/pub-list";

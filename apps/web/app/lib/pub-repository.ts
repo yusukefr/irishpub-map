@@ -6,10 +6,12 @@ import { getValidatedPubs } from "./pub-data";
 type PubRow = { data: unknown };
 let sqlClient: ReturnType<typeof neon> | null = null;
 
+/** Neonへの接続設定があり、永続化を利用できるかを返します。 */
 export function isDatabaseConfigured() {
   return Boolean(process.env.DATABASE_URL);
 }
 
+/** Neon設定時はDB、未設定時は検証済みJSONから店舗一覧を取得します。 */
 export async function getPubs() {
   if (!isDatabaseConfigured()) return getValidatedPubs();
 
@@ -19,6 +21,7 @@ export async function getPubs() {
   return asPubs(rows.map((row) => row.data));
 }
 
+/** 外部入力を店舗型として検証し、新しいIDを付けて永続化します。 */
 export async function createPub(value: unknown) {
   const pub = toPub(value, randomUUID());
   const sql = getRequiredSql();
@@ -27,6 +30,7 @@ export async function createPub(value: unknown) {
   return pub;
 }
 
+/** 外部入力を既存IDの店舗型として検証し、該当レコードを更新します。 */
 export async function updatePub(id: string, value: unknown) {
   const pub = toPub(value, id);
   const sql = getRequiredSql();
@@ -35,6 +39,7 @@ export async function updatePub(id: string, value: unknown) {
   return rows.length === 1 ? asPubs([rows[0].data])[0] : null;
 }
 
+/** 指定IDの店舗を削除し、実際に削除できたかを返します。 */
 export async function deletePub(id: string) {
   const sql = getRequiredSql();
   await ensureTable(sql);
@@ -56,6 +61,7 @@ async function ensureTable(sql: ReturnType<typeof neon>) {
   await sql`CREATE TABLE IF NOT EXISTS pubs (id TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
   const rows = (await sql`SELECT COUNT(*)::int AS count FROM pubs`) as Array<{ count: number }>;
   if (rows[0]?.count === 0) {
+    // 空のDBだけを初期化し、既存の管理データをJSONで上書きしないようにします。
     for (const pub of getValidatedPubs()) {
       await sql`INSERT INTO pubs (id, data) VALUES (${pub.id}, ${JSON.stringify(pub)}::jsonb) ON CONFLICT (id) DO NOTHING`;
     }
