@@ -67,7 +67,7 @@ npm run build
 
 - `main` へ直接コミットせず、`origin/main` から作成した作業ブランチで変更します。
 - Issue 対応では、実装前に `scripts/comment-issue-design.sh --issue <number> --body-file <file>` で設計方針を投稿します。
-- 複数行の Issue コメントと PR 本文は必ず `--body-file` を使います。`--body` にリテラルの `\n` や改行を渡しません。
+- 複数行の Issue コメントは `--body-file` を使い、PR 本文は `.github/pull_request_template.md` をベースにした本文ファイルを `--body-file` で渡します。`--body` はPR作成に使用しません。
 - PR は `scripts/create-pr.sh` で作成し、関連 Issue、検証結果、必要な reviewer / assignee を設定します。
 
 GitHub 操作スクリプトの `PR_REVIEWER` と `PR_ASSIGNEE` は実行環境の変数を参照します。ローカル `.env` を使う場合は、実行前にシェルへ export してください。
