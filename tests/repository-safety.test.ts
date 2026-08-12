@@ -22,6 +22,7 @@ describe("repository safety check", () => {
     const diff = ["diff --git a/a b/a", "+++ b/a", "+https://github.com/owner/repository", `-${removedEmail}`].join("\n");
 
     expect(findSensitiveData(stagedAddedLines(diff))).toEqual([]);
+    expect(findSensitiveData("https://example.vercel.app")).toEqual([]);
   });
 
   it("detects configured account identifiers without storing them in the repository", () => {

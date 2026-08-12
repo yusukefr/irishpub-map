@@ -4,7 +4,6 @@ import { existsSync, readFileSync } from "node:fs";
 const DEFAULT_PATTERNS = [
   { name: "メールアドレス", pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i },
   { name: "GitHub アカウント URL", pattern: /https?:\/\/(?:api\.)?github\.com\/(?!(?:owner|organization|org|example|sponsors)(?:\/|$))(?:users\/|repos\/)?[A-Za-z0-9-]+(?:\/[A-Za-z0-9_.-]+)?/i },
-  { name: "Vercel デプロイ URL", pattern: /https?:\/\/[A-Za-z0-9-]+\.vercel\.app\b/i },
   { name: "GitHub トークン", pattern: /\b(?:ghp|github_pat)_[A-Za-z0-9_]{20,}\b/i },
   { name: "API キー形式の値", pattern: /\bsk-[A-Za-z0-9]{20,}\b/ },
   { name: "秘密鍵", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ }

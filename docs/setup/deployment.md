@@ -8,7 +8,7 @@ Web アプリは Vercel にデプロイします。`main` ブランチを Produc
 
 ## 公開 URL
 
-Production URL とカスタムドメインは Vercel の Project Settings で管理します。個別の URL はリポジトリへ記録せず、運用担当者に安全な経路で共有してください。
+公開 URL は README に記載します。Production URL とカスタムドメインの設定変更は Vercel の Project Settings で管理してください。
 
 ## Vercel プロジェクト設定
 
