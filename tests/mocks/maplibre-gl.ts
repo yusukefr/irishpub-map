@@ -32,7 +32,7 @@ export function resetMaplibreMock() {
   maplibreMock.mapConstructor.mockClear();
 }
 
-class MapMock {
+export class Map {
   constructor(options: unknown) {
     maplibreMock.mapConstructor(options);
 
@@ -47,7 +47,7 @@ class MapMock {
   remove = maplibreMock.mapRemove;
 }
 
-class MarkerMock {
+export class Marker {
   constructor(options: unknown) {
     maplibreMock.markerConstructor(options);
   }
@@ -57,16 +57,9 @@ class MarkerMock {
   addTo = maplibreMock.markerAddTo.mockReturnThis();
 }
 
-class PopupMock {
+export class Popup {
   setHTML = maplibreMock.popupSetHTML.mockReturnThis();
   setDOMContent = maplibreMock.popupSetDOMContent.mockReturnThis();
 }
 
-const maplibregl = {
-  Map: MapMock,
-  Marker: MarkerMock,
-  Popup: PopupMock,
-  NavigationControl: maplibreMock.navigationControl
-};
-
-export default maplibregl;
+export const NavigationControl = maplibreMock.navigationControl;
