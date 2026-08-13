@@ -442,10 +442,9 @@ h1 {
 }
 
 .pub-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
 }
 
@@ -468,12 +467,19 @@ h1 {
 
 .pub-links {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
   gap: 12px;
   font-size: 0.9rem;
 }
 
+.pub-service-links {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
 
 .external-text-link {
   display: inline-flex;
@@ -1150,5 +1156,16 @@ body {
 
   .pub-card:hover {
     transform: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .pub-actions {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .pub-links {
+    justify-content: space-between;
   }
 }

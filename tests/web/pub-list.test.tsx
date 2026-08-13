@@ -145,6 +145,8 @@ describe("PubList", () => {
       "href",
       "https://example.com"
     );
+    const serviceLinks = within(cards[0]).getByRole("group", { name: "Tokyo Sample Pub のサービスリンク" });
+
     expect(within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub のGoogle Mapsを新しいタブで開く" })).toHaveAttribute(
       "href",
       "https://maps.example.com"
@@ -153,8 +155,10 @@ describe("PubList", () => {
       "href",
       "https://instagram.example.com/tokyo"
     );
+    expect(within(serviceLinks).getAllByRole("link")).toHaveLength(2);
     expect(within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub の公式サイトを新しいタブで開く" })).not.toBeInTheDocument();
     expect(within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub のGoogle Mapsを新しいタブで開く" })).not.toBeInTheDocument();
     expect(within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub のInstagramを新しいタブで開く" })).not.toBeInTheDocument();
+    expect(within(cards[1]).queryByRole("group", { name: "Osaka Sample Pub のサービスリンク" })).not.toBeInTheDocument();
   });
 });

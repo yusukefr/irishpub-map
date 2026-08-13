@@ -95,16 +95,7 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
                   {pub.websiteUrl ? (
                     <WebsiteLink href={pub.websiteUrl} pubName={pub.name} />
                   ) : null}
-                  {pub.googleMapsUrl ? (
-                    <ExternalIconLink href={pub.googleMapsUrl} pubName={pub.name} service="Google Maps" className="google-maps-link">
-                      <MapPinIcon />
-                    </ExternalIconLink>
-                  ) : null}
-                  {pub.instagramUrl ? (
-                    <ExternalIconLink href={pub.instagramUrl} pubName={pub.name} service="Instagram" className="instagram-link">
-                      <InstagramIcon />
-                    </ExternalIconLink>
-                  ) : null}
+                  <ExternalServiceLinks pub={pub} />
                 </div>
               </div>
               {isExpanded ? <PubDetails pub={pub} detailsId={detailsId} /> : null}
@@ -150,18 +141,30 @@ function PubDetails({ pub, detailsId }: PubDetailsProps) {
         {pub.websiteUrl ? (
           <WebsiteLink href={pub.websiteUrl} pubName={pub.name} />
         ) : null}
-        {pub.googleMapsUrl ? (
-          <ExternalIconLink href={pub.googleMapsUrl} pubName={pub.name} service="Google Maps" className="google-maps-link">
-            <MapPinIcon />
-          </ExternalIconLink>
-        ) : null}
-        {pub.instagramUrl ? (
-          <ExternalIconLink href={pub.instagramUrl} pubName={pub.name} service="Instagram" className="instagram-link">
-            <InstagramIcon />
-          </ExternalIconLink>
-        ) : null}
+        <ExternalServiceLinks pub={pub} />
       </div>
     </section>
+  );
+}
+
+function ExternalServiceLinks({ pub }: { pub: Pub }) {
+  if (!pub.googleMapsUrl && !pub.instagramUrl) {
+    return null;
+  }
+
+  return (
+    <div className="pub-service-links" role="group" aria-label={`${pub.name} のサービスリンク`}>
+      {pub.googleMapsUrl ? (
+        <ExternalIconLink href={pub.googleMapsUrl} pubName={pub.name} service="Google Maps" className="google-maps-link">
+          <MapPinIcon />
+        </ExternalIconLink>
+      ) : null}
+      {pub.instagramUrl ? (
+        <ExternalIconLink href={pub.instagramUrl} pubName={pub.name} service="Instagram" className="instagram-link">
+          <InstagramIcon />
+        </ExternalIconLink>
+      ) : null}
+    </div>
   );
 }
 
