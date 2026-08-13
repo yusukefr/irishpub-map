@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
 import { getTagLabel } from "@irishpub-map/shared/tag";
 
@@ -93,14 +93,17 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
                 </button>
                 <div className="pub-links">
                   {pub.websiteUrl ? (
-                    <a href={pub.websiteUrl} target="_blank" rel="noreferrer">
-                      公式サイト
-                    </a>
+                    <WebsiteLink href={pub.websiteUrl} pubName={pub.name} />
                   ) : null}
                   {pub.googleMapsUrl ? (
-                    <a href={pub.googleMapsUrl} target="_blank" rel="noreferrer">
-                      Google Maps
-                    </a>
+                    <ExternalIconLink href={pub.googleMapsUrl} pubName={pub.name} service="Google Maps" className="google-maps-link">
+                      <MapPinIcon />
+                    </ExternalIconLink>
+                  ) : null}
+                  {pub.instagramUrl ? (
+                    <ExternalIconLink href={pub.instagramUrl} pubName={pub.name} service="Instagram" className="instagram-link">
+                      <InstagramIcon />
+                    </ExternalIconLink>
                   ) : null}
                 </div>
               </div>
@@ -145,21 +148,59 @@ function PubDetails({ pub, detailsId }: PubDetailsProps) {
       </dl>
       <div className="pub-detail-links" aria-label={`${pub.name} external links`}>
         {pub.websiteUrl ? (
-          <a href={pub.websiteUrl} target="_blank" rel="noreferrer">
-            公式サイト
-          </a>
+          <WebsiteLink href={pub.websiteUrl} pubName={pub.name} />
         ) : null}
         {pub.googleMapsUrl ? (
-          <a href={pub.googleMapsUrl} target="_blank" rel="noreferrer">
-            Google Maps
-          </a>
+          <ExternalIconLink href={pub.googleMapsUrl} pubName={pub.name} service="Google Maps" className="google-maps-link">
+            <MapPinIcon />
+          </ExternalIconLink>
         ) : null}
         {pub.instagramUrl ? (
-          <a href={pub.instagramUrl} target="_blank" rel="noreferrer">
-            Instagram
-          </a>
+          <ExternalIconLink href={pub.instagramUrl} pubName={pub.name} service="Instagram" className="instagram-link">
+            <InstagramIcon />
+          </ExternalIconLink>
         ) : null}
       </div>
     </section>
   );
+}
+
+type ExternalLinkProps = {
+  href: string;
+  pubName: string;
+};
+
+function WebsiteLink({ href, pubName }: ExternalLinkProps) {
+  return (
+    <a className="external-text-link" href={href} target="_blank" rel="noreferrer" aria-label={`${pubName} の公式サイトを新しいタブで開く`} onClick={(event) => event.stopPropagation()}>
+      公式サイト
+      <ExternalLinkIcon />
+    </a>
+  );
+}
+
+type ExternalIconLinkProps = ExternalLinkProps & {
+  service: "Google Maps" | "Instagram";
+  className: string;
+  children: ReactNode;
+};
+
+function ExternalIconLink({ href, pubName, service, className, children }: ExternalIconLinkProps) {
+  return (
+    <a className={`external-icon-link ${className}`} href={href} target="_blank" rel="noreferrer" aria-label={`${pubName} の${service}を新しいタブで開く`} title={service} onClick={(event) => event.stopPropagation()}>
+      {children}
+    </a>
+  );
+}
+
+function ExternalLinkIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" /></svg>;
+}
+
+function MapPinIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 10c0 5-8 10-8 10S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>;
+}
+
+function InstagramIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><circle cx="12" cy="12" r="4" /><circle cx="17.3" cy="6.8" r="1" className="icon-fill" /></svg>;
 }
