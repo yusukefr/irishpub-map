@@ -109,9 +109,9 @@ describe("PubList", () => {
     expect(details).toHaveTextContent("東京都 / 千代田区");
     expect(details).toHaveTextContent("営業中");
     expect(details).toHaveTextContent("ギネス / ライブ音楽 / seasonal-event");
-    expect(within(details).getByRole("link", { name: "公式サイト" })).toHaveAttribute("href", "https://example.com");
-    expect(within(details).getByRole("link", { name: "Google Maps" })).toHaveAttribute("href", "https://maps.example.com");
-    expect(within(details).getByRole("link", { name: "Instagram" })).toHaveAttribute(
+    expect(within(details).getByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" })).toHaveAttribute("href", "https://example.com");
+    expect(within(details).getByRole("link", { name: "Tokyo Sample Pub のGoogle Mapsを新しいタブで開く" })).toHaveAttribute("href", "https://maps.example.com");
+    expect(within(details).getByRole("link", { name: "Tokyo Sample Pub のInstagramを新しいタブで開く" })).toHaveAttribute(
       "href",
       "https://instagram.example.com/tokyo"
     );
@@ -132,7 +132,7 @@ describe("PubList", () => {
   it("does not open details when an external link is clicked", () => {
     render(<PubList pubs={pubs} />);
 
-    fireEvent.click(screen.getAllByRole("link", { name: "公式サイト" })[0]);
+    fireEvent.click(screen.getAllByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" })[0]);
 
     expect(screen.queryByRole("region", { name: "Tokyo Sample Pub の詳細" })).not.toBeInTheDocument();
   });
@@ -141,15 +141,24 @@ describe("PubList", () => {
     render(<PubList pubs={pubs} />);
 
     const cards = screen.getAllByRole("article");
-    expect(within(cards[0]).getByRole("link", { name: "公式サイト" })).toHaveAttribute(
+    expect(within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" })).toHaveAttribute(
       "href",
       "https://example.com"
     );
-    expect(within(cards[0]).getByRole("link", { name: "Google Maps" })).toHaveAttribute(
+    const serviceLinks = within(cards[0]).getByRole("group", { name: "Tokyo Sample Pub のサービスリンク" });
+
+    expect(within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub のGoogle Mapsを新しいタブで開く" })).toHaveAttribute(
       "href",
       "https://maps.example.com"
     );
-    expect(within(cards[1]).queryByRole("link", { name: "公式サイト" })).not.toBeInTheDocument();
-    expect(within(cards[1]).queryByRole("link", { name: "Google Maps" })).not.toBeInTheDocument();
+    expect(within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub のInstagramを新しいタブで開く" })).toHaveAttribute(
+      "href",
+      "https://instagram.example.com/tokyo"
+    );
+    expect(within(serviceLinks).getAllByRole("link")).toHaveLength(2);
+    expect(within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub の公式サイトを新しいタブで開く" })).not.toBeInTheDocument();
+    expect(within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub のGoogle Mapsを新しいタブで開く" })).not.toBeInTheDocument();
+    expect(within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub のInstagramを新しいタブで開く" })).not.toBeInTheDocument();
+    expect(within(cards[1]).queryByRole("group", { name: "Osaka Sample Pub のサービスリンク" })).not.toBeInTheDocument();
   });
 });
