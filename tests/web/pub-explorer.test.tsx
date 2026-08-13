@@ -84,7 +84,15 @@ describe("PubExplorer", () => {
     mockGeolocation(originalGeolocation);
   });
 
+
+  it("shows a search placeholder without prefecture", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    expect(screen.getByLabelText("店舗を検索")).toHaveAttribute("placeholder", "店舗名、エリア");
+  });
+
   it("filters the displayed pubs by pub name", () => {
+
     render(<PubExplorer pubs={pubs} />);
 
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "osaka" } });

@@ -123,7 +123,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
               setQuery(event.target.value);
               setSelectedPubId(null);
             }}
-            placeholder="店舗名、都道府県、エリア"
+            placeholder="店舗名、エリア"
           />
           {query ? (
             <button type="button" onClick={() => {
