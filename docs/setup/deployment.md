@@ -132,6 +132,8 @@ node -e 'const { randomBytes, scryptSync } = require("crypto"); const password =
 
 Neon Free は小規模な管理用途から開始できますが、使用量と上限は Neon のダッシュボードで監視してください。
 
+店舗データを一括追加する場合は、[開発環境・セットアップ手順の一括インポート](development.md#店舗データの一括インポート)を使用してください。ProductionとPreviewの接続先が分かれている場合は、両方へ個別に実行します。
+
 参考: [Neon の Vercel Native Integration](https://neon.com/blog/neon-vercel-native-integration)、[Vercel の Deployment integration actions](https://vercel.com/docs/integrations/create-integration/deployment-integration-action)
 
 API の認証・更新条件は[API 方針](../specs/api.md)、全体構成は[システム構成](../architecture/system-overview.md)を参照してください。
