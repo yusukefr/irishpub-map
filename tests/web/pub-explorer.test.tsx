@@ -258,6 +258,22 @@ describe("PubExplorer", () => {
     expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
   });
 
+  it("keeps the map instance when tag and status filters change", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "ライブ音楽" }));
+
+    expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.mapRemove).not.toHaveBeenCalled();
+    expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "open" } });
+
+    expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.mapRemove).not.toHaveBeenCalled();
+    expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
+  });
+
   it("combines search, prefecture, tag, and status filters", () => {
     render(<PubExplorer pubs={pubs} />);
 

@@ -142,6 +142,18 @@ describe("PubMap", () => {
     expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
   });
 
+  it("updates markers without rebuilding the map when pubs are filtered", () => {
+    const { rerender } = render(<PubMap pubs={pubs} />);
+
+    rerender(<PubMap pubs={[pubs[0]]} />);
+
+    expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.mapRemove).not.toHaveBeenCalled();
+    expect(maplibreMock.markerRemove).toHaveBeenCalledTimes(3);
+    expect(maplibreMock.markerConstructor).toHaveBeenCalledTimes(4);
+    expect(maplibreMock.markerSetLngLat).toHaveBeenLastCalledWith([139.767, 35.681]);
+  });
+
   it("moves the map to a prefecture with one pub", () => {
     render(<PubMap pubs={[pubs[1]]} focusPubs={[pubs[1]]} />);
 
