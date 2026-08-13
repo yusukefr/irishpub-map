@@ -3,7 +3,7 @@ import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
 export type PubFilters = {
   query?: string;
   prefecture?: string;
-  tag?: string;
+  tags?: string[];
   status?: PubStatus | "";
 };
 
@@ -71,10 +71,10 @@ export function filterPubs(pubs: Pub[], filters: PubFilters) {
       !normalizedQuery ||
       [pub.name, pub.prefecture, pub.city].some((field) => normalizeSearchText(field).includes(normalizedQuery));
     const matchesPrefecture = !filters.prefecture || pub.prefecture === filters.prefecture;
-    const matchesTag = !filters.tag || pub.tags.includes(filters.tag);
+    const matchesTags = !filters.tags?.length || filters.tags.every((tag) => pub.tags.includes(tag));
     const matchesStatus = !filters.status || pub.status === filters.status;
 
-    return matchesQuery && matchesPrefecture && matchesTag && matchesStatus;
+    return matchesQuery && matchesPrefecture && matchesTags && matchesStatus;
   });
 }
 
