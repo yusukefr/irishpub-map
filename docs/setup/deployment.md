@@ -36,6 +36,15 @@ GitHub Actions のPR用ワークフローで `npm run update-app-version` が実
 
 Production Domain / Alias の確認項目:
 
+## Web Analytics と Speed Insights
+
+アプリには `@vercel/analytics` と `@vercel/speed-insights` を組み込み、ProductionデプロイのページビューとCore Web Vitalsを収集します。追加の環境変数は不要です。
+
+1. Vercel Project の **Analytics** を開き、Web Analyticsを有効化します。
+2. Vercel Project の **Speed Insights** を開き、有効化します。
+3. Productionへデプロイ後、実際のアクセスを発生させてから各ダッシュボードでデータを確認します。反映まで時間がかかる場合があります。
+
+Analyticsはプライバシーに配慮したVercelのファーストパーティ計測です。カスタムイベントの追加や保持期間などの詳細は、Vercel Dashboardと公式ドキュメントで確認してください。
 - Domains に承認済みの Production Domain が登録されている
 - `main` ブランチの Production Deployment が Production Domain に紐づいている
 - Preview Deployment の URL と Production URL を混同しない
