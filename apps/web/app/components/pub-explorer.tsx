@@ -38,28 +38,28 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
   const [selectedPrefecture, setSelectedPrefecture] = useState("");
   const [currentPrefecture, setCurrentPrefecture] = useState("");
   const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
-  const [selectedTag, setSelectedTag] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<PubStatus | "">("");
   const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
   const hasSelectedPrefecture = useRef(false);
   const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
   const availableTags = useMemo(() => getAvailableTags(pubs), [pubs]);
   const filteredPubs = useMemo(
-    () => filterPubs(pubs, { query, prefecture: selectedPrefecture, tag: selectedTag, status: selectedStatus }),
-    [pubs, query, selectedPrefecture, selectedTag, selectedStatus]
+    () => filterPubs(pubs, { query, prefecture: selectedPrefecture, tags: selectedTags, status: selectedStatus }),
+    [pubs, query, selectedPrefecture, selectedTags, selectedStatus]
   );
   const prefecturePubs = useMemo(
     () => (selectedPrefecture ? filterPubs(pubs, { prefecture: selectedPrefecture }) : []),
     [pubs, selectedPrefecture]
   );
   const mapFocusPubs = selectedPrefecture === currentPrefecture ? EMPTY_FOCUS_PUBS : prefecturePubs;
-  const hasActiveFilters = Boolean(query || selectedPrefecture || selectedTag || selectedStatus);
+  const hasActiveFilters = Boolean(query || selectedPrefecture || selectedTags.length || selectedStatus);
 
   const resetFilters = () => {
     hasSelectedPrefecture.current = false;
     setQuery("");
     setSelectedPrefecture("");
-    setSelectedTag("");
+    setSelectedTags([]);
     setSelectedStatus("");
     setSelectedPubId(null);
   };
@@ -154,20 +154,28 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
               ))}
             </select>
           </label>
-          <label htmlFor="pub-tag-filter">
-            タグ
-            <select id="pub-tag-filter" value={selectedTag} onChange={(event) => {
-              setSelectedTag(event.target.value);
-              setSelectedPubId(null);
-            }}>
-              <option value="">すべてのタグ</option>
-              {availableTags.map((tag) => (
-                <option value={tag} key={tag}>
-                  {getTagLabel(tag)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <fieldset className="tag-filter">
+            <legend>タグ</legend>
+            <div className="tag-filter-options">
+              {availableTags.map((tag) => {
+                const isSelected = selectedTags.includes(tag);
+
+                return (
+                  <button
+                    type="button"
+                    key={tag}
+                    aria-pressed={isSelected}
+                    onClick={() => {
+                      setSelectedTags((current) => isSelected ? current.filter((item) => item !== tag) : [...current, tag]);
+                      setSelectedPubId(null);
+                    }}
+                  >
+                    {getTagLabel(tag)}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
           <label htmlFor="pub-status-filter">
             営業状況
             <select

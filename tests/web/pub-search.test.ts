@@ -72,7 +72,11 @@ describe("filterPubsByQuery", () => {
   });
 
   it("filters pubs by tag", () => {
-    expect(filterPubs(pubs, { tag: "food" }).map((pub) => pub.id)).toEqual(["tokyo-sample", "kyoto-sample"]);
+    expect(filterPubs(pubs, { tags: ["food"] }).map((pub) => pub.id)).toEqual(["tokyo-sample", "kyoto-sample"]);
+  });
+
+  it("filters pubs by every selected tag", () => {
+    expect(filterPubs(pubs, { tags: ["guinness", "food"] }).map((pub) => pub.id)).toEqual(["tokyo-sample"]);
   });
 
   it("filters pubs by status", () => {
@@ -81,7 +85,7 @@ describe("filterPubsByQuery", () => {
 
   it("combines search, prefecture, tag, and status filters", () => {
     expect(
-      filterPubs(pubs, { query: "京都府", prefecture: "京都府", tag: "food", status: "closed" }).map((pub) => pub.id)
+      filterPubs(pubs, { query: "京都府", prefecture: "京都府", tags: ["food"], status: "closed" }).map((pub) => pub.id)
     ).toEqual(["kyoto-sample"]);
   });
 

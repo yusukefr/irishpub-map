@@ -765,6 +765,45 @@ body {
   font-weight: 800;
 }
 
+.tag-filter {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tag-filter legend {
+  margin-bottom: 7px;
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.tag-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.tag-filter-options button {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #afc2b5;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.tag-filter-options button[aria-pressed="true"] {
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
+  color: #fff;
+}
+
 .search-result-count,
 .list-count {
   flex: 0 0 auto;

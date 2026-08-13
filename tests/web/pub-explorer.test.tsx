@@ -214,13 +214,23 @@ describe("PubExplorer", () => {
   it("filters the displayed pubs by tag", () => {
     render(<PubExplorer pubs={pubs} />);
 
-    expect(screen.getByRole("option", { name: "ライブ音楽" })).toHaveValue("live-music");
-
-    fireEvent.change(screen.getByLabelText("タグ"), { target: { value: "live-music" } });
+    fireEvent.click(screen.getByRole("button", { name: "ライブ音楽" }));
 
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+  });
+
+  it("filters the displayed pubs by every selected tag", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "ギネス" }));
+    fireEvent.click(screen.getByRole("button", { name: "食事あり" }));
+
+    expect(screen.getByRole("button", { name: "ギネス" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "食事あり" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
   });
 
   it("filters the displayed pubs by status", () => {
@@ -245,7 +255,7 @@ describe("PubExplorer", () => {
 
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "東京都" } });
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
-    fireEvent.change(screen.getByLabelText("タグ"), { target: { value: "food" } });
+    fireEvent.click(screen.getByRole("button", { name: "食事あり" }));
     fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "open" } });
 
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
@@ -258,14 +268,14 @@ describe("PubExplorer", () => {
 
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "京都府" } });
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "京都府" } });
-    fireEvent.change(screen.getByLabelText("タグ"), { target: { value: "food" } });
+    fireEvent.click(screen.getByRole("button", { name: "食事あり" }));
     fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "closed" } });
 
     fireEvent.click(screen.getByRole("button", { name: "条件をリセット" }));
 
     expect(screen.getByLabelText("店舗を検索")).toHaveValue("");
     expect(screen.getByLabelText("都道府県")).toHaveValue("");
-    expect(screen.getByLabelText("タグ")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "食事あり" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByLabelText("営業状況")).toHaveValue("");
     expect(screen.getByText("3件のPubが見つかりました")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "条件をリセット" })).not.toBeInTheDocument();
