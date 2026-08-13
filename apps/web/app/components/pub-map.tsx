@@ -45,6 +45,8 @@ export function PubMap({
 }: PubMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markerElementsRef = useRef(new globalThis.Map<string, HTMLButtonElement>());
+  const mapRef = useRef<Map | null>(null);
+  const markersRef = useRef(new globalThis.Map<string, Marker>());
   // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
   const onSelectPubRef = useRef(onSelectPub);
   const [mapUnavailable, setMapUnavailable] = useState(false);
@@ -55,6 +57,8 @@ export function PubMap({
 
   useEffect(() => {
     const container = containerRef.current;
+    const markers = markersRef.current;
+    const markerElements = markerElementsRef.current;
 
     if (!container) {
       return;
@@ -71,7 +75,8 @@ export function PubMap({
     }
 
     let map: Map;
-    markerElementsRef.current.clear();
+    markerElements.clear();
+    markers.clear();
 
     try {
       map = new Map({
@@ -99,18 +104,7 @@ export function PubMap({
       });
 
       map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
-      focusMap(map, focusPubs, currentLocation);
-
-      pubs.forEach((pub) => {
-        const popup = new Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
-        const markerElement = createMarkerElement(pub, false, () => onSelectPubRef.current(pub.id));
-        markerElementsRef.current.set(pub.id, markerElement);
-
-        new Marker({ element: markerElement, anchor: "bottom" })
-          .setLngLat([pub.longitude, pub.latitude])
-          .setPopup(popup)
-          .addTo(map);
-      });
+      mapRef.current = map;
     } catch (error) {
       console.error("Failed to initialize the map.", error);
       showFallback();
@@ -118,9 +112,45 @@ export function PubMap({
     }
 
     return () => {
+      markers.forEach((marker) => marker.remove());
+      markers.clear();
+      markerElements.clear();
+      mapRef.current = null;
       map.remove();
     };
-  }, [currentLocation, focusPubs, pubs]);
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map) {
+      return;
+    }
+
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current.clear();
+    markerElementsRef.current.clear();
+
+    pubs.forEach((pub) => {
+      const popup = new Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
+      const markerElement = createMarkerElement(pub, false, () => onSelectPubRef.current(pub.id));
+      const marker = new Marker({ element: markerElement, anchor: "bottom" })
+        .setLngLat([pub.longitude, pub.latitude])
+        .setPopup(popup)
+        .addTo(map);
+
+      markerElementsRef.current.set(pub.id, markerElement);
+      markersRef.current.set(pub.id, marker);
+    });
+  }, [pubs]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (map) {
+      focusMap(map, focusPubs, currentLocation);
+    }
+  }, [currentLocation, focusPubs]);
 
   useEffect(() => {
     markerElementsRef.current.forEach((marker, pubId) => {
