@@ -36,9 +36,19 @@ export async function updateAppVersion(versionFile = DEFAULT_VERSION_FILE, bumpT
   return next;
 }
 
-/** Vercelのビルド前にアプリの表示バージョンを更新します。 */
+/** デプロイ成果物へ反映するリリース日だけを日本時間で更新します。 */
+export async function updateReleaseDate(versionFile = DEFAULT_VERSION_FILE, now = new Date()) {
+  const current = JSON.parse(await readFile(versionFile, "utf8"));
+  if (typeof current.version !== "string") throw new Error("app-version.json must contain a version string.");
+
+  const next = { version: current.version, releaseDate: formatJstDate(now) };
+  await writeFile(versionFile, JSON.stringify(next, null, 2) + String.fromCharCode(10), "utf8");
+  return next;
+}
+
+/** Vercelのビルド前にアプリの表示バージョンまたはリリース日を更新します。 */
 async function main() {
-  const next = await updateAppVersion();
+  const next = process.argv.includes("--date-only") ? await updateReleaseDate() : await updateAppVersion();
   console.log(`Updated app version to v${next.version} (${next.releaseDate} JST).`);
 }
 

@@ -3,7 +3,7 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { bumpVersion, formatJstDate, updateAppVersion } from "../scripts/update-app-version.mjs";
+import { bumpVersion, formatJstDate, updateAppVersion, updateReleaseDate } from "../scripts/update-app-version.mjs";
 
 describe("update-app-version", () => {
   it("increments the patch version by default", () => {
@@ -26,6 +26,16 @@ describe("update-app-version", () => {
     await updateAppVersion(versionFile, "minor", new Date("2026-08-12T15:00:00.000Z"));
 
     expect(JSON.parse(await readFile(versionFile, "utf8"))).toEqual({ version: "0.2.0", releaseDate: "2026-08-13" });
+  });
+
+  it("updates only the JST release date without changing the version", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "irishpub-map-version-date-"));
+    const versionFile = join(directory, "app-version.json");
+    await writeFile(versionFile, JSON.stringify({ version: "0.1.9", releaseDate: "2026-01-01" }));
+
+    await updateReleaseDate(versionFile, new Date("2026-08-12T15:00:00.000Z"));
+
+    expect(JSON.parse(await readFile(versionFile, "utf8"))).toEqual({ version: "0.1.9", releaseDate: "2026-08-13" });
   });
 
   it("rejects unsupported bump types and invalid versions", () => {
