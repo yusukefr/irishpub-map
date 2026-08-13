@@ -10,6 +10,6 @@ describe("AppVersionFooter", () => {
 
     const versionInfo = screen.getByRole("contentinfo", { name: "アプリのバージョン情報" });
     expect(versionInfo).toHaveTextContent(`v${appVersion.version}`);
-    expect(versionInfo).toHaveTextContent(`リリース日 ${appVersion.releaseDate}`);
+    expect(versionInfo).toHaveTextContent(`リリース日 ${appVersion.releaseDate}（JST）`);
   });
 });

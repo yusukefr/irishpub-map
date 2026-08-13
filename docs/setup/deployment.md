@@ -21,12 +21,18 @@ Vercel で対象の GitHub リポジトリを Import します。
 | Framework Preset | Next.js |
 | Root Directory | `.` |
 | Install Command | `npm ci` |
-| Build Command | `npm run build` |
+| Build Command | `npm run update-app-version && npm run build` |
 | Output Directory | `apps/web/.next` |
 | Production Branch | `main` |
 | Node.js Version | 24.x |
 
 `vercel.json` でも同じ build 設定を管理します。
+
+### デプロイ時のバージョン更新
+
+Vercel のビルド開始前に `npm run update-app-version` が実行され、`app-version.json` のバージョンとリリース日をデプロイ成果物へ反映します。リリース日は日本時間（JST）の当日を `YYYY-MM-DD` 形式で記録し、更新種別が未指定の場合はバグフィックスとして patch バージョンを1つ上げます。
+
+機能追加や画面改修をデプロイする場合は、Vercel の Preview / Production 環境変数 `APP_VERSION_BUMP` に `minor` を設定してください。未設定または `patch` の場合は patch バージョンが更新されます。`major` はこの運用では自動更新しません。
 
 Production Domain / Alias の確認項目:
 
