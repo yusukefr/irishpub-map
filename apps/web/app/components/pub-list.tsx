@@ -89,7 +89,7 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
                     }
                   }}
                 >
-                  詳細
+                  {isExpanded ? "閉じる" : "詳細"}
                 </button>
                 <div className="pub-links">
                   {pub.websiteUrl ? (

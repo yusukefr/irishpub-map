@@ -102,6 +102,7 @@ describe("PubList", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "詳細" })[0]);
 
     const details = screen.getByRole("region", { name: "Tokyo Sample Pub の詳細" });
+    expect(screen.getAllByRole("button", { name: "閉じる" })[0]).toHaveAttribute("aria-expanded", "true");
     expect(details).toHaveTextContent("店舗名");
     expect(details).toHaveTextContent("Tokyo Sample Pub");
     expect(details).toHaveTextContent("住所");
@@ -116,9 +117,10 @@ describe("PubList", () => {
       "https://instagram.example.com/tokyo"
     );
 
-    fireEvent.click(screen.getAllByRole("button", { name: "詳細" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "閉じる" })[0]);
 
     expect(screen.queryByRole("region", { name: "Tokyo Sample Pub の詳細" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "詳細" })[0]).toHaveAttribute("aria-expanded", "false");
   });
 
   it("opens pub details with keyboard operation", () => {
