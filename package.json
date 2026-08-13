@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "npm run dev -w apps/web",
     "build": "npm run build -w apps/web",
+    "import-pubs": "node scripts/import-pubs.mjs",
     "update-app-version": "node scripts/update-app-version.mjs",
     "lint": "npm run lint -w apps/web",
     "typecheck": "npm run typecheck -w apps/web",

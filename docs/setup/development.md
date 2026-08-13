@@ -47,6 +47,26 @@ cp .env.example .env.local
 
 管理画面の表示とログインは、3 つの `ADMIN_*` 変数がすべて設定されている場合に有効です。店舗の追加・編集・削除には、さらに `DATABASE_URL` が必要です。DB 未設定時は `/admin` で初期データを閲覧できますが、更新操作は失敗します。
 
+## 店舗データの一括インポート
+
+`scripts/import-pubs.mjs` は、JSON形式の店舗データをNeonの `pubs` テーブルへ追加します。`id` が既に存在する店舗は更新せずにスキップするため、同じファイルを再実行しても安全です。入力は `packages/shared` の `Pub` 型と同じ形式の配列で、既定のファイル名はリポジトリルートの `pubs.json` です。
+
+Neonの接続文字列は、ローカルのシェル環境変数として一時的に設定して実行します。接続文字列は出力・コミットしません。ProductionとPreviewの接続先が異なる場合は、それぞれ実行します。
+
+~~~bash
+DATABASE_URL="$NEON_PRODUCTION_DATABASE_URL" npm run import-pubs -- pubs.json
+
+DATABASE_URL="$NEON_PREVIEW_DATABASE_URL" npm run import-pubs -- pubs.json
+~~~
+
+`NEON_PRODUCTION_DATABASE_URL` と `NEON_PREVIEW_DATABASE_URL` は、Neon ConsoleまたはVercel Projectの環境変数から安全に取得した接続文字列をシェルへ設定した一時的な変数名です。実際の値を `.env`、シェル履歴、リポジトリへ残さないでください。別の入力ファイルを使う場合は、末尾のパスを置き換えます。
+
+~~~bash
+DATABASE_URL="$NEON_PRODUCTION_DATABASE_URL" npm run import-pubs -- path/to/pubs.json
+~~~
+
+実行結果は `Imported <追加件数>, skipped <既存ID件数>, total <入力件数>` の形式で表示されます。無効な形式や入力内で重複する `id` がある場合は、DBへの書き込み前にエラーで停止します。
+
 パスワードハッシュはローカルで生成し、値をリポジトリに保存しません。
 
 ~~~bash

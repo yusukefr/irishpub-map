@@ -19,8 +19,15 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** ワークフローから渡されたPR本文を標準入力ストリームから読み取ります。 */
+export async function readStdin(stream = process.stdin) {
+  let body = "";
+  for await (const chunk of stream) body += chunk;
+  return body;
+}
+
 async function main() {
-  const body = await readFile(0, "utf8");
+  const body = await readStdin();
   const versionInfo = JSON.parse(await readFile("app-version.json", "utf8"));
   process.stdout.write(upsertAppVersionSection(body, versionInfo));
 }

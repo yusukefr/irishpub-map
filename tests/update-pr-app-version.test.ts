@@ -1,8 +1,13 @@
 // PR本文へデプロイバージョンを記載し、再実行時に同じ欄を更新できることを保証するテストです。
 import { describe, expect, it } from "vitest";
-import { upsertAppVersionSection } from "../scripts/update-pr-app-version.mjs";
+import { Readable } from "node:stream";
+import { readStdin, upsertAppVersionSection } from "../scripts/update-pr-app-version.mjs";
 
 describe("update-pr-app-version", () => {
+  it("reads a pull request body from standard input", async () => {
+    await expect(readStdin(Readable.from(["## Summary", "\n\n- Change"]))).resolves.toBe("## Summary\n\n- Change");
+  });
+
   it("appends a searchable app version section to a pull request body", () => {
     const body = upsertAppVersionSection("## Summary\n\n- Change", { version: "0.1.1", releaseDate: "2026-08-13" });
 
