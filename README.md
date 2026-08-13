@@ -80,10 +80,12 @@ Skills は繰り返し実行する手順を補助するものであり、リポ�
 
 ## バージョン情報の更新
 
-アプリの表示バージョンは `app-version.json` で管理します。リリース時は以下を更新してください。
+アプリの表示バージョンは `app-version.json` で管理します。GitHub Actions のPR用ワークフローで `npm run update-app-version` が実行され、更新された値がPRブランチとデプロイ成果物へ反映されます。Vercelではコミット済みバージョンを維持し、リリース日だけをJSTで更新します。
 
 - `version`: 公開するアプリのバージョン番号
 - `releaseDate`: 公開日。`YYYY-MM-DD` 形式で記載します。
+
+デフォルトはバグフィックス向けの patch 更新です。機能追加や画面改修では、GitHub Actions のリポジトリVariables `APP_VERSION_BUMP=minor` を設定してください。リリース日は日本時間（JST）で更新されます。
 
 Web アプリの下部には、このファイルの `version` と `releaseDate` が表示されます。更新後は `npm run build` で表示用データを含めてビルドできることを確認してください。
 
