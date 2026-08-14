@@ -49,6 +49,7 @@ function isPub(value) {
   return (
     typeof pub.id === "string" &&
     typeof pub.name === "string" &&
+    isOptionalKana(pub.kana) &&
     typeof pub.prefecture === "string" &&
     typeof pub.address === "string" &&
     isOptionalString(pub.city) &&
@@ -65,6 +66,10 @@ function isPub(value) {
 
 function isOptionalString(value) {
   return value === undefined || value === null || typeof value === "string";
+}
+
+function isOptionalKana(value) {
+  return value === undefined || typeof value === "string";
 }
 
 function isLatitude(value) {

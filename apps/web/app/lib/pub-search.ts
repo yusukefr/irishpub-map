@@ -69,7 +69,7 @@ export function filterPubs(pubs: Pub[], filters: PubFilters) {
   return pubs.filter((pub) => {
     const matchesQuery =
       !normalizedQuery ||
-      [pub.name, pub.prefecture, pub.city].some((field) => normalizeSearchText(field).includes(normalizedQuery));
+      [pub.name, pub.kana, pub.prefecture, pub.city].some((field) => normalizeSearchText(field).includes(normalizedQuery));
     const matchesPrefecture = !filters.prefecture || pub.prefecture === filters.prefecture;
     const matchesTags = !filters.tags?.length || filters.tags.every((tag) => pub.tags.includes(tag));
     const matchesStatus = !filters.status || pub.status === filters.status;
@@ -118,7 +118,9 @@ export function getAvailableStatuses(pubs: Pub[]) {
 }
 
 function normalizeSearchText(value: string | undefined) {
-  return value?.trim().toLocaleLowerCase() ?? "";
+  return value?.normalize("NFKC").trim().toLocaleLowerCase().replace(/[\u30a1-\u30f6]/g, (character) => {
+    return String.fromCharCode(character.charCodeAt(0) - 0x60);
+  }) ?? "";
 }
 
 function getSquaredDistance(origin: Coordinates, destination: Coordinates) {
