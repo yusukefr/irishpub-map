@@ -17,7 +17,9 @@
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "prepare": "node scripts/install-git-hooks.mjs",
-    "check:sensitive-data": "node scripts/check-sensitive-data.mjs --tracked"
+    "check:sensitive-data": "node scripts/check-sensitive-data.mjs --tracked",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "overrides": {
     "postcss": "8.5.26"
@@ -27,6 +29,7 @@
     "@testing-library/react": "^16.3.2",
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^30.0.1",
+    "prettier": "^3.9.6",
     "vitest": "^4.1.10"
   },
   "engines": {

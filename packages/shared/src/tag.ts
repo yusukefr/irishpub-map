@@ -3,7 +3,7 @@ const TAG_LABELS: Record<string, string> = {
   food: "食事あり",
   "station-area": "駅近",
   "craft-beer": "クラフトビール",
-  "live-music": "ライブ音楽"
+  "live-music": "ライブ音楽",
 };
 
 /** 既知のタグIDを日本語表示名へ変換し、未知のタグはIDをそのまま返します。 */

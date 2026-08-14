@@ -16,15 +16,15 @@ Vercel で対象の GitHub リポジトリを Import します。
 
 推奨設定:
 
-| 項目 | 値 |
-| --- | --- |
-| Framework Preset | Next.js |
-| Root Directory | `.` |
-| Install Command | `npm ci` |
-| Build Command | `npm run update-app-version -- --date-only && npm run build` |
-| Output Directory | `apps/web/.next` |
-| Production Branch | `main` |
-| Node.js Version | 24.x |
+| 項目              | 値                                                           |
+| ----------------- | ------------------------------------------------------------ |
+| Framework Preset  | Next.js                                                      |
+| Root Directory    | `.`                                                          |
+| Install Command   | `npm ci`                                                     |
+| Build Command     | `npm run update-app-version -- --date-only && npm run build` |
+| Output Directory  | `apps/web/.next`                                             |
+| Production Branch | `main`                                                       |
+| Node.js Version   | 24.x                                                         |
 
 `vercel.json` でも同じ build 設定を管理します。
 
@@ -45,6 +45,7 @@ Production Domain / Alias の確認項目:
 3. Productionへデプロイ後、実際のアクセスを発生させてから各ダッシュボードでデータを確認します。反映まで時間がかかる場合があります。
 
 Analyticsはプライバシーに配慮したVercelのファーストパーティ計測です。カスタムイベントの追加や保持期間などの詳細は、Vercel Dashboardと公式ドキュメントで確認してください。
+
 - Domains に承認済みの Production Domain が登録されている
 - `main` ブランチの Production Deployment が Production Domain に紐づいている
 - Preview Deployment の URL と Production URL を混同しない
@@ -114,10 +115,10 @@ printf '%s' "$NEON_PREVIEW_DATABASE_URL" | vercel env add DATABASE_URL preview
 
 CI の Slack 通知は Vercel の環境変数ではなく GitHub の Actions 設定を参照します。通知を有効にする場合は、リポジトリの **Settings → Secrets and variables → Actions** で次を設定します。
 
-| 種別 | 名前 | 用途 |
-| --- | --- | --- |
-| Variable | `SLACK_CICD_CHANNEL` | 任意。通知先チャンネル |
-| Secret | `SLACK_CICD_WEBHOOK_URL` | Slack Incoming Webhook URL |
+| 種別     | 名前                     | 用途                       |
+| -------- | ------------------------ | -------------------------- |
+| Variable | `SLACK_CICD_CHANNEL`     | 任意。通知先チャンネル     |
+| Secret   | `SLACK_CICD_WEBHOOK_URL` | Slack Incoming Webhook URL |
 
 ## デプロイの流れ
 

@@ -21,13 +21,22 @@ export function bumpVersion(version, bumpType = "patch") {
 
 /** 指定時刻を日本時間のYYYY-MM-DD形式へ変換します。 */
 export function formatJstDate(date) {
-  const parts = new Intl.DateTimeFormat("en-US", { timeZone: JST_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: JST_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
 }
 
 /** バージョンファイルを読み込み、指定された更新種別とJST日付で書き換えます。 */
-export async function updateAppVersion(versionFile = DEFAULT_VERSION_FILE, bumpType = process.env.APP_VERSION_BUMP ?? "patch", now = new Date()) {
+export async function updateAppVersion(
+  versionFile = DEFAULT_VERSION_FILE,
+  bumpType = process.env.APP_VERSION_BUMP ?? "patch",
+  now = new Date(),
+) {
   const current = JSON.parse(await readFile(versionFile, "utf8"));
   if (typeof current.version !== "string") throw new Error("app-version.json must contain a version string.");
 

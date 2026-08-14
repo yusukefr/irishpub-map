@@ -4,7 +4,7 @@
 
 Irish Pub Map は、Vercel 上の Next.js アプリとして動作します。公開画面はサーバー側で店舗データを取得し、ブラウザでは MapLibre GL JS により地図と店舗一覧を表示します。管理画面は Cookie ベースの管理者セッションで保護し、Neon Postgres が設定されている場合に店舗データを永続化します。
 
-~~~mermaid
+```mermaid
 flowchart TB
   visitor[利用者のブラウザ]
   administrator[管理者のブラウザ]
@@ -45,7 +45,7 @@ flowchart TB
   github --> actions
   github --> vercel
   actions -.->|"Webhook が設定されている場合"| slack
-~~~
+```
 
 ## データの扱い
 
@@ -55,12 +55,12 @@ flowchart TB
 
 ## 主要な境界
 
-| 境界 | 責務 |
-| --- | --- |
-| ブラウザ | 検索・絞り込み、位置情報の取得、地図描画、管理画面の操作 |
-| Next.js ページ / API | 公開画面のデータ取得、HTTP API、管理画面へのアクセス制御 |
-| `pub-repository` | JSON フォールバック、Neon の初期化、店舗データの CRUD |
-| `admin-auth` | 認証情報の検証、署名付き管理者セッション Cookie の発行・検証 |
-| GitHub Actions | 追跡済みファイルの機密情報検査、Lint、テスト、ビルド、任意の Slack 通知 |
+| 境界                 | 責務                                                                    |
+| -------------------- | ----------------------------------------------------------------------- |
+| ブラウザ             | 検索・絞り込み、位置情報の取得、地図描画、管理画面の操作                |
+| Next.js ページ / API | 公開画面のデータ取得、HTTP API、管理画面へのアクセス制御                |
+| `pub-repository`     | JSON フォールバック、Neon の初期化、店舗データの CRUD                   |
+| `admin-auth`         | 認証情報の検証、署名付き管理者セッション Cookie の発行・検証            |
+| GitHub Actions       | 追跡済みファイルの機密情報検査、Lint、テスト、ビルド、任意の Slack 通知 |
 
 代表的な処理の時系列は[シーケンス図](sequences.md)を参照してください。

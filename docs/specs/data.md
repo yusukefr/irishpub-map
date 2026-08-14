@@ -2,8 +2,7 @@
 
 ## 概要
 
-型定義と検証ロジックは `packages/shared/src/pub.ts` にあります。
-Neon Postgres のテーブル、カラム、JSONB 構造、ER 図は[データベース定義書](database.md)を参照してください。
+型定義と検証ロジックは `packages/shared/src/pub.ts` にあります。Neon Postgres のテーブル、カラム、JSONB 構造、ER 図は[データベース定義書](database.md)を参照してください。
 
 `data/pubs.json` は初期データとフォールバックです。`DATABASE_URL` が未設定の環境では公開 API と管理画面の表示に同ファイルを使います。Neon を設定した環境では、テーブルが空の場合に同ファイルを初期投入し、その後の管理画面による追加・編集・削除は Neon の `pubs` テーブルへ保存します。
 
@@ -31,21 +30,21 @@ Neon Postgres のテーブル、カラム、JSONB 構造、ER 図は[データ�
 
 ## フィールド
 
-| フィールド | 型 | 必須 | 説明 |
-| --- | --- | --- | --- |
-| `id` | string | yes | 店舗を一意に識別する ID |
-| `name` | string | yes | 店舗名 |
-| `kana` | string | no | 店舗名の読み（ひらがな）。かな検索に使用 |
-| `prefecture` | string | yes | 都道府県 |
-| `city` | string | no | 市区町村 |
-| `address` | string | yes | 住所 |
-| `latitude` | number | yes | 緯度 |
-| `longitude` | number | yes | 経度 |
-| `websiteUrl` | string \| null | no | 公式サイト URL |
-| `googleMapsUrl` | string \| null | no | Google Maps URL |
-| `instagramUrl` | string \| null | no | Instagram URL |
-| `tags` | string[] | yes | 検索・絞り込み用タグ |
-| `status` | string | yes | 店舗状態 |
+| フィールド      | 型             | 必須 | 説明                                     |
+| --------------- | -------------- | ---- | ---------------------------------------- |
+| `id`            | string         | yes  | 店舗を一意に識別する ID                  |
+| `name`          | string         | yes  | 店舗名                                   |
+| `kana`          | string         | no   | 店舗名の読み（ひらがな）。かな検索に使用 |
+| `prefecture`    | string         | yes  | 都道府県                                 |
+| `city`          | string         | no   | 市区町村                                 |
+| `address`       | string         | yes  | 住所                                     |
+| `latitude`      | number         | yes  | 緯度                                     |
+| `longitude`     | number         | yes  | 経度                                     |
+| `websiteUrl`    | string \| null | no   | 公式サイト URL                           |
+| `googleMapsUrl` | string \| null | no   | Google Maps URL                          |
+| `instagramUrl`  | string \| null | no   | Instagram URL                            |
+| `tags`          | string[]       | yes  | 検索・絞り込み用タグ                     |
+| `status`        | string         | yes  | 店舗状態                                 |
 
 ## `status`
 

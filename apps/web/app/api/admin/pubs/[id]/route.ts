@@ -21,5 +21,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   if (!authorized(request)) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (!isDatabaseConfigured()) return Response.json({ error: "Database is not configured." }, { status: 503 });
-  return (await deletePub((await context.params).id)) ? Response.json({ ok: true }) : Response.json({ error: "Not found" }, { status: 404 });
+  return (await deletePub((await context.params).id))
+    ? Response.json({ ok: true })
+    : Response.json({ error: "Not found" }, { status: 404 });
 }

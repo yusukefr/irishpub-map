@@ -8,21 +8,21 @@
 
 Node.js バージョンは `.nvmrc` に合わせます。
 
-~~~bash
+```bash
 nvm use
-~~~
+```
 
 ## セットアップ
 
-~~~bash
+```bash
 npm install
-~~~
+```
 
 ## 起動
 
-~~~bash
+```bash
 npm run dev
-~~~
+```
 
 Web アプリは `apps/web` の Next.js アプリとして起動します。
 
@@ -30,9 +30,9 @@ Web アプリは `apps/web` の Next.js アプリとして起動します。
 
 `.env.example` を参考に `.env.local` を作成できます。
 
-~~~bash
+```bash
 cp .env.example .env.local
-~~~
+```
 
 | 変数 | 必要な場面 | 用途 |
 | --- | --- | --- |
@@ -53,75 +53,87 @@ cp .env.example .env.local
 
 Neonの接続文字列は、ローカルのシェル環境変数として一時的に設定して実行します。接続文字列は出力・コミットしません。ProductionとPreviewの接続先が異なる場合は、それぞれ実行します。
 
-~~~bash
+```bash
 DATABASE_URL="$NEON_PRODUCTION_DATABASE_URL" npm run import-pubs -- pubs.json
 
 DATABASE_URL="$NEON_PREVIEW_DATABASE_URL" npm run import-pubs -- pubs.json
-~~~
+```
 
 `NEON_PRODUCTION_DATABASE_URL` と `NEON_PREVIEW_DATABASE_URL` は、Neon ConsoleまたはVercel Projectの環境変数から安全に取得した接続文字列をシェルへ設定した一時的な変数名です。実際の値を `.env`、シェル履歴、リポジトリへ残さないでください。別の入力ファイルを使う場合は、末尾のパスを置き換えます。
 
-~~~bash
+```bash
 DATABASE_URL="$NEON_PRODUCTION_DATABASE_URL" npm run import-pubs -- path/to/pubs.json
-~~~
+```
 
 実行結果は `Imported <追加件数>, skipped <既存ID件数>, total <入力件数>` の形式で表示されます。無効な形式や入力内で重複する `id` がある場合は、DBへの書き込み前にエラーで停止します。
 
 パスワードハッシュはローカルで生成し、値をリポジトリに保存しません。
 
-~~~bash
+```bash
 node -e 'const { randomBytes, scryptSync } = require("crypto"); const password = process.argv[1]; const salt = randomBytes(16).toString("base64"); console.log(salt + ":" + scryptSync(password, salt, 64).toString("base64"))' '設定したいパスワード'
-~~~
+```
 
 ## テスト
 
 単体テストは Vitest で実行します。coverage threshold は 90% 以上です。
 
-~~~bash
+```bash
 npm test
-~~~
+```
 
 watch モード:
 
-~~~bash
+```bash
 npm run test:watch
-~~~
+```
 
 ## 型チェック
 
-~~~bash
+```bash
 npm run typecheck
-~~~
+```
 
 ## Lint
 
-~~~bash
+```bash
 npm run lint
-~~~
+```
+
+## Format
+
+コードの書式にはPrettierを使用します。整形を実行する場合は `format`、書式を確認するだけの場合は `format:check` を実行します。
+
+```bash
+npm run format
+npm run format:check
+```
+
+CIでは `format:check` が実行されるため、Pull Requestを作成する前にローカルでも確認してください。
 
 ## Build
 
-~~~bash
+```bash
 npm run build
-~~~
+```
 
 ## Audit
 
-~~~bash
+```bash
 npm audit --omit=dev
-~~~
+```
 
 ## 推奨検証セット
 
 アプリ本体を変更した場合は、原則として以下を実行します。
 
-~~~bash
+```bash
 npm test
+npm run format:check
 npm run typecheck
 npm run lint
 npm run build
 npm audit --omit=dev
-~~~
+```
 
 ## 関連資料
 

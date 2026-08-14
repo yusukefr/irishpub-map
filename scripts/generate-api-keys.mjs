@@ -22,11 +22,12 @@ export function parseCount(args) {
 
 /** コマンドライン引数から生成数と出力先を取得します。 */
 export function parseArguments(args) {
-  if (args.length > 2) throw new Error(`Usage: node scripts/generate-api-keys.mjs [count] [output-file] (1-${MAX_API_KEY_COUNT})`);
+  if (args.length > 2)
+    throw new Error(`Usage: node scripts/generate-api-keys.mjs [count] [output-file] (1-${MAX_API_KEY_COUNT})`);
 
   return {
     count: parseCount(args.slice(0, 1)),
-    outputPath: args[1] || DEFAULT_OUTPUT_PATH
+    outputPath: args[1] || DEFAULT_OUTPUT_PATH,
   };
 }
 

@@ -15,7 +15,7 @@ const basePub: Pub = {
   googleMapsUrl: "https://maps.example.com",
   instagramUrl: null,
   tags: ["guinness", "food"],
-  status: "open"
+  status: "open",
 };
 
 describe("asPubs", () => {
@@ -27,7 +27,7 @@ describe("asPubs", () => {
       city: index % 2 === 0 ? basePub.city : undefined,
       websiteUrl: index % 2 === 0 ? basePub.websiteUrl : null,
       googleMapsUrl: index % 2 === 0 ? basePub.googleMapsUrl : undefined,
-      status
+      status,
     }));
 
     expect(asPubs(pubs)).toEqual(pubs);

@@ -3,7 +3,14 @@ import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_API_KEY_COUNT, DEFAULT_OUTPUT_PATH, MAX_API_KEY_COUNT, generateApiKeys, parseArguments, parseCount } from "../scripts/generate-api-keys.mjs";
+import {
+  DEFAULT_API_KEY_COUNT,
+  DEFAULT_OUTPUT_PATH,
+  MAX_API_KEY_COUNT,
+  generateApiKeys,
+  parseArguments,
+  parseCount,
+} from "../scripts/generate-api-keys.mjs";
 
 const scriptPath = resolve(process.cwd(), "scripts/generate-api-keys.mjs");
 

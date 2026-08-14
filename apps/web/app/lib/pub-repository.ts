@@ -35,7 +35,8 @@ export async function updatePub(id: string, value: unknown) {
   const pub = toPub(value, id);
   const sql = getRequiredSql();
   await ensureTable(sql);
-  const rows = (await sql`UPDATE pubs SET data = ${JSON.stringify(pub)}::jsonb, updated_at = NOW() WHERE id = ${id} RETURNING data`) as PubRow[];
+  const rows =
+    (await sql`UPDATE pubs SET data = ${JSON.stringify(pub)}::jsonb, updated_at = NOW() WHERE id = ${id} RETURNING data`) as PubRow[];
   return rows.length === 1 ? asPubs([rows[0].data])[0] : null;
 }
 

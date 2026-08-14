@@ -9,7 +9,20 @@ const fetchMock = vi.fn();
 // 画面遷移を発生させず、認証後の遷移先だけを観測します。
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
-const pub = { id: "pub-1", name: "The Pub", prefecture: "東京都", city: "渋谷区", address: "神南 1-1", latitude: 35.1, longitude: 139.1, websiteUrl: null, googleMapsUrl: null, instagramUrl: null, tags: ["guinness"], status: "open" as const };
+const pub = {
+  id: "pub-1",
+  name: "The Pub",
+  prefecture: "東京都",
+  city: "渋谷区",
+  address: "神南 1-1",
+  latitude: 35.1,
+  longitude: 139.1,
+  websiteUrl: null,
+  googleMapsUrl: null,
+  instagramUrl: null,
+  tags: ["guinness"],
+  status: "open" as const,
+};
 
 beforeEach(() => {
   push.mockReset();

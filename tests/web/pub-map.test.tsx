@@ -18,7 +18,7 @@ const pubs: Pub[] = [
     googleMapsUrl: "https://maps.example.com",
     instagramUrl: null,
     tags: ["guinness"],
-    status: "open"
+    status: "open",
   },
   {
     id: "osaka-sample",
@@ -31,7 +31,7 @@ const pubs: Pub[] = [
     googleMapsUrl: null,
     instagramUrl: null,
     tags: [],
-    status: "unknown"
+    status: "unknown",
   },
   {
     id: "closed-sample",
@@ -44,8 +44,8 @@ const pubs: Pub[] = [
     googleMapsUrl: null,
     instagramUrl: null,
     tags: [],
-    status: "closed"
-  }
+    status: "closed",
+  },
 ];
 
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
@@ -78,8 +78,8 @@ describe("PubMap", () => {
     expect(maplibreMock.mapConstructor).toHaveBeenCalledWith(
       expect.objectContaining({
         center: [139.767, 35.681],
-        zoom: 5
-      })
+        zoom: 5,
+      }),
     );
     expect(maplibreMock.navigationControl).toHaveBeenCalledWith({ visualizePitch: true });
     expect(maplibreMock.mapAddControl).toHaveBeenCalledTimes(1);
@@ -106,10 +106,14 @@ describe("PubMap", () => {
     expect(maplibreMock.popupSetHTML).not.toHaveBeenCalled();
     expect(maplibreMock.popupSetDOMContent).toHaveBeenCalledTimes(3);
     expect((maplibreMock.popupSetDOMContent.mock.calls[0][0] as HTMLElement).textContent).toBe(
-      "Tokyo Sample Pub東京都 / 千代田区"
+      "Tokyo Sample Pub東京都 / 千代田区",
     );
-    expect((maplibreMock.popupSetDOMContent.mock.calls[1][0] as HTMLElement).textContent).toBe("Osaka Sample Pub大阪府");
-    expect((maplibreMock.popupSetDOMContent.mock.calls[2][0] as HTMLElement).textContent).toBe("Closed Sample Pub京都府");
+    expect((maplibreMock.popupSetDOMContent.mock.calls[1][0] as HTMLElement).textContent).toBe(
+      "Osaka Sample Pub大阪府",
+    );
+    expect((maplibreMock.popupSetDOMContent.mock.calls[2][0] as HTMLElement).textContent).toBe(
+      "Closed Sample Pub京都府",
+    );
     expect(screen.queryByText("地図を表示できませんでした")).not.toBeInTheDocument();
 
     unmount();
@@ -121,7 +125,7 @@ describe("PubMap", () => {
     const temporarilyClosedPub: Pub = {
       ...pubs[0],
       id: "temporarily-closed-sample",
-      status: "temporarily_closed"
+      status: "temporarily_closed",
     };
 
     render(<PubMap pubs={[...pubs, temporarilyClosedPub]} />);
@@ -144,7 +148,7 @@ describe("PubMap", () => {
     expect(maplibreMock.markerSetLngLat).toHaveBeenLastCalledWith([139.701, 35.658]);
     expect(maplibreMock.mapJumpTo).toHaveBeenCalledWith({
       center: [139.701, 35.658],
-      zoom: 12
+      zoom: 12,
     });
   });
 
@@ -181,7 +185,7 @@ describe("PubMap", () => {
 
     expect(maplibreMock.mapJumpTo).toHaveBeenCalledWith({
       center: [135.502, 34.693],
-      zoom: 10
+      zoom: 10,
     });
   });
 
@@ -190,7 +194,7 @@ describe("PubMap", () => {
       ...pubs[0],
       id: "tokyo-second",
       latitude: 35.72,
-      longitude: 139.81
+      longitude: 139.81,
     };
 
     render(<PubMap pubs={[pubs[0], secondTokyoPub]} focusPubs={[pubs[0], secondTokyoPub]} />);
@@ -198,9 +202,9 @@ describe("PubMap", () => {
     expect(maplibreMock.mapFitBounds).toHaveBeenCalledWith(
       [
         [139.767, 35.681],
-        [139.81, 35.72]
+        [139.81, 35.72],
       ],
-      { maxZoom: 10, padding: 48 }
+      { maxZoom: 10, padding: 48 },
     );
   });
 
@@ -210,7 +214,7 @@ describe("PubMap", () => {
       id: "html-like-sample",
       name: '<img src=x onerror="alert(1)">',
       prefecture: "<script>prefecture</script>",
-      city: "中央区<script>alert(1)</script>"
+      city: "中央区<script>alert(1)</script>",
     };
 
     render(<PubMap pubs={[htmlLikePub]} />);
@@ -220,7 +224,7 @@ describe("PubMap", () => {
 
     const popupContent = maplibreMock.popupSetDOMContent.mock.calls[0][0] as HTMLElement;
     expect(popupContent.textContent).toBe(
-      '<img src=x onerror="alert(1)"><script>prefecture</script> / 中央区<script>alert(1)</script>'
+      '<img src=x onerror="alert(1)"><script>prefecture</script> / 中央区<script>alert(1)</script>',
     );
     expect(popupContent.querySelector("img")).toBeNull();
     expect(popupContent.querySelector("script")).toBeNull();

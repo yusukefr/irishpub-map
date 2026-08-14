@@ -34,6 +34,9 @@ jobs:
       - name: Check sensitive data
         run: npm run check:sensitive-data
 
+      - name: Format check
+        run: npm run format:check
+
       - name: Lint
         run: npm run lint
 

@@ -14,6 +14,8 @@ export function validateProductionEnvironment(environment = process.env) {
 }
 
 if (process.argv[1] && import.meta.url === new URL(process.argv[1], "file:").href && !validateProductionEnvironment()) {
-  console.error("Production の必須環境変数が設定されていません。IRISHPUB_MAP_API_KEY を Vercel の Production 環境に設定してください。");
+  console.error(
+    "Production の必須環境変数が設定されていません。IRISHPUB_MAP_API_KEY を Vercel の Production 環境に設定してください。",
+  );
   process.exitCode = 1;
 }

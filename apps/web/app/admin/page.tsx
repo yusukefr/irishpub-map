@@ -6,7 +6,15 @@ import { getPubs, isDatabaseConfigured } from "../lib/pub-repository";
 
 /** 管理設定とセッションを検証し、認証済み管理画面を表示します。 */
 export default async function AdminPage() {
-  if (!isAdminConfigured()) return <main className="admin-shell"><section className="admin-panel"><h1>管理画面の設定が必要です</h1><p>管理者用の環境変数を設定してください。</p></section></main>;
+  if (!isAdminConfigured())
+    return (
+      <main className="admin-shell">
+        <section className="admin-panel">
+          <h1>管理画面の設定が必要です</h1>
+          <p>管理者用の環境変数を設定してください。</p>
+        </section>
+      </main>
+    );
   const session = getAdminSession((await cookies()).toString());
   if (!session) redirect("/admin/login");
   return <AdminPubManager initialPubs={await getPubs()} databaseConfigured={isDatabaseConfigured()} />;

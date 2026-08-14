@@ -30,7 +30,7 @@ export function PubMap({
   focusPubs = EMPTY_FOCUS_PUBS,
   currentLocation = null,
   selectedPubId = null,
-  onSelectPub = () => undefined
+  onSelectPub = () => undefined,
 }: PubMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markerElementsRef = useRef(new globalThis.Map<string, HTMLButtonElement>());
@@ -78,19 +78,19 @@ export function PubMap({
               type: "raster",
               tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
               tileSize: 256,
-              attribution: "© OpenStreetMap contributors"
-            }
+              attribution: "© OpenStreetMap contributors",
+            },
           },
           layers: [
             {
               id: "osm",
               type: "raster",
-              source: "osm"
-            }
-          ]
+              source: "osm",
+            },
+          ],
         },
         center: DEFAULT_MAP_CENTER,
-        zoom: DEFAULT_MAP_ZOOM
+        zoom: DEFAULT_MAP_ZOOM,
       });
 
       map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
@@ -148,7 +148,7 @@ export function PubMap({
 
     const marker = new Marker({
       element: createCurrentLocationMarkerElement(),
-      anchor: "center"
+      anchor: "center",
     })
       .setLngLat([currentLocation.longitude, currentLocation.latitude])
       .addTo(map);
@@ -193,7 +193,7 @@ function canCreateWebglContext() {
 
   return Boolean(
     canvas.getContext("webgl", { failIfMajorPerformanceCaveat: false }) ??
-      canvas.getContext("experimental-webgl", { failIfMajorPerformanceCaveat: false })
+    canvas.getContext("experimental-webgl", { failIfMajorPerformanceCaveat: false }),
   );
 }
 
@@ -216,8 +216,10 @@ function createMarkerElement(pub: Pub, isSelected: boolean, onSelect: () => void
     "pub-map-marker",
     `pub-map-marker-${pub.status}`,
     pub.status === "open" ? "pub-map-marker-guinness" : "",
-    isSelected ? "pub-map-marker-selected" : ""
-  ].filter(Boolean).join(" ");
+    isSelected ? "pub-map-marker-selected" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   marker.setAttribute("aria-label", `店舗を選択: ${pub.name}`);
   marker.setAttribute("aria-pressed", String(isSelected));
   marker.addEventListener("click", onSelect);
@@ -260,7 +262,7 @@ function focusMap(map: Map, focusPubs: Pub[], currentLocation: Coordinates | nul
     const [pub] = focusPubs;
     map.jumpTo({
       center: [pub.longitude, pub.latitude],
-      zoom: PREFECTURE_MAP_ZOOM
+      zoom: PREFECTURE_MAP_ZOOM,
     });
     return;
   }
@@ -272,9 +274,9 @@ function focusMap(map: Map, focusPubs: Pub[], currentLocation: Coordinates | nul
     map.fitBounds(
       [
         [Math.min(...longitudes), Math.min(...latitudes)],
-        [Math.max(...longitudes), Math.max(...latitudes)]
+        [Math.max(...longitudes), Math.max(...latitudes)],
       ],
-      { maxZoom: PREFECTURE_MAP_ZOOM, padding: PREFECTURE_MAP_PADDING }
+      { maxZoom: PREFECTURE_MAP_ZOOM, padding: PREFECTURE_MAP_PADDING },
     );
     return;
   }
@@ -282,7 +284,7 @@ function focusMap(map: Map, focusPubs: Pub[], currentLocation: Coordinates | nul
   if (currentLocation) {
     map.jumpTo({
       center: [currentLocation.longitude, currentLocation.latitude],
-      zoom: CURRENT_LOCATION_ZOOM
+      zoom: CURRENT_LOCATION_ZOOM,
     });
   }
 }

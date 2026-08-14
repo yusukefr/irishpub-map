@@ -2,7 +2,7 @@
 
 ## 公開画面で店舗を表示する
 
-~~~mermaid
+```mermaid
 sequenceDiagram
   actor Visitor as 利用者
   participant Page as Next.js 公開ページ
@@ -30,13 +30,13 @@ sequenceDiagram
     Explorer->>Explorer: 最寄りの掲載都道府県を初期選択
   end
   Explorer-->>Visitor: 地図と店舗一覧を更新
-~~~
+```
 
 Vercel の Preview Deployment Protection が公開 API のサーバー側 fetch を SSO へリダイレクトした場合、公開ページは `data/pubs.json` を検証してフォールバック表示します。WebGL を初期化できないブラウザでは、地図の代わりに店舗一覧を案内します。
 
 ## 管理者が店舗を追加・更新・削除する
 
-~~~mermaid
+```mermaid
 sequenceDiagram
   actor Admin as 管理者
   participant AdminPage as /admin
@@ -82,6 +82,6 @@ sequenceDiagram
   else DATABASE_URL が未設定
     AdminAPI-->>Admin: 503（閲覧のみ）
   end
-~~~
+```
 
 管理 API のリクエストとレスポンス、HTTP ステータスの詳細は[API 方針](../specs/api.md)を参照してください。
