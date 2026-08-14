@@ -56,14 +56,32 @@ Vercel の Production / Preview 環境には、用途に応じて次の変数を
 
 | 変数 | 必要な場面 | 用途 |
 | --- | --- | --- |
-| `IRISHPUB_MAP_API_KEY` | 任意 | `GET /api/pubs` の API key |
+| `IRISHPUB_MAP_API_KEY` | Production は必須、Preview は任意 | `GET /api/pubs` の API key |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Preview の Deployment Protection を使う場合 | サーバー側 fetch 用の Protection Bypass secret |
 | `DATABASE_URL` | 管理画面で永続化する場合 | Neon の接続文字列 |
 | `ADMIN_USERNAME` | 管理画面を有効にする場合 | 管理者 ID |
 | `ADMIN_PASSWORD_HASH` | 管理画面を有効にする場合 | scrypt パスワードハッシュ |
 | `ADMIN_SESSION_SECRET` | 管理画面を有効にする場合 | セッション Cookie 署名用秘密鍵 |
 
-`IRISHPUB_MAP_API_KEY` はサーバー側で `/api/pubs` へ渡され、ブラウザには露出しません。値を設定すると、API に直接アクセスする外部クライアントは `x-api-key` ヘッダーが必要になります。
+`IRISHPUB_MAP_API_KEY` はサーバー側で `/api/pubs` へ渡され、ブラウザには露出しません。Production では未設定のままデプロイできないため、Vercel の Environment Variables で **Production** 対象に登録してください。値を設定した Preview やローカル環境でも、API に直接アクセスする外部クライアントは `x-api-key` ヘッダーが必要になります。
+
+`vercel.json` の build command は最初に `npm run validate:production-env` を実行します。Vercel の `VERCEL_ENV` が `production` の場合に `IRISHPUB_MAP_API_KEY` が未設定または空文字なら、API キーの実値を表示せずデプロイを失敗させます。実行時にも同じ設定不備を `503` として検出します。
+
+### API キーの生成
+
+API キーは、リポジトリへ値を保存せず、ローカルでファイルへ生成します。引数なしではカレントディレクトリの `api-keys.txt` に5個のキーを1行ずつ保存します。成功時にキーをコンソールへ出力しません。
+
+```bash
+node scripts/generate-api-keys.mjs
+```
+
+生成数を指定する場合は、1〜100個の範囲で指定します。
+
+```bash
+node scripts/generate-api-keys.mjs 10 /secure/path/api-keys.txt
+```
+
+生成ファイルは所有者だけが読める権限（`0600`）で保存されます。生成されたキーは秘密情報として扱い、必要なものだけを Vercel の `IRISHPUB_MAP_API_KEY` に登録してください。生成ファイルを Issue、Pull Request、リポジトリ、CI ログへ保存・貼り付けないでください。
 
 Preview Deployment Protection を有効にしている場合、サーバー側から同じ Preview URL の `/api/pubs` を fetch すると Vercel SSO へリダイレクトされることがあります。その場合は Vercel の Protection Bypass for Automation secret を `VERCEL_AUTOMATION_BYPASS_SECRET` として Preview 環境にも設定してください。アプリはこの値を `x-vercel-protection-bypass` ヘッダーとして送信します。未設定でも SSO リダイレクト時は検証済み店舗データへフォールバックし、ページ全体が server error にならないようにしています。
 
