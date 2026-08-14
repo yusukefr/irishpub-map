@@ -64,6 +64,22 @@ Vercel の Production / Preview 環境には、用途に応じて次の変数を
 
 `IRISHPUB_MAP_API_KEY` はサーバー側で `/api/pubs` へ渡され、ブラウザには露出しません。値を設定すると、API に直接アクセスする外部クライアントは `x-api-key` ヘッダーが必要になります。
 
+### API キーの生成
+
+API キーは、リポジトリへ値を保存せず、ローカルでファイルへ生成します。引数なしではカレントディレクトリの `api-keys.txt` に5個のキーを1行ずつ保存します。成功時にキーをコンソールへ出力しません。
+
+```bash
+node scripts/generate-api-keys.mjs
+```
+
+生成数を指定する場合は、1〜100個の範囲で指定します。
+
+```bash
+node scripts/generate-api-keys.mjs 10 /secure/path/api-keys.txt
+```
+
+生成ファイルは所有者だけが読める権限（`0600`）で保存されます。生成されたキーは秘密情報として扱い、必要なものだけを Vercel の `IRISHPUB_MAP_API_KEY` に登録してください。生成ファイルを Issue、Pull Request、リポジトリ、CI ログへ保存・貼り付けないでください。
+
 Preview Deployment Protection を有効にしている場合、サーバー側から同じ Preview URL の `/api/pubs` を fetch すると Vercel SSO へリダイレクトされることがあります。その場合は Vercel の Protection Bypass for Automation secret を `VERCEL_AUTOMATION_BYPASS_SECRET` として Preview 環境にも設定してください。アプリはこの値を `x-vercel-protection-bypass` ヘッダーとして送信します。未設定でも SSO リダイレクト時は検証済み店舗データへフォールバックし、ページ全体が server error にならないようにしています。
 
 管理画面のログインには `ADMIN_USERNAME`、`ADMIN_PASSWORD_HASH`、`ADMIN_SESSION_SECRET` のすべてが必要です。更新操作には、さらに `DATABASE_URL` が必要です。
