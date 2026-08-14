@@ -4,6 +4,8 @@ import { vi } from "vitest";
 export const maplibreMock = {
   mapRemove: vi.fn(),
   mapAddControl: vi.fn(),
+  mapOn: vi.fn(),
+  mapOff: vi.fn(),
   mapFitBounds: vi.fn(),
   mapJumpTo: vi.fn(),
   markerConstructor: vi.fn(),
@@ -18,12 +20,16 @@ export const maplibreMock = {
   shouldThrowMapConstructor: false,
 };
 
+const mapEventListeners = new globalThis.Map<string, (...args: unknown[]) => void>();
+
 /** テスト間でMapLibreの呼び出し履歴と失敗フラグを初期化します。 */
 export function resetMaplibreMock() {
   maplibreMock.shouldThrowMapConstructor = false;
   maplibreMock.mapRemove.mockClear();
   maplibreMock.markerConstructor.mockClear();
   maplibreMock.mapAddControl.mockClear();
+  maplibreMock.mapOn.mockClear();
+  maplibreMock.mapOff.mockClear();
   maplibreMock.mapFitBounds.mockClear();
   maplibreMock.mapJumpTo.mockClear();
   maplibreMock.markerSetLngLat.mockClear();
@@ -34,6 +40,12 @@ export function resetMaplibreMock() {
   maplibreMock.popupSetDOMContent.mockClear();
   maplibreMock.navigationControl.mockClear();
   maplibreMock.mapConstructor.mockClear();
+  mapEventListeners.clear();
+}
+
+/** MapLibreのイベントを発火し、ロード完了や通信エラーを再現します。 */
+export function emitMapEvent(type: string, ...args: unknown[]) {
+  mapEventListeners.get(type)?.(...args);
 }
 
 export class Map {
@@ -46,6 +58,18 @@ export class Map {
   }
 
   addControl = maplibreMock.mapAddControl;
+  on = (type: string, listener: (...args: unknown[]) => void) => {
+    maplibreMock.mapOn(type, listener);
+    mapEventListeners.set(type, listener);
+    return this;
+  };
+  off = (type: string, listener: (...args: unknown[]) => void) => {
+    maplibreMock.mapOff(type, listener);
+    if (mapEventListeners.get(type) === listener) {
+      mapEventListeners.delete(type);
+    }
+    return this;
+  };
   fitBounds = maplibreMock.mapFitBounds;
   jumpTo = maplibreMock.mapJumpTo;
   remove = maplibreMock.mapRemove;
