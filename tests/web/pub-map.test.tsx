@@ -1,10 +1,12 @@
 // MapLibre初期化、ピン、表示範囲、WebGLフォールバックを保証するテストです。
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PubMap } from "../../apps/web/app/components/pub-map";
 import type { Pub } from "../../packages/shared/src/pub";
-import { maplibreMock, resetMaplibreMock } from "../mocks/maplibre-gl";
+import { emitMapEvent, maplibreMock, resetMaplibreMock } from "../mocks/maplibre-gl";
 
+const globalStyles = readFileSync("apps/web/app/globals.css", "utf8");
 const pubs: Pub[] = [
   {
     id: "tokyo-sample",
@@ -115,6 +117,13 @@ describe("PubMap", () => {
       "Closed Sample Pub京都府",
     );
     expect(screen.queryByText("地図を表示できませんでした")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("地図を読み込んでいます…");
+    expect(maplibreMock.mapOn).toHaveBeenCalledWith("load", expect.any(Function));
+    expect(maplibreMock.mapOn).toHaveBeenCalledWith("error", expect.any(Function));
+
+    act(() => emitMapEvent("load"));
+
+    expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
 
     unmount();
 
@@ -237,6 +246,7 @@ describe("PubMap", () => {
 
     expect(maplibreMock.mapConstructor).not.toHaveBeenCalled();
     expect(await screen.findByRole("status")).toHaveTextContent("地図を表示できませんでした");
+    expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
     expect(screen.getByText(/店舗一覧からIrish Pubを確認してください/)).toBeInTheDocument();
   });
 
@@ -249,5 +259,23 @@ describe("PubMap", () => {
     await waitFor(() => expect(screen.getByRole("status")).toBeInTheDocument());
     expect(consoleError).toHaveBeenCalledWith("Failed to initialize the map.", expect.any(Error));
     expect(maplibreMock.mapRemove).not.toHaveBeenCalled();
+  });
+
+  it("shows an error message when map tile loading fails", () => {
+    render(<PubMap pubs={pubs} />);
+
+    expect(screen.getByText("地図を読み込んでいます…")).toBeInTheDocument();
+
+    act(() => emitMapEvent("error", { error: new Error("Tile request failed") }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("地図タイルの読み込みに失敗しました");
+    expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
+  });
+
+  it("uses a static loading indicator when reduced motion is preferred", () => {
+    expect(globalStyles).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+    expect(globalStyles).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.map-loading-indicator \{\s*animation: none;/,
+    );
   });
 });

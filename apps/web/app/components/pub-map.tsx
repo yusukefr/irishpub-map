@@ -40,6 +40,7 @@ export function PubMap({
   // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
   const onSelectPubRef = useRef(onSelectPub);
   const [mapUnavailable, setMapUnavailable] = useState(false);
+  const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
     onSelectPubRef.current = onSelectPub;
@@ -65,6 +66,8 @@ export function PubMap({
     }
 
     let map: Map;
+    let handleMapLoad: () => void;
+    let handleMapError: () => void;
     markerElements.clear();
     markers.clear();
 
@@ -94,6 +97,14 @@ export function PubMap({
       });
 
       map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
+      handleMapLoad = () => {
+        setMapStatus((status) => (status === "error" ? status : "ready"));
+      };
+      handleMapError = () => {
+        setMapStatus("error");
+      };
+      map.on("load", handleMapLoad);
+      map.on("error", handleMapError);
       mapRef.current = map;
     } catch (error) {
       console.error("Failed to initialize the map.", error);
@@ -107,6 +118,8 @@ export function PubMap({
       markerElements.clear();
       currentLocationMarkerRef.current?.remove();
       currentLocationMarkerRef.current = null;
+      map.off("load", handleMapLoad);
+      map.off("error", handleMapError);
       mapRef.current = null;
       map.remove();
     };
@@ -181,6 +194,19 @@ export function PubMap({
             このブラウザ環境ではWebGLが無効、または利用できないため地図を初期化できません。
             右側または下部の店舗一覧からIrish Pubを確認してください。
           </p>
+        </div>
+      ) : mapStatus === "error" ? (
+        <div className="map-error" role="alert" aria-live="assertive">
+          <h2>地図を読み込めませんでした</h2>
+          <p>
+            地図タイルの読み込みに失敗しました。通信環境を確認して再読み込みしてください。
+            右側または下部の店舗一覧からIrish Pubを確認できます。
+          </p>
+        </div>
+      ) : mapStatus === "loading" ? (
+        <div className="map-loading" role="status" aria-live="polite">
+          <span className="map-loading-indicator" aria-hidden="true" />
+          <p>地図を読み込んでいます…</p>
         </div>
       ) : null}
     </div>
