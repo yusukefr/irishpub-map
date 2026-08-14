@@ -66,7 +66,7 @@ Vercel の Production / Preview 環境には、用途に応じて次の変数を
 
 ### API キーの生成
 
-API キーは、リポジトリへ値を保存せず、ローカルのターミナルで生成します。引数なしでは5個のキーを1行ずつ出力します。
+API キーは、リポジトリへ値を保存せず、ローカルでファイルへ生成します。引数なしではカレントディレクトリの `api-keys.txt` に5個のキーを1行ずつ保存します。成功時にキーをコンソールへ出力しません。
 
 ```bash
 node scripts/generate-api-keys.mjs
@@ -75,10 +75,10 @@ node scripts/generate-api-keys.mjs
 生成数を指定する場合は、1〜100個の範囲で指定します。
 
 ```bash
-node scripts/generate-api-keys.mjs 10
+node scripts/generate-api-keys.mjs 10 /secure/path/api-keys.txt
 ```
 
-出力されたキーは秘密情報として扱い、必要なものだけを Vercel の `IRISHPUB_MAP_API_KEY` に登録してください。ターミナルログ、Issue、Pull Request、リポジトリ内のファイルへ貼り付けないでください。
+生成ファイルは所有者だけが読める権限（`0600`）で保存されます。生成されたキーは秘密情報として扱い、必要なものだけを Vercel の `IRISHPUB_MAP_API_KEY` に登録してください。生成ファイルを Issue、Pull Request、リポジトリ、CI ログへ保存・貼り付けないでください。
 
 Preview Deployment Protection を有効にしている場合、サーバー側から同じ Preview URL の `/api/pubs` を fetch すると Vercel SSO へリダイレクトされることがあります。その場合は Vercel の Protection Bypass for Automation secret を `VERCEL_AUTOMATION_BYPASS_SECRET` として Preview 環境にも設定してください。アプリはこの値を `x-vercel-protection-bypass` ヘッダーとして送信します。未設定でも SSO リダイレクト時は検証済み店舗データへフォールバックし、ページ全体が server error にならないようにしています。
 
