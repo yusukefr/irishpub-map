@@ -8,11 +8,10 @@ describe("RootLayout", () => {
     const layout = RootLayout({ children: <main>Irish Pub Map</main> });
     const body = Children.toArray(layout.props.children).find((child) => child.type === "body");
     const bodyChildren = Children.toArray(body.props.children);
-    const componentNames = bodyChildren.map((child) => typeof child.type === "function" ? child.type.name : "");
+    const componentNames = bodyChildren.map((child) => (typeof child.type === "function" ? child.type.name : ""));
 
-    expect(componentNames).toEqual(expect.arrayContaining([
-      expect.stringMatching(/Analytics/),
-      expect.stringMatching(/SpeedInsights/)
-    ]));
+    expect(componentNames).toEqual(
+      expect.arrayContaining([expect.stringMatching(/Analytics/), expect.stringMatching(/SpeedInsights/)]),
+    );
   });
 });

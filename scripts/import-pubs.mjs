@@ -34,7 +34,8 @@ export async function importPubs(databaseUrl, pubs, sql) {
   let imported = 0;
   let skipped = 0;
   for (const pub of pubs) {
-    const rows = await client`INSERT INTO pubs (id, data) VALUES (${pub.id}, ${JSON.stringify(pub)}::jsonb) ON CONFLICT (id) DO NOTHING RETURNING id`;
+    const rows =
+      await client`INSERT INTO pubs (id, data) VALUES (${pub.id}, ${JSON.stringify(pub)}::jsonb) ON CONFLICT (id) DO NOTHING RETURNING id`;
     if (rows.length === 1) imported += 1;
     else skipped += 1;
   }

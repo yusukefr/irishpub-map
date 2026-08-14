@@ -39,11 +39,14 @@ npm install
 
 ```bash
 npm test
+npm run format:check
 npm run typecheck
 npm run lint
 npm run build
 npm audit --omit=dev
 ```
+
+コードの整形にはPrettierを使用します。書式を変更する場合は `npm run format`、確認だけの場合は `npm run format:check` を実行してください。
 
 開発サーバー:
 

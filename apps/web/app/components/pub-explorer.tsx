@@ -8,7 +8,7 @@ import {
   getAvailablePrefectures,
   getAvailableTags,
   getNearestAvailablePrefecture,
-  type Coordinates
+  type Coordinates,
 } from "../lib/pub-search";
 import { PubList } from "./pub-list";
 import { PubMap } from "./pub-map";
@@ -21,13 +21,13 @@ const STATUS_LABELS: Record<PubStatus, string> = {
   open: "営業中",
   temporarily_closed: "一時休業",
   closed: "閉業",
-  unknown: "不明"
+  unknown: "不明",
 };
 
 const GEOLOCATION_OPTIONS: PositionOptions = {
   enableHighAccuracy: false,
   maximumAge: 300000,
-  timeout: 5000
+  timeout: 5000,
 };
 
 const EMPTY_FOCUS_PUBS: Pub[] = [];
@@ -46,11 +46,11 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
   const availableTags = useMemo(() => getAvailableTags(pubs), [pubs]);
   const filteredPubs = useMemo(
     () => filterPubs(pubs, { query, prefecture: selectedPrefecture, tags: selectedTags, status: selectedStatus }),
-    [pubs, query, selectedPrefecture, selectedTags, selectedStatus]
+    [pubs, query, selectedPrefecture, selectedTags, selectedStatus],
   );
   const prefecturePubs = useMemo(
     () => (selectedPrefecture ? filterPubs(pubs, { prefecture: selectedPrefecture }) : []),
-    [pubs, selectedPrefecture]
+    [pubs, selectedPrefecture],
   );
   const mapFocusPubs = selectedPrefecture === currentPrefecture ? EMPTY_FOCUS_PUBS : prefecturePubs;
   const hasActiveFilters = Boolean(query || selectedPrefecture || selectedTags.length || selectedStatus);
@@ -90,7 +90,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
         }
       },
       () => undefined,
-      GEOLOCATION_OPTIONS
+      GEOLOCATION_OPTIONS,
     );
 
     return () => {
@@ -106,7 +106,9 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
             <p className="section-kicker">Find a pub</p>
             <h2 id="pub-search-heading">地図と条件から探す</h2>
           </div>
-          <p className="search-result-count" aria-live="polite">{filteredPubs.length}件のPubが見つかりました</p>
+          <p className="search-result-count" aria-live="polite">
+            {filteredPubs.length}件のPubが見つかりました
+          </p>
         </div>
         <label className="search-label" htmlFor="pub-search">
           店舗を検索
@@ -126,10 +128,13 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
             placeholder="店舗名、エリア"
           />
           {query ? (
-            <button type="button" onClick={() => {
-              setQuery("");
-              setSelectedPubId(null);
-            }}>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setSelectedPubId(null);
+              }}
+            >
               クリア
             </button>
           ) : null}
@@ -166,7 +171,9 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
                     key={tag}
                     aria-pressed={isSelected}
                     onClick={() => {
-                      setSelectedTags((current) => isSelected ? current.filter((item) => item !== tag) : [...current, tag]);
+                      setSelectedTags((current) =>
+                        isSelected ? current.filter((item) => item !== tag) : [...current, tag],
+                      );
                       setSelectedPubId(null);
                     }}
                   >

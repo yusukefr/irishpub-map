@@ -6,7 +6,7 @@ import {
   getAvailablePrefectures,
   getAvailableStatuses,
   getAvailableTags,
-  getNearestAvailablePrefecture
+  getNearestAvailablePrefecture,
 } from "../../apps/web/app/lib/pub-search";
 import type { Pub } from "../../packages/shared/src/pub";
 
@@ -23,7 +23,7 @@ const pubs: Pub[] = [
     googleMapsUrl: "https://maps.example.com",
     instagramUrl: null,
     tags: ["guinness", "food"],
-    status: "open"
+    status: "open",
   },
   {
     id: "osaka-sample",
@@ -37,7 +37,7 @@ const pubs: Pub[] = [
     googleMapsUrl: null,
     instagramUrl: null,
     tags: ["live-music"],
-    status: "unknown"
+    status: "unknown",
   },
   {
     id: "kyoto-sample",
@@ -50,8 +50,8 @@ const pubs: Pub[] = [
     googleMapsUrl: null,
     instagramUrl: null,
     tags: ["food"],
-    status: "closed"
-  }
+    status: "closed",
+  },
 ];
 
 describe("filterPubsByQuery", () => {
@@ -64,13 +64,13 @@ describe("filterPubsByQuery", () => {
       ...pubs[0],
       id: "english-pub",
       name: "The Blarney Stone",
-      kana: "ざ ぶらーにー すとーん"
+      kana: "ざ ぶらーにー すとーん",
     };
     const katakanaPub: Pub = {
       ...pubs[0],
       id: "katakana-pub",
       name: "シャノンズ",
-      kana: "しゃのんず"
+      kana: "しゃのんず",
     };
 
     expect(filterPubsByQuery([englishPub], "ぶらーにー").map((pub) => pub.id)).toEqual(["english-pub"]);
@@ -104,7 +104,9 @@ describe("filterPubsByQuery", () => {
 
   it("combines search, prefecture, tag, and status filters", () => {
     expect(
-      filterPubs(pubs, { query: "京都府", prefecture: "京都府", tags: ["food"], status: "closed" }).map((pub) => pub.id)
+      filterPubs(pubs, { query: "京都府", prefecture: "京都府", tags: ["food"], status: "closed" }).map(
+        (pub) => pub.id,
+      ),
     ).toEqual(["kyoto-sample"]);
   });
 

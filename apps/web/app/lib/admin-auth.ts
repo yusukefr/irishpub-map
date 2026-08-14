@@ -73,7 +73,11 @@ function sign(value: string, secret: string) {
 }
 
 function readCookie(cookieHeader: string | null, name: string) {
-  return cookieHeader?.split(";").map((value) => value.trim()).find((value) => value.startsWith(`${name}=`))?.slice(name.length + 1);
+  return cookieHeader
+    ?.split(";")
+    .map((value) => value.trim())
+    .find((value) => value.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
 }
 
 // 長さが異なる場合も先に判定し、timingSafeEqualへ不正な長さを渡さないようにします。

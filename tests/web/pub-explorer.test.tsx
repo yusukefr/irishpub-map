@@ -18,7 +18,7 @@ const pubs: Pub[] = [
     googleMapsUrl: "https://maps.example.com",
     instagramUrl: null,
     tags: ["guinness", "food"],
-    status: "open"
+    status: "open",
   },
   {
     id: "osaka-sample",
@@ -32,7 +32,7 @@ const pubs: Pub[] = [
     googleMapsUrl: null,
     instagramUrl: null,
     tags: ["live-music"],
-    status: "unknown"
+    status: "unknown",
   },
   {
     id: "kyoto-sample",
@@ -45,8 +45,8 @@ const pubs: Pub[] = [
     googleMapsUrl: null,
     instagramUrl: null,
     tags: ["food"],
-    status: "closed"
-  }
+    status: "closed",
+  },
 ];
 
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
@@ -67,7 +67,7 @@ function mockWebglContext() {
 function mockGeolocation(geolocation: Partial<Geolocation> | undefined) {
   Object.defineProperty(navigator, "geolocation", {
     configurable: true,
-    value: geolocation
+    value: geolocation,
   });
 }
 
@@ -84,7 +84,6 @@ describe("PubExplorer", () => {
     mockGeolocation(originalGeolocation);
   });
 
-
   it("shows a search placeholder without prefecture", () => {
     render(<PubExplorer pubs={pubs} />);
 
@@ -92,7 +91,6 @@ describe("PubExplorer", () => {
   });
 
   it("filters the displayed pubs by pub name", () => {
-
     render(<PubExplorer pubs={pubs} />);
 
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "osaka" } });
@@ -125,9 +123,9 @@ describe("PubExplorer", () => {
           altitude: null,
           altitudeAccuracy: null,
           heading: null,
-          speed: null
+          speed: null,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     });
     mockGeolocation({ getCurrentPosition });
@@ -138,14 +136,14 @@ describe("PubExplorer", () => {
     expect(getCurrentPosition).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), {
       enableHighAccuracy: false,
       maximumAge: 300000,
-      timeout: 5000
+      timeout: 5000,
     });
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
     expect(maplibreMock.mapJumpTo).toHaveBeenLastCalledWith({
       center: [139.701, 35.658],
-      zoom: 12
+      zoom: 12,
     });
   });
 
@@ -156,7 +154,7 @@ describe("PubExplorer", () => {
         message: "denied",
         PERMISSION_DENIED: 1,
         POSITION_UNAVAILABLE: 2,
-        TIMEOUT: 3
+        TIMEOUT: 3,
       });
     });
     mockGeolocation({ getCurrentPosition });
@@ -180,7 +178,7 @@ describe("PubExplorer", () => {
     expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
     expect(maplibreMock.mapJumpTo).toHaveBeenLastCalledWith({
       center: [135.502, 34.693],
-      zoom: 10
+      zoom: 10,
     });
   });
 
@@ -199,7 +197,9 @@ describe("PubExplorer", () => {
 
     fireEvent.click(tokyoMarker);
 
-    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" }).closest("article")).toHaveClass("pub-card-selected");
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" }).closest("article")).toHaveClass(
+      "pub-card-selected",
+    );
     expect(osakaCard).not.toHaveClass("pub-card-selected");
     expect(tokyoMarker).toHaveClass("pub-map-marker-selected");
     expect(tokyoMarker).toHaveAttribute("aria-pressed", "true");
@@ -216,7 +216,9 @@ describe("PubExplorer", () => {
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "大阪府" } });
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "" } });
 
-    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" }).closest("article")).not.toHaveClass("pub-card-selected");
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" }).closest("article")).not.toHaveClass(
+      "pub-card-selected",
+    );
   });
 
   it("filters the displayed pubs by tag", () => {

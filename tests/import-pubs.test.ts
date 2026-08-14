@@ -10,7 +10,7 @@ const pub = {
   latitude: 35.68,
   longitude: 139.76,
   tags: ["guinness"],
-  status: "open"
+  status: "open",
 };
 
 describe("parsePubs", () => {
@@ -37,7 +37,7 @@ describe("importPubs", () => {
     await expect(importPubs("postgresql://example", [pub, { ...pub, id: "existing-pub" }], sql)).resolves.toEqual({
       imported: 1,
       skipped: 1,
-      total: 2
+      total: 2,
     });
   });
 

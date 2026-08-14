@@ -9,13 +9,13 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
-    apple: "/icon.svg"
-  }
+    apple: "/icon.svg",
+  },
 };
 
 /** 日本語ページ全体のメタデータと共通HTML構造を定義します。 */
 export default function RootLayout({
-  children
+  children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {

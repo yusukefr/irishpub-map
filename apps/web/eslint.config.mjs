@@ -7,20 +7,16 @@ const disabledReactRules = Object.fromEntries(
   [...nextVitals, ...nextTypescript]
     .flatMap(({ rules = {} }) => Object.keys(rules))
     .filter((ruleName) => ruleName.startsWith("react/"))
-    .map((ruleName) => [ruleName, "off"])
+    .map((ruleName) => [ruleName, "off"]),
 );
 
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
   {
-    rules: disabledReactRules
+    rules: disabledReactRules,
   },
   {
-    ignores: [
-      ".next/**",
-      "next-env.d.ts",
-      "node_modules/**"
-    ]
-  }
+    ignores: [".next/**", "next-env.d.ts", "node_modules/**"],
+  },
 ]);

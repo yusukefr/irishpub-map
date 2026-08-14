@@ -54,12 +54,12 @@
 
 通常の検証コマンドは次のとおりです。
 
-~~~bash
+```bash
 npm test
 npm run typecheck
 npm run lint
 npm run build
-~~~
+```
 
 依存関係を変更した場合は、追加で `npm audit --omit=dev` を実行します。
 
@@ -79,9 +79,9 @@ npm run build
 
 GitHub 操作スクリプトの `PR_REVIEWER` と `PR_ASSIGNEE` は実行環境の変数を参照します。ローカル `.env` を使う場合は、実行前にシェルへ export してください。
 
-~~~bash
+```bash
 set -a
 source .env
 set +a
 scripts/create-pr.sh --issue <number> --title "<title>" --body-file pr-body.md
-~~~
+```

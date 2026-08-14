@@ -15,7 +15,7 @@ export const maplibreMock = {
   popupSetDOMContent: vi.fn(),
   navigationControl: vi.fn(),
   mapConstructor: vi.fn(),
-  shouldThrowMapConstructor: false
+  shouldThrowMapConstructor: false,
 };
 
 /** テスト間でMapLibreの呼び出し履歴と失敗フラグを初期化します。 */

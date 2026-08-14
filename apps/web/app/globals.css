@@ -174,7 +174,6 @@ h1 {
   background: #dce6e1;
 }
 
-
 .map-fallback {
   position: absolute;
   inset: 0;
@@ -215,7 +214,9 @@ h1 {
   border: 3px solid #fffdf8;
   border-radius: 50%;
   background: #168c75;
-  box-shadow: 0 0 0 6px rgb(22 140 117 / 24%), 0 2px 8px rgb(23 33 29 / 28%);
+  box-shadow:
+    0 0 0 6px rgb(22 140 117 / 24%),
+    0 2px 8px rgb(23 33 29 / 28%);
 }
 
 .current-location-marker::after {
@@ -524,7 +525,10 @@ h1 {
   border-radius: 50%;
   background: #ffffff;
   text-decoration: none;
-  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .external-icon-link:hover {
@@ -622,23 +626,101 @@ h1 {
     min-height: 460px;
   }
 }
-.admin-shell { min-height: 100vh; padding: 48px 16px; }
-.admin-panel { width: min(100%, 520px); margin: 0 auto; padding: 28px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
-.admin-wide { width: min(100%, 1080px); }
-.admin-heading, .admin-actions, .admin-pub-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.admin-form { display: grid; gap: 14px; margin-top: 24px; }
-.admin-pub-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.admin-form h2, .admin-pub-form .admin-actions { grid-column: 1 / -1; }
-.admin-form label { display: grid; gap: 6px; font-weight: 700; }
-.admin-form input, .admin-form select { min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
-.admin-form button, .admin-heading button, .admin-pub-list button { min-height: 38px; padding: 0 12px; border: 1px solid var(--accent-strong); border-radius: 6px; background: var(--accent-strong); color: #fff; cursor: pointer; font: inherit; font-weight: 700; }
-.admin-form button:disabled, .admin-pub-list button:disabled { cursor: not-allowed; opacity: .55; }
-.admin-error { color: #9b1c16; font-weight: 700; }
-.admin-pub-list { display: grid; gap: 10px; padding: 0; list-style: none; }
-.admin-pub-list li { padding: 12px; border: 1px solid var(--line); border-radius: 6px; }
-.admin-pub-list li span:last-child { display: flex; gap: 8px; }
-@media (max-width: 640px) { .admin-pub-form { grid-template-columns: 1fr; } .admin-heading, .admin-pub-list li { align-items: flex-start; flex-direction: column; } }
-
+.admin-shell {
+  min-height: 100vh;
+  padding: 48px 16px;
+}
+.admin-panel {
+  width: min(100%, 520px);
+  margin: 0 auto;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.admin-wide {
+  width: min(100%, 1080px);
+}
+.admin-heading,
+.admin-actions,
+.admin-pub-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.admin-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+.admin-pub-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.admin-form h2,
+.admin-pub-form .admin-actions {
+  grid-column: 1 / -1;
+}
+.admin-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+.admin-form input,
+.admin-form select {
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+}
+.admin-form button,
+.admin-heading button,
+.admin-pub-list button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--accent-strong);
+  border-radius: 6px;
+  background: var(--accent-strong);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.admin-form button:disabled,
+.admin-pub-list button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.admin-error {
+  color: #9b1c16;
+  font-weight: 700;
+}
+.admin-pub-list {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+.admin-pub-list li {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.admin-pub-list li span:last-child {
+  display: flex;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .admin-pub-form {
+    grid-template-columns: 1fr;
+  }
+  .admin-heading,
+  .admin-pub-list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
 
 /* Explorer redesign: visual hierarchy, readable controls, and accessible focus states. */
 :root {
@@ -659,9 +741,7 @@ html {
 }
 
 body {
-  background:
-    radial-gradient(circle at 100% 0, rgb(224 173 75 / 12%), transparent 28rem),
-    var(--background);
+  background: radial-gradient(circle at 100% 0, rgb(224 173 75 / 12%), transparent 28rem), var(--background);
   font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
 }
 
@@ -693,7 +773,15 @@ body {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background-image: linear-gradient(135deg, rgb(255 255 255 / 5%) 25%, transparent 25%, transparent 50%, rgb(255 255 255 / 5%) 50%, rgb(255 255 255 / 5%) 75%, transparent 75%);
+  background-image: linear-gradient(
+    135deg,
+    rgb(255 255 255 / 5%) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgb(255 255 255 / 5%) 50%,
+    rgb(255 255 255 / 5%) 75%,
+    transparent 75%
+  );
   background-size: 28px 28px;
   content: "";
   mask-image: linear-gradient(90deg, black, transparent 80%);
@@ -759,7 +847,9 @@ body {
   font-size: 0.94rem;
   font-weight: 800;
   text-decoration: none;
-  transition: background-color 160ms ease, transform 160ms ease;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
 }
 
 .masthead-link:hover {
@@ -948,7 +1038,9 @@ body {
   font: inherit;
   font-size: 0.88rem;
   font-weight: 800;
-  transition: background-color 160ms ease, transform 160ms ease;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
 }
 
 .search-row button:hover,
@@ -1043,7 +1135,10 @@ body {
   border: 1px solid #cfdbd1;
   border-radius: 14px;
   box-shadow: 0 4px 12px rgb(22 35 28 / 5%);
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .pub-card:hover {
@@ -1058,7 +1153,9 @@ body {
 
 .pub-card-selected {
   border-color: #0f7b54;
-  box-shadow: 0 0 0 3px rgb(15 123 84 / 20%), 0 10px 22px rgb(22 35 28 / 10%);
+  box-shadow:
+    0 0 0 3px rgb(15 123 84 / 20%),
+    0 10px 22px rgb(22 35 28 / 10%);
 }
 
 .pub-card h3 {
@@ -1077,7 +1174,9 @@ body {
 .pub-detail-toggle {
   min-height: 38px;
   border-radius: 10px;
-  transition: background-color 160ms ease, transform 160ms ease;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
 }
 
 .pub-links,

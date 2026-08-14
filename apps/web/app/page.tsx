@@ -37,7 +37,7 @@ async function getPubs() {
   const response = await fetch(`${protocol}://${host}/api/pubs`, {
     headers: createPubsApiHeaders(),
     redirect: "manual",
-    cache: "no-store"
+    cache: "no-store",
   });
 
   if (response.ok) {

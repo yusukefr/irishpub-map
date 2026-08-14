@@ -25,7 +25,7 @@ describe("GET /api/pubs", () => {
 
     const missingKeyResponse = await GET(new Request("http://localhost/api/pubs"));
     const invalidKeyResponse = await GET(
-      new Request("http://localhost/api/pubs", { headers: { "x-api-key": "wrong" } })
+      new Request("http://localhost/api/pubs", { headers: { "x-api-key": "wrong" } }),
     );
 
     await expect(missingKeyResponse.json()).resolves.toEqual({ error: "Unauthorized" });

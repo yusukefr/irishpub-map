@@ -17,7 +17,7 @@ const pubs: Pub[] = [
     googleMapsUrl: "https://maps.example.com",
     instagramUrl: "https://instagram.example.com/tokyo",
     tags: ["guinness", "live-music", "seasonal-event"],
-    status: "open"
+    status: "open",
   },
   {
     id: "osaka-sample",
@@ -30,7 +30,7 @@ const pubs: Pub[] = [
     googleMapsUrl: null,
     instagramUrl: null,
     tags: [],
-    status: "unknown"
+    status: "unknown",
   },
   {
     id: "kyoto-temporary",
@@ -44,7 +44,7 @@ const pubs: Pub[] = [
     googleMapsUrl: null,
     instagramUrl: null,
     tags: ["food"],
-    status: "temporarily_closed"
+    status: "temporarily_closed",
   },
   {
     id: "nagoya-closed",
@@ -58,8 +58,8 @@ const pubs: Pub[] = [
     googleMapsUrl: null,
     instagramUrl: null,
     tags: ["craft-beer"],
-    status: "closed"
-  }
+    status: "closed",
+  },
 ];
 
 describe("PubList", () => {
@@ -110,12 +110,15 @@ describe("PubList", () => {
     expect(details).toHaveTextContent("東京都 / 千代田区");
     expect(details).toHaveTextContent("営業中");
     expect(details).toHaveTextContent("ギネス / ライブ音楽 / seasonal-event");
-    expect(within(details).getByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" })).toHaveAttribute("href", "https://example.com");
-    expect(within(details).getByRole("link", { name: "Tokyo Sample Pub のGoogle Mapsを新しいタブで開く" })).toHaveAttribute("href", "https://maps.example.com");
-    expect(within(details).getByRole("link", { name: "Tokyo Sample Pub のInstagramを新しいタブで開く" })).toHaveAttribute(
-      "href",
-      "https://instagram.example.com/tokyo"
-    );
+    expect(
+      within(details).getByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" }),
+    ).toHaveAttribute("href", "https://example.com");
+    expect(
+      within(details).getByRole("link", { name: "Tokyo Sample Pub のGoogle Mapsを新しいタブで開く" }),
+    ).toHaveAttribute("href", "https://maps.example.com");
+    expect(
+      within(details).getByRole("link", { name: "Tokyo Sample Pub のInstagramを新しいタブで開く" }),
+    ).toHaveAttribute("href", "https://instagram.example.com/tokyo");
 
     fireEvent.click(screen.getAllByRole("button", { name: "閉じる" })[0]);
 
@@ -143,24 +146,29 @@ describe("PubList", () => {
     render(<PubList pubs={pubs} />);
 
     const cards = screen.getAllByRole("article");
-    expect(within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" })).toHaveAttribute(
-      "href",
-      "https://example.com"
-    );
+    expect(
+      within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" }),
+    ).toHaveAttribute("href", "https://example.com");
     const serviceLinks = within(cards[0]).getByRole("group", { name: "Tokyo Sample Pub のサービスリンク" });
 
-    expect(within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub のGoogle Mapsを新しいタブで開く" })).toHaveAttribute(
-      "href",
-      "https://maps.example.com"
-    );
-    expect(within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub のInstagramを新しいタブで開く" })).toHaveAttribute(
-      "href",
-      "https://instagram.example.com/tokyo"
-    );
+    expect(
+      within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub のGoogle Mapsを新しいタブで開く" }),
+    ).toHaveAttribute("href", "https://maps.example.com");
+    expect(
+      within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub のInstagramを新しいタブで開く" }),
+    ).toHaveAttribute("href", "https://instagram.example.com/tokyo");
     expect(within(serviceLinks).getAllByRole("link")).toHaveLength(2);
-    expect(within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub の公式サイトを新しいタブで開く" })).not.toBeInTheDocument();
-    expect(within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub のGoogle Mapsを新しいタブで開く" })).not.toBeInTheDocument();
-    expect(within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub のInstagramを新しいタブで開く" })).not.toBeInTheDocument();
-    expect(within(cards[1]).queryByRole("group", { name: "Osaka Sample Pub のサービスリンク" })).not.toBeInTheDocument();
+    expect(
+      within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub の公式サイトを新しいタブで開く" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub のGoogle Mapsを新しいタブで開く" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub のInstagramを新しいタブで開く" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(cards[1]).queryByRole("group", { name: "Osaka Sample Pub のサービスリンク" }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -17,7 +17,8 @@ describe("update-pr-app-version", () => {
   });
 
   it("replaces the previous version section instead of duplicating it", () => {
-    const body = "## Summary\n\n<!-- app-version:start -->\n## App Version\n\n- Deployed version: `v0.1.1`\n- Release date: `2026-08-13 JST`\n<!-- app-version:end -->\n";
+    const body =
+      "## Summary\n\n<!-- app-version:start -->\n## App Version\n\n- Deployed version: `v0.1.1`\n- Release date: `2026-08-13 JST`\n<!-- app-version:end -->\n";
     const updated = upsertAppVersionSection(body, { version: "0.1.2", releaseDate: "2026-08-14" });
 
     expect(updated).toContain("Deployed version: `v0.1.2`");

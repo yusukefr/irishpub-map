@@ -14,14 +14,14 @@ const STATUS_LABELS: Record<PubStatus, string> = {
   open: "営業中",
   temporarily_closed: "一時休業",
   closed: "閉業",
-  unknown: "不明"
+  unknown: "不明",
 };
 
 const STATUS_BADGE_CLASSES: Record<PubStatus, string> = {
   open: "pub-status-open",
   temporarily_closed: "pub-status-temporarily-closed",
   closed: "pub-status-closed",
-  unknown: "pub-status-unknown"
+  unknown: "pub-status-unknown",
 };
 
 /** 絞り込み済み店舗をカード表示し、選択状態を地図と共有します。 */
@@ -53,8 +53,10 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
               className={[
                 "pub-card",
                 pub.status === "closed" ? "pub-card-closed" : "",
-                isSelected ? "pub-card-selected" : ""
-              ].filter(Boolean).join(" ")}
+                isSelected ? "pub-card-selected" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               data-selected={isSelected || undefined}
               key={pub.id}
               onClick={() => onSelectPub(pub.id)}
@@ -92,9 +94,7 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
                   {isExpanded ? "閉じる" : "詳細"}
                 </button>
                 <div className="pub-links">
-                  {pub.websiteUrl ? (
-                    <WebsiteLink href={pub.websiteUrl} pubName={pub.name} />
-                  ) : null}
+                  {pub.websiteUrl ? <WebsiteLink href={pub.websiteUrl} pubName={pub.name} /> : null}
                   <ExternalServiceLinks pub={pub} />
                 </div>
               </div>
@@ -138,9 +138,7 @@ function PubDetails({ pub, detailsId }: PubDetailsProps) {
         </div>
       </dl>
       <div className="pub-detail-links" aria-label={`${pub.name} external links`}>
-        {pub.websiteUrl ? (
-          <WebsiteLink href={pub.websiteUrl} pubName={pub.name} />
-        ) : null}
+        {pub.websiteUrl ? <WebsiteLink href={pub.websiteUrl} pubName={pub.name} /> : null}
         <ExternalServiceLinks pub={pub} />
       </div>
     </section>
@@ -155,7 +153,12 @@ function ExternalServiceLinks({ pub }: { pub: Pub }) {
   return (
     <div className="pub-service-links" role="group" aria-label={`${pub.name} のサービスリンク`}>
       {pub.googleMapsUrl ? (
-        <ExternalIconLink href={pub.googleMapsUrl} pubName={pub.name} service="Google Maps" className="google-maps-link">
+        <ExternalIconLink
+          href={pub.googleMapsUrl}
+          pubName={pub.name}
+          service="Google Maps"
+          className="google-maps-link"
+        >
           <MapPinIcon />
         </ExternalIconLink>
       ) : null}
@@ -175,7 +178,14 @@ type ExternalLinkProps = {
 
 function WebsiteLink({ href, pubName }: ExternalLinkProps) {
   return (
-    <a className="external-text-link" href={href} target="_blank" rel="noreferrer" aria-label={`${pubName} の公式サイトを新しいタブで開く`} onClick={(event) => event.stopPropagation()}>
+    <a
+      className="external-text-link"
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`${pubName} の公式サイトを新しいタブで開く`}
+      onClick={(event) => event.stopPropagation()}
+    >
       公式サイト
       <ExternalLinkIcon />
     </a>
@@ -190,20 +200,43 @@ type ExternalIconLinkProps = ExternalLinkProps & {
 
 function ExternalIconLink({ href, pubName, service, className, children }: ExternalIconLinkProps) {
   return (
-    <a className={`external-icon-link ${className}`} href={href} target="_blank" rel="noreferrer" aria-label={`${pubName} の${service}を新しいタブで開く`} title={service} onClick={(event) => event.stopPropagation()}>
+    <a
+      className={`external-icon-link ${className}`}
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`${pubName} の${service}を新しいタブで開く`}
+      title={service}
+      onClick={(event) => event.stopPropagation()}
+    >
       {children}
     </a>
   );
 }
 
 function ExternalLinkIcon() {
-  return <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" /></svg>;
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M14 4h6v6M20 4l-9 9M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" />
+    </svg>
+  );
 }
 
 function MapPinIcon() {
-  return <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 10c0 5-8 10-8 10S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>;
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M20 10c0 5-8 10-8 10S4 15 4 10a8 8 0 1 1 16 0Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
 }
 
 function InstagramIcon() {
-  return <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><circle cx="12" cy="12" r="4" /><circle cx="17.3" cy="6.8" r="1" className="icon-fill" /></svg>;
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.3" cy="6.8" r="1" className="icon-fill" />
+    </svg>
+  );
 }

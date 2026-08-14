@@ -3,10 +3,14 @@ import { existsSync, readFileSync } from "node:fs";
 
 const DEFAULT_PATTERNS = [
   { name: "メールアドレス", pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i },
-  { name: "GitHub アカウント URL", pattern: /https?:\/\/(?:api\.)?github\.com\/(?!(?:owner|organization|org|example|sponsors)(?:\/|$))(?:users\/|repos\/)?[A-Za-z0-9-]+(?:\/[A-Za-z0-9_.-]+)?/i },
+  {
+    name: "GitHub アカウント URL",
+    pattern:
+      /https?:\/\/(?:api\.)?github\.com\/(?!(?:owner|organization|org|example|sponsors)(?:\/|$))(?:users\/|repos\/)?[A-Za-z0-9-]+(?:\/[A-Za-z0-9_.-]+)?/i,
+  },
   { name: "GitHub トークン", pattern: /\b(?:ghp|github_pat)_[A-Za-z0-9_]{20,}\b/i },
   { name: "API キー形式の値", pattern: /\bsk-[A-Za-z0-9]{20,}\b/ },
-  { name: "秘密鍵", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ }
+  { name: "秘密鍵", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },
 ];
 
 export function findSensitiveData(text, identifiers = []) {
@@ -19,12 +23,27 @@ export function findSensitiveData(text, identifiers = []) {
   return [...new Set(findings)];
 }
 
+/** staged差分の追加行から機密情報を抽出します。lockfileのfunding URLは検査対象外です。 */
 export function stagedAddedLines(diff) {
-  return diff.split("\n").filter((line) => line.startsWith("+") && !line.startsWith("+++")).map((line) => line.slice(1)).join("\n");
+  let currentFile = "";
+
+  return diff
+    .split("\n")
+    .flatMap((line) => {
+      if (line.startsWith("diff --git ")) {
+        currentFile = line.match(/^diff --git a\/(.+) b\/.*$/)?.[1] || "";
+      }
+      if (currentFile === "package-lock.json" || !line.startsWith("+") || line.startsWith("+++")) return [];
+      return [line.slice(1)];
+    })
+    .join("\n");
 }
 
 export function runtimeIdentifiers(environment = process.env) {
-  const identifiers = (environment.SENSITIVE_IDENTIFIERS || "").split(",").map((item) => item.trim()).filter(Boolean);
+  const identifiers = (environment.SENSITIVE_IDENTIFIERS || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
   for (const key of ["user.name", "user.email"]) {
     const value = runGit(["config", "--get", key], true);
     if (value) identifiers.push(value);
@@ -39,7 +58,10 @@ export function runtimeIdentifiers(environment = process.env) {
 
 function runGit(args, optional = false) {
   try {
-    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", optional ? "ignore" : "inherit"] }).trim();
+    return execFileSync("git", args, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", optional ? "ignore" : "inherit"],
+    }).trim();
   } catch (error) {
     if (optional) return "";
     throw error;
@@ -47,16 +69,22 @@ function runGit(args, optional = false) {
 }
 
 function trackedContents() {
-  return runGit(["ls-files", "-z"]).split("\0").filter(Boolean).filter((file) => file !== "package-lock.json").flatMap((file) => {
-    if (!existsSync(file)) return [];
-    const content = readFileSync(file, "utf8");
-    return content.includes("\0") ? [] : [{ file, content }];
-  });
+  return runGit(["ls-files", "-z"])
+    .split("\0")
+    .filter(Boolean)
+    .filter((file) => file !== "package-lock.json")
+    .flatMap((file) => {
+      if (!existsSync(file)) return [];
+      const content = readFileSync(file, "utf8");
+      return content.includes("\0") ? [] : [{ file, content }];
+    });
 }
 
 function checkEntries(entries) {
   const identifiers = runtimeIdentifiers();
-  const failures = entries.flatMap(({ file, content }) => findSensitiveData(content, identifiers).map((finding) => `${file}: ${finding}`));
+  const failures = entries.flatMap(({ file, content }) =>
+    findSensitiveData(content, identifiers).map((finding) => `${file}: ${finding}`),
+  );
   if (failures.length === 0) return;
 
   console.error("リポジトリへの追加を中止しました。公開不要な情報を環境変数またはローカル設定へ移してください。");
