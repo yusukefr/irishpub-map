@@ -3,6 +3,7 @@
 ## 概要
 
 型定義と検証ロジックは `packages/shared/src/pub.ts` にあります。
+Neon Postgres のテーブル、カラム、JSONB 構造、ER 図は[データベース定義書](database.md)を参照してください。
 
 `data/pubs.json` は初期データとフォールバックです。`DATABASE_URL` が未設定の環境では公開 API と管理画面の表示に同ファイルを使います。Neon を設定した環境では、テーブルが空の場合に同ファイルを初期投入し、その後の管理画面による追加・編集・削除は Neon の `pubs` テーブルへ保存します。
 
