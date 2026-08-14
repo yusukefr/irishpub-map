@@ -102,7 +102,7 @@ describe("PubMap", () => {
     expect(unknownMarkerOptions.element).toHaveClass("pub-map-marker-unknown");
     expect(unknownMarkerOptions.element).toHaveStyle({ "--pub-marker-color": "#6b7280" });
     expect(closedMarkerOptions.element).toHaveClass("pub-map-marker-closed");
-    expect(closedMarkerOptions.element).toHaveStyle({ "--pub-marker-color": "#d92d20" });
+    expect(closedMarkerOptions.element).toHaveStyle({ "--pub-marker-color": "#6b7280" });
     expect(maplibreMock.popupSetHTML).not.toHaveBeenCalled();
     expect(maplibreMock.popupSetDOMContent).toHaveBeenCalledTimes(3);
     expect((maplibreMock.popupSetDOMContent.mock.calls[0][0] as HTMLElement).textContent).toBe(
@@ -117,9 +117,31 @@ describe("PubMap", () => {
     expect(maplibreMock.mapRemove).toHaveBeenCalledTimes(1);
   });
 
+  it("uses the same gray marker for every non-open status", () => {
+    const temporarilyClosedPub: Pub = {
+      ...pubs[0],
+      id: "temporarily-closed-sample",
+      status: "temporarily_closed"
+    };
+
+    render(<PubMap pubs={[...pubs, temporarilyClosedPub]} />);
+
+    const markerOptions = maplibreMock.markerConstructor.mock.calls[3][0] as { element: HTMLElement };
+    expect(markerOptions.element).toHaveClass("pub-map-marker-temporarily_closed");
+    expect(markerOptions.element).toHaveStyle({ "--pub-marker-color": "#6b7280" });
+  });
+
   it("moves the map to the provided current location", () => {
     render(<PubMap pubs={pubs} currentLocation={{ latitude: 35.658, longitude: 139.701 }} />);
 
+    const currentMarkerOptions = maplibreMock.markerConstructor.mock.calls[3][0] as {
+      anchor: string;
+      element: HTMLElement;
+    };
+    expect(currentMarkerOptions.anchor).toBe("center");
+    expect(currentMarkerOptions.element).toHaveClass("current-location-marker");
+    expect(currentMarkerOptions.element).toHaveAccessibleName("現在地");
+    expect(maplibreMock.markerSetLngLat).toHaveBeenLastCalledWith([139.701, 35.658]);
     expect(maplibreMock.mapJumpTo).toHaveBeenCalledWith({
       center: [139.701, 35.658],
       zoom: 12

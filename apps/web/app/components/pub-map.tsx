@@ -6,10 +6,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { Coordinates } from "../lib/pub-search";
 
-const PUB_MARKER_COLORS = {
-  closed: "#d92d20",
-  other: "#6b7280"
-} as const;
+const NON_OPEN_PUB_MARKER_COLOR = "#6b7280";
 
 const DEFAULT_MAP_CENTER: [number, number] = [139.767, 35.681];
 const DEFAULT_MAP_ZOOM = 5;
@@ -18,14 +15,6 @@ const PREFECTURE_MAP_ZOOM = 10;
 const PREFECTURE_MAP_PADDING = 48;
 
 const EMPTY_FOCUS_PUBS: Pub[] = [];
-
-function getMarkerColor(status: Pub["status"]) {
-  if (status === "closed") {
-    return PUB_MARKER_COLORS.closed;
-  }
-
-  return PUB_MARKER_COLORS.other;
-}
 
 type PubMapProps = {
   pubs: Pub[];
@@ -47,6 +36,7 @@ export function PubMap({
   const markerElementsRef = useRef(new globalThis.Map<string, HTMLButtonElement>());
   const mapRef = useRef<Map | null>(null);
   const markersRef = useRef(new globalThis.Map<string, Marker>());
+  const currentLocationMarkerRef = useRef<Marker | null>(null);
   // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
   const onSelectPubRef = useRef(onSelectPub);
   const [mapUnavailable, setMapUnavailable] = useState(false);
@@ -115,6 +105,8 @@ export function PubMap({
       markers.forEach((marker) => marker.remove());
       markers.clear();
       markerElements.clear();
+      currentLocationMarkerRef.current?.remove();
+      currentLocationMarkerRef.current = null;
       mapRef.current = null;
       map.remove();
     };
@@ -143,6 +135,26 @@ export function PubMap({
       markersRef.current.set(pub.id, marker);
     });
   }, [pubs]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    currentLocationMarkerRef.current?.remove();
+    currentLocationMarkerRef.current = null;
+
+    if (!map || !currentLocation) {
+      return;
+    }
+
+    const marker = new Marker({
+      element: createCurrentLocationMarkerElement(),
+      anchor: "center"
+    })
+      .setLngLat([currentLocation.longitude, currentLocation.latitude])
+      .addTo(map);
+
+    currentLocationMarkerRef.current = marker;
+  }, [currentLocation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -211,7 +223,7 @@ function createMarkerElement(pub: Pub, isSelected: boolean, onSelect: () => void
   marker.addEventListener("click", onSelect);
 
   if (pub.status !== "open") {
-    marker.style.setProperty("--pub-marker-color", getMarkerColor(pub.status));
+    marker.style.setProperty("--pub-marker-color", NON_OPEN_PUB_MARKER_COLOR);
     marker.append(document.createElement("span"));
 
     return marker;
@@ -228,6 +240,16 @@ function createMarkerElement(pub: Pub, isSelected: boolean, onSelect: () => void
 
   glass.append(foam, stout);
   marker.append(glass);
+
+  return marker;
+}
+
+function createCurrentLocationMarkerElement() {
+  const marker = document.createElement("div");
+  marker.className = "current-location-marker";
+  marker.setAttribute("role", "img");
+  marker.setAttribute("aria-label", "現在地");
+  marker.title = "現在地";
 
   return marker;
 }

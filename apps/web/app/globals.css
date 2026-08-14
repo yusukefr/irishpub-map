@@ -208,6 +208,24 @@ h1 {
   transform: translateY(-2px);
 }
 
+.current-location-marker {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fffdf8;
+  border-radius: 50%;
+  background: #168c75;
+  box-shadow: 0 0 0 6px rgb(22 140 117 / 24%), 0 2px 8px rgb(23 33 29 / 28%);
+}
+
+.current-location-marker::after {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: #fffdf8;
+  content: "";
+}
+
 .pub-map-marker * {
   pointer-events: none;
 }
