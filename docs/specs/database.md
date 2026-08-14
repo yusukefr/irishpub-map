@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS pubs (
 | --- | --- | --- | --- |
 | `id` | string | yes | `pubs.id` と同じ店舗 ID |
 | `name` | string | yes | 店舗名 |
+| `kana` | string | no | 店舗名の読み（ひらがな）。かな検索に使用 |
 | `prefecture` | string | yes | 都道府県 |
 | `city` | string \| null | no | 市区町村 |
 | `address` | string | yes | 住所 |

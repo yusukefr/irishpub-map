@@ -4,6 +4,7 @@ import { getSourcePath, importPubs, parsePubs } from "../scripts/import-pubs.mjs
 const pub = {
   id: "test-pub",
   name: "Test Pub",
+  kana: "てすと ぱぶ",
   prefecture: "東京都",
   address: "東京都千代田区1-1-1",
   latitude: 35.68,
@@ -20,6 +21,7 @@ describe("parsePubs", () => {
   it("rejects duplicate IDs and invalid records", () => {
     expect(() => parsePubs([pub, { ...pub, name: "Duplicate" }])).toThrow("Invalid pub data found.");
     expect(() => parsePubs([{ ...pub, status: "invalid" }])).toThrow("Invalid pub data found.");
+    expect(() => parsePubs([{ ...pub, kana: 123 }])).toThrow("Invalid pub data found.");
   });
 });
 

@@ -3,6 +3,7 @@ export type PubStatus = "open" | "temporarily_closed" | "closed" | "unknown";
 export type Pub = {
   id: string;
   name: string;
+  kana?: string;
   prefecture: string;
   city?: string;
   address: string;
@@ -44,6 +45,7 @@ function isPub(value: unknown): value is Pub {
   return (
     typeof pub.id === "string" &&
     typeof pub.name === "string" &&
+    isOptionalString(pub.kana) &&
     typeof pub.prefecture === "string" &&
     typeof pub.address === "string" &&
     isOptionalString(pub.city) &&

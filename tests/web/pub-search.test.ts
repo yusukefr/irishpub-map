@@ -59,6 +59,25 @@ describe("filterPubsByQuery", () => {
     expect(filterPubsByQuery(pubs, "osaka").map((pub) => pub.id)).toEqual(["osaka-sample"]);
   });
 
+  it("finds English and Katakana names with either kana", () => {
+    const englishPub: Pub = {
+      ...pubs[0],
+      id: "english-pub",
+      name: "The Blarney Stone",
+      kana: "ざ ぶらーにー すとーん"
+    };
+    const katakanaPub: Pub = {
+      ...pubs[0],
+      id: "katakana-pub",
+      name: "シャノンズ",
+      kana: "しゃのんず"
+    };
+
+    expect(filterPubsByQuery([englishPub], "ぶらーにー").map((pub) => pub.id)).toEqual(["english-pub"]);
+    expect(filterPubsByQuery([englishPub], "ブラーニー").map((pub) => pub.id)).toEqual(["english-pub"]);
+    expect(filterPubsByQuery([katakanaPub], "しゃのんず").map((pub) => pub.id)).toEqual(["katakana-pub"]);
+  });
+
   it("filters pubs by prefecture", () => {
     expect(filterPubsByQuery(pubs, "東京都").map((pub) => pub.id)).toEqual(["tokyo-sample"]);
   });

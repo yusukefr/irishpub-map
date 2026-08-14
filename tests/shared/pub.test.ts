@@ -5,6 +5,7 @@ import { asPubs, type Pub } from "../../packages/shared/src/pub";
 const basePub: Pub = {
   id: "tokyo-sample",
   name: "Tokyo Sample Pub",
+  kana: "とーきょー さんぷる ぱぶ",
   prefecture: "東京都",
   city: "千代田区",
   address: "東京都千代田区1-1-1",
@@ -56,6 +57,7 @@ describe("asPubs", () => {
 
   it("rejects invalid optional fields", () => {
     expect(() => asPubs([{ ...basePub, city: 123 }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, kana: 123 }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, websiteUrl: 123 }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, googleMapsUrl: 123 }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, instagramUrl: 123 }])).toThrow("Invalid pub data found.");

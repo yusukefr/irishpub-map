@@ -15,6 +15,7 @@ Neon Postgres のテーブル、カラム、JSONB 構造、ER 図は[データ�
 {
   "id": "tokyo-dubliners-shinjuku",
   "name": "The Dubliners' Irish Pub Shinjuku",
+  "kana": "ざだぶりなーず あいりっしゅぱぶ しんじゅく",
   "prefecture": "東京都",
   "city": "新宿区",
   "address": "東京都新宿区...",
@@ -34,6 +35,7 @@ Neon Postgres のテーブル、カラム、JSONB 構造、ER 図は[データ�
 | --- | --- | --- | --- |
 | `id` | string | yes | 店舗を一意に識別する ID |
 | `name` | string | yes | 店舗名 |
+| `kana` | string | no | 店舗名の読み（ひらがな）。かな検索に使用 |
 | `prefecture` | string | yes | 都道府県 |
 | `city` | string | no | 市区町村 |
 | `address` | string | yes | 住所 |
