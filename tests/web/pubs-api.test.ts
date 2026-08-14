@@ -32,7 +32,9 @@ describe("GET /api/pubs", () => {
     process.env.VERCEL_ENV = "production";
     delete process.env.IRISHPUB_MAP_API_KEY;
 
-    const response = await GET(new Request("http://localhost/api/pubs", { headers: { "x-api-key": "test-only-api-key" } }));
+    const response = await GET(
+      new Request("http://localhost/api/pubs", { headers: { "x-api-key": "test-only-api-key" } }),
+    );
 
     await expect(response.json()).resolves.toEqual({ error: "API authentication is not configured." });
     expect(response.status).toBe(503);
@@ -56,7 +58,9 @@ describe("GET /api/pubs", () => {
     process.env.VERCEL_ENV = "production";
     process.env.IRISHPUB_MAP_API_KEY = "test-only-api-key";
 
-    const response = await GET(new Request("http://localhost/api/pubs", { headers: { "x-api-key": "test-only-api-key" } }));
+    const response = await GET(
+      new Request("http://localhost/api/pubs", { headers: { "x-api-key": "test-only-api-key" } }),
+    );
     const body = (await response.json()) as { pubs: unknown[] };
 
     expect(response.status).toBe(200);
