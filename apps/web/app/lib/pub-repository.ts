@@ -21,12 +21,18 @@ type DbPubRow = {
 
 let sqlClient: ReturnType<typeof neon> | null = null;
 
-/** Neonへの接続設定があり、永続化を利用できるかを返します。 */
+/**
+ * Neonへの接続設定があり、永続化を利用できるかを返します。
+ * @returns {boolean} DB接続設定が存在する場合はtrue。
+ */
 export function isDatabaseConfigured() {
   return Boolean(process.env.DATABASE_URL);
 }
 
-/** Neon設定時は独立カラムから、未設定時は検証済みJSONから店舗一覧を取得します。 */
+/**
+ * Neon設定時は独立カラムから、未設定時は検証済みJSONから店舗一覧を取得します。
+ * @returns {Promise<Pub[]>} 検証済みの店舗一覧。
+ */
 export async function getPubs() {
   if (!isDatabaseConfigured()) return getValidatedPubs();
 
@@ -41,7 +47,11 @@ export async function getPubs() {
   return parseDbPubs(rows);
 }
 
-/** 外部入力を店舗型として検証し、新しいUUIDを付けて独立カラムへ永続化します。 */
+/**
+ * 外部入力を店舗型として検証し、新しいUUIDを付けて独立カラムへ永続化します。
+ * @param {unknown} value - 検証・登録する外部入力。
+ * @returns {Promise<Pub>} 登録した店舗。
+ */
 export async function createPub(value: unknown) {
   const pub = toPub(value, randomUUID());
   const sql = getRequiredSql();
@@ -50,7 +60,12 @@ export async function createPub(value: unknown) {
   return pub;
 }
 
-/** 外部入力を既存UUIDの店舗型として検証し、独立カラムを更新します。 */
+/**
+ * 外部入力を既存UUIDの店舗型として検証し、独立カラムを更新します。
+ * @param {string} id - 更新対象の店舗ID。
+ * @param {unknown} value - 検証・保存する店舗データ。
+ * @returns {Promise<Pub | null>} 更新した店舗、または対象がない場合のnull。
+ */
 export async function updatePub(id: string, value: unknown) {
   const pub = toPub(value, id);
   const sql = getRequiredSql();
@@ -69,7 +84,11 @@ export async function updatePub(id: string, value: unknown) {
   return rows.length === 1 ? toPub(rows[0]) : null;
 }
 
-/** 指定UUIDの店舗を削除し、実際に削除できたかを返します。 */
+/**
+ * 指定UUIDの店舗を削除し、実際に削除できたかを返します。
+ * @param {string} id - 削除対象の店舗ID。
+ * @returns {Promise<boolean>} 店舗を削除できた場合はtrue。
+ */
 export async function deletePub(id: string) {
   const sql = getRequiredSql();
   await ensureTable(sql);
@@ -167,7 +186,11 @@ function toNullable(value: string | null | undefined) {
   const normalized = typeof value === "string" ? value.trim() : value;
   return normalized || null;
 }
-/** DBドライバーの返却値を店舗単位で検証し、有効な店舗だけを返します。 */
+/**
+ * DBドライバーの返却値を店舗単位で検証し、有効な店舗だけを返します。
+ * @param {unknown[]} rows - DBドライバーから返された行。
+ * @returns {Pub[]} 有効な店舗のみを含む一覧。
+ */
 export function parseDbPubs(rows: unknown[]) {
   const pubs: Pub[] = [];
   let skippedCount = 0;

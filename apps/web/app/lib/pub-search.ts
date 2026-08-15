@@ -1,5 +1,8 @@
 import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
 
+/**
+ * 検索条件を表す任意の絞り込み項目です。
+ */
 export type PubFilters = {
   query?: string;
   prefecture?: string;
@@ -7,6 +10,9 @@ export type PubFilters = {
   status?: PubStatus | "";
 };
 
+/**
+ * 現在地などの緯度・経度を表す座標です。
+ */
 export type Coordinates = {
   latitude: number;
   longitude: number;
@@ -62,7 +68,12 @@ const PREFECTURES_IN_JIS_ORDER = [
   "沖縄県",
 ] as const;
 
-/** 指定された検索・絞り込み条件をすべて満たす店舗を返します。 */
+/**
+ * 指定された検索・絞り込み条件をすべて満たす店舗を返します。
+ * @param {Pub[]} pubs - 絞り込み対象の店舗一覧。
+ * @param {PubFilters} filters - 適用する検索・絞り込み条件。
+ * @returns {Pub[]} 条件に一致する店舗一覧。
+ */
 export function filterPubs(pubs: Pub[], filters: PubFilters) {
   const normalizedQuery = normalizeSearchText(filters.query ?? "");
 
@@ -80,19 +91,33 @@ export function filterPubs(pubs: Pub[], filters: PubFilters) {
   });
 }
 
-/** 店舗名・都道府県・市区町村を対象に、入力文字列で店舗を検索します。 */
+/**
+ * 店舗名・都道府県・市区町村を対象に、入力文字列で店舗を検索します。
+ * @param {Pub[]} pubs - 絞り込み対象の店舗一覧。
+ * @param {string} query - 店舗名などを検索する文字列。
+ * @returns {Pub[]} 検索結果の店舗一覧。
+ */
 export function filterPubsByQuery(pubs: Pub[], query: string) {
   return filterPubs(pubs, { query });
 }
 
-/** 店舗が登録されている都道府県だけをJIS都道府県コード順で返します。 */
+/**
+ * 店舗が登録されている都道府県だけをJIS都道府県コード順で返します。
+ * @returns {string[]} 店舗が登録されている都道府県一覧。
+ * @param {Pub[]} pubs - 絞り込み対象の店舗一覧。
+ */
 export function getAvailablePrefectures(pubs: Pub[]) {
   const availablePrefectures = new Set(pubs.map((pub) => pub.prefecture));
 
   return PREFECTURES_IN_JIS_ORDER.filter((prefecture) => availablePrefectures.has(prefecture));
 }
 
-/** 現在地との近似距離が最短になる、登録店舗の都道府県を返します。 */
+/**
+ * 現在地との近似距離が最短になる、登録店舗の都道府県を返します。
+ * @param {Pub[]} pubs - 絞り込み対象の店舗一覧。
+ * @param {Coordinates} coordinates - 距離計算の基準座標。
+ * @returns {string} 最寄り店舗が属する都道府県、または空文字列。
+ */
 export function getNearestAvailablePrefecture(pubs: Pub[], coordinates: Coordinates) {
   let nearestPrefecture = "";
   let shortestDistance = Number.POSITIVE_INFINITY;
@@ -109,12 +134,20 @@ export function getNearestAvailablePrefecture(pubs: Pub[], coordinates: Coordina
   return nearestPrefecture;
 }
 
-/** 登録店舗で利用されているタグを重複なく並べて返します。 */
+/**
+ * 登録店舗で利用されているタグを重複なく並べて返します。
+ * @returns {string[]} 利用中のタグ一覧。
+ * @param {Pub[]} pubs - 絞り込み対象の店舗一覧。
+ */
 export function getAvailableTags(pubs: Pub[]) {
   return [...new Set(pubs.flatMap((pub) => pub.tags))].sort((a, b) => a.localeCompare(b));
 }
 
-/** 登録店舗で利用されている営業状態を重複なく並べて返します。 */
+/**
+ * 登録店舗で利用されている営業状態を重複なく並べて返します。
+ * @returns {PubStatus[]} 利用中の営業状態一覧。
+ * @param {Pub[]} pubs - 絞り込み対象の店舗一覧。
+ */
 export function getAvailableStatuses(pubs: Pub[]) {
   return [...new Set(pubs.map((pub) => pub.status))].sort((a, b) => a.localeCompare(b));
 }

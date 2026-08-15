@@ -13,7 +13,12 @@ export const metadata: Metadata = {
   },
 };
 
-/** 日本語ページ全体のメタデータと共通HTML構造を定義します。 */
+/**
+ * 日本語ページ全体のメタデータと共通HTML構造を定義します。
+ * @param {{ children: React.ReactNode }} root0 - 共通レイアウトの子要素。
+ * @param {React.ReactNode} root0.children - ページ本文。
+ * @returns {JSX.Element} 共通HTMLレイアウト。
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

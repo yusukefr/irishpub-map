@@ -54,7 +54,10 @@ async function getPubs() {
   throw new Error("Failed to fetch pubs.");
 }
 
-/** 公開トップページをサーバー描画し、取得済み店舗を探索UIへ渡します。 */
+/**
+ * 公開トップページをサーバー描画し、取得済み店舗を探索UIへ渡します。
+ * @returns {Promise<JSX.Element>} 店舗探索画面。
+ */
 export default async function Home() {
   const pubList = await getPubs();
 

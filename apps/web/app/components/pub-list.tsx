@@ -24,7 +24,14 @@ const STATUS_BADGE_CLASSES: Record<PubStatus, string> = {
   unknown: "pub-status-unknown",
 };
 
-/** 絞り込み済み店舗をカード表示し、選択状態を地図と共有します。 */
+/**
+ * 絞り込み済み店舗をカード表示し、選択状態を地図と共有します。
+ * @param {{ pubs: Pub[]; selectedPubId?: string | null; onSelectPub?: (pubId: string) => void }} root0 - 一覧表示の状態。
+ * @param {Pub[]} root0.pubs - 表示する店舗一覧。
+ * @param {string | null | undefined} root0.selectedPubId - 選択中の店舗ID。
+ * @param {(pubId: string) => void} root0.onSelectPub - 店舗選択時のコールバック。
+ * @returns {JSX.Element} 店舗カード一覧。
+ */
 export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefined }: PubListProps) {
   const [expandedPubId, setExpandedPubId] = useState<string | null>(null);
 

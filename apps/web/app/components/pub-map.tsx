@@ -24,7 +24,16 @@ type PubMapProps = {
   onSelectPub?: (pubId: string) => void;
 };
 
-/** 店舗ピン、選択状態、表示範囲をMapLibre上へ同期します。 */
+/**
+ * 店舗ピン、選択状態、表示範囲をMapLibre上へ同期します。
+ * @param {{ pubs: Pub[]; focusPubs?: Pub[]; currentLocation?: Coordinates | null; selectedPubId?: string | null; onSelectPub?: (pubId: string) => void }} root0 - 地図表示の状態。
+ * @param {Pub[]} root0.pubs - 地図へ表示する店舗一覧。
+ * @param {Pub[]} root0.focusPubs - 表示範囲を合わせる店舗一覧。
+ * @param {Coordinates | null | undefined} root0.currentLocation - 現在地。
+ * @param {string | null | undefined} root0.selectedPubId - 選択中の店舗ID。
+ * @param {(pubId: string) => void} root0.onSelectPub - 店舗選択時のコールバック。
+ * @returns {JSX.Element} 店舗地図、またはWebGL非対応時のフォールバック。
+ */
 export function PubMap({
   pubs,
   focusPubs = EMPTY_FOCUS_PUBS,

@@ -1,5 +1,7 @@
+/** 店舗の営業状態を表します。 */
 export type PubStatus = "open" | "temporarily_closed" | "closed" | "unknown";
 
+/** 店舗検索・地図表示・永続化で共有する店舗データです。 */
 export type Pub = {
   id: string;
   name: string;
@@ -16,7 +18,11 @@ export type Pub = {
   status: PubStatus;
 };
 
-/** 未検証の値を店舗配列として検証し、重複IDを含む不正データを拒否します。 */
+/**
+ * 未検証の値を店舗配列として検証し、重複IDを含む不正データを拒否します。
+ * @param {unknown} value - 検証する未加工の値。
+ * @returns {Pub[]} 正規化済みの店舗一覧。
+ */
 export function asPubs(value: unknown): Pub[] {
   if (!Array.isArray(value)) {
     throw new Error("Pub data must be an array.");
@@ -90,7 +96,6 @@ function isLongitude(value: unknown) {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-/** 店舗 ID が RFC 4122 の UUID 形式かを判定します。 */
 function normalizePub(pub: Pub): Pub {
   return {
     ...pub,
@@ -111,6 +116,10 @@ function normalizeOptionalUrl(value: string | null | undefined) {
   const normalized = typeof value === "string" ? value.trim() : value;
   return normalized || null;
 }
+/** 店舗IDがRFC 4122のUUID形式かを判定します。
+ * @param {unknown} value - 判定する値。
+ * @returns {value is string} UUID形式の文字列の場合はtrue。
+ */
 export function isPubId(value: unknown): value is string {
   return typeof value === "string" && UUID_PATTERN.test(value);
 }
