@@ -119,7 +119,7 @@ export function getAvailableStatuses(pubs: Pub[]) {
   return [...new Set(pubs.map((pub) => pub.status))].sort((a, b) => a.localeCompare(b));
 }
 
-function normalizeSearchText(value: string | undefined) {
+function normalizeSearchText(value: string | null | undefined) {
   return (
     value
       ?.normalize("NFKC")

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { asPubs, type Pub } from "../../packages/shared/src/pub";
 
 const basePub: Pub = {
-  id: "tokyo-sample",
+  id: "550e8400-e29b-41d4-a716-446655440101",
   name: "Tokyo Sample Pub",
   kana: "とーきょー さんぷる ぱぶ",
   prefecture: "東京都",
@@ -23,14 +23,38 @@ describe("asPubs", () => {
     const statuses: Pub["status"][] = ["open", "temporarily_closed", "closed", "unknown"];
     const pubs = statuses.map((status, index) => ({
       ...basePub,
-      id: `pub-${status}`,
+      id: `550e8400-e29b-41d4-a716-44665544010${index + 2}`,
       city: index % 2 === 0 ? basePub.city : undefined,
       websiteUrl: index % 2 === 0 ? basePub.websiteUrl : null,
       googleMapsUrl: index % 2 === 0 ? basePub.googleMapsUrl : undefined,
       status,
     }));
 
-    expect(asPubs(pubs)).toEqual(pubs);
+    expect(asPubs(pubs)).toEqual(pubs.map((pub) => ({ ...pub, googleMapsUrl: pub.googleMapsUrl ?? null })));
+  });
+
+  it("normalizes empty optional values", () => {
+    expect(
+      asPubs([
+        {
+          ...basePub,
+          kana: null,
+          city: "  ",
+          websiteUrl: " ",
+          googleMapsUrl: " https://maps.example.com ",
+          instagramUrl: undefined,
+        },
+      ]),
+    ).toEqual([
+      {
+        ...basePub,
+        kana: undefined,
+        city: undefined,
+        websiteUrl: null,
+        googleMapsUrl: "https://maps.example.com",
+        instagramUrl: null,
+      },
+    ]);
   });
 
   it("rejects non-array input", () => {
@@ -61,6 +85,8 @@ describe("asPubs", () => {
     expect(() => asPubs([{ ...basePub, websiteUrl: 123 }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, googleMapsUrl: 123 }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, instagramUrl: 123 }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, websiteUrl: "ftp://example.com" }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, id: "legacy-id" }])).toThrow("Invalid pub data found.");
   });
 
   it("rejects non-finite and out-of-range coordinates", () => {

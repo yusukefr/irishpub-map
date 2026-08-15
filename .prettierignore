@@ -6,3 +6,4 @@ coverage
 .vercel
 .agents/skills
 *.min.js
+*.sql
