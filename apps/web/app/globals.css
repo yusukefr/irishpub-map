@@ -197,6 +197,55 @@ h1 {
   line-height: 1.8;
 }
 
+.map-loading,
+.map-error {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-content: center;
+  padding: 32px;
+  background: rgb(220 230 225 / 88%);
+  color: var(--ink);
+  pointer-events: none;
+  text-align: center;
+}
+
+.map-loading p,
+.map-error p {
+  max-width: 520px;
+  margin: 12px auto 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.map-error h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.map-loading-indicator {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  border: 4px solid rgb(15 123 84 / 22%);
+  border-top-color: var(--accent-strong);
+  border-radius: 50%;
+  animation: map-loading-spin 0.9s linear infinite;
+}
+
+@keyframes map-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-loading-indicator {
+    animation: none;
+  }
+}
+
 .pub-map-marker {
   width: 34px;
   height: 42px;
