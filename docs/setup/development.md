@@ -51,6 +51,8 @@ cp .env.example .env.local
 
 `scripts/import-pubs.mjs` は、JSON形式の店舗データをNeonの `pubs` テーブルへ追加します。`id` が既に存在する店舗は更新せずにスキップするため、同じファイルを再実行しても安全です。入力は `packages/shared` の `Pub` 型と同じ形式の配列で、既定のファイル名はリポジトリルートの `pubs.json` です。
 
+移行後の `pubs` は独立カラム構成です。既存の JSONB 構成を移行する場合は、先に [店舗テーブル移行手順](../operations/database-migration.md) を Preview／Production ごとに実行してください。
+
 Neonの接続文字列は、ローカルのシェル環境変数として一時的に設定して実行します。接続文字列は出力・コミットしません。ProductionとPreviewの接続先が異なる場合は、それぞれ実行します。
 
 ```bash

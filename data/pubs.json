@@ -1,6 +1,6 @@
 [
   {
-    "id": "tokyo-dubliners-shinjuku",
+    "id": "550e8400-e29b-41d4-a716-446655440001",
     "name": "THE DUBLINERS' IRISHPUB",
     "kana": "ざだぶりなーず あいりっしゅぱぶ",
     "prefecture": "東京都",
@@ -15,7 +15,7 @@
     "status": "closed"
   },
   {
-    "id": "tokyo-little-gang",
+    "id": "550e8400-e29b-41d4-a716-446655440002",
     "name": "PUBLIC HOUSE Little GANG",
     "kana": "ぱぶりっく はうす りとる ぎゃんぐ",
     "prefecture": "東京都",
@@ -30,7 +30,7 @@
     "status": "open"
   },
   {
-    "id": "tokyo-irish-pub-craic",
+    "id": "550e8400-e29b-41d4-a716-446655440003",
     "name": "Irish Pub Craic",
     "kana": "あいりっしゅ ぱぶ くらいく",
     "prefecture": "東京都",
@@ -45,7 +45,7 @@
     "status": "open"
   },
   {
-    "id": "tokyo-shannons",
+    "id": "550e8400-e29b-41d4-a716-446655440004",
     "name": "シャノンズ",
     "kana": "しゃのんず",
     "prefecture": "東京都",
@@ -60,7 +60,7 @@
     "status": "open"
   },
   {
-    "id": "tokyo-seamus-ohara",
+    "id": "550e8400-e29b-41d4-a716-446655440005",
     "name": "シェイマスオハラ Irish Pub Seamus O'Hara 武蔵小山店",
     "kana": "しぇいますおはら あいりっしゅ ぱぶ しぇいます おはら むさしこやまてん",
     "prefecture": "東京都",
@@ -75,7 +75,7 @@
     "status": "open"
   },
   {
-    "id": "tokyo-irish-pub-an-solas",
+    "id": "550e8400-e29b-41d4-a716-446655440006",
     "name": "Irish Pub An SÓLÁS アイリッシュパブ アン ソラス",
     "kana": "あいりっしゅ ぱぶ あん そらす あいりっしゅぱぶ あん そらす",
     "prefecture": "東京都",
@@ -90,7 +90,7 @@
     "status": "open"
   },
   {
-    "id": "tokyo-irish-pub-failte",
+    "id": "550e8400-e29b-41d4-a716-446655440007",
     "name": "Irish pub ＆ Restaurant Failte 渋谷フォルチェ",
     "kana": "あいりっしゅ ぱぶ あんど れすとらん ふぁるちぇ しぶや ふぉるちぇ",
     "prefecture": "東京都",
@@ -105,7 +105,7 @@
     "status": "open"
   },
   {
-    "id": "tokyo-noi",
+    "id": "550e8400-e29b-41d4-a716-446655440008",
     "name": "noi",
     "kana": "のい",
     "prefecture": "東京都",
@@ -120,7 +120,7 @@
     "status": "open"
   },
   {
-    "id": "tokyo-irish-pub-banshee",
+    "id": "550e8400-e29b-41d4-a716-446655440009",
     "name": "Irish Pub Banshee",
     "kana": "あいりっしゅ ぱぶ ばんしー",
     "prefecture": "東京都",
@@ -135,7 +135,7 @@
     "status": "open"
   },
   {
-    "id": "osaka-the-blarney-stone",
+    "id": "550e8400-e29b-41d4-a716-446655440010",
     "name": "The Blarney Stone Shinsaibashi",
     "kana": "ざ ぶらーにー すとーん しんさいばし",
     "prefecture": "大阪府",

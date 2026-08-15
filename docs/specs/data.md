@@ -2,7 +2,7 @@
 
 ## 概要
 
-型定義と検証ロジックは `packages/shared/src/pub.ts` にあります。Neon Postgres のテーブル、カラム、JSONB 構造、ER 図は[データベース定義書](database.md)を参照してください。
+型定義と検証ロジックは `packages/shared/src/pub.ts` にあります。Neon Postgres の項目別カラム、制約、インデックスは[項目別カラムの定義](database-columns.md)を参照してください。既存 DB の移行は[移行手順](../operations/database-migration.md)に従います。
 
 `data/pubs.json` は初期データとフォールバックです。`DATABASE_URL` が未設定の環境では公開 API と管理画面の表示に同ファイルを使います。Neon を設定した環境では、テーブルが空の場合に同ファイルを初期投入し、その後の管理画面による追加・編集・削除は Neon の `pubs` テーブルへ保存します。
 
@@ -12,7 +12,7 @@
 
 ```json
 {
-  "id": "tokyo-dubliners-shinjuku",
+  "id": "550e8400-e29b-41d4-a716-446655440001",
   "name": "The Dubliners' Irish Pub Shinjuku",
   "kana": "ざだぶりなーず あいりっしゅぱぶ しんじゅく",
   "prefecture": "東京都",

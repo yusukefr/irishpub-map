@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { getSourcePath, importPubs, parsePubs } from "../scripts/import-pubs.mjs";
 
 const pub = {
-  id: "test-pub",
+  id: "550e8400-e29b-41d4-a716-446655440201",
   name: "Test Pub",
   kana: "てすと ぱぶ",
   prefecture: "東京都",
@@ -22,6 +22,7 @@ describe("parsePubs", () => {
     expect(() => parsePubs([pub, { ...pub, name: "Duplicate" }])).toThrow("Invalid pub data found.");
     expect(() => parsePubs([{ ...pub, status: "invalid" }])).toThrow("Invalid pub data found.");
     expect(() => parsePubs([{ ...pub, kana: 123 }])).toThrow("Invalid pub data found.");
+    expect(() => parsePubs([{ ...pub, id: "legacy-id" }])).toThrow("Invalid pub data found.");
   });
 });
 
@@ -29,12 +30,14 @@ describe("importPubs", () => {
   it("inserts new records and skips existing IDs", async () => {
     let insertIndex = 0;
     const sql = vi.fn(async (strings: TemplateStringsArray) => {
-      if (strings[0].startsWith("CREATE TABLE")) return [];
+      if (!strings[0].trimStart().startsWith("INSERT INTO pubs")) return [];
       insertIndex += 1;
-      return insertIndex === 1 ? [{ id: "test-pub" }] : [];
+      return insertIndex === 1 ? [{ id: "550e8400-e29b-41d4-a716-446655440201" }] : [];
     });
 
-    await expect(importPubs("postgresql://example", [pub, { ...pub, id: "existing-pub" }], sql)).resolves.toEqual({
+    await expect(
+      importPubs("postgresql://example", [pub, { ...pub, id: "550e8400-e29b-41d4-a716-446655440202" }], sql),
+    ).resolves.toEqual({
       imported: 1,
       skipped: 1,
       total: 2,

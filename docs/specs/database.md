@@ -4,7 +4,7 @@
 
 Irish Pub Map の永続化先は Neon Postgres です。`DATABASE_URL` が設定された環境では、`apps/web/app/lib/pub-repository.ts` が `pubs` テーブルを作成・読み書きします。
 
-現在は SQL マイグレーションファイルを別管理しておらず、アプリケーション起動時またはインポート実行時の `CREATE TABLE IF NOT EXISTS` をスキーマ定義の実体としています。本書はその実装を基準にした現行のテーブル定義です。
+旧 JSONB 構成の履歴と互換情報は本書に残します。移行後の現行スキーマ、制約、インデックスは [項目別カラムの定義](database-columns.md) と [移行手順](../operations/database-migration.md) を正とします。
 
 ## テーブル一覧
 
@@ -14,7 +14,7 @@ Irish Pub Map の永続化先は Neon Postgres です。`DATABASE_URL` が設定
 
 管理者ユーザーやセッションを保存するテーブルはありません。管理者認証情報は環境変数で管理し、ログイン後のセッションは署名付き HttpOnly Cookie で管理します。
 
-## `pubs` テーブル
+## 移行前の `pubs` テーブル（履歴）
 
 ### DDL
 
