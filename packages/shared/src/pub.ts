@@ -61,7 +61,7 @@ function isPub(value: unknown): value is Pub {
     isOptionalUrl(pub.googleMapsUrl) &&
     isOptionalUrl(pub.instagramUrl) &&
     Array.isArray(pub.tags) &&
-    pub.tags.every((tag) => typeof tag === "string") &&
+    pub.tags.every((tag) => isNonEmptyString(tag)) &&
     isPubStatus(pub.status)
   );
 }
@@ -104,6 +104,7 @@ function normalizePub(pub: Pub): Pub {
     websiteUrl: normalizeOptionalUrl(pub.websiteUrl),
     googleMapsUrl: normalizeOptionalUrl(pub.googleMapsUrl),
     instagramUrl: normalizeOptionalUrl(pub.instagramUrl),
+    tags: [...new Set(pub.tags.map((tag) => tag.trim()))],
   };
 }
 

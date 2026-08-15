@@ -1,5 +1,7 @@
 # データベース定義書
 
+現行の店舗メタデータ正規化（都道府県・営業状況マスタ、店舗タグ関係）は docs/specs/database-normalization.md と db/migrations/002_normalize_pub_metadata_up.sql を正とします。
+
 ## 概要
 
 Irish Pub Map の永続化先は Neon Postgres です。`DATABASE_URL` が設定された環境では、`apps/web/app/lib/pub-repository.ts` が `pubs` テーブルを作成・読み書きします。

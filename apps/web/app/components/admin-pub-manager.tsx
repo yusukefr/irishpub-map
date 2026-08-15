@@ -2,10 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
+import type { Pub } from "@irishpub-map/shared/pub";
+import { PREFECTURES } from "@irishpub-map/shared/prefecture";
+import { PUB_STATUS_DEFINITIONS } from "@irishpub-map/shared/status";
 
 type Props = { initialPubs: Pub[]; databaseConfigured: boolean };
-const statuses: PubStatus[] = ["open", "temporarily_closed", "closed", "unknown"];
+const statuses = PUB_STATUS_DEFINITIONS;
 const emptyPub = {
   name: "",
   prefecture: "",
@@ -120,7 +122,14 @@ export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
           </label>
           <label>
             都道府県
-            <input name="prefecture" required defaultValue={values.prefecture} />
+            <select name="prefecture" required defaultValue={values.prefecture}>
+              <option value="">都道府県を選択</option>
+              {PREFECTURES.map((prefecture) => (
+                <option key={prefecture.code} value={prefecture.name}>
+                  {prefecture.name}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             市区町村
@@ -146,7 +155,9 @@ export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
             営業状況
             <select name="status" defaultValue={values.status}>
               {statuses.map((status) => (
-                <option key={status}>{status}</option>
+                <option key={status.code} value={status.value}>
+                  {status.displayName}
+                </option>
               ))}
             </select>
           </label>

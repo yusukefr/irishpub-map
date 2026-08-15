@@ -1,10 +1,12 @@
 # 店舗テーブル定義（項目別カラム）
 
+注意: 本書の現行スキーマは docs/specs/database-normalization.md と db/migrations/002_normalize_pub_metadata_up.sql を正とします。以下に残る prefecture、tags、status の単独カラム定義は 002 適用前の一時形式です。
+
 ## 概要
 
 Issue #175 の移行後、Neon Postgres の `pubs` は店舗属性を独立カラムで保持します。既存の `data JSONB` テーブルは自動変換せず、[移行手順](../operations/database-migration.md) に従って明示的に移行します。
 
-## DDL
+## 001移行前のDDL（履歴）
 
 ```sql
 CREATE TABLE pubs (

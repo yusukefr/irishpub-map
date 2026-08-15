@@ -35,9 +35,17 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_pubs_colu
 
 ## ロールバック
 
+001の移行が完了した後は、002_normalize_pub_metadata_up.sql を実行してからアプリを切り替えます。002の確認には 002_normalize_pub_metadata_verify.sql を使います。002を戻す場合は 002_normalize_pub_metadata_down.sql を先に実行し、その後に001のロールバックを実行します。
+
+002の適用と確認は次の順で実行します。
+
+    psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_normalize_pub_metadata_up.sql
+    psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_normalize_pub_metadata_verify.sql
+
 新テーブルへ書き込みが発生した後のロールバックでは、その更新は旧テーブルへ戻りません。書き込みを停止し、Neon バックアップまたは旧テーブルを確認してから実行します。
 
 ```bash
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_normalize_pub_metadata_down.sql
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_pubs_columns_down.sql
 ```
 

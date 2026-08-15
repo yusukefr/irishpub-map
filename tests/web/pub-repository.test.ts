@@ -5,7 +5,7 @@ const baseRow = {
   id: "550e8400-e29b-41d4-a716-446655440001",
   name: "Dubliners",
   kana: null,
-  prefecture: "東京都",
+  prefecture_code: 13,
   city: "新宿区",
   address: "東京都新宿区",
   latitude: 35.6911443,
@@ -14,7 +14,7 @@ const baseRow = {
   google_maps_url: null,
   instagram_url: null,
   tags: ["guinness", "food"],
-  status: "open",
+  status_code: 1,
 };
 
 describe("parseDbPubs", () => {
@@ -51,6 +51,6 @@ describe("parseDbPubs", () => {
   });
 
   it("fails explicitly when every database row is invalid", () => {
-    expect(() => parseDbPubs([{ ...baseRow, status: "invalid" }])).toThrow("No valid pub data found in database.");
+    expect(() => parseDbPubs([{ ...baseRow, status_code: 99 }])).toThrow("No valid pub data found in database.");
   });
 });
