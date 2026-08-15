@@ -85,3 +85,11 @@ source .env
 set +a
 scripts/create-pr.sh --issue <number> --title "<title>" --body-file pr-body.md
 ```
+
+### ESLint と JSDoc
+
+- ESLint の設定はリポジトリルートの `eslint.config.mjs` で管理し、Web アプリと `packages/shared/src` を同じルールで検査します。
+- 公開された関数、コンポーネント、Route Handler、共有パッケージの公開型を JSDoc の対象とします。内部のイベントコールバック、局所的な変換関数、無名関数へ一律のコメントは要求しません。
+- 公開関数の JSDoc には目的を記載し、引数がある場合は `@param`、戻り値がある場合は `@returns` を付けます。説明は型だけでは分からない前提、失敗時の扱い、副作用を優先します。
+- 採用ルールは、JSDoc の整列・タグ名・引数名・説明・JSDoc・`@param`・`@returns` の検査と、ESLint コアの `no-eval`、`no-implied-eval`、`no-new-func`、`no-script-url`、`no-promise-executor-return` です。
+- `@typescript-eslint/no-misused-promises`、`eslint-plugin-security`、`eslint-plugin-react`、`no-console`、`no-await-in-loop` は、型認識設定・誤検知・互換性・既存の正当な用途を考慮して見送ります。Prettier のルールは ESLint に重複させません。

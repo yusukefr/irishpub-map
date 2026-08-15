@@ -32,7 +32,12 @@ const GEOLOCATION_OPTIONS: PositionOptions = {
 
 const EMPTY_FOCUS_PUBS: Pub[] = [];
 
-/** 検索条件、地図、店舗一覧で共有する探索状態を一元管理します。 */
+/**
+ * 検索条件、地図、店舗一覧で共有する探索状態を一元管理します。
+ * @param {{ pubs: Pub[] }} root0 - 探索対象の店舗一覧。
+ * @param {Pub[]} root0.pubs - 検索対象の店舗一覧。
+ * @returns {JSX.Element} 検索・地図・一覧を組み合わせた探索画面。
+ */
 export function PubExplorer({ pubs }: PubExplorerProps) {
   const [query, setQuery] = useState("");
   const [selectedPrefecture, setSelectedPrefecture] = useState("");

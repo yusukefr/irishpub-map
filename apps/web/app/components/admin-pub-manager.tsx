@@ -40,7 +40,13 @@ function toBody(form: FormData) {
   };
 }
 
-/** 管理者向けの店舗追加・編集・削除とローカル一覧状態を管理します。 */
+/**
+ * 管理者向けの店舗追加・編集・削除とローカル一覧状態を管理します。
+ * @param {{ initialPubs: Pub[]; databaseConfigured: boolean }} root0 - 管理画面の初期状態。
+ * @param {Pub[]} root0.initialPubs - 初期表示する店舗一覧。
+ * @param {boolean} root0.databaseConfigured - DB永続化が利用可能かどうか。
+ * @returns {JSX.Element} 店舗管理画面。
+ */
 export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
   const [pubs, setPubs] = useState(initialPubs);
   const [editing, setEditing] = useState<Pub | null>(null);

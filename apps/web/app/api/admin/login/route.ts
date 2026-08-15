@@ -1,6 +1,10 @@
 import { createAdminSession, isAdminConfigured, sessionCookie, verifyAdminCredentials } from "../../../lib/admin-auth";
 
-/** 管理者認証を行い、成功時にHttpOnlyセッションCookieを発行します。 */
+/**
+ * 管理者認証を行い、成功時にHttpOnlyセッションCookieを発行します。
+ * @param {Request} request - 認証情報を含むログインリクエスト。
+ * @returns {Promise<Response>} 認証結果と、成功時のセッションCookie。
+ */
 export async function POST(request: Request) {
   if (!isAdminConfigured()) return Response.json({ error: "Admin authentication is not configured." }, { status: 503 });
   const body = (await request.json().catch(() => null)) as { username?: unknown; password?: unknown } | null;

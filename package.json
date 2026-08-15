@@ -12,7 +12,7 @@
     "import-pubs": "node scripts/import-pubs.mjs",
     "validate:production-env": "node scripts/validate-production-env.mjs",
     "update-app-version": "node scripts/update-app-version.mjs",
-    "lint": "npm run lint -w apps/web",
+    "lint": "eslint --config eslint.config.mjs apps/web/app packages/shared/src --max-warnings=0",
     "typecheck": "npm run typecheck -w apps/web",
     "test": "vitest run --coverage",
     "test:watch": "vitest",

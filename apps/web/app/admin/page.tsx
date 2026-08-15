@@ -4,7 +4,10 @@ import { AdminPubManager } from "../components/admin-pub-manager";
 import { getAdminSession, isAdminConfigured } from "../lib/admin-auth";
 import { getPubs, isDatabaseConfigured } from "../lib/pub-repository";
 
-/** 管理設定とセッションを検証し、認証済み管理画面を表示します。 */
+/**
+ * 管理設定とセッションを検証し、認証済み管理画面を表示します。
+ * @returns {Promise<JSX.Element>} 管理画面、または設定不足時の案内画面。
+ */
 export default async function AdminPage() {
   if (!isAdminConfigured())
     return (

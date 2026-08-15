@@ -2,7 +2,12 @@ import { getPubs } from "../../lib/pub-repository";
 
 const API_KEY_HEADER = "x-api-key";
 
-/** 公開店舗一覧を返し、Production では API キー設定とリクエスト認証を必須にします。 */
+/**
+/**
+ * 公開店舗一覧を返し、Production では API キー設定とリクエスト認証を必須にします。
+ * @param {Request} request - APIキー確認対象のリクエスト。
+ * @returns {Promise<Response>} 公開店舗一覧、または認証エラー。
+ */
 export async function GET(request: Request) {
   const apiKey = process.env.IRISHPUB_MAP_API_KEY?.trim();
 
