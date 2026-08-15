@@ -4,19 +4,19 @@ import { asPubs, type Pub } from "@irishpub-map/shared/pub";
 import { getValidatedPubs } from "./pub-data";
 
 type DbPubRow = {
-  id: string;
-  name: string;
-  kana: string | null;
-  prefecture: string;
-  city: string | null;
-  address: string;
-  latitude: number;
-  longitude: number;
-  website_url: string | null;
-  google_maps_url: string | null;
-  instagram_url: string | null;
+  id: unknown;
+  name: unknown;
+  kana: unknown;
+  prefecture: unknown;
+  city: unknown;
+  address: unknown;
+  latitude: unknown;
+  longitude: unknown;
+  website_url: unknown;
+  google_maps_url: unknown;
+  instagram_url: unknown;
   tags: unknown;
-  status: string;
+  status: unknown;
 };
 
 let sqlClient: ReturnType<typeof neon> | null = null;
@@ -38,7 +38,7 @@ export async function getPubs() {
     FROM pubs
     ORDER BY prefecture, name
   `) as DbPubRow[];
-  return asPubs(rows.map(toPub));
+  return parseDbPubs(rows);
 }
 
 /** 外部入力を店舗型として検証し、新しいUUIDを付けて独立カラムへ永続化します。 */
@@ -141,7 +141,9 @@ function toPub(value: DbPubRow | unknown, id?: string): Pub {
     return asPubs([{ ...(value as Record<string, unknown>), id }])[0];
   }
 
-  const row = value as DbPubRow;
+  const row = normalizeDbRow(value as DbPubRow);
+  if (!row) throw new Error("Invalid database pub row.");
+
   return asPubs([
     {
       id: row.id,
@@ -152,9 +154,9 @@ function toPub(value: DbPubRow | unknown, id?: string): Pub {
       address: row.address,
       latitude: row.latitude,
       longitude: row.longitude,
-      websiteUrl: row.website_url,
-      googleMapsUrl: row.google_maps_url,
-      instagramUrl: row.instagram_url,
+      websiteUrl: row.websiteUrl,
+      googleMapsUrl: row.googleMapsUrl,
+      instagramUrl: row.instagramUrl,
       tags: row.tags,
       status: row.status,
     },
@@ -164,4 +166,79 @@ function toPub(value: DbPubRow | unknown, id?: string): Pub {
 function toNullable(value: string | null | undefined) {
   const normalized = typeof value === "string" ? value.trim() : value;
   return normalized || null;
+}
+/** DBドライバーの返却値を店舗単位で検証し、有効な店舗だけを返します。 */
+export function parseDbPubs(rows: unknown[]) {
+  const pubs: Pub[] = [];
+  let skippedCount = 0;
+
+  for (const row of rows) {
+    try {
+      pubs.push(toPub(row as DbPubRow));
+    } catch {
+      skippedCount += 1;
+    }
+  }
+
+  if (skippedCount > 0) {
+    console.error("Skipped invalid pub rows from the database.", {
+      skippedCount,
+      totalCount: rows.length,
+    });
+  }
+
+  if (rows.length > 0 && pubs.length === 0) {
+    throw new Error("No valid pub data found in database.");
+  }
+
+  return asPubs(pubs);
+}
+
+function normalizeDbRow(row: DbPubRow) {
+  if (!row || typeof row !== "object") return null;
+
+  return {
+    id: normalizeText(row.id),
+    name: normalizeText(row.name),
+    kana: normalizeOptionalText(row.kana),
+    prefecture: normalizeText(row.prefecture),
+    city: normalizeOptionalText(row.city),
+    address: normalizeText(row.address),
+    latitude: normalizeNumber(row.latitude),
+    longitude: normalizeNumber(row.longitude),
+    websiteUrl: normalizeOptionalText(row.website_url),
+    googleMapsUrl: normalizeOptionalText(row.google_maps_url),
+    instagramUrl: normalizeOptionalText(row.instagram_url),
+    tags: normalizeTags(row.tags),
+    status: normalizeText(row.status),
+  };
+}
+
+function normalizeText(value: unknown) {
+  return typeof value === "string" ? value.trim() : value;
+}
+
+function normalizeOptionalText(value: unknown) {
+  if (value === null || value === undefined) return undefined;
+  return typeof value === "string" ? value.trim() || undefined : value;
+}
+
+function normalizeNumber(value: unknown) {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string" || value.trim() === "") return value;
+
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : value;
+}
+
+function normalizeTags(value: unknown) {
+  if (Array.isArray(value)) return value.map((tag) => normalizeText(tag));
+  if (typeof value !== "string") return value;
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.map((tag) => normalizeText(tag)) : value;
+  } catch {
+    return value;
+  }
 }
