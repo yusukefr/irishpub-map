@@ -2,6 +2,8 @@
 
 ## 概要
 
+DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、タグを pub_tags の複数行として保存します。公開APIと初期JSONの形式は従来どおり都道府県名・外部ステータス値・タグ配列です。
+
 型定義と検証ロジックは `packages/shared/src/pub.ts` にあります。Neon Postgres の項目別カラム、制約、インデックスは[項目別カラムの定義](database-columns.md)を参照してください。既存 DB の移行は[移行手順](../operations/database-migration.md)に従います。
 
 `data/pubs.json` は初期データとフォールバックです。`DATABASE_URL` が未設定の環境では公開 API と管理画面の表示に同ファイルを使います。Neon を設定した環境では、テーブルが空の場合に同ファイルを初期投入し、その後の管理画面による追加・編集・削除は Neon の `pubs` テーブルへ保存します。
