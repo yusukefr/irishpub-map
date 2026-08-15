@@ -7,6 +7,7 @@ const baseRow = {
   kana: null,
   prefecture_code: 13,
   city: "新宿区",
+  municipality_code: "131041",
   address: "東京都新宿区",
   latitude: 35.6911443,
   longitude: 139.7025086,
@@ -34,6 +35,7 @@ describe("parseDbPubs", () => {
         longitude: 139.7025086,
         tags: ["guinness", "food"],
         websiteUrl: null,
+        municipalityCode: "131041",
       }),
     );
   });

@@ -8,6 +8,7 @@ const basePub: Pub = {
   kana: "とーきょー さんぷる ぱぶ",
   prefecture: "東京都",
   city: "千代田区",
+  municipalityCode: "131016",
   address: "東京都千代田区1-1-1",
   latitude: 35.681,
   longitude: 139.767,
@@ -85,6 +86,7 @@ describe("asPubs", () => {
     expect(() => asPubs([{ ...basePub, websiteUrl: 123 }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, googleMapsUrl: 123 }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, instagramUrl: 123 }])).toThrow("Invalid pub data found.");
+    expect(() => asPubs([{ ...basePub, municipalityCode: "13101" }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, websiteUrl: "ftp://example.com" }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, id: "legacy-id" }])).toThrow("Invalid pub data found.");
   });

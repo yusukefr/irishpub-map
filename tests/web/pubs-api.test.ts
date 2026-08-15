@@ -25,7 +25,13 @@ describe("GET /api/pubs", () => {
 
     expect(response.status).toBe(200);
     expect(body.pubs.length).toBeGreaterThan(0);
-    expect(body.pubs[0]).toEqual(expect.objectContaining({ id: expect.any(String), name: expect.any(String) }));
+    expect(body.pubs[0]).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        name: expect.any(String),
+        municipalityCode: expect.stringMatching(/^[0-9]{6}$/),
+      }),
+    );
   });
 
   it("returns a configuration error in Production when the API key is missing", async () => {

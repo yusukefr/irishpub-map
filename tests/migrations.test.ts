@@ -45,4 +45,17 @@ describe("pubs database migrations", () => {
     expect(downSql).toContain("ALTER TABLE pubs ADD COLUMN prefecture");
     expect(downSql).toContain("DROP TABLE pub_tags");
   });
+
+  it("defines the municipality code master migration, CSV import, verification, and rollback", async () => {
+    const upSql = await readMigration("003_municipality_codes_up.sql");
+    const verifySql = await readMigration("003_municipality_codes_verify.sql");
+    const downSql = await readMigration("003_municipality_codes_down.sql");
+
+    expect(upSql).toContain("CREATE TABLE IF NOT EXISTS municipality_codes");
+    expect(upSql).toContain("\\copy municipality_codes_import");
+    expect(upSql).toContain("data/市区町村コード.csv");
+    expect(upSql).toContain("ON CONFLICT (code) DO UPDATE");
+    expect(verifySql).toContain("invalid_municipality_codes");
+    expect(downSql).toContain("DROP TABLE IF EXISTS municipality_codes");
+  });
 });

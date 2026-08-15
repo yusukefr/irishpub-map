@@ -29,7 +29,7 @@ const PREFECTURES_IN_JIS_ORDER = PREFECTURES.map(({ name }) => name);
 export function filterPubs(pubs: Pub[], filters: PubFilters) {
   const normalizedQuery = normalizeSearchText(filters.query ?? "");
 
-  return pubs.filter((pub) => {
+  const filteredPubs = pubs.filter((pub) => {
     const matchesQuery =
       !normalizedQuery ||
       [pub.name, pub.kana, pub.prefecture, pub.city].some((field) =>
@@ -41,6 +41,17 @@ export function filterPubs(pubs: Pub[], filters: PubFilters) {
 
     return matchesQuery && matchesPrefecture && matchesTags && matchesStatus;
   });
+
+  return sortPubsByMunicipalityCode(filteredPubs);
+}
+
+/**
+ * 市区町村コード順と副次キーで、店舗配列を決定的に並べ替えます。
+ * @param {Pub[]} pubs - 並べ替える店舗一覧。
+ * @returns {Pub[]} 市区町村コード順に並んだ新しい配列。
+ */
+export function sortPubsByMunicipalityCode(pubs: Pub[]) {
+  return [...pubs].sort(comparePubsByMunicipalityCode);
 }
 
 /**
@@ -123,4 +134,19 @@ function getSquaredDistance(origin: Coordinates, destination: Coordinates) {
   const longitudeDifference = (destination.longitude - origin.longitude) * longitudeScale;
 
   return latitudeDifference ** 2 + longitudeDifference ** 2;
+}
+
+function comparePubsByMunicipalityCode(left: Pub, right: Pub) {
+  const leftCode = left.municipalityCode ? Number(left.municipalityCode) : Number.POSITIVE_INFINITY;
+  const rightCode = right.municipalityCode ? Number(right.municipalityCode) : Number.POSITIVE_INFINITY;
+
+  if (leftCode !== rightCode) return leftCode - rightCode;
+
+  return compareText(left.name, right.name) || compareText(left.kana, right.kana) || compareText(left.id, right.id);
+}
+
+function compareText(left: string | null | undefined, right: string | null | undefined) {
+  const leftText = left ?? "";
+  const rightText = right ?? "";
+  return leftText < rightText ? -1 : leftText > rightText ? 1 : 0;
 }

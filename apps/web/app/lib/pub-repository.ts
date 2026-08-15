@@ -11,6 +11,7 @@ type DbPubRow = {
   kana: unknown;
   prefecture_code: unknown;
   city: unknown;
+  municipality_code: unknown;
   address: unknown;
   latitude: unknown;
   longitude: unknown;
@@ -42,14 +43,16 @@ export async function getPubs() {
   const sql = getSql();
   await ensureTable(sql);
   const rows = (await sql`
-    SELECT p.id::text, p.name, p.kana, p.prefecture_code, p.city, p.address, p.latitude, p.longitude,
+    SELECT p.id::text, p.name, p.kana, p.prefecture_code, p.city, mc.code AS municipality_code, p.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code,
       COALESCE(array_agg(pt.tag ORDER BY pt.tag) FILTER (WHERE pt.tag IS NOT NULL), '{}') AS tags
     FROM pubs AS p
+    LEFT JOIN municipality_codes AS mc
+      ON mc.prefecture_code = p.prefecture_code AND mc.municipality_name = p.city
     LEFT JOIN pub_tags AS pt ON pt.pub_id = p.id
-    GROUP BY p.id, p.name, p.kana, p.prefecture_code, p.city, p.address, p.latitude, p.longitude,
+    GROUP BY p.id, p.name, p.kana, p.prefecture_code, p.city, mc.code, p.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code
-    ORDER BY p.prefecture_code, p.name
+    ORDER BY mc.code IS NULL, mc.code::bigint, p.name, p.id
   `) as DbPubRow[];
   return parseDbPubs(rows);
 }
@@ -115,6 +118,19 @@ function getSql() {
 
 async function ensureTable(sql: ReturnType<typeof neon>) {
   if (schemaReady) return;
+
+  const municipalityTable = (await sql`
+    SELECT to_regclass('public.municipality_codes')::text AS table_name
+  `) as Array<{ table_name: string | null }>;
+  if (!municipalityTable[0]?.table_name) {
+    throw new Error("Municipality code table is missing. Run db/migrations/003_municipality_codes_up.sql first.");
+  }
+  const municipalityRows = (await sql`SELECT COUNT(*)::int AS count FROM municipality_codes`) as Array<{
+    count: number;
+  }>;
+  if (municipalityRows[0]?.count === 0) {
+    throw new Error("Municipality code table is empty. Run db/migrations/003_municipality_codes_up.sql first.");
+  }
 
   const existingColumns =
     (await sql`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'pubs'`) as Array<{
@@ -193,13 +209,15 @@ async function replacePubTags(sql: ReturnType<typeof neon>, pubId: string, tags:
 
 async function getPubById(sql: ReturnType<typeof neon>, id: string) {
   const rows = (await sql`
-    SELECT p.id::text, p.name, p.kana, p.prefecture_code, p.city, p.address, p.latitude, p.longitude,
+    SELECT p.id::text, p.name, p.kana, p.prefecture_code, p.city, mc.code AS municipality_code, p.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code,
       COALESCE(array_agg(pt.tag ORDER BY pt.tag) FILTER (WHERE pt.tag IS NOT NULL), '{}') AS tags
     FROM pubs AS p
+    LEFT JOIN municipality_codes AS mc
+      ON mc.prefecture_code = p.prefecture_code AND mc.municipality_name = p.city
     LEFT JOIN pub_tags AS pt ON pt.pub_id = p.id
     WHERE p.id = ${id}::uuid
-    GROUP BY p.id, p.name, p.kana, p.prefecture_code, p.city, p.address, p.latitude, p.longitude,
+    GROUP BY p.id, p.name, p.kana, p.prefecture_code, p.city, mc.code, p.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code
   `) as DbPubRow[];
   return rows.length === 1 ? toPub(rows[0]) : null;
@@ -223,6 +241,7 @@ function toPub(value: DbPubRow | unknown, id?: string): Pub {
       kana: row.kana ?? undefined,
       prefecture: row.prefecture,
       city: row.city ?? undefined,
+      municipalityCode: row.municipalityCode,
       address: row.address,
       latitude: row.latitude,
       longitude: row.longitude,
@@ -297,6 +316,7 @@ function normalizeDbRow(row: DbPubRow) {
     kana: normalizeOptionalText(row.kana),
     prefecture,
     city: normalizeOptionalText(row.city),
+    municipalityCode: normalizeMunicipalityCode(row.municipality_code),
     address: normalizeText(row.address),
     latitude: normalizeNumber(row.latitude),
     longitude: normalizeNumber(row.longitude),
@@ -306,6 +326,11 @@ function normalizeDbRow(row: DbPubRow) {
     tags: normalizeTags(row.tags),
     status,
   };
+}
+
+function normalizeMunicipalityCode(value: unknown) {
+  const normalized = normalizeOptionalText(value);
+  return typeof normalized === "string" && /^\d{6}$/.test(normalized) ? normalized : undefined;
 }
 
 function normalizeText(value: unknown) {

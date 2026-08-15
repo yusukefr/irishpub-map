@@ -11,6 +11,7 @@ const pubs: Pub[] = [
     name: "Tokyo Sample Pub",
     prefecture: "東京都",
     city: "千代田区",
+    municipalityCode: "131016",
     address: "東京都千代田区1-1-1",
     latitude: 35.681,
     longitude: 139.767,
@@ -25,6 +26,7 @@ const pubs: Pub[] = [
     name: "Osaka Sample Pub",
     prefecture: "大阪府",
     city: "大阪市",
+    municipalityCode: "271004",
     address: "大阪府大阪市1-1-1",
     latitude: 34.693,
     longitude: 135.502,
@@ -38,6 +40,7 @@ const pubs: Pub[] = [
     id: "kyoto-sample",
     name: "Kyoto Sample Pub",
     prefecture: "京都府",
+    municipalityCode: "261009",
     address: "京都府京都市1-1-1",
     latitude: 35.011,
     longitude: 135.768,
@@ -190,7 +193,7 @@ describe("PubExplorer", () => {
     expect(osakaCard).not.toBeNull();
     fireEvent.click(osakaCard as HTMLElement);
 
-    const osakaMarker = (maplibreMock.markerConstructor.mock.calls[1][0] as { element: HTMLButtonElement }).element;
+    const osakaMarker = (maplibreMock.markerConstructor.mock.calls[2][0] as { element: HTMLButtonElement }).element;
     expect(osakaCard).toHaveClass("pub-card-selected");
     expect(osakaMarker).toHaveClass("pub-map-marker-selected");
     expect(osakaMarker).toHaveAttribute("aria-pressed", "true");

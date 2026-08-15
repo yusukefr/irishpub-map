@@ -2,7 +2,7 @@
 
 ## 概要
 
-DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、タグを pub_tags の複数行として保存します。公開APIと初期JSONの形式は従来どおり都道府県名・外部ステータス値・タグ配列です。
+DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、タグを pub_tags の複数行、市区町村コードを municipality_codes のマスタとして保存します。公開APIと初期JSONは市区町村名を保持し、公開APIの `municipalityCode` は市区町村マスタから解決できた場合に付加します。
 
 型定義と検証ロジックは `packages/shared/src/pub.ts` にあります。Neon Postgres の項目別カラム、制約、インデックスは[項目別カラムの定義](database-columns.md)を参照してください。既存 DB の移行は[移行手順](../operations/database-migration.md)に従います。
 
@@ -32,21 +32,22 @@ DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、�
 
 ## フィールド
 
-| フィールド      | 型             | 必須 | 説明                                     |
-| --------------- | -------------- | ---- | ---------------------------------------- |
-| `id`            | string         | yes  | 店舗を一意に識別する ID                  |
-| `name`          | string         | yes  | 店舗名                                   |
-| `kana`          | string         | no   | 店舗名の読み（ひらがな）。かな検索に使用 |
-| `prefecture`    | string         | yes  | 都道府県                                 |
-| `city`          | string         | no   | 市区町村                                 |
-| `address`       | string         | yes  | 住所                                     |
-| `latitude`      | number         | yes  | 緯度                                     |
-| `longitude`     | number         | yes  | 経度                                     |
-| `websiteUrl`    | string \| null | no   | 公式サイト URL                           |
-| `googleMapsUrl` | string \| null | no   | Google Maps URL                          |
-| `instagramUrl`  | string \| null | no   | Instagram URL                            |
-| `tags`          | string[]       | yes  | 検索・絞り込み用タグ                     |
-| `status`        | string         | yes  | 店舗状態                                 |
+| フィールド         | 型             | 必須 | 説明                                      |
+| ------------------ | -------------- | ---- | ----------------------------------------- |
+| `id`               | string         | yes  | 店舗を一意に識別する ID                   |
+| `name`             | string         | yes  | 店舗名                                    |
+| `kana`             | string         | no   | 店舗名の読み（ひらがな）。かな検索に使用  |
+| `prefecture`       | string         | yes  | 都道府県                                  |
+| `city`             | string         | no   | 市区町村                                  |
+| `municipalityCode` | string or null | no   | 市区町村マスタから解決した6桁の団体コード |
+| `address`          | string         | yes  | 住所                                      |
+| `latitude`         | number         | yes  | 緯度                                      |
+| `longitude`        | number         | yes  | 経度                                      |
+| `websiteUrl`       | string \| null | no   | 公式サイト URL                            |
+| `googleMapsUrl`    | string \| null | no   | Google Maps URL                           |
+| `instagramUrl`     | string \| null | no   | Instagram URL                             |
+| `tags`             | string[]       | yes  | 検索・絞り込み用タグ                      |
+| `status`           | string         | yes  | 店舗状態                                  |
 
 ## `status`
 
