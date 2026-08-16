@@ -2,7 +2,8 @@ name: AI作業依頼
 description: CodexなどのAI Agentに実装・調査・整理を依頼するためのテンプレート
 title: "[AI Task]: "
 labels:
-  - ai-task
+  - ai-agent
+  - task
 body:
   - type: markdown
     attributes:
