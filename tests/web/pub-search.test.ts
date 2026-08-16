@@ -98,6 +98,10 @@ describe("filterPubsByQuery", () => {
     expect(filterPubs(pubs, { tags: ["food"] }).map((pub) => pub.id)).toEqual(["tokyo-sample", "kyoto-sample"]);
   });
 
+  it("accepts canonical aliases in tag filters", () => {
+    expect(filterPubs(pubs, { tags: [" ギネス "] }).map((pub) => pub.id)).toEqual(["tokyo-sample"]);
+  });
+
   it("filters pubs by every selected tag", () => {
     expect(filterPubs(pubs, { tags: ["guinness", "food"] }).map((pub) => pub.id)).toEqual(["tokyo-sample"]);
   });

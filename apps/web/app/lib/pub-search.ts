@@ -1,5 +1,6 @@
 import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
 import { PREFECTURES } from "@irishpub-map/shared/prefecture";
+import { normalizeTags } from "@irishpub-map/shared/tag";
 
 /**
  * 検索条件を表す任意の絞り込み項目です。
@@ -29,7 +30,7 @@ const PREFECTURES_IN_JIS_ORDER = PREFECTURES.map(({ name }) => name);
  */
 export function filterPubs(pubs: Pub[], filters: PubFilters) {
   const normalizedQuery = normalizeSearchText(filters.query ?? "");
-
+  const normalizedTags = normalizeTags(filters.tags ?? []);
   const filteredPubs = pubs.filter((pub) => {
     const matchesQuery =
       !normalizedQuery ||
@@ -37,7 +38,7 @@ export function filterPubs(pubs: Pub[], filters: PubFilters) {
         normalizeSearchText(field).includes(normalizedQuery),
       );
     const matchesPrefecture = !filters.prefecture || pub.prefecture === filters.prefecture;
-    const matchesTags = !filters.tags?.length || filters.tags.every((tag) => pub.tags.includes(tag));
+    const matchesTags = !normalizedTags.length || normalizedTags.every((tag) => pub.tags.includes(tag));
     const matchesStatus = matchesPubStatus(pub, filters);
 
     return matchesQuery && matchesPrefecture && matchesTags && matchesStatus;
@@ -112,7 +113,7 @@ export function getNearestAvailablePrefecture(pubs: Pub[], coordinates: Coordina
  * @param {Pub[]} pubs - 絞り込み対象の店舗一覧。
  */
 export function getAvailableTags(pubs: Pub[]) {
-  return [...new Set(pubs.flatMap((pub) => pub.tags))].sort((a, b) => a.localeCompare(b));
+  return normalizeTags(pubs.flatMap((pub) => pub.tags)).sort((a, b) => a.localeCompare(b));
 }
 
 /**

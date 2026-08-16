@@ -1,3 +1,5 @@
+import { normalizeTags } from "./tag";
+
 /** 店舗の営業状態を表します。 */
 export type PubStatus = "open" | "temporarily_closed" | "closed" | "unknown";
 
@@ -112,7 +114,7 @@ function normalizePub(pub: Pub): Pub {
     websiteUrl: normalizeOptionalUrl(pub.websiteUrl),
     googleMapsUrl: normalizeOptionalUrl(pub.googleMapsUrl),
     instagramUrl: normalizeOptionalUrl(pub.instagramUrl),
-    tags: [...new Set(pub.tags.map((tag) => tag.trim()))],
+    tags: normalizeTags(pub.tags),
   };
 }
 

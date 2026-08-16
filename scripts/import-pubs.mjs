@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { neon } from "@neondatabase/serverless";
+import tagDefinitions from "../packages/shared/src/tag-definitions.json" with { type: "json" };
 
 const DEFAULT_SOURCE_PATH = "pubs.json";
 const PUB_STATUSES = new Set(["open", "temporarily_closed", "closed", "unknown"]);
@@ -104,6 +105,20 @@ const PREFECTURE_KANAS = [
 ];
 const PUB_STATUS_CODES = { open: 1, temporarily_closed: 2, closed: 3, unknown: 4 };
 
+function normalizeTag(tag) {
+  const normalized = tag
+    .normalize("NFKC")
+    .trim()
+    .toLocaleLowerCase("en-US")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-");
+  return tagDefinitions.aliases[normalized] ?? tagDefinitions.aliases[tag.trim()] ?? normalized;
+}
+
+function normalizeTags(tags) {
+  return [...new Set(tags.map(normalizeTag).filter(Boolean))];
+}
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 /** コマンドライン引数からインポート元のJSONファイルパスを取得します。 */
 export function getSourcePath(args) {
@@ -121,7 +136,7 @@ export function parsePubs(value) {
     ids.add(pub.id);
   }
 
-  return value;
+  return value.map((pub) => ({ ...pub, tags: normalizeTags(pub.tags) }));
 }
 
 /** Neonの正規化された店舗・マスタ・タグテーブルへ追加し、既存IDは更新せずにスキップします。 */
@@ -185,7 +200,7 @@ export async function importPubs(databaseUrl, pubs, sql) {
     `;
     if (rows.length === 1) {
       imported += 1;
-      for (const tag of new Set(pub.tags.map((item) => item.trim()).filter(Boolean))) {
+      for (const tag of normalizeTags(pub.tags)) {
         const tagRows = await client`
           INSERT INTO tags (name)
           VALUES (${tag})

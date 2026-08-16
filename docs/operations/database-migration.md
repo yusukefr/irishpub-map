@@ -15,7 +15,7 @@ export MIGRATION_DATABASE_URL='対象環境から安全に取得した接続文�
 node scripts/run-neon-migration.mjs db/migrations/001_pubs_columns_verify.sql
 ```
 
-001・002・004のSQLマイグレーションは `@neondatabase/serverless` の Node `Client` で実行します。`psql` の導入や使用は不要です。接続文字列は出力せず、作業終了後はシェル変数を破棄してください。003はCSV取込にpsqlの `\\copy` を使う既存SQLのため、このスクリプトの対象外です。
+001・002・004・005のSQLマイグレーションは `@neondatabase/serverless` の Node `Client` で実行します。`psql` の導入や使用は不要です。接続文字列は出力せず、作業終了後はシェル変数を破棄してください。003はCSV取込にpsqlの `\\copy` を使う既存SQLのため、このスクリプトの対象外です。
 
 ## 移行
 
@@ -53,16 +53,19 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_municipal
 
 003はCSVをpsqlの `\\copy` で読み込む既存SQLのため、このNode実行スクリプトの対象外です。003を新規環境へ適用する場合は、CSV取込処理をNodeクライアントへ移行してから実行します。
 
-タグをマスタへ正規化する場合は、003の確認後に次を実行します。`004` は既存の `pub_tags.tag` を `tags.name` と `pub_tags.tag_id` へ移行し、旧 `pub_tags` をロールバック用に保持します。
+タグをマスタへ正規化する場合は、003の確認後に004を実行し、そのverify後に005を実行します。`004` は既存の `pub_tags.tag` を `tags.name` と `pub_tags.tag_id` へ移行し、`005` はタグ名の別名を正規化して店舗ごとの重複関係を統合します。いずれも旧データをロールバック用に保持します。
 
 ```bash
 node scripts/run-neon-migration.mjs db/migrations/004_normalize_pub_tags_up.sql
 node scripts/run-neon-migration.mjs db/migrations/004_normalize_pub_tags_verify.sql
+node scripts/run-neon-migration.mjs db/migrations/005_normalize_tag_names_up.sql
+node scripts/run-neon-migration.mjs db/migrations/005_normalize_tag_names_verify.sql
 ```
 
 新テーブルへ書き込みが発生した後のロールバックでは、その更新は旧テーブルへ戻りません。書き込みを停止し、Neon バックアップまたは旧テーブルを確認してから実行します。
 
 ```bash
+node scripts/run-neon-migration.mjs db/migrations/005_normalize_tag_names_down.sql
 node scripts/run-neon-migration.mjs db/migrations/004_normalize_pub_tags_down.sql
 node scripts/run-neon-migration.mjs db/migrations/003_municipality_codes_down.sql
 node scripts/run-neon-migration.mjs db/migrations/002_normalize_pub_metadata_down.sql

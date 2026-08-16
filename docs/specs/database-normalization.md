@@ -29,7 +29,7 @@ pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.co
 | municipalityCode（6桁コード） | municipality_codes.code   |
 | tags（文字列配列）            | tags と pub_tags の複数行 |
 
-取得時はリポジトリがマスタを表示名・外部値へ戻し、タグ行を配列へ集約します。DB未設定時の data/pubs.json フォールバックも従来どおりです。
+取得時はリポジトリがマスタを表示名・外部値へ戻し、タグ行を配列へ集約します。DB未設定時の data/pubs.json フォールバックも従来どおりです。タグの内部キー・表示名・別名・棚卸しは [タグの正規化仕様](tag-normalization.md) を正とします。
 
 ## コードと表示
 
