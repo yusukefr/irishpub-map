@@ -9,6 +9,7 @@ export type PubFilters = {
   prefecture?: string;
   tags?: string[];
   status?: PubStatus | "";
+  includeClosed?: boolean;
 };
 
 /**
@@ -37,12 +38,20 @@ export function filterPubs(pubs: Pub[], filters: PubFilters) {
       );
     const matchesPrefecture = !filters.prefecture || pub.prefecture === filters.prefecture;
     const matchesTags = !filters.tags?.length || filters.tags.every((tag) => pub.tags.includes(tag));
-    const matchesStatus = !filters.status || pub.status === filters.status;
+    const matchesStatus = matchesPubStatus(pub, filters);
 
     return matchesQuery && matchesPrefecture && matchesTags && matchesStatus;
   });
 
   return sortPubsByMunicipalityCode(filteredPubs);
+}
+
+function matchesPubStatus(pub: Pub, filters: PubFilters) {
+  if (filters.includeClosed !== undefined) {
+    return filters.includeClosed ? pub.status === "open" || pub.status === "closed" : pub.status === "open";
+  }
+
+  return !filters.status || pub.status === filters.status;
 }
 
 /**

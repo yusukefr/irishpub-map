@@ -25,7 +25,7 @@ sequenceDiagram
   Repository-->>API: 検証済み店舗データ
   API-->>Page: { pubs }
   Page-->>Visitor: HTML と店舗データ
-  Visitor->>Explorer: 検索・都道府県・タグ・営業状況を操作
+  Visitor->>Explorer: 検索・都道府県・タグ・閉業店舗表示を操作
   opt 位置情報の利用を許可
     Explorer->>Explorer: 最寄りの掲載都道府県を初期選択
   end

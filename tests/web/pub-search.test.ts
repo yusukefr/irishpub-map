@@ -106,6 +106,19 @@ describe("filterPubsByQuery", () => {
     expect(filterPubs(pubs, { status: "closed" }).map((pub) => pub.id)).toEqual(["kyoto-sample"]);
   });
 
+  it("shows only open pubs when closed pubs are excluded", () => {
+    expect(filterPubs(pubs, { includeClosed: false }).map((pub) => pub.id)).toEqual(["tokyo-sample"]);
+  });
+
+  it("includes closed pubs but excludes temporary and unknown statuses", () => {
+    const temporarilyClosedPub: Pub = { ...pubs[0], id: "temporarily-closed", status: "temporarily_closed" };
+
+    expect(filterPubs([...pubs, temporarilyClosedPub], { includeClosed: true }).map((pub) => pub.id)).toEqual([
+      "tokyo-sample",
+      "kyoto-sample",
+    ]);
+  });
+
   it("combines search, prefecture, tag, and status filters", () => {
     expect(
       filterPubs(pubs, { query: "京都府", prefecture: "京都府", tags: ["food"], status: "closed" }).map(

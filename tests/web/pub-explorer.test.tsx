@@ -96,11 +96,11 @@ describe("PubExplorer", () => {
   it("filters the displayed pubs by pub name", () => {
     render(<PubExplorer pubs={pubs} />);
 
-    fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "osaka" } });
+    fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "tokyo" } });
 
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
   });
 
   it("filters the displayed pubs by prefecture and city area", () => {
@@ -111,9 +111,9 @@ describe("PubExplorer", () => {
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
 
-    fireEvent.change(searchInput, { target: { value: "大阪市" } });
-    expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+    fireEvent.change(searchInput, { target: { value: "千代田区" } });
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
   });
 
   it("defaults to the nearest available prefecture when geolocation succeeds", async () => {
@@ -165,7 +165,9 @@ describe("PubExplorer", () => {
     render(<PubExplorer pubs={pubs} />);
 
     expect(screen.getByLabelText("都道府県")).toHaveValue("");
-    expect(screen.getByText("3件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
     expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
   });
 
@@ -174,36 +176,38 @@ describe("PubExplorer", () => {
 
     expect(screen.getByRole("option", { name: "すべての都道府県" })).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "大阪府" } });
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
 
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
     expect(maplibreMock.mapJumpTo).toHaveBeenLastCalledWith({
-      center: [135.502, 34.693],
+      center: [139.767, 35.681],
       zoom: 10,
     });
   });
 
   it("links selected pub cards and map markers in both directions", () => {
     render(<PubExplorer pubs={pubs} />);
-    const osakaCard = screen.getByRole("heading", { name: "Osaka Sample Pub" }).closest("article");
-    const tokyoMarker = (maplibreMock.markerConstructor.mock.calls[0][0] as { element: HTMLButtonElement }).element;
+    fireEvent.click(screen.getByRole("checkbox", { name: "閉業した店舗を含める" }));
 
-    expect(osakaCard).not.toBeNull();
-    fireEvent.click(osakaCard as HTMLElement);
+    const kyotoCard = screen.getByRole("heading", { name: "Kyoto Sample Pub" }).closest("article");
+    const tokyoMarker = (maplibreMock.markerConstructor.mock.calls[1][0] as { element: HTMLButtonElement }).element;
 
-    const osakaMarker = (maplibreMock.markerConstructor.mock.calls[2][0] as { element: HTMLButtonElement }).element;
-    expect(osakaCard).toHaveClass("pub-card-selected");
-    expect(osakaMarker).toHaveClass("pub-map-marker-selected");
-    expect(osakaMarker).toHaveAttribute("aria-pressed", "true");
+    expect(kyotoCard).not.toBeNull();
+    fireEvent.click(kyotoCard as HTMLElement);
+
+    const kyotoMarker = (maplibreMock.markerConstructor.mock.calls[2][0] as { element: HTMLButtonElement }).element;
+    expect(kyotoCard).toHaveClass("pub-card-selected");
+    expect(kyotoMarker).toHaveClass("pub-map-marker-selected");
+    expect(kyotoMarker).toHaveAttribute("aria-pressed", "true");
 
     fireEvent.click(tokyoMarker);
 
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" }).closest("article")).toHaveClass(
       "pub-card-selected",
     );
-    expect(osakaCard).not.toHaveClass("pub-card-selected");
+    expect(kyotoCard).not.toHaveClass("pub-card-selected");
     expect(tokyoMarker).toHaveClass("pub-map-marker-selected");
     expect(tokyoMarker).toHaveAttribute("aria-pressed", "true");
   });
@@ -227,11 +231,11 @@ describe("PubExplorer", () => {
   it("filters the displayed pubs by tag", () => {
     render(<PubExplorer pubs={pubs} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "ライブ音楽" }));
+    fireEvent.click(screen.getByRole("button", { name: "ギネス" }));
 
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Tokyo Sample Pub" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
   });
 
   it("filters the displayed pubs by every selected tag", () => {
@@ -246,21 +250,22 @@ describe("PubExplorer", () => {
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
   });
 
-  it("filters the displayed pubs by status", () => {
+  it("shows open pubs by default and includes closed pubs with a switch", () => {
     render(<PubExplorer pubs={pubs} />);
-    const statusFilter = screen.getByLabelText("営業状況");
+    const closedToggle = screen.getByRole("checkbox", { name: "閉業した店舗を含める" });
 
-    expect(statusFilter.querySelectorAll("option")).toHaveLength(2);
-    expect(screen.getAllByRole("option", { name: "すべての営業状況" })).toHaveLength(1);
-    expect(screen.getAllByRole("option", { name: "営業中" })).toHaveLength(1);
-    expect(statusFilter).toHaveValue("");
-
-    fireEvent.change(statusFilter, { target: { value: "open" } });
-
+    expect(closedToggle).not.toBeChecked();
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
+
+    fireEvent.click(closedToggle);
+
+    expect(closedToggle).toBeChecked();
+    expect(screen.getByText("2件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Kyoto Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
   });
 
   it("keeps the map instance when tag and status filters change", () => {
@@ -272,7 +277,7 @@ describe("PubExplorer", () => {
     expect(maplibreMock.mapRemove).not.toHaveBeenCalled();
     expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
 
-    fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "open" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "閉業した店舗を含める" }));
 
     expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
     expect(maplibreMock.mapRemove).not.toHaveBeenCalled();
@@ -285,7 +290,7 @@ describe("PubExplorer", () => {
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "東京都" } });
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
     fireEvent.click(screen.getByRole("button", { name: "食事あり" }));
-    fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "open" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "閉業した店舗を含める" }));
 
     expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
@@ -298,15 +303,17 @@ describe("PubExplorer", () => {
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "京都府" } });
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "京都府" } });
     fireEvent.click(screen.getByRole("button", { name: "食事あり" }));
-    fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "closed" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "閉業した店舗を含める" }));
 
     fireEvent.click(screen.getByRole("button", { name: "条件をリセット" }));
 
     expect(screen.getByLabelText("店舗を検索")).toHaveValue("");
     expect(screen.getByLabelText("都道府県")).toHaveValue("");
     expect(screen.getByRole("button", { name: "食事あり" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByLabelText("営業状況")).toHaveValue("");
-    expect(screen.getByText("3件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "閉業した店舗を含める" })).not.toBeChecked();
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "条件をリセット" })).not.toBeInTheDocument();
   });
 
@@ -316,9 +323,9 @@ describe("PubExplorer", () => {
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "京都府" } });
     fireEvent.click(screen.getByRole("button", { name: "クリア" }));
 
-    expect(screen.getByText("3件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Kyoto Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
   });
 });
