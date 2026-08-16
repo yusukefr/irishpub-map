@@ -12,11 +12,13 @@ $$;
 CREATE TABLE IF NOT EXISTS municipality_codes (
   code TEXT PRIMARY KEY CHECK (code ~ '^[0-9]{6}$'),
   prefecture_code SMALLINT NOT NULL REFERENCES prefectures(code),
-  prefecture_name TEXT NOT NULL CHECK (btrim(prefecture_name) <> ''),
   municipality_name TEXT,
-  prefecture_kana TEXT,
   municipality_kana TEXT
 );
+
+ALTER TABLE municipality_codes
+  DROP COLUMN IF EXISTS prefecture_name,
+  DROP COLUMN IF EXISTS prefecture_kana;
 
 CREATE TEMP TABLE municipality_codes_import (
   code TEXT,
@@ -37,9 +39,21 @@ BEGIN
     FROM municipality_codes_import
     WHERE btrim(COALESCE(code, '')) !~ '^[0-9]{6}$'
       OR btrim(COALESCE(prefecture_name, '')) = ''
+      OR btrim(COALESCE(prefecture_kana, '')) = ''
       OR CASE
         WHEN btrim(COALESCE(code, '')) ~ '^[0-9]{6}$'
           THEN substring(btrim(code) FROM 1 FOR 2)::SMALLINT NOT BETWEEN 1 AND 47
+        ELSE FALSE
+      END
+      OR CASE
+        WHEN btrim(COALESCE(code, '')) ~ '^[0-9]{6}$'
+          THEN NOT EXISTS (
+            SELECT 1
+            FROM prefectures AS prefecture
+            WHERE prefecture.code = substring(btrim(municipality_codes_import.code) FROM 1 FOR 2)::SMALLINT
+              AND prefecture.name = btrim(municipality_codes_import.prefecture_name)
+              AND prefecture.kana = btrim(municipality_codes_import.prefecture_kana)
+          )
         ELSE FALSE
       END
   ) THEN
@@ -49,21 +63,19 @@ END
 $$;
 
 INSERT INTO municipality_codes (
-  code, prefecture_code, prefecture_name, municipality_name, prefecture_kana, municipality_kana
+  code, prefecture_code, municipality_name, municipality_kana
 )
 SELECT
   btrim(source.code),
-  substring(btrim(source.code) FROM 1 FOR 2)::SMALLINT,
-  btrim(source.prefecture_name),
+  prefecture.code,
   NULLIF(btrim(source.municipality_name), ''),
-  NULLIF(btrim(source.prefecture_kana), ''),
   NULLIF(btrim(source.municipality_kana), '')
 FROM municipality_codes_import AS source
+JOIN prefectures AS prefecture
+  ON prefecture.code = substring(btrim(source.code) FROM 1 FOR 2)::SMALLINT
 ON CONFLICT (code) DO UPDATE SET
   prefecture_code = EXCLUDED.prefecture_code,
-  prefecture_name = EXCLUDED.prefecture_name,
   municipality_name = EXCLUDED.municipality_name,
-  prefecture_kana = EXCLUDED.prefecture_kana,
   municipality_kana = EXCLUDED.municipality_kana;
 
 CREATE INDEX IF NOT EXISTS municipality_codes_prefecture_name_idx

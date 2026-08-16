@@ -37,6 +37,7 @@ describe("pubs database migrations", () => {
     const downSql = await readMigration("002_normalize_pub_metadata_down.sql");
 
     expect(upSql).toContain("CREATE TABLE IF NOT EXISTS prefectures");
+    expect(upSql).toContain("kana TEXT NOT NULL");
     expect(upSql).toContain("CREATE TABLE IF NOT EXISTS pub_statuses");
     expect(upSql).toContain("CREATE TABLE pub_tags");
     expect(upSql).toContain("ALTER TABLE pubs DROP COLUMN prefecture");
@@ -52,6 +53,10 @@ describe("pubs database migrations", () => {
     const downSql = await readMigration("003_municipality_codes_down.sql");
 
     expect(upSql).toContain("CREATE TABLE IF NOT EXISTS municipality_codes");
+    expect(upSql).toContain("prefecture_code SMALLINT NOT NULL REFERENCES prefectures(code)");
+    expect(upSql).toContain("DROP COLUMN IF EXISTS prefecture_name");
+    expect(upSql).not.toContain("prefecture_name = EXCLUDED.prefecture_name");
+    expect(upSql).not.toContain("prefecture_kana = EXCLUDED.prefecture_kana");
     expect(upSql).toContain("\\copy municipality_codes_import");
     expect(upSql).toContain("data/市区町村コード.csv");
     expect(upSql).toContain("ON CONFLICT (code) DO UPDATE");

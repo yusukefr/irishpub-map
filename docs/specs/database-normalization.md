@@ -7,12 +7,12 @@ Issue #188 の対応後、店舗メタデータは次の関係に分けて保存
 | テーブル           | 役割                                         |
 | ------------------ | -------------------------------------------- |
 | pubs               | 店舗の基本情報、prefecture_code、status_code |
-| prefectures        | JIS都道府県コード（1〜47）と表示名           |
+| prefectures        | JIS都道府県コード（1〜47）、表示名、カナ     |
 | pub_statuses       | 営業状況の数値コード、外部値、表示名         |
-| municipality_codes | 市区町村コード、都道府県・市区町村名、カナ   |
+| municipality_codes | 市区町村コード、市区町村名、カナ             |
 | pub_tags           | 店舗IDとタグの対応。店舗IDとタグの複合主キー |
 
-pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.code を参照します。市区町村コードは `municipality_codes.code` に6桁文字列として保存し、都道府県コードと市区町村名で店舗と対応付けます。pub_tags.pub_id は pubs.id を参照し、店舗削除時はタグも削除します。複合主キーにより同じ店舗への同一タグの重複を防ぎます。
+pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.code を参照します。市区町村コードは `municipality_codes.code` に6桁文字列として保存し、都道府県コードと市区町村名で店舗と対応付けます。都道府県名・カナは prefectures マスタで管理し、municipality_codes には重複して保存しません。pub_tags.pub_id は pubs.id を参照し、店舗削除時はタグも削除します。複合主キーにより同じ店舗への同一タグの重複を防ぎます。
 
 ## 外部形式との対応
 
@@ -21,6 +21,7 @@ pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.co
 | 外部項目                      | DBでの保存              |
 | ----------------------------- | ----------------------- |
 | prefecture（都道府県名）      | prefectures.code        |
+| prefecture のカナ             | prefectures.kana        |
 | status（open など）           | pub_statuses.code       |
 | municipalityCode（6桁コード） | municipality_codes.code |
 | tags（文字列配列）            | pub_tags の複数行       |

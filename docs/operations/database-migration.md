@@ -42,7 +42,7 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_pubs_colu
     psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_normalize_pub_metadata_up.sql
     psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_normalize_pub_metadata_verify.sql
 
-市区町村コードのマスタを追加する場合は、リポジトリルートで次を実行します。`003` は `data/市区町村コード.csv` のコード・名称・カナを `municipality_codes` へ取り込みます。
+市区町村コードのマスタを追加する場合は、リポジトリルートで次を実行します。`003` は `data/市区町村コード.csv` のコード・市区町村名・市区町村名カナを `municipality_codes` へ取り込み、CSV の都道府県名・カナが `prefectures` マスタと一致することも検証します。
 
 ```bash
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_municipality_codes_up.sql

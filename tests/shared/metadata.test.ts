@@ -6,6 +6,8 @@ describe("normalized metadata definitions", () => {
   it("defines all JIS prefectures in ascending code order", () => {
     expect(PREFECTURES).toHaveLength(47);
     expect(PREFECTURES.map(({ code }) => code)).toEqual(Array.from({ length: 47 }, (_, index) => index + 1));
+    expect(PREFECTURES.every(({ kana }) => kana.length > 0)).toBe(true);
+    expect(PREFECTURES[12].kana).toBe("ﾄｳｷｮｳﾄ");
     expect(getPrefectureCode("東京都")).toBe(13);
     expect(getPrefectureName(47)).toBe("沖縄県");
   });

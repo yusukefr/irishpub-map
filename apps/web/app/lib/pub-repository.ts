@@ -158,9 +158,10 @@ async function ensureTable(sql: ReturnType<typeof neon>) {
     status_code SMALLINT NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
-  await sql`CREATE TABLE IF NOT EXISTS prefectures (code SMALLINT PRIMARY KEY CHECK (code BETWEEN 1 AND 47), name TEXT NOT NULL UNIQUE CHECK (btrim(name) <> ''))`;
+  await sql`CREATE TABLE IF NOT EXISTS prefectures (code SMALLINT PRIMARY KEY CHECK (code BETWEEN 1 AND 47), name TEXT NOT NULL UNIQUE CHECK (btrim(name) <> ''), kana TEXT NOT NULL CHECK (btrim(kana) <> ''))`;
+  await sql`ALTER TABLE prefectures ADD COLUMN IF NOT EXISTS kana TEXT`;
   for (const prefecture of PREFECTURES) {
-    await sql`INSERT INTO prefectures (code, name) VALUES (${prefecture.code}, ${prefecture.name}) ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name`;
+    await sql`INSERT INTO prefectures (code, name, kana) VALUES (${prefecture.code}, ${prefecture.name}, ${prefecture.kana}) ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, kana = EXCLUDED.kana`;
   }
   await sql`CREATE TABLE IF NOT EXISTS pub_statuses (code SMALLINT PRIMARY KEY, value TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL)`;
   for (const status of PUB_STATUS_DEFINITIONS) {
