@@ -63,4 +63,19 @@ describe("pubs database migrations", () => {
     expect(verifySql).toContain("invalid_municipality_codes");
     expect(downSql).toContain("DROP TABLE IF EXISTS municipality_codes");
   });
+
+  it("defines the tag master migration, verification, and rollback", async () => {
+    const upSql = await readMigration("004_normalize_pub_tags_up.sql");
+    const verifySql = await readMigration("004_normalize_pub_tags_verify.sql");
+    const downSql = await readMigration("004_normalize_pub_tags_down.sql");
+
+    expect(upSql).toContain("CREATE TABLE tags");
+    expect(upSql).toContain("name TEXT NOT NULL UNIQUE");
+    expect(upSql).toContain("tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE");
+    expect(upSql).toContain("ALTER TABLE pub_tags RENAME TO pub_tags_legacy_20260816");
+    expect(verifySql).toContain("orphan_tag_references");
+    expect(verifySql).toContain("duplicate_tag_names");
+    expect(downSql).toContain("ALTER TABLE tags RENAME TO tags_normalized_20260816");
+    expect(downSql).toContain("CREATE INDEX pub_tags_tag_idx");
+  });
 });

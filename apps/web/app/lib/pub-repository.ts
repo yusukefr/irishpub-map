@@ -45,11 +45,12 @@ export async function getPubs() {
   const rows = (await sql`
     SELECT p.id::text, p.name, p.kana, p.prefecture_code, p.city, mc.code AS municipality_code, p.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code,
-      COALESCE(array_agg(pt.tag ORDER BY pt.tag) FILTER (WHERE pt.tag IS NOT NULL), '{}') AS tags
+      COALESCE(array_agg(t.name ORDER BY t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
     FROM pubs AS p
     LEFT JOIN municipality_codes AS mc
       ON mc.prefecture_code = p.prefecture_code AND mc.municipality_name = p.city
     LEFT JOIN pub_tags AS pt ON pt.pub_id = p.id
+    LEFT JOIN tags AS t ON t.id = pt.tag_id
     GROUP BY p.id, p.name, p.kana, p.prefecture_code, p.city, mc.code, p.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code
     ORDER BY mc.code IS NULL, mc.code::bigint, p.name, p.id
@@ -132,6 +133,26 @@ async function ensureTable(sql: ReturnType<typeof neon>) {
     throw new Error("Municipality code table is empty. Run db/migrations/003_municipality_codes_up.sql first.");
   }
 
+  const tagSchema = (await sql`
+    SELECT table_name, column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name IN ('pub_tags', 'tags')
+  `) as Array<{ table_name: string; column_name: string }>;
+  const pubTagsColumns = new Set(
+    tagSchema.filter(({ table_name }) => table_name === "pub_tags").map(({ column_name }) => column_name),
+  );
+  const tagsColumns = new Set(
+    tagSchema.filter(({ table_name }) => table_name === "tags").map(({ column_name }) => column_name),
+  );
+  const hasTagTables = pubTagsColumns.size > 0 || tagsColumns.size > 0;
+  const hasNormalizedTagTables =
+    pubTagsColumns.has("pub_id") && pubTagsColumns.has("tag_id") && tagsColumns.has("id") && tagsColumns.has("name");
+  if (hasTagTables && !hasNormalizedTagTables) {
+    throw new Error(
+      "Database schema is not normalized for tags. Run db/migrations/004_normalize_pub_tags_up.sql first.",
+    );
+  }
+
   const existingColumns =
     (await sql`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'pubs'`) as Array<{
       column_name: string;
@@ -171,12 +192,13 @@ async function ensureTable(sql: ReturnType<typeof neon>) {
   await sql`ALTER TABLE pubs DROP CONSTRAINT IF EXISTS pubs_status_code_fkey`;
   await sql`ALTER TABLE pubs ADD CONSTRAINT pubs_prefecture_code_fkey FOREIGN KEY (prefecture_code) REFERENCES prefectures(code)`;
   await sql`ALTER TABLE pubs ADD CONSTRAINT pubs_status_code_fkey FOREIGN KEY (status_code) REFERENCES pub_statuses(code)`;
-  await sql`CREATE TABLE IF NOT EXISTS pub_tags (pub_id UUID NOT NULL REFERENCES pubs(id) ON DELETE CASCADE, tag TEXT NOT NULL CHECK (btrim(tag) <> ''), PRIMARY KEY (pub_id, tag))`;
+  await sql`CREATE TABLE IF NOT EXISTS tags (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL UNIQUE CHECK (btrim(name) <> ''))`;
+  await sql`CREATE TABLE IF NOT EXISTS pub_tags (pub_id UUID NOT NULL REFERENCES pubs(id) ON DELETE CASCADE, tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE, PRIMARY KEY (pub_id, tag_id))`;
   await sql`CREATE INDEX IF NOT EXISTS pubs_prefecture_code_name_idx ON pubs (prefecture_code, name)`;
   await sql`CREATE INDEX IF NOT EXISTS pubs_city_idx ON pubs (city)`;
   await sql`CREATE INDEX IF NOT EXISTS pubs_kana_idx ON pubs (kana)`;
   await sql`CREATE INDEX IF NOT EXISTS pubs_status_code_idx ON pubs (status_code)`;
-  await sql`CREATE INDEX IF NOT EXISTS pub_tags_tag_idx ON pub_tags (tag)`;
+  await sql`CREATE INDEX IF NOT EXISTS pub_tags_tag_id_idx ON pub_tags (tag_id)`;
 
   const rows = (await sql`SELECT COUNT(*)::int AS count FROM pubs`) as Array<{ count: number }>;
   if (rows[0]?.count === 0) {
@@ -204,7 +226,14 @@ async function insertPub(sql: ReturnType<typeof neon>, pub: Pub, skipExisting = 
 async function replacePubTags(sql: ReturnType<typeof neon>, pubId: string, tags: string[]) {
   await sql`DELETE FROM pub_tags WHERE pub_id = ${pubId}::uuid`;
   for (const tag of new Set(tags.map((item) => item.trim()).filter(Boolean))) {
-    await sql`INSERT INTO pub_tags (pub_id, tag) VALUES (${pubId}::uuid, ${tag}) ON CONFLICT (pub_id, tag) DO NOTHING`;
+    const tagRows = (await sql`
+      INSERT INTO tags (name)
+      VALUES (${tag})
+      ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+      RETURNING id
+    `) as Array<{ id: string }>;
+    if (tagRows.length !== 1) throw new Error("Could not resolve tag master record.");
+    await sql`INSERT INTO pub_tags (pub_id, tag_id) VALUES (${pubId}::uuid, ${tagRows[0].id}::uuid) ON CONFLICT (pub_id, tag_id) DO NOTHING`;
   }
 }
 
@@ -212,11 +241,12 @@ async function getPubById(sql: ReturnType<typeof neon>, id: string) {
   const rows = (await sql`
     SELECT p.id::text, p.name, p.kana, p.prefecture_code, p.city, mc.code AS municipality_code, p.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code,
-      COALESCE(array_agg(pt.tag ORDER BY pt.tag) FILTER (WHERE pt.tag IS NOT NULL), '{}') AS tags
+      COALESCE(array_agg(t.name ORDER BY t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
     FROM pubs AS p
     LEFT JOIN municipality_codes AS mc
       ON mc.prefecture_code = p.prefecture_code AND mc.municipality_name = p.city
     LEFT JOIN pub_tags AS pt ON pt.pub_id = p.id
+    LEFT JOIN tags AS t ON t.id = pt.tag_id
     WHERE p.id = ${id}::uuid
     GROUP BY p.id, p.name, p.kana, p.prefecture_code, p.city, mc.code, p.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code

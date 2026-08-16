@@ -49,7 +49,7 @@ cp .env.example .env.local
 
 ## 店舗データの一括インポート
 
-インポート先は002正規化後の pubs、prefectures、pub_statuses、pub_tags です。既存JSONB構成を使う環境は、移行手順の001と002を順番に実行してからインポートしてください。
+インポート先は004正規化後の pubs、prefectures、pub_statuses、tags、pub_tags です。既存JSONB構成を使う環境は、移行手順の001〜004を順番に実行してからインポートしてください。
 
 `scripts/import-pubs.mjs` は、JSON形式の店舗データをNeonの `pubs` テーブルへ追加します。`id` が既に存在する店舗は更新せずにスキップするため、同じファイルを再実行しても安全です。入力は `packages/shared` の `Pub` 型と同じ形式の配列で、既定のファイル名はリポジトリルートの `pubs.json` です。
 

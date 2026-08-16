@@ -1,6 +1,6 @@
 # 店舗テーブル定義（項目別カラム）
 
-注意: 本書の現行スキーマは docs/specs/database-normalization.md と db/migrations/002_normalize_pub_metadata_up.sql、db/migrations/003_municipality_codes_up.sql を正とします。以下に残る prefecture、tags、status の単独カラム定義は 002 適用前の一時形式です。市区町村コードのマスタ定義は database-normalization.md を参照してください。
+注意: 本書の現行スキーマは docs/specs/database-normalization.md と db/migrations/002_normalize_pub_metadata_up.sql、db/migrations/003_municipality_codes_up.sql、db/migrations/004_normalize_pub_tags_up.sql を正とします。以下に残る prefecture、tags、status の単独カラム定義は 002 適用前の一時形式です。市区町村コードとタグマスタの定義は database-normalization.md を参照してください。
 
 ## 概要
 
