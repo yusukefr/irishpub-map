@@ -2,6 +2,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 const DEFAULT_VERSION_FILE = new URL("../app-version.json", import.meta.url);
+const DEFAULT_PACKAGE_FILE = new URL("../package.json", import.meta.url);
+const DEFAULT_LOCK_FILE = new URL("../package-lock.json", import.meta.url);
 const JST_TIME_ZONE = "Asia/Tokyo";
 
 /** セマンティックバージョンの更新種別です。 */
@@ -31,17 +33,32 @@ export function formatJstDate(date) {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-/** バージョンファイルを読み込み、指定された更新種別とJST日付で書き換えます。 */
+/** バージョンファイルとルートnpmメタデータを更新します。 */
 export async function updateAppVersion(
   versionFile = DEFAULT_VERSION_FILE,
   bumpType = process.env.APP_VERSION_BUMP ?? "patch",
   now = new Date(),
+  packageFile = DEFAULT_PACKAGE_FILE,
+  lockFile = DEFAULT_LOCK_FILE,
 ) {
   const current = JSON.parse(await readFile(versionFile, "utf8"));
   if (typeof current.version !== "string") throw new Error("app-version.json must contain a version string.");
 
   const next = { version: bumpVersion(current.version, bumpType), releaseDate: formatJstDate(now) };
+  const packageJson = JSON.parse(await readFile(packageFile, "utf8"));
+  if (typeof packageJson.version !== "string") throw new Error("package.json must contain a version string.");
+
+  const packageLock = JSON.parse(await readFile(lockFile, "utf8"));
+  if (typeof packageLock.version !== "string" || typeof packageLock.packages?.[""]?.version !== "string") {
+    throw new Error("package-lock.json must contain root package version metadata.");
+  }
+
+  packageJson.version = next.version;
+  packageLock.version = next.version;
+  packageLock.packages[""].version = next.version;
   await writeFile(versionFile, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+  await writeFile(packageFile, `${JSON.stringify(packageJson, null, 2)}\n`, "utf8");
+  await writeFile(lockFile, `${JSON.stringify(packageLock, null, 2)}\n`, "utf8");
   return next;
 }
 
