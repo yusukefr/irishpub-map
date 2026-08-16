@@ -28,6 +28,17 @@ Vercel で対象の GitHub リポジトリを Import します。
 
 `vercel.json` でも同じ build 設定を管理します。
 
+### Vercel Toolbar / Preview Comments
+
+Production Deploymentの出力は不変な静的成果物として扱われるため、ProductionのPreview Commentsは **OFF** にします。Previewでコメントを使う場合はPreview環境だけを必要に応じて有効化します。設定はVercel Projectの **Settings → General → Vercel Toolbar** で環境ごとに管理し、vercel.jsonでは管理しません。
+
+Productionのデプロイがビルド完了後の `Deploying outputs...` で失敗し、Deployment APIのエラーコードが `IMMUTABLE_STATIC_PATCH_PREVIEW_COMMENTS` の場合は、ProductionのToolbar／Feedback設定をOFFにしてから再デプロイします。設定変更後は次の項目を確認します。
+
+- Production FeedbackがOFFになっている
+- Previewの設定は必要な運用に合わせている
+- VercelのDeploymentがReadyになり、Production aliasが割り当てられている
+- アプリのビルドログに同じエラーコードが再発していない
+
 ### デプロイ時のバージョン更新
 
 GitHub Actions のPR用ワークフローで `npm run update-app-version` が実行され、PRブランチの `app-version.json`、ルート `package.json`、ルート `package-lock.json` のバージョンと `app-version.json` のリリース日を同期してコミットします。Vercelでは `npm run update-app-version -- --date-only` により、コミット済みバージョンを維持したまま `app-version.json` のリリース日だけを日本時間（JST）の当日に更新します。
