@@ -46,6 +46,10 @@ describe("importPubs", () => {
     });
   });
 
+  it("normalizes tag aliases before import", () => {
+    expect(parsePubs([{ ...pub, tags: ["ギネス", "guinness", "whisky"] }])[0].tags).toEqual(["guinness", "whiskey"]);
+  });
+
   it("requires a database URL and accepts the default source path", async () => {
     await expect(importPubs("", [pub])).rejects.toThrow("DATABASE_URL is required.");
     expect(getSourcePath([])).toBe("pubs.json");

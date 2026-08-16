@@ -78,4 +78,18 @@ describe("pubs database migrations", () => {
     expect(downSql).toContain("ALTER TABLE tags RENAME TO tags_normalized_20260816");
     expect(downSql).toContain("CREATE INDEX pub_tags_tag_idx");
   });
+
+  it("defines the tag name normalization migration, verification, and rollback", async () => {
+    const upSql = await readMigration("005_normalize_tag_names_up.sql");
+    const verifySql = await readMigration("005_normalize_tag_names_verify.sql");
+    const downSql = await readMigration("005_normalize_tag_names_down.sql");
+
+    expect(upSql).toContain("tag_name_normalization_backup_20260817");
+    expect(upSql).toContain("ON CONFLICT (pub_id, tag_id) DO NOTHING");
+    expect(upSql).toContain("DELETE FROM tags");
+    expect(verifySql).toContain("remaining_alias_names");
+    expect(verifySql).toContain("duplicate_pub_tag_names");
+    expect(downSql).toContain("tag_name_normalization_pub_tags_backup_20260817");
+    expect(downSql).toContain("tags_normalized_20260817");
+  });
 });

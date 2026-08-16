@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import type { Pub } from "@irishpub-map/shared/pub";
 import { PREFECTURES } from "@irishpub-map/shared/prefecture";
 import { PUB_STATUS_DEFINITIONS } from "@irishpub-map/shared/status";
+import { normalizeTags } from "@irishpub-map/shared/tag";
 
 type Props = { initialPubs: Pub[]; databaseConfigured: boolean };
 const statuses = PUB_STATUS_DEFINITIONS;
@@ -34,10 +35,7 @@ function toBody(form: FormData) {
     websiteUrl: form.get("websiteUrl") || null,
     googleMapsUrl: form.get("googleMapsUrl") || null,
     instagramUrl: form.get("instagramUrl") || null,
-    tags: String(form.get("tags") || "")
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean),
+    tags: normalizeTags(String(form.get("tags") || "").split(",")),
     status: form.get("status"),
   };
 }

@@ -100,6 +100,13 @@ describe("asPubs", () => {
     expect(() => asPubs([{ ...basePub, longitude: -181 }])).toThrow("Invalid pub data found.");
   });
 
+  it("normalizes aliases and removes duplicate tags", () => {
+    expect(asPubs([{ ...basePub, tags: ["ギネス", "guinness", "WHISKY", "whisky"] }])[0].tags).toEqual([
+      "guinness",
+      "whiskey",
+    ]);
+  });
+
   it("rejects invalid tags and status", () => {
     expect(() => asPubs([{ ...basePub, tags: "guinness" }])).toThrow("Invalid pub data found.");
     expect(() => asPubs([{ ...basePub, tags: ["guinness", 1] }])).toThrow("Invalid pub data found.");

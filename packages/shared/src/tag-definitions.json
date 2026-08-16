@@ -1,0 +1,19 @@
+{
+  "canonical": {
+    "guinness": "ギネス",
+    "food": "食事あり",
+    "station-area": "駅近",
+    "craft-beer": "クラフトビール",
+    "live-music": "ライブ音楽",
+    "whiskey": "ウイスキー"
+  },
+  "aliases": {
+    "ギネス": "guinness",
+    "食事あり": "food",
+    "駅近": "station-area",
+    "クラフトビール": "craft-beer",
+    "ライブ音楽": "live-music",
+    "whisky": "whiskey",
+    "ウイスキー": "whiskey"
+  }
+}

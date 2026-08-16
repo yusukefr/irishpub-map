@@ -1,6 +1,6 @@
 # データベース定義書
 
-現行の店舗メタデータ正規化（都道府県・営業状況・市区町村コード・タグの各マスタ、店舗タグ関係）は docs/specs/database-normalization.md と db/migrations/002_normalize_pub_metadata_up.sql、db/migrations/003_municipality_codes_up.sql、db/migrations/004_normalize_pub_tags_up.sql を正とします。
+現行の店舗メタデータ正規化（都道府県・営業状況・市区町村コード・タグの各マスタ、店舗タグ関係）は docs/specs/database-normalization.md と db/migrations/002_normalize_pub_metadata_up.sql、db/migrations/003_municipality_codes_up.sql、db/migrations/004_normalize_pub_tags_up.sql と db/migrations/005_normalize_tag_names_up.sql を正とします。
 
 ## 概要
 

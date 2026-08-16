@@ -3,6 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { PREFECTURES, getPrefectureCode, getPrefectureName } from "@irishpub-map/shared/prefecture";
 import { getPubStatusCode, getPubStatusValue, PUB_STATUS_DEFINITIONS } from "@irishpub-map/shared/status";
 import { asPubs, type Pub } from "@irishpub-map/shared/pub";
+import { normalizeTags } from "@irishpub-map/shared/tag";
 import { getValidatedPubs } from "./pub-data";
 
 type DbPubRow = {
@@ -225,7 +226,7 @@ async function insertPub(sql: ReturnType<typeof neon>, pub: Pub, skipExisting = 
 
 async function replacePubTags(sql: ReturnType<typeof neon>, pubId: string, tags: string[]) {
   await sql`DELETE FROM pub_tags WHERE pub_id = ${pubId}::uuid`;
-  for (const tag of new Set(tags.map((item) => item.trim()).filter(Boolean))) {
+  for (const tag of normalizeTags(tags)) {
     const tagRows = (await sql`
       INSERT INTO tags (name)
       VALUES (${tag})
@@ -354,7 +355,7 @@ function normalizeDbRow(row: DbPubRow) {
     websiteUrl: normalizeOptionalText(row.website_url),
     googleMapsUrl: normalizeOptionalText(row.google_maps_url),
     instagramUrl: normalizeOptionalText(row.instagram_url),
-    tags: normalizeTags(row.tags),
+    tags: normalizeDbTags(row.tags),
     status,
   };
 }
@@ -381,7 +382,7 @@ function normalizeNumber(value: unknown) {
   return Number.isFinite(numberValue) ? numberValue : value;
 }
 
-function normalizeTags(value: unknown) {
+function normalizeDbTags(value: unknown) {
   if (Array.isArray(value)) return value.map((tag) => normalizeText(tag));
   if (typeof value !== "string") return value;
 
