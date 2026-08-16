@@ -1092,6 +1092,27 @@ body {
     transform 160ms ease;
 }
 
+.filter-row .closed-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.filter-row .closed-filter input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent-strong);
+}
+
+.filter-row .closed-filter span {
+  line-height: 1.4;
+}
+
 .search-row button:hover,
 .filter-reset:hover,
 .pub-detail-toggle:hover {

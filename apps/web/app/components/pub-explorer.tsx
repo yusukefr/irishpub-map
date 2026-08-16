@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
+import type { Pub } from "@irishpub-map/shared/pub";
 import { getTagLabel } from "@irishpub-map/shared/tag";
 import {
   filterPubs,
@@ -15,13 +15,6 @@ import { PubMap } from "./pub-map";
 
 type PubExplorerProps = {
   pubs: Pub[];
-};
-
-const STATUS_LABELS: Record<PubStatus, string> = {
-  open: "営業中",
-  temporarily_closed: "一時休業",
-  closed: "閉業",
-  unknown: "不明",
 };
 
 const GEOLOCATION_OPTIONS: PositionOptions = {
@@ -44,28 +37,28 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
   const [currentPrefecture, setCurrentPrefecture] = useState("");
   const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<PubStatus | "">("");
+  const [includeClosed, setIncludeClosed] = useState(false);
   const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
   const hasSelectedPrefecture = useRef(false);
   const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
   const availableTags = useMemo(() => getAvailableTags(pubs), [pubs]);
   const filteredPubs = useMemo(
-    () => filterPubs(pubs, { query, prefecture: selectedPrefecture, tags: selectedTags, status: selectedStatus }),
-    [pubs, query, selectedPrefecture, selectedTags, selectedStatus],
+    () => filterPubs(pubs, { query, prefecture: selectedPrefecture, tags: selectedTags, includeClosed }),
+    [pubs, query, selectedPrefecture, selectedTags, includeClosed],
   );
   const prefecturePubs = useMemo(
-    () => (selectedPrefecture ? filterPubs(pubs, { prefecture: selectedPrefecture }) : []),
-    [pubs, selectedPrefecture],
+    () => (selectedPrefecture ? filterPubs(pubs, { prefecture: selectedPrefecture, includeClosed }) : []),
+    [pubs, selectedPrefecture, includeClosed],
   );
   const mapFocusPubs = selectedPrefecture === currentPrefecture ? EMPTY_FOCUS_PUBS : prefecturePubs;
-  const hasActiveFilters = Boolean(query || selectedPrefecture || selectedTags.length || selectedStatus);
+  const hasActiveFilters = Boolean(query || selectedPrefecture || selectedTags.length || includeClosed);
 
   const resetFilters = () => {
     hasSelectedPrefecture.current = false;
     setQuery("");
     setSelectedPrefecture("");
     setSelectedTags([]);
-    setSelectedStatus("");
+    setIncludeClosed(false);
     setSelectedPubId(null);
   };
 
@@ -188,19 +181,17 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
               })}
             </div>
           </fieldset>
-          <label htmlFor="pub-status-filter">
-            営業状況
-            <select
-              id="pub-status-filter"
-              value={selectedStatus}
+          <label className="closed-filter">
+            <input
+              type="checkbox"
+              checked={includeClosed}
+              aria-label="閉業した店舗を含める"
               onChange={(event) => {
-                setSelectedStatus(event.target.value as PubStatus | "");
+                setIncludeClosed(event.target.checked);
                 setSelectedPubId(null);
               }}
-            >
-              <option value="">すべての営業状況</option>
-              <option value="open">{STATUS_LABELS.open}</option>
-            </select>
+            />
+            <span>閉業した店舗を含める</span>
           </label>
           {hasActiveFilters ? (
             <button type="button" className="filter-reset" onClick={resetFilters}>
@@ -208,7 +199,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
             </button>
           ) : null}
         </div>
-        <p className="search-help">店舗名・エリア・タグ・営業状況を組み合わせて絞り込めます。</p>
+        <p className="search-help">店舗名・エリア・タグで絞り込み、必要に応じて閉業した店舗を含められます。</p>
       </section>
 
       <section className="map-layout" aria-label="Irish Pub map and list">
