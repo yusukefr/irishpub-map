@@ -10,6 +10,7 @@
     "dev": "npm run dev -w apps/web",
     "build": "npm run build -w apps/web",
     "import-pubs": "node scripts/import-pubs.mjs",
+    "export-municipality-csv": "node scripts/export-municipality-codes.mjs",
     "validate:production-env": "node scripts/validate-production-env.mjs",
     "update-app-version": "node scripts/update-app-version.mjs",
     "lint": "eslint --config eslint.config.mjs apps/web/app packages/shared/src --max-warnings=0",
@@ -30,7 +31,8 @@
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^30.0.1",
     "prettier": "^3.9.6",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "xlsx": "^0.18.5"
   },
   "engines": {
     "node": "24.x",
