@@ -7,6 +7,7 @@ import {
   getAvailableStatuses,
   getAvailableTags,
   getNearestAvailablePrefecture,
+  sortPubsByMunicipalityCode,
 } from "../../apps/web/app/lib/pub-search";
 import type { Pub } from "../../packages/shared/src/pub";
 
@@ -16,6 +17,7 @@ const pubs: Pub[] = [
     name: "Tokyo Sample Pub",
     prefecture: "東京都",
     city: "千代田区",
+    municipalityCode: "131016",
     address: "東京都千代田区1-1-1",
     latitude: 35.681,
     longitude: 139.767,
@@ -30,6 +32,7 @@ const pubs: Pub[] = [
     name: "Osaka Sample Pub",
     prefecture: "大阪府",
     city: "大阪市",
+    municipalityCode: "271004",
     address: "大阪府大阪市1-1-1",
     latitude: 34.693,
     longitude: 135.502,
@@ -44,6 +47,7 @@ const pubs: Pub[] = [
     name: "Kyoto Sample Pub",
     prefecture: "京都府",
     address: "京都府京都市1-1-1",
+    municipalityCode: "261009",
     latitude: 35.011,
     longitude: 135.768,
     websiteUrl: null,
@@ -111,7 +115,24 @@ describe("filterPubsByQuery", () => {
   });
 
   it("returns all pubs when the query is blank", () => {
-    expect(filterPubsByQuery(pubs, "  ")).toEqual(pubs);
+    expect(filterPubsByQuery(pubs, "  ")).toEqual([pubs[0], pubs[2], pubs[1]]);
+  });
+
+  it("sorts filtered pubs by municipality code and stable secondary keys", () => {
+    const unsorted = [
+      { ...pubs[1], id: "osaka-z", municipalityCode: "271004" },
+      { ...pubs[0], id: "tokyo", municipalityCode: "131016" },
+      { ...pubs[0], id: "unknown", municipalityCode: undefined },
+      { ...pubs[0], id: "osaka-a", name: "A Pub", municipalityCode: "271004", tags: ["live-music"] },
+    ];
+
+    expect(sortPubsByMunicipalityCode(unsorted).map((pub) => pub.id)).toEqual([
+      "tokyo",
+      "osaka-a",
+      "osaka-z",
+      "unknown",
+    ]);
+    expect(filterPubs(unsorted, { tags: ["live-music"] }).map((pub) => pub.id)).toEqual(["osaka-a", "osaka-z"]);
   });
 
   it("finds the nearest available prefecture from coordinates", () => {

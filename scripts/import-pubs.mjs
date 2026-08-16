@@ -53,6 +53,55 @@ const PREFECTURE_NAMES = [
   "鹿児島県",
   "沖縄県",
 ];
+const PREFECTURE_KANAS = [
+  "ﾎｯｶｲﾄﾞｳ",
+  "ｱｵﾓﾘｹﾝ",
+  "ｲﾜﾃｹﾝ",
+  "ﾐﾔｷﾞｹﾝ",
+  "ｱｷﾀｹﾝ",
+  "ﾔﾏｶﾞﾀｹﾝ",
+  "ﾌｸｼﾏｹﾝ",
+  "ｲﾊﾞﾗｷｹﾝ",
+  "ﾄﾁｷﾞｹﾝ",
+  "ｸﾞﾝﾏｹﾝ",
+  "ｻｲﾀﾏｹﾝ",
+  "ﾁﾊﾞｹﾝ",
+  "ﾄｳｷｮｳﾄ",
+  "ｶﾅｶﾞﾜｹﾝ",
+  "ﾆｲｶﾞﾀｹﾝ",
+  "ﾄﾔﾏｹﾝ",
+  "ｲｼｶﾜｹﾝ",
+  "ﾌｸｲｹﾝ",
+  "ﾔﾏﾅｼｹﾝ",
+  "ﾅｶﾞﾉｹﾝ",
+  "ｷﾞﾌｹﾝ",
+  "ｼｽﾞｵｶｹﾝ",
+  "ｱｲﾁｹﾝ",
+  "ﾐｴｹﾝ",
+  "ｼｶﾞｹﾝ",
+  "ｷｮｳﾄﾌ",
+  "ｵｵｻｶﾌ",
+  "ﾋｮｳｺﾞｹﾝ",
+  "ﾅﾗｹﾝ",
+  "ﾜｶﾔﾏｹﾝ",
+  "ﾄｯﾄﾘｹﾝ",
+  "ｼﾏﾈｹﾝ",
+  "ｵｶﾔﾏｹﾝ",
+  "ﾋﾛｼﾏｹﾝ",
+  "ﾔﾏｸﾞﾁｹﾝ",
+  "ﾄｸｼﾏｹﾝ",
+  "ｶｶﾞﾜｹﾝ",
+  "ｴﾋﾒｹﾝ",
+  "ｺｳﾁｹﾝ",
+  "ﾌｸｵｶｹﾝ",
+  "ｻｶﾞｹﾝ",
+  "ﾅｶﾞｻｷｹﾝ",
+  "ｸﾏﾓﾄｹﾝ",
+  "ｵｵｲﾀｹﾝ",
+  "ﾐﾔｻﾞｷｹﾝ",
+  "ｶｺﾞｼﾏｹﾝ",
+  "ｵｷﾅﾜｹﾝ",
+];
 const PUB_STATUS_CODES = { open: 1, temporarily_closed: 2, closed: 3, unknown: 4 };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -97,9 +146,10 @@ export async function importPubs(databaseUrl, pubs, sql) {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
-  await client`CREATE TABLE IF NOT EXISTS prefectures (code SMALLINT PRIMARY KEY, name TEXT NOT NULL UNIQUE)`;
+  await client`CREATE TABLE IF NOT EXISTS prefectures (code SMALLINT PRIMARY KEY, name TEXT NOT NULL UNIQUE, kana TEXT NOT NULL)`;
+  await client`ALTER TABLE prefectures ADD COLUMN IF NOT EXISTS kana TEXT`;
   for (const [index, name] of PREFECTURE_NAMES.entries()) {
-    await client`INSERT INTO prefectures (code, name) VALUES (${index + 1}, ${name}) ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name`;
+    await client`INSERT INTO prefectures (code, name, kana) VALUES (${index + 1}, ${name}, ${PREFECTURE_KANAS[index]}) ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, kana = EXCLUDED.kana`;
   }
   await client`CREATE TABLE IF NOT EXISTS pub_statuses (code SMALLINT PRIMARY KEY, value TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL)`;
   const displayNames = { open: "営業中", temporarily_closed: "一時休業", closed: "閉店", unknown: "不明" };

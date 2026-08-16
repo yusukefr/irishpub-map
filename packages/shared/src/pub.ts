@@ -8,6 +8,8 @@ export type Pub = {
   kana?: string | null;
   prefecture: string;
   city?: string | null;
+  /** 市区町村マスタから解決した6桁の団体コードです。 */
+  municipalityCode?: string | null;
   address: string;
   latitude: number;
   longitude: number;
@@ -55,6 +57,7 @@ function isPub(value: unknown): value is Pub {
     isNonEmptyString(pub.prefecture) &&
     isNonEmptyString(pub.address) &&
     isOptionalString(pub.city) &&
+    isOptionalMunicipalityCode(pub.municipalityCode) &&
     isLatitude(pub.latitude) &&
     isLongitude(pub.longitude) &&
     isOptionalUrl(pub.websiteUrl) &&
@@ -72,6 +75,10 @@ function isPubStatus(value: unknown): value is PubStatus {
 
 function isOptionalString(value: unknown) {
   return value === undefined || value === null || typeof value === "string";
+}
+
+function isOptionalMunicipalityCode(value: unknown) {
+  return value === undefined || value === null || (typeof value === "string" && /^[0-9]{6}$/.test(value));
 }
 
 function isNonEmptyString(value: unknown) {
@@ -101,11 +108,17 @@ function normalizePub(pub: Pub): Pub {
     ...pub,
     kana: normalizeOptionalText(pub.kana),
     city: normalizeOptionalText(pub.city),
+    municipalityCode: normalizeOptionalMunicipalityCode(pub.municipalityCode),
     websiteUrl: normalizeOptionalUrl(pub.websiteUrl),
     googleMapsUrl: normalizeOptionalUrl(pub.googleMapsUrl),
     instagramUrl: normalizeOptionalUrl(pub.instagramUrl),
     tags: [...new Set(pub.tags.map((tag) => tag.trim()))],
   };
+}
+
+function normalizeOptionalMunicipalityCode(value: string | null | undefined) {
+  const normalized = typeof value === "string" ? value.trim() : "";
+  return normalized || undefined;
 }
 
 function normalizeOptionalText(value: string | null | undefined) {

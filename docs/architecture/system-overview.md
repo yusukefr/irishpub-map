@@ -24,7 +24,7 @@ flowchart TB
     staticData["data/pubs.json<br/>初期データ・フォールバック"]
   end
 
-  neon[(Neon Postgres<br/>pubs テーブル)]
+  neon[(Neon Postgres<br/>店舗・各種マスタテーブル)]
 
   visitor --> publicPage
   publicPage --> publicApi
@@ -50,7 +50,7 @@ flowchart TB
 ## データの扱い
 
 - `data/pubs.json` は検証済みの初期データであり、`DATABASE_URL` が未設定の開発環境・公開 API のフォールバックにも使います。
-- `DATABASE_URL` が設定されている場合、`pub-repository` は Neon の `pubs` テーブルを読み書きします。テーブルが空の場合は `data/pubs.json` の内容を初期投入します。
+- `DATABASE_URL` が設定されている場合、`pub-repository` は Neon の `pubs` と各種マスタテーブルを読み書きします。店舗テーブルが空の場合は `data/pubs.json` の内容を初期投入し、市区町村コードは `municipality_codes` と結合して解決します。
 - API とリポジトリ層は、共有パッケージの `asPubs` で読み出した店舗データを検証します。型の詳細は[店舗データ仕様](../specs/data.md)を参照してください。
 
 ## 主要な境界
