@@ -160,12 +160,13 @@ export async function importPubs(databaseUrl, pubs, sql) {
   await client`ALTER TABLE pubs DROP CONSTRAINT IF EXISTS pubs_status_code_fkey`;
   await client`ALTER TABLE pubs ADD CONSTRAINT pubs_prefecture_code_fkey FOREIGN KEY (prefecture_code) REFERENCES prefectures(code)`;
   await client`ALTER TABLE pubs ADD CONSTRAINT pubs_status_code_fkey FOREIGN KEY (status_code) REFERENCES pub_statuses(code)`;
-  await client`CREATE TABLE IF NOT EXISTS pub_tags (pub_id UUID NOT NULL REFERENCES pubs(id) ON DELETE CASCADE, tag TEXT NOT NULL CHECK (btrim(tag) <> ''), PRIMARY KEY (pub_id, tag))`;
+  await client`CREATE TABLE IF NOT EXISTS tags (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL UNIQUE CHECK (btrim(name) <> ''))`;
+  await client`CREATE TABLE IF NOT EXISTS pub_tags (pub_id UUID NOT NULL REFERENCES pubs(id) ON DELETE CASCADE, tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE, PRIMARY KEY (pub_id, tag_id))`;
   await client`CREATE INDEX IF NOT EXISTS pubs_prefecture_code_name_idx ON pubs (prefecture_code, name)`;
   await client`CREATE INDEX IF NOT EXISTS pubs_city_idx ON pubs (city)`;
   await client`CREATE INDEX IF NOT EXISTS pubs_kana_idx ON pubs (kana)`;
   await client`CREATE INDEX IF NOT EXISTS pubs_status_code_idx ON pubs (status_code)`;
-  await client`CREATE INDEX IF NOT EXISTS pub_tags_tag_idx ON pub_tags (tag)`;
+  await client`CREATE INDEX IF NOT EXISTS pub_tags_tag_id_idx ON pub_tags (tag_id)`;
 
   let imported = 0;
   let skipped = 0;
@@ -185,7 +186,14 @@ export async function importPubs(databaseUrl, pubs, sql) {
     if (rows.length === 1) {
       imported += 1;
       for (const tag of new Set(pub.tags.map((item) => item.trim()).filter(Boolean))) {
-        await client`INSERT INTO pub_tags (pub_id, tag) VALUES (${pub.id}::uuid, ${tag}) ON CONFLICT (pub_id, tag) DO NOTHING`;
+        const tagRows = await client`
+          INSERT INTO tags (name)
+          VALUES (${tag})
+          ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+          RETURNING id
+        `;
+        if (tagRows.length !== 1) throw new Error("Could not resolve tag master record.");
+        await client`INSERT INTO pub_tags (pub_id, tag_id) VALUES (${pub.id}::uuid, ${tagRows[0].id}::uuid) ON CONFLICT (pub_id, tag_id) DO NOTHING`;
       }
     } else {
       skipped += 1;

@@ -1,6 +1,6 @@
 # データベース定義書
 
-現行の店舗メタデータ正規化（都道府県・営業状況・市区町村コードの各マスタ、店舗タグ関係）は docs/specs/database-normalization.md と db/migrations/002_normalize_pub_metadata_up.sql、db/migrations/003_municipality_codes_up.sql を正とします。
+現行の店舗メタデータ正規化（都道府県・営業状況・市区町村コード・タグの各マスタ、店舗タグ関係）は docs/specs/database-normalization.md と db/migrations/002_normalize_pub_metadata_up.sql、db/migrations/003_municipality_codes_up.sql、db/migrations/004_normalize_pub_tags_up.sql を正とします。
 
 ## 概要
 
@@ -16,6 +16,7 @@ Irish Pub Map の永続化先は Neon Postgres です。`DATABASE_URL` が設定
 | `prefectures`        | 都道府県コード・表示名・カナを保存     |
 | `pub_statuses`       | 営業状況コードと表示名を保存           |
 | `municipality_codes` | 市区町村コードと市区町村名・カナを保存 |
+| `tags`               | タグIDとタグ名を保存                   |
 | `pub_tags`           | 店舗とタグの対応を保存                 |
 
 管理者ユーザーやセッションを保存するテーブルはありません。管理者認証情報は環境変数で管理し、ログイン後のセッションは署名付き HttpOnly Cookie で管理します。

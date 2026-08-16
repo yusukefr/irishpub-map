@@ -49,9 +49,17 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_municipal
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_municipality_codes_verify.sql
 ```
 
+タグをマスタへ正規化する場合は、003の確認後に次を実行します。`004` は既存の `pub_tags.tag` を `tags.name` と `pub_tags.tag_id` へ移行し、旧 `pub_tags` をロールバック用に保持します。
+
+```bash
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/004_normalize_pub_tags_up.sql
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/004_normalize_pub_tags_verify.sql
+```
+
 新テーブルへ書き込みが発生した後のロールバックでは、その更新は旧テーブルへ戻りません。書き込みを停止し、Neon バックアップまたは旧テーブルを確認してから実行します。
 
 ```bash
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/004_normalize_pub_tags_down.sql
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_municipality_codes_down.sql
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_normalize_pub_metadata_down.sql
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_pubs_columns_down.sql
