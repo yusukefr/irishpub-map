@@ -46,12 +46,12 @@ pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.co
 
 ## 移行と初期化
 
-既存の001適用済みDBは db/migrations/002_normalize_pub_metadata_up.sql、続けて db/migrations/003_municipality_codes_up.sql、004_normalize_pub_tags_up.sql を明示的に実行します。003はリポジトリルートから市区町村コードCSVを psql のクライアント側コピーで取り込み、004は既存の `pub_tags.tag` をタグマスタと `tag_id` 参照へ移行します。適用後は各 migration の verify SQL で確認します。戻す場合は004、003の順にdown.sqlを実行します。
+既存の001適用済みDBは db/migrations/002_normalize_pub_metadata_up.sql、続けて db/migrations/003_municipality_codes_up.sql、004_normalize_pub_tags_up.sql を明示的に実行します。003はリポジトリルートから市区町村コードCSVを psql のクライアント側コピーで取り込む既存形式のためNode実行スクリプトの対象外です。004は既存の `pub_tags.tag` をタグマスタと `tag_id` 参照へ移行します。適用後は各 migration の verify SQL で確認します。戻す場合は004、003の順にdown.sqlを実行します。
 
 タグマスタの移行は、003の確認後に次の順で実行します。
 
-    psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/004_normalize_pub_tags_up.sql
-    psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/004_normalize_pub_tags_verify.sql
+    node scripts/run-neon-migration.mjs db/migrations/004_normalize_pub_tags_up.sql
+    node scripts/run-neon-migration.mjs db/migrations/004_normalize_pub_tags_verify.sql
 
 004のdown.sqlを実行する場合はアプリの書き込みを停止します。新しいタグ関連付けは文字列タグへ変換して復元し、正規化後のテーブルは `pub_tags_normalized_20260816` と `tags_normalized_20260816` へ退避します。
 

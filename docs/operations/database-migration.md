@@ -12,15 +12,17 @@
 
 ```bash
 export MIGRATION_DATABASE_URL='対象環境から安全に取得した接続文字列'
-psql "$MIGRATION_DATABASE_URL" -c 'SELECT COUNT(*) FROM pubs;'
+node scripts/run-neon-migration.mjs db/migrations/001_pubs_columns_verify.sql
 ```
+
+001・002・004のSQLマイグレーションは `@neondatabase/serverless` の Node `Client` で実行します。`psql` の導入や使用は不要です。接続文字列は出力せず、作業終了後はシェル変数を破棄してください。003はCSV取込にpsqlの `\\copy` を使う既存SQLのため、このスクリプトの対象外です。
 
 ## 移行
 
 アプリを新スキーマ対応版へ切り替える前に、対象 DB へ 1 回だけ実行します。
 
 ```bash
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_pubs_columns_up.sql
+node scripts/run-neon-migration.mjs db/migrations/001_pubs_columns_up.sql
 ```
 
 移行 SQL は、旧テーブルのスナップショット、旧 ID→決定的 UUID の対応表、必須値・座標・URL・タグ・status の事前検証、全属性の独立カラムへのコピー、件数照合を同一トランザクションで行います。切り替え後も `pubs_jsonb_legacy_20260815` と `pub_id_migration_map` を保持します。
@@ -28,7 +30,7 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_pubs_colu
 ## 移行後確認
 
 ```bash
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_pubs_columns_verify.sql
+node scripts/run-neon-migration.mjs db/migrations/001_pubs_columns_verify.sql
 ```
 
 `row_count` と `id_map_count` が旧件数と一致し、`missing_migrated_rows` が 0、`legacy_jsonb_dependency` が 0 であることを確認します。Preview／Production それぞれで公開 API、管理画面の一覧・追加・編集・削除、検索、店舗詳細 URL、インポートも確認します。
@@ -39,8 +41,8 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_pubs_colu
 
 002の適用と確認は次の順で実行します。
 
-    psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_normalize_pub_metadata_up.sql
-    psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_normalize_pub_metadata_verify.sql
+    node scripts/run-neon-migration.mjs db/migrations/002_normalize_pub_metadata_up.sql
+    node scripts/run-neon-migration.mjs db/migrations/002_normalize_pub_metadata_verify.sql
 
 市区町村コードのマスタを追加する場合は、リポジトリルートで次を実行します。`003` は `data/市区町村コード.csv` のコード・市区町村名・市区町村名カナを `municipality_codes` へ取り込み、CSV の都道府県名・カナが `prefectures` マスタと一致することも検証します。
 
@@ -49,20 +51,22 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_municipal
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_municipality_codes_verify.sql
 ```
 
+003はCSVをpsqlの `\\copy` で読み込む既存SQLのため、このNode実行スクリプトの対象外です。003を新規環境へ適用する場合は、CSV取込処理をNodeクライアントへ移行してから実行します。
+
 タグをマスタへ正規化する場合は、003の確認後に次を実行します。`004` は既存の `pub_tags.tag` を `tags.name` と `pub_tags.tag_id` へ移行し、旧 `pub_tags` をロールバック用に保持します。
 
 ```bash
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/004_normalize_pub_tags_up.sql
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/004_normalize_pub_tags_verify.sql
+node scripts/run-neon-migration.mjs db/migrations/004_normalize_pub_tags_up.sql
+node scripts/run-neon-migration.mjs db/migrations/004_normalize_pub_tags_verify.sql
 ```
 
 新テーブルへ書き込みが発生した後のロールバックでは、その更新は旧テーブルへ戻りません。書き込みを停止し、Neon バックアップまたは旧テーブルを確認してから実行します。
 
 ```bash
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/004_normalize_pub_tags_down.sql
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_municipality_codes_down.sql
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_normalize_pub_metadata_down.sql
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_pubs_columns_down.sql
+node scripts/run-neon-migration.mjs db/migrations/004_normalize_pub_tags_down.sql
+node scripts/run-neon-migration.mjs db/migrations/003_municipality_codes_down.sql
+node scripts/run-neon-migration.mjs db/migrations/002_normalize_pub_metadata_down.sql
+node scripts/run-neon-migration.mjs db/migrations/001_pubs_columns_down.sql
 ```
 
 ロールバック SQL は新テーブルを `pubs_columns_rolled_back_20260815` へ退避し、旧テーブルを `pubs` に戻します。復旧後は旧スキーマ対応コードへ戻し、件数・属性・API を再確認します。接続文字列やトークンは運用記録に残しません。
