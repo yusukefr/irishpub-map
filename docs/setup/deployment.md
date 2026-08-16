@@ -30,7 +30,7 @@ Vercel で対象の GitHub リポジトリを Import します。
 
 ### デプロイ時のバージョン更新
 
-GitHub Actions のPR用ワークフローで `npm run update-app-version` が実行され、PRブランチの `app-version.json` にバージョンとリリース日をコミットします。Vercelでは `npm run update-app-version -- --date-only` により、コミット済みバージョンを維持したままリリース日だけを日本時間（JST）の当日に更新します。
+GitHub Actions のPR用ワークフローで `npm run update-app-version` が実行され、PRブランチの `app-version.json`、ルート `package.json`、ルート `package-lock.json` のバージョンと `app-version.json` のリリース日を同期してコミットします。Vercelでは `npm run update-app-version -- --date-only` により、コミット済みバージョンを維持したまま `app-version.json` のリリース日だけを日本時間（JST）の当日に更新します。
 
 機能追加や画面改修をデプロイする場合は、GitHub Actions のリポジトリVariables `APP_VERSION_BUMP` に `minor` を設定してください。未設定または `patch` の場合は patch バージョンが更新されます。`major` はこの運用では自動更新しません。
 
