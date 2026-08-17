@@ -2,11 +2,11 @@
 
 ## 概要
 
-DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、タグを pub_tags の複数行、市区町村コードを municipality_codes のマスタとして保存します。公開APIと初期JSONは市区町村名を保持し、公開APIの `municipalityCode` は市区町村マスタから解決できた場合に付加します。
+DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、タグを pub_tags の複数行、市区町村コードを municipality_codes のマスタとして保存します。公開APIはNeonの店舗データを返し、市区町村名から `municipalityCode` を解決できた場合に付加します。
 
 型定義と検証ロジックは `packages/shared/src/pub.ts` にあります。Neon Postgres の項目別カラム、制約、インデックスは[項目別カラムの定義](database-columns.md)を参照してください。既存 DB の移行は[移行手順](../operations/database-migration.md)に従います。
 
-`data/pubs.json` は初期データとフォールバックです。`DATABASE_URL` が未設定の環境では公開 API と管理画面の表示に同ファイルを使います。Neon を設定した環境では、テーブルが空の場合に同ファイルを初期投入し、その後の管理画面による追加・編集・削除は Neon の `pubs` テーブルへ保存します。
+店舗データはNeonの `pubs` テーブルを正とします。`DATABASE_URL` が未設定の環境では公開APIと管理画面は空の店舗一覧を表示し、更新操作は利用できません。新規データは管理画面または一括インポート手順でNeonへ投入します。
 
 読み出した配列は `asPubs` で検証します。配列以外、必須項目の欠落、不正な緯度経度、重複した `id`、未定義の `status` を含むデータは受け付けません。タグは `packages/shared/src/tag-definitions.json` の内部キーへ正規化し、店舗内の重複を除去します。詳細は [タグの正規化仕様](tag-normalization.md) を参照してください。
 

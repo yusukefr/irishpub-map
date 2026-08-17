@@ -6,7 +6,7 @@
 
 - 日本国内の Irish Pub を地図上で探せる Web アプリです。
 - まず Web 版を優先し、将来的に同じデータ構造を使ってモバイルアプリへ展開します。
-- `data/pubs.json` は初期データとフォールバック、共通型は `packages/shared` で管理します。Neon を設定した環境では店舗データを永続化します。
+- 店舗データはNeon Postgresで管理し、共通型は `packages/shared` で管理します。DATABASE_URL未設定時は店舗0件として扱います。
 
 ## Tech Stack
 
@@ -23,7 +23,7 @@
 
 - `apps/web`: Next.js Web アプリ
 - `packages/shared`: Web/モバイルで共通利用する型やロジック
-- `data/pubs.json`: 店舗データの初期データ・フォールバック
+- Neon Postgres: 店舗データの永続化先。ローカルのデータ投入はインポート手順を使用
 - `.github`: Issue / Pull Request テンプレートなど GitHub 設定
 
 ## Standard Commands

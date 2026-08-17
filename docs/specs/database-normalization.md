@@ -29,7 +29,7 @@ pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.co
 | municipalityCode（6桁コード） | municipality_codes.code   |
 | tags（文字列配列）            | tags と pub_tags の複数行 |
 
-取得時はリポジトリがマスタを表示名・外部値へ戻し、タグ行を配列へ集約します。DB未設定時の data/pubs.json フォールバックも従来どおりです。タグの内部キー・表示名・別名・棚卸しは [タグの正規化仕様](tag-normalization.md) を正とします。
+取得時はリポジトリがマスタを表示名・外部値へ戻し、タグ行を配列へ集約します。DATABASE_URL未設定時は静的データへフォールバックせず、空の店舗一覧を返します。タグの内部キー・表示名・別名・棚卸しは [タグの正規化仕様](tag-normalization.md) を正とします。
 
 ## コードと表示
 
@@ -55,4 +55,4 @@ pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.co
 
 004のdown.sqlを実行する場合はアプリの書き込みを停止します。新しいタグ関連付けは文字列タグへ変換して復元し、正規化後のテーブルは `pub_tags_normalized_20260816` と `tags_normalized_20260816` へ退避します。
 
-アプリは旧形式の既存DBを自動変換しません。旧形式を検出した場合は002の実行を要求します。新規の空DBでは、マスタと正規化されたテーブルを作成し、data/pubs.json を初期投入します。
+アプリは旧形式の既存DBを自動変換しません。旧形式を検出した場合は002の実行を要求します。新規の空DBでは、マスタと正規化されたテーブルだけを作成します。店舗データは管理画面またはNeonインポート手順で明示的に投入します。
