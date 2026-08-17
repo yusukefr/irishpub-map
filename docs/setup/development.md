@@ -26,6 +26,62 @@ npm run dev
 
 Web アプリは `apps/web` の Next.js アプリとして起動します。
 
+## agent-browserによるブラウザ確認
+
+ブラウザから公開画面を確認する場合は、プロジェクトに追加した`agent-browser`を使用します。`agent-browser`のバージョンは`package-lock.json`で固定され、Chrome本体はリポジトリへ含めません。
+
+初回のみ、Chrome for Testingを取得します。
+
+```bash
+npx agent-browser install
+```
+
+Linuxでブラウザのシステム依存ライブラリも必要な場合は、環境のパッケージ管理者権限を確認したうえで次を実行します。
+
+```bash
+npx agent-browser install --with-deps
+```
+
+別のターミナルで開発サーバーを起動し、トップページを開いて読み込みを待ちます。
+
+```bash
+npm run dev
+
+npx agent-browser open http://localhost:3000
+npx agent-browser wait --load networkidle
+npx agent-browser snapshot -i
+```
+
+`snapshot -i`で表示された`@eN`形式の参照を使って、検索やチェックボックスなどの主要操作を確認します。画面が変わった後は参照が無効になるため、操作のたびにスナップショットを取り直します。
+
+```bash
+npx agent-browser fill @e1 "東京"
+npx agent-browser press Enter
+npx agent-browser snapshot -i
+
+# スナップショットで確認した参照番号に置き換えます
+npx agent-browser click @e2
+npx agent-browser snapshot -i
+```
+
+画面サイズを指定してスクリーンショットを取得できます。デスクトップ幅と、モバイル幅の目安である390px幅を確認します。
+
+```bash
+npx agent-browser set viewport 1280 900
+npx agent-browser screenshot /tmp/irishpub-map-desktop.png
+
+npx agent-browser set viewport 390 844
+npx agent-browser screenshot /tmp/irishpub-map-mobile.png
+```
+
+確認が終わったらブラウザセッションを終了します。
+
+```bash
+npx agent-browser close
+```
+
+Chromeをダウンロードできない環境では、既にインストール済みのChromeを自動検出させるか、`AGENT_BROWSER_EXECUTABLE_PATH`で実行ファイルのパスを指定できます。認証情報やトークンはコマンド、スクリーンショット、リポジトリへ保存しません。
+
 ## 環境変数
 
 `.env.example` を参考に `.env.local` を作成できます。
