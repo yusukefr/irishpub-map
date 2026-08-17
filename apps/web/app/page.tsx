@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import { AppVersionFooter } from "./components/app-version-footer";
 import { PubExplorer } from "./components/pub-explorer";
-import { getValidatedPubs } from "./lib/pub-data";
 import { asPubs } from "@irishpub-map/shared/pub";
 
 const API_KEY_HEADER = "x-api-key";
@@ -46,9 +45,9 @@ async function getPubs() {
     return asPubs(data.pubs);
   }
 
-  // Preview ProtectionのSSOへ転送された場合も、公開画面自体はJSONデータで表示します。
+  // Preview ProtectionのSSOへ転送された場合は、静的データを複製せず空の一覧を表示します。
   if (process.env.VERCEL && isVercelSsoRedirect(response)) {
-    return getValidatedPubs();
+    return [];
   }
 
   throw new Error("Failed to fetch pubs.");

@@ -21,7 +21,6 @@ flowchart TB
     adminApi["管理 API<br/>/api/admin/*"]
     auth[admin-auth]
     repository[pub-repository]
-    staticData["data/pubs.json<br/>初期データ・フォールバック"]
   end
 
   neon[(Neon Postgres<br/>店舗・各種マスタテーブル)]
@@ -40,7 +39,6 @@ flowchart TB
   adminApi --> repository
 
   repository -->|"DATABASE_URL 設定時"| neon
-  repository -->|"未設定時、または DB 初期投入の元データ"| staticData
 
   github --> actions
   github --> vercel
@@ -49,8 +47,8 @@ flowchart TB
 
 ## データの扱い
 
-- `data/pubs.json` は検証済みの初期データであり、`DATABASE_URL` が未設定の開発環境・公開 API のフォールバックにも使います。
-- `DATABASE_URL` が設定されている場合、`pub-repository` は Neon の `pubs` と各種マスタテーブルを読み書きします。店舗テーブルが空の場合は `data/pubs.json` の内容を初期投入し、市区町村コードは `municipality_codes` と結合して解決します。
+- `DATABASE_URL` が設定された環境では、`pub-repository` がNeonの店舗・マスタテーブルを読み書きします。未設定時は公開APIと画面が空の店舗一覧を返します。
+- 店舗テーブルが空の場合も自動投入は行わず、管理画面またはNeonインポート手順による明示的な投入を必要とします。市区町村コードは `municipality_codes` と結合して解決します。
 - API とリポジトリ層は、共有パッケージの `asPubs` で読み出した店舗データを検証します。型の詳細は[店舗データ仕様](../specs/data.md)を参照してください。
 
 ## 主要な境界
@@ -59,7 +57,7 @@ flowchart TB
 | -------------------- | ----------------------------------------------------------------------- |
 | ブラウザ             | 検索・絞り込み、位置情報の取得、地図描画、管理画面の操作                |
 | Next.js ページ / API | 公開画面のデータ取得、HTTP API、管理画面へのアクセス制御                |
-| `pub-repository`     | JSON フォールバック、Neon の初期化、店舗データの CRUD                   |
+| `pub-repository`     | Neonの初期化、店舗データの CRUD                                         |
 | `admin-auth`         | 認証情報の検証、署名付き管理者セッション Cookie の発行・検証            |
 | GitHub Actions       | 追跡済みファイルの機密情報検査、Lint、テスト、ビルド、任意の Slack 通知 |
 
