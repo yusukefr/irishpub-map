@@ -1,11 +1,15 @@
 import { Children } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../../apps/web/app/lib/i18n/server", () => ({
+  getRequestLocale: async () => "ja",
+}));
 
 import RootLayout from "../../apps/web/app/layout";
 
 describe("RootLayout", () => {
-  it("includes Vercel Analytics and Speed Insights", () => {
-    const layout = RootLayout({ children: <main>Irish Pub Map</main> });
+  it("includes Vercel Analytics and Speed Insights", async () => {
+    const layout = await RootLayout({ children: <main>Irish Pub Map</main> });
     const body = Children.toArray(layout.props.children).find((child) => child.type === "body");
     const bodyChildren = Children.toArray(body.props.children);
     const componentNames = bodyChildren.map((child) => (typeof child.type === "function" ? child.type.name : ""));

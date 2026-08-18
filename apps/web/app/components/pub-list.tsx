@@ -2,19 +2,14 @@
 
 import { useState, type ReactNode } from "react";
 import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
-import { getTagLabel } from "@irishpub-map/shared/tag";
+import { formatMessage, getTagLabel, getTranslation } from "../lib/i18n";
+import type { Locale } from "../lib/i18n";
 
 type PubListProps = {
   pubs: Pub[];
   selectedPubId?: string | null;
   onSelectPub?: (pubId: string) => void;
-};
-
-const STATUS_LABELS: Record<PubStatus, string> = {
-  open: "営業中",
-  temporarily_closed: "一時休業",
-  closed: "閉業",
-  unknown: "不明",
+  locale?: Locale;
 };
 
 const STATUS_BADGE_CLASSES: Record<PubStatus, string> = {
@@ -32,7 +27,8 @@ const STATUS_BADGE_CLASSES: Record<PubStatus, string> = {
  * @param {(pubId: string) => void} root0.onSelectPub - 店舗選択時のコールバック。
  * @returns {JSX.Element} 店舗カード一覧。
  */
-export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefined }: PubListProps) {
+export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefined, locale = "ja" }: PubListProps) {
+  const t = getTranslation(locale);
   const [expandedPubId, setExpandedPubId] = useState<string | null>(null);
 
   const togglePubDetails = (pubId: string) => {
@@ -41,13 +37,13 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
   };
 
   return (
-    <aside className="pub-list" aria-label="Irish Pub list">
+    <aside className="pub-list" aria-label={t.explorer.mapAndListLabel}>
       <div className="list-header">
         <div>
-          <p className="section-kicker">Search results</p>
-          <h2>掲載店舗</h2>
+          <p className="section-kicker">{t.list.kicker}</p>
+          <h2>{t.list.heading}</h2>
         </div>
-        <span className="list-count">{pubs.length}件</span>
+        <span className="list-count">{formatMessage(t.list.count, { count: pubs.length })}</span>
       </div>
       <div className="pub-items">
         {pubs.map((pub) => {
@@ -74,13 +70,13 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
                   <p>{[pub.prefecture, pub.city].filter(Boolean).join(" / ")}</p>
                 </div>
                 <span className={["pub-status", STATUS_BADGE_CLASSES[pub.status]].join(" ")}>
-                  {STATUS_LABELS[pub.status]}
+                  {t.list.statuses[pub.status]}
                 </span>
               </div>
               {pub.tags.length > 0 ? (
                 <ul className="pub-tags" aria-label={`${pub.name} のタグ`}>
                   {pub.tags.map((tag) => (
-                    <li key={tag}>{getTagLabel(tag)}</li>
+                    <li key={tag}>{getTagLabel(locale, tag)}</li>
                   ))}
                 </ul>
               ) : null}
@@ -98,14 +94,14 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
                     }
                   }}
                 >
-                  {isExpanded ? "閉じる" : "詳細"}
+                  {isExpanded ? t.list.close : t.list.details}
                 </button>
                 <div className="pub-links">
                   {pub.websiteUrl ? <WebsiteLink href={pub.websiteUrl} pubName={pub.name} /> : null}
                   <ExternalServiceLinks pub={pub} />
                 </div>
               </div>
-              {isExpanded ? <PubDetails pub={pub} detailsId={detailsId} /> : null}
+              {isExpanded ? <PubDetails pub={pub} detailsId={detailsId} locale={locale} /> : null}
             </article>
           );
         })}
@@ -117,9 +113,11 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
 type PubDetailsProps = {
   pub: Pub;
   detailsId: string;
+  locale: Locale;
 };
 
-function PubDetails({ pub, detailsId }: PubDetailsProps) {
+function PubDetails({ pub, detailsId, locale }: PubDetailsProps) {
+  const t = getTranslation(locale);
   return (
     <section className="pub-details" id={detailsId} aria-label={`${pub.name} の詳細`}>
       <dl>
@@ -137,11 +135,11 @@ function PubDetails({ pub, detailsId }: PubDetailsProps) {
         </div>
         <div>
           <dt>営業状況</dt>
-          <dd>{STATUS_LABELS[pub.status]}</dd>
+          <dd>{t.list.statuses[pub.status]}</dd>
         </div>
         <div>
           <dt>タグ</dt>
-          <dd>{pub.tags.length > 0 ? pub.tags.map(getTagLabel).join(" / ") : "未設定"}</dd>
+          <dd>{pub.tags.length > 0 ? pub.tags.map((tag) => getTagLabel(locale, tag)).join(" / ") : "未設定"}</dd>
         </div>
       </dl>
       <div className="pub-detail-links" aria-label={`${pub.name} external links`}>
