@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "title": "Irish Pub Map in Japan",
+    "description": "Find Irish pubs across Japan using the map and filters."
+  },
+  "language": {
+    "label": "Language",
+    "ja": "日本語",
+    "en": "English"
+  },
+  "home": {
+    "eyebrow": "Irish Pub Finder / Japan",
+    "lead": "Find an Irish pub for today’s drink by location, prefecture, or the kind of experience you are looking for.",
+    "findPubs": "Find a pub",
+    "listedInformation": "Directory information",
+    "listedPubs": "Listed pubs",
+    "howToFind": "Browse by",
+    "mapAndFilters": "Map and filters"
+  },
+  "explorer": {
+    "kicker": "Find a pub",
+    "heading": "Search by map and filters",
+    "resultCount": "{count} pub(s) found",
+    "searchLabel": "Search pubs",
+    "searchPlaceholder": "Pub name or area",
+    "clear": "Clear",
+    "prefecture": "Prefecture",
+    "allPrefectures": "All prefectures",
+    "tags": "Tags",
+    "includeClosed": "Include closed pubs",
+    "resetFilters": "Reset filters",
+    "help": "Filter by pub name, area, or tag. Include closed pubs only when you need them.",
+    "mapAndListLabel": "Irish Pub map and list"
+  },
+  "list": {
+    "kicker": "Search results",
+    "heading": "Listed pubs",
+    "count": "{count} pub(s)",
+    "details": "Details",
+    "close": "Close",
+    "name": "Name",
+    "address": "Address",
+    "area": "Area",
+    "status": "Status",
+    "tags": "Tags",
+    "unset": "Not set",
+    "officialWebsite": "Website",
+    "statuses": {
+      "open": "Open",
+      "temporarily_closed": "Temporarily closed",
+      "closed": "Closed",
+      "unknown": "Unknown"
+    },
+    "tagLabels": {
+      "guinness": "Guinness",
+      "food": "Food available",
+      "station-area": "Near station",
+      "craft-beer": "Craft beer",
+      "live-music": "Live music",
+      "whiskey": "Whiskey"
+    }
+  },
+  "map": {
+    "locationsLabel": "Irish Pub locations",
+    "currentLocation": "Current location",
+    "unavailableHeading": "The map is unavailable",
+    "unavailableDescription": "WebGL is disabled or unavailable in this browser, so the map could not be initialized. Please use the pub list beside or below the map.",
+    "errorHeading": "The map could not be loaded",
+    "errorDescription": "Map tiles could not be loaded. Check your connection and reload the page. You can still use the pub list beside or below the map.",
+    "loading": "Loading the map…",
+    "selectPub": "Select pub: {name}"
+  }
+}
