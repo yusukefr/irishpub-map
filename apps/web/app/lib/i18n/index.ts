@@ -4,6 +4,8 @@ import en from "./en.json";
 
 /** 利用者が明示選択した表示言語を保存するCookie名です。 */
 export const LOCALE_COOKIE = "irishpub-map-locale";
+/** 言語設定Cookieを保持する30日間の秒数です。 */
+export const LOCALE_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 /** 言語メニューを構成するロケールと国旗絵文字です。 */
 export const LANGUAGE_OPTIONS = [
   { locale: "ja", flag: "🇯🇵" },

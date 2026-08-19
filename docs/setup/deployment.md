@@ -53,13 +53,16 @@ GitHub Actions のPR用ワークフローで `npm run update-app-version` が実
 
 ## Web Analytics と Speed Insights
 
-アプリには `@vercel/analytics` と `@vercel/speed-insights` を組み込み、ProductionデプロイのページビューとCore Web Vitalsを収集します。追加の環境変数は不要です。
+Web Analytics と Speed Insights は、プライバシー表示対応が完了するまで一時停止しています。アプリから計測コンポーネントと依存パッケージを削除しているため、Vercel Dashboard 側の機能が有効でも新しいページビューや Core Web Vitals をアプリから送信しません。
 
-1. Vercel Project の **Analytics** を開き、Web Analyticsを有効化します。
-2. Vercel Project の **Speed Insights** を開き、有効化します。
-3. Productionへデプロイ後、実際のアクセスを発生させてから各ダッシュボードでデータを確認します。反映まで時間がかかる場合があります。
+再開する場合は、次の条件をすべて満たした変更を Pull Request でレビューしてください。
 
-Analyticsはプライバシーに配慮したVercelのファーストパーティ計測です。カスタムイベントの追加や保持期間などの詳細は、Vercel Dashboardと公式ドキュメントで確認してください。
+1. 公開するプライバシー・外部送信表示に、送信情報、送信先、目的、保持期間、停止方法を反映する。
+2. 利用中の Vercel プラン、DPA の適用状況、Dashboard の保持期間と設定を確認する。
+3. 同意取得の要否を対象地域と利用目的に照らして再確認する。
+4. 計測パッケージとコンポーネントを追加し、ブラウザの通信内容を検証する。
+
+現在の整理内容と再確認項目は[外部送信・プライバシー実態整理](../operations/privacy-and-external-transmission.md)を参照してください。過去に収集済みのデータは、Vercel のプラン別保持期間に従って Dashboard に残る可能性があります。
 
 ## 環境変数
 

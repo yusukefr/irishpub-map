@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LanguageSwitcher } from "../../apps/web/app/components/language-switcher";
+import { LOCALE_COOKIE_MAX_AGE_SECONDS } from "../../apps/web/app/lib/i18n";
 
 describe("LanguageSwitcher", () => {
   afterEach(() => {
@@ -26,6 +27,7 @@ describe("LanguageSwitcher", () => {
 
   it("stores a newly selected locale before reloading", () => {
     const reload = vi.fn();
+    const cookieSetter = vi.spyOn(document, "cookie", "set");
     Object.defineProperty(window, "location", { configurable: true, value: { ...window.location, reload } });
     render(<LanguageSwitcher locale="ja" />);
 
@@ -33,6 +35,7 @@ describe("LanguageSwitcher", () => {
     fireEvent.click(screen.getByRole("menuitemradio", { name: "English" }));
 
     expect(document.cookie).toContain("irishpub-map-locale=en");
+    expect(cookieSetter).toHaveBeenCalledWith(expect.stringContaining(`Max-Age=${LOCALE_COOKIE_MAX_AGE_SECONDS}`));
     expect(reload).toHaveBeenCalledOnce();
   });
 
