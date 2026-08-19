@@ -811,7 +811,7 @@ body {
   align-items: end;
   gap: clamp(32px, 8vw, 120px);
   min-height: 330px;
-  padding: 56px clamp(20px, 6vw, 96px) 84px;
+  padding: 96px clamp(20px, 6vw, 96px) 84px;
   overflow: hidden;
   background:
     radial-gradient(circle at 84% 8%, rgb(255 239 184 / 28%), transparent 16rem),
@@ -844,6 +844,94 @@ body {
 
 .masthead-copy {
   max-width: 780px;
+}
+
+.language-switcher {
+  position: absolute;
+  top: 24px;
+  right: clamp(20px, 6vw, 96px);
+  z-index: 3;
+}
+
+.language-switcher-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 999px;
+  background: rgb(5 40 30 / 58%);
+  box-shadow: 0 10px 24px rgb(2 24 17 / 18%);
+  color: #fffdf8;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.language-switcher-trigger:hover,
+.language-switcher-trigger[aria-expanded="true"] {
+  border-color: rgb(255 255 255 / 48%);
+  background: rgb(5 40 30 / 78%);
+}
+
+.language-switcher-flag {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.language-switcher-chevron {
+  color: var(--gold);
+  font-size: 0.9rem;
+  letter-spacing: 0;
+}
+
+.language-switcher-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  min-width: 210px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 18px 42px rgb(23 33 29 / 24%);
+}
+
+.language-switcher-menu button {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.language-switcher-menu button:hover,
+.language-switcher-menu button[aria-checked="true"] {
+  background: var(--gold-soft);
+  color: var(--accent-strong);
+}
+
+.language-switcher-check {
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 900;
+  text-align: center;
 }
 
 .eyebrow,
@@ -1282,7 +1370,12 @@ body {
 
 @media (max-width: 680px) {
   .masthead {
-    padding: 44px 24px 64px;
+    padding: 84px 24px 64px;
+  }
+
+  .language-switcher {
+    top: 16px;
+    right: 16px;
   }
 
   .masthead h1 {
