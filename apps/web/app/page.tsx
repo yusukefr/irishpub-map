@@ -68,8 +68,8 @@ export default async function Home() {
   return (
     <main className="page-shell">
       <section className="masthead">
+        <LanguageSwitcher locale={locale} />
         <div className="masthead-copy">
-          <LanguageSwitcher locale={locale} />
           <p className="eyebrow">{t.home.eyebrow}</p>
           <h1>
             Irish Pub Map

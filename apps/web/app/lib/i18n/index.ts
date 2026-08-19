@@ -4,10 +4,15 @@ import en from "./en.json";
 
 /** 利用者が明示選択した表示言語を保存するCookie名です。 */
 export const LOCALE_COOKIE = "irishpub-map-locale";
-/** 現在アプリケーションが提供する表示言語です。 */
-export const LOCALES = ["ja", "en"] as const;
+/** 言語メニューを構成するロケールと国旗絵文字です。 */
+export const LANGUAGE_OPTIONS = [
+  { locale: "ja", flag: "🇯🇵" },
+  { locale: "en", flag: "🇬🇧" },
+] as const;
 /** サポート済みの表示言語コードです。 */
-export type Locale = (typeof LOCALES)[number];
+export type Locale = (typeof LANGUAGE_OPTIONS)[number]["locale"];
+/** 現在アプリケーションが提供する表示言語です。 */
+export const LOCALES: readonly Locale[] = LANGUAGE_OPTIONS.map(({ locale }) => locale);
 
 const translations = { ja, en } as const;
 /** 各言語JSONが持つ翻訳辞書の構造です。 */
