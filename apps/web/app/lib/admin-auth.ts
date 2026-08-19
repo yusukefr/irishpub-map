@@ -107,5 +107,8 @@ function readCookie(cookieHeader: string | null, name: string) {
 function safeEqual(left: string | Buffer, right: string | Buffer) {
   const leftBuffer = Buffer.isBuffer(left) ? left : Buffer.from(left);
   const rightBuffer = Buffer.isBuffer(right) ? right : Buffer.from(right);
-  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
+  const leftBytes = Uint8Array.from(leftBuffer);
+  const rightBytes = Uint8Array.from(rightBuffer);
+
+  return leftBytes.length === rightBytes.length && timingSafeEqual(leftBytes, rightBytes);
 }
