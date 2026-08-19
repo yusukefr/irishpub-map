@@ -2,7 +2,7 @@
 
 ## 現行スキーマ
 
-Issue #194 の対応後、店舗メタデータは次の関係に分けて保存します。
+現行の店舗メタデータは次の関係に分けて保存します。
 
 | テーブル           | 役割                                             |
 | ------------------ | ------------------------------------------------ |
@@ -46,13 +46,6 @@ pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.co
 
 ## 移行と初期化
 
-既存の001適用済みDBは db/migrations/002_normalize_pub_metadata_up.sql、続けて db/migrations/003_municipality_codes_up.sql、004_normalize_pub_tags_up.sql を明示的に実行します。003はリポジトリルートから市区町村コードCSVを psql のクライアント側コピーで取り込む既存形式のためNode実行スクリプトの対象外です。004は既存の `pub_tags.tag` をタグマスタと `tag_id` 参照へ移行します。適用後は各 migration の verify SQL で確認します。戻す場合は004、003の順にdown.sqlを実行します。
+旧JSONB構成からは、001（項目別カラム）、002（都道府県・営業状況・タグ関係）、003（市区町村コード）、004（タグマスタ）、005（タグ名）の順に適用します。003はCSVを `psql` のクライアント側 `\\copy` で取り込み、それ以外はNodeのNeonクライアントで実行します。コマンド、verify項目、逆順のロールバックは[店舗テーブル移行手順](../operations/database-migration.md)へ集約します。
 
-タグマスタの移行は、003の確認後に次の順で実行します。
-
-    node scripts/run-neon-migration.mjs db/migrations/004_normalize_pub_tags_up.sql
-    node scripts/run-neon-migration.mjs db/migrations/004_normalize_pub_tags_verify.sql
-
-004のdown.sqlを実行する場合はアプリの書き込みを停止します。新しいタグ関連付けは文字列タグへ変換して復元し、正規化後のテーブルは `pub_tags_normalized_20260816` と `tags_normalized_20260816` へ退避します。
-
-アプリは旧形式の既存DBを自動変換しません。旧形式を検出した場合は002の実行を要求します。新規の空DBでは、マスタと正規化されたテーブルだけを作成します。店舗データは管理画面またはNeonインポート手順で明示的に投入します。
+アプリは旧形式や途中まで適用されたDBを自動変換しません。新規の空DBでは一括インポートが店舗・都道府県・営業状況・タグ関連テーブルを作成しますが、公開APIを使う前に003を別途適用する必要があります。店舗データは管理画面または一括インポートで明示的に投入し、リポジトリへスナップショットを保存しません。

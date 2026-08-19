@@ -34,18 +34,18 @@ DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、�
 
 | フィールド         | 型             | 必須 | 説明                                      |
 | ------------------ | -------------- | ---- | ----------------------------------------- |
-| `id`               | string         | yes  | 店舗を一意に識別する ID                   |
+| `id`               | string         | yes  | 店舗を一意に識別するRFC 4122 UUID         |
 | `name`             | string         | yes  | 店舗名                                    |
 | `kana`             | string         | no   | 店舗名の読み（ひらがな）。かな検索に使用  |
-| `prefecture`       | string         | yes  | 都道府県                                  |
+| `prefecture`       | string         | yes  | DB登録時は共有定義の47都道府県名に限定    |
 | `city`             | string         | no   | 市区町村                                  |
 | `municipalityCode` | string or null | no   | 市区町村マスタから解決した6桁の団体コード |
 | `address`          | string         | yes  | 住所                                      |
 | `latitude`         | number         | yes  | 緯度                                      |
 | `longitude`        | number         | yes  | 経度                                      |
-| `websiteUrl`       | string \| null | no   | 公式サイト URL                            |
-| `googleMapsUrl`    | string \| null | no   | Google Maps URL                           |
-| `instagramUrl`     | string \| null | no   | Instagram URL                             |
+| `websiteUrl`       | string \| null | no   | HTTP(S)の公式サイト URL                   |
+| `googleMapsUrl`    | string \| null | no   | HTTP(S)のGoogle Maps URL                  |
+| `instagramUrl`     | string \| null | no   | HTTP(S)のInstagram URL                    |
 | `tags`             | string[]       | yes  | 検索・絞り込み用タグ                      |
 | `status`           | string         | yes  | 店舗状態                                  |
 
@@ -64,6 +64,7 @@ DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、�
 - 更新時は URL に指定した `id` を維持します。
 - 作成、更新、削除には `DATABASE_URL` と有効な管理者セッションが必要です。
 - `city` と各 URL 項目は省略または `null` にできます。`tags` は文字列の配列です。
+- `municipalityCode` は保存せず、読み出し時に `prefecture` と `city` に一致する市区町村マスタから付加します。
 
 ## 運用メモ
 

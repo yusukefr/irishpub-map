@@ -16,15 +16,15 @@ Vercel で対象の GitHub リポジトリを Import します。
 
 推奨設定:
 
-| 項目              | 値                                                           |
-| ----------------- | ------------------------------------------------------------ |
-| Framework Preset  | Next.js                                                      |
-| Root Directory    | `.`                                                          |
-| Install Command   | `npm ci`                                                     |
-| Build Command     | `npm run update-app-version -- --date-only && npm run build` |
-| Output Directory  | `apps/web/.next`                                             |
-| Production Branch | `main`                                                       |
-| Node.js Version   | 24.x                                                         |
+| 項目              | 値                                                                                              |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| Framework Preset  | Next.js                                                                                         |
+| Root Directory    | `.`                                                                                             |
+| Install Command   | `npm ci`                                                                                        |
+| Build Command     | `npm run validate:production-env && npm run update-app-version -- --date-only && npm run build` |
+| Output Directory  | `apps/web/.next`                                                                                |
+| Production Branch | `main`                                                                                          |
+| Node.js Version   | 24.x                                                                                            |
 
 `vercel.json` でも同じ build 設定を管理します。
 
@@ -45,7 +45,11 @@ GitHub Actions のPR用ワークフローで `npm run update-app-version` が実
 
 機能追加や画面改修をデプロイする場合は、GitHub Actions のリポジトリVariables `APP_VERSION_BUMP` に `minor` を設定してください。未設定または `patch` の場合は patch バージョンが更新されます。`major` はこの運用では自動更新しません。
 
-Production Domain / Alias の確認項目:
+### Production Domain / Alias の確認項目
+
+- Domains に承認済みの Production Domain が登録されている
+- `main` ブランチの Production Deployment が Production Domain に紐づいている
+- Preview Deployment の URL と Production URL を混同しない
 
 ## Web Analytics と Speed Insights
 
@@ -56,10 +60,6 @@ Production Domain / Alias の確認項目:
 3. Productionへデプロイ後、実際のアクセスを発生させてから各ダッシュボードでデータを確認します。反映まで時間がかかる場合があります。
 
 Analyticsはプライバシーに配慮したVercelのファーストパーティ計測です。カスタムイベントの追加や保持期間などの詳細は、Vercel Dashboardと公式ドキュメントで確認してください。
-
-- Domains に承認済みの Production Domain が登録されている
-- `main` ブランチの Production Deployment が Production Domain に紐づいている
-- Preview Deployment の URL と Production URL を混同しない
 
 ## 環境変数
 
@@ -147,11 +147,15 @@ PR を merge する前に、少なくとも以下を確認します。
 ```bash
 nvm use
 npm ci
-npm run lint
 npm test
+npm run format:check
+npm run typecheck
+npm run lint
 npm run build
-npm audit --omit=dev
+npm run check:sensitive-data
 ```
+
+依存関係を変更した場合は、追加で `npm audit --omit=dev` を実行します。
 
 ## 参考
 
@@ -161,7 +165,9 @@ npm audit --omit=dev
 
 ## 管理画面と Neon Postgres
 
-管理画面は `/admin` です。Vercel Marketplace から Neon を追加し、Production 環境には本番ブランチ、Preview 環境には[Neon Preview ブランチ上限対策](#neon-preview-ブランチ上限対策)で作成した固定ブランチの `DATABASE_URL` を設定してください。初回のデータ取得時に `pubs` テーブルと各種マスタを作成します。店舗データは管理画面または[開発環境・セットアップ手順の一括インポート](development.md#店舗データの一括インポート)で明示的に投入してください。`DATABASE_URL` が未設定の場合、管理画面は店舗0件を表示できますが書き込みはできません。
+管理画面は `/admin` です。Vercel Marketplace から Neon を追加し、Production 環境には本番ブランチ、Preview 環境には[Neon Preview ブランチ上限対策](#neon-preview-ブランチ上限対策)で作成した固定ブランチの `DATABASE_URL` を設定してください。店舗データは管理画面または[開発環境・セットアップ手順の一括インポート](development.md#店舗データの一括インポート)で明示的に投入します。
+
+`pub-repository` は既存スキーマを自動移行しません。また、`municipality_codes` が存在しない、または空の場合は読み出しを停止します。新規の空DBは[一括インポート手順](development.md#店舗データの一括インポート)、旧JSONB構成のDBは[店舗テーブル移行手順](../operations/database-migration.md)に従って、公開APIへ接続する前に準備してください。`DATABASE_URL` が未設定の場合、管理画面は店舗0件を表示できますが書き込みはできません。
 
 パスワードハッシュは、ローカルで生成して Vercel の環境変数にだけ登録します。例:
 

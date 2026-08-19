@@ -16,7 +16,7 @@ Next.js Route Handler で公開 API と管理 API を提供します。公開画
 {
   "pubs": [
     {
-      "id": "example-pub",
+      "id": "550e8400-e29b-41d4-a716-446655440001",
       "name": "Example Pub",
       "prefecture": "東京都",
       "address": "東京都...",

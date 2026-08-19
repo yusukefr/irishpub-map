@@ -23,8 +23,13 @@
 
 - `apps/web`: Next.js Web アプリ
 - `packages/shared`: Web/モバイルで共通利用する型やロジック
-- Neon Postgres: 店舗データの永続化先。ローカルのデータ投入はインポート手順を使用
+- `db/migrations`: Neon Postgres のスキーマ移行SQL
+- `data`: 市区町村コードのマスタCSV。店舗データは含めない
+- `docs`: 仕様、構成、開発・運用手順
+- `.agents/skills`: このリポジトリで共有するCodex Skills
 - `.github`: Issue / Pull Request テンプレートなど GitHub 設定
+
+店舗データの永続化先はNeon Postgresです。ローカルからのデータ投入はインポート手順を使用します。
 
 ## Standard Commands
 

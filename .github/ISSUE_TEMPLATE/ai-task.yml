@@ -44,9 +44,12 @@ body:
       label: 完了条件
       description: 何ができていれば完了と判断するかを書いてください。
       placeholder: |
+        - npm test が通る
+        - npm run format:check が通る
         - npm run typecheck が通る
         - npm run lint が通る
         - npm run build が通る
+        - npm run check:sensitive-data が通る
         - READMEの必要箇所が更新されている
     validations:
       required: true

@@ -12,6 +12,8 @@
 
 - [プロダクト仕様](docs/specs/product.md)
 - [店舗データ仕様](docs/specs/data.md)
+- [データベース定義](docs/specs/database.md)
+- [データベース移行手順](docs/operations/database-migration.md)
 - [API 方針](docs/specs/api.md)
 - [システム構成図](docs/architecture/system-overview.md)
 - [シーケンス図](docs/architecture/sequences.md)
@@ -45,11 +47,14 @@ Web アプリは `apps/web` の Next.js アプリとして起動します。
 
 ```bash
 npm test
+npm run format:check
 npm run typecheck
 npm run lint
 npm run build
-npm audit --omit=dev
+npm run check:sensitive-data
 ```
+
+依存関係を変更した場合は、追加で `npm audit --omit=dev` を実行します。
 
 ## コードとドキュメントの同期
 
@@ -88,8 +93,11 @@ Web アプリの下部には、このファイルの `version` と `releaseDate`
 
 ```text
 irishpub-map
+├── .agents/skills
+├── .github
 ├── apps/web
 ├── data
+├── db/migrations
 ├── docs
 ├── packages/shared
 ├── scripts
