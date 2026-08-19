@@ -12,9 +12,12 @@
 
 ## Verification
 
+- [ ] `npm test`
+- [ ] `npm run format:check`
 - [ ] `npm run typecheck`
 - [ ] `npm run lint`
 - [ ] `npm run build`
+- [ ] `npm run check:sensitive-data`
 - [ ] `npm audit --omit=dev`
 
 ## Notes

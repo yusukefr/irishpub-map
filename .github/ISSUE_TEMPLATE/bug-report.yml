@@ -48,7 +48,7 @@ body:
     attributes:
       label: 環境
       description: OS、ブラウザ、Node.jsバージョンなどを書いてください。
-      placeholder: 例）macOS / Chrome / Node.js 22
+      placeholder: 例）macOS / Chrome / Node.js 24
     validations:
       required: false
   - type: textarea

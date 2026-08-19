@@ -49,9 +49,12 @@ body:
       label: 検証方法
       description: リファクタリング後に確認すべきコマンドや画面操作を書いてください。
       placeholder: |
+        - npm test
+        - npm run format:check
         - npm run typecheck
         - npm run lint
         - npm run build
+        - npm run check:sensitive-data
         - 地図と店舗一覧が従来通り表示される
     validations:
       required: true
