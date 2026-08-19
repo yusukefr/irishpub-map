@@ -14,6 +14,7 @@
 - [店舗データ仕様](docs/specs/data.md)
 - [データベース定義](docs/specs/database.md)
 - [データベース移行手順](docs/operations/database-migration.md)
+- [外部送信・プライバシー実態整理](docs/operations/privacy-and-external-transmission.md)
 - [API 方針](docs/specs/api.md)
 - [システム構成図](docs/architecture/system-overview.md)
 - [シーケンス図](docs/architecture/sequences.md)

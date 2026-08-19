@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { LANGUAGE_OPTIONS, LOCALE_COOKIE, type Locale, getTranslation } from "../lib/i18n";
+import {
+  LANGUAGE_OPTIONS,
+  LOCALE_COOKIE,
+  LOCALE_COOKIE_MAX_AGE_SECONDS,
+  type Locale,
+  getTranslation,
+} from "../lib/i18n";
 
 type LanguageSwitcherProps = { locale: Locale };
 
 function persistLocale(nextLocale: Locale) {
-  // UI設定のため、クライアントから読めるCookieとして1年間保存します。
-  document.cookie = `${LOCALE_COOKIE}=${nextLocale}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  // 言語設定以外には利用せず、クライアントから読めるCookieとして30日間だけ保存します。
+  document.cookie = `${LOCALE_COOKIE}=${nextLocale}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
   window.location.reload();
 }
 
