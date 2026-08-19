@@ -9,7 +9,6 @@ sequenceDiagram
   participant API as GET /api/pubs
   participant Repository as pub-repository
   participant Neon as Neon Postgres
-  participant JSON as data/pubs.json
   participant Explorer as PubExplorer / MapLibre
 
   Visitor->>Page: GET /
@@ -19,8 +18,7 @@ sequenceDiagram
     Repository->>Neon: pubs を読み出す
     Neon-->>Repository: 店舗データ
   else DATABASE_URL が未設定
-    Repository->>JSON: 初期データを読み出す
-    JSON-->>Repository: 店舗データ
+    Repository-->>API: 空の店舗データ
   end
   Repository-->>API: 検証済み店舗データ
   API-->>Page: { pubs }
@@ -32,7 +30,7 @@ sequenceDiagram
   Explorer-->>Visitor: 地図と店舗一覧を更新
 ```
 
-Vercel の Preview Deployment Protection が公開 API のサーバー側 fetch を SSO へリダイレクトした場合、公開ページは `data/pubs.json` を検証してフォールバック表示します。WebGL を初期化できないブラウザでは、地図の代わりに店舗一覧を案内します。
+VercelのPreview Deployment Protectionが公開APIのサーバー側fetchをSSOへリダイレクトした場合、公開ページは静的データを複製せず店舗0件で表示します。実データを表示するにはSSO回避用の設定とDATABASE_URLを構成します。WebGLを初期化できないブラウザでは、地図の代わりに店舗一覧を案内します。
 
 ## 管理者が店舗を追加・更新・削除する
 
@@ -65,7 +63,7 @@ sequenceDiagram
     Repository->>Neon: pubs を読み出す
     Neon-->>Repository: 店舗データ
   else DATABASE_URL が未設定
-    Note over Repository: data/pubs.json をフォールバックとして使用
+    Repository-->>AdminPage: 空の店舗一覧
   end
   Repository-->>AdminPage: 検証済み店舗データ
   AdminPage-->>Admin: 店舗管理フォーム

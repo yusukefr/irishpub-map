@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Pub } from "@irishpub-map/shared/pub";
-import { getTagLabel } from "@irishpub-map/shared/tag";
+import { formatMessage, getTagLabel, getTranslation, type Locale } from "../lib/i18n";
 import {
   filterPubs,
   getAvailablePrefectures,
@@ -15,6 +15,7 @@ import { PubMap } from "./pub-map";
 
 type PubExplorerProps = {
   pubs: Pub[];
+  locale?: Locale;
 };
 
 const GEOLOCATION_OPTIONS: PositionOptions = {
@@ -31,7 +32,8 @@ const EMPTY_FOCUS_PUBS: Pub[] = [];
  * @param {Pub[]} root0.pubs - 検索対象の店舗一覧。
  * @returns {JSX.Element} 検索・地図・一覧を組み合わせた探索画面。
  */
-export function PubExplorer({ pubs }: PubExplorerProps) {
+export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
+  const t = getTranslation(locale);
   const [query, setQuery] = useState("");
   const [selectedPrefecture, setSelectedPrefecture] = useState("");
   const [currentPrefecture, setCurrentPrefecture] = useState("");
@@ -101,11 +103,11 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
       <section className="search-panel" aria-labelledby="pub-search-heading">
         <div className="search-panel-heading">
           <div>
-            <p className="section-kicker">Find a pub</p>
-            <h2 id="pub-search-heading">地図と条件から探す</h2>
+            <p className="section-kicker">{t.explorer.kicker}</p>
+            <h2 id="pub-search-heading">{t.explorer.heading}</h2>
           </div>
           <p className="search-result-count" aria-live="polite">
-            {filteredPubs.length}件のPubが見つかりました
+            {formatMessage(t.explorer.resultCount, { count: filteredPubs.length })}
           </p>
         </div>
         <label className="search-label" htmlFor="pub-search">
@@ -123,7 +125,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
               setQuery(event.target.value);
               setSelectedPubId(null);
             }}
-            placeholder="店舗名、エリア"
+            placeholder={t.explorer.searchPlaceholder}
           />
           {query ? (
             <button
@@ -149,7 +151,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
                 setSelectedPubId(null);
               }}
             >
-              <option value="">すべての都道府県</option>
+              <option value="">{t.explorer.allPrefectures}</option>
               {availablePrefectures.map((prefecture) => (
                 <option value={prefecture} key={prefecture}>
                   {prefecture}
@@ -158,7 +160,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
             </select>
           </label>
           <fieldset className="tag-filter">
-            <legend>タグ</legend>
+            <legend>{t.explorer.tags}</legend>
             <div className="tag-filter-options">
               {availableTags.map((tag) => {
                 const isSelected = selectedTags.includes(tag);
@@ -175,7 +177,7 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
                       setSelectedPubId(null);
                     }}
                   >
-                    {getTagLabel(tag)}
+                    {getTagLabel(locale, tag)}
                   </button>
                 );
               })}
@@ -185,13 +187,13 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
             <input
               type="checkbox"
               checked={includeClosed}
-              aria-label="閉業した店舗を含める"
+              aria-label={t.explorer.includeClosed}
               onChange={(event) => {
                 setIncludeClosed(event.target.checked);
                 setSelectedPubId(null);
               }}
             />
-            <span>閉業した店舗を含める</span>
+            <span>{t.explorer.includeClosed}</span>
           </label>
           {hasActiveFilters ? (
             <button type="button" className="filter-reset" onClick={resetFilters}>
@@ -199,18 +201,19 @@ export function PubExplorer({ pubs }: PubExplorerProps) {
             </button>
           ) : null}
         </div>
-        <p className="search-help">店舗名・エリア・タグで絞り込み、必要に応じて閉業した店舗を含められます。</p>
+        <p className="search-help">{t.explorer.help}</p>
       </section>
 
-      <section className="map-layout" aria-label="Irish Pub map and list">
+      <section className="map-layout" aria-label={t.explorer.mapAndListLabel}>
         <PubMap
           pubs={filteredPubs}
           focusPubs={mapFocusPubs}
           currentLocation={currentLocation}
           selectedPubId={selectedPubId}
           onSelectPub={setSelectedPubId}
+          locale={locale}
         />
-        <PubList pubs={filteredPubs} selectedPubId={selectedPubId} onSelectPub={setSelectedPubId} />
+        <PubList pubs={filteredPubs} selectedPubId={selectedPubId} onSelectPub={setSelectedPubId} locale={locale} />
       </section>
     </div>
   );

@@ -1,6 +1,6 @@
 {
   "name": "irishpub-map",
-  "version": "0.1.25",
+  "version": "0.1.27",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -29,6 +29,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@vitest/coverage-v8": "^4.1.10",
+    "agent-browser": "^0.34.0",
     "jsdom": "^30.0.1",
     "prettier": "^3.9.6",
     "vitest": "^4.1.10",

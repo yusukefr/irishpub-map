@@ -4,7 +4,6 @@ import { PREFECTURES, getPrefectureCode, getPrefectureName } from "@irishpub-map
 import { getPubStatusCode, getPubStatusValue, PUB_STATUS_DEFINITIONS } from "@irishpub-map/shared/status";
 import { asPubs, type Pub } from "@irishpub-map/shared/pub";
 import { normalizeTags } from "@irishpub-map/shared/tag";
-import { getValidatedPubs } from "./pub-data";
 
 type DbPubRow = {
   id: unknown;
@@ -35,11 +34,11 @@ export function isDatabaseConfigured() {
 }
 
 /**
- * Neon設定時は独立カラムから、未設定時は検証済みJSONから店舗一覧を取得します。
+ * Neon設定時は独立カラムから、未設定時は空の店舗一覧を取得します。
  * @returns {Promise<Pub[]>} 検証済みの店舗一覧。
  */
 export async function getPubs() {
-  if (!isDatabaseConfigured()) return getValidatedPubs();
+  if (!isDatabaseConfigured()) return [];
 
   const sql = getSql();
   await ensureTable(sql);
@@ -201,15 +200,10 @@ async function ensureTable(sql: ReturnType<typeof neon>) {
   await sql`CREATE INDEX IF NOT EXISTS pubs_status_code_idx ON pubs (status_code)`;
   await sql`CREATE INDEX IF NOT EXISTS pub_tags_tag_id_idx ON pub_tags (tag_id)`;
 
-  const rows = (await sql`SELECT COUNT(*)::int AS count FROM pubs`) as Array<{ count: number }>;
-  if (rows[0]?.count === 0) {
-    // 空のDBだけを初期化し、既存の管理データを初期JSONで上書きしないようにします。
-    for (const pub of getValidatedPubs()) await insertPub(sql, pub, true);
-  }
   schemaReady = true;
 }
 
-async function insertPub(sql: ReturnType<typeof neon>, pub: Pub, skipExisting = false) {
+async function insertPub(sql: ReturnType<typeof neon>, pub: Pub) {
   await sql`
     INSERT INTO pubs (
       id, name, kana, prefecture_code, city, address, latitude, longitude,
@@ -219,7 +213,6 @@ async function insertPub(sql: ReturnType<typeof neon>, pub: Pub, skipExisting = 
       ${pub.latitude}, ${pub.longitude}, ${toNullable(pub.websiteUrl)}, ${toNullable(pub.googleMapsUrl)},
       ${toNullable(pub.instagramUrl)}, ${getRequiredStatusCode(pub.status)}
     )
-    ${skipExisting ? sql`ON CONFLICT (id) DO NOTHING` : sql``}
   `;
   await replacePubTags(sql, pub.id, pub.tags);
 }

@@ -1,5 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
-import { parseDbPubs } from "../../apps/web/app/lib/pub-repository";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { getPubs, parseDbPubs } from "../../apps/web/app/lib/pub-repository";
+
+const originalDatabaseUrl = process.env.DATABASE_URL;
+
+function restoreDatabaseUrl() {
+  if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
+  else process.env.DATABASE_URL = originalDatabaseUrl;
+}
 
 const baseRow = {
   id: "550e8400-e29b-41d4-a716-446655440001",
@@ -17,6 +24,16 @@ const baseRow = {
   tags: ["guinness", "food"],
   status_code: 1,
 };
+
+describe("getPubs", () => {
+  afterEach(restoreDatabaseUrl);
+
+  it("returns an empty list when the database is not configured", async () => {
+    delete process.env.DATABASE_URL;
+
+    await expect(getPubs()).resolves.toEqual([]);
+  });
+});
 
 describe("parseDbPubs", () => {
   it("normalizes driver values before validating a database row", () => {

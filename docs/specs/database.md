@@ -79,7 +79,7 @@ ORDER BY data->>'prefecture', data->>'name';
 
 | 操作 | 実装 | 整合性の扱い |
 | --- | --- | --- |
-| 初期作成 | `ensureTable` | テーブルがなければ作成する。空テーブルの場合は `data/pubs.json` を `ON CONFLICT DO NOTHING` で初期投入する。 |
+| 初期作成 | `ensureTable` | 旧スキーマのテーブルを作成する。現行実装では正規化済みの空テーブルを作成し、店舗データは自動投入しない。 |
 | 一括投入 | `scripts/import-pubs.mjs` | `id` が既存の場合はスキップし、新規 ID のみ追加する。 |
 | 取得 | `getPubs` | JSONB の配列を `asPubs` で検証して返す。 |
 | 追加 | `createPub` | 入力を検証し、サーバー発行 UUID を `id` に設定して追加する。 |

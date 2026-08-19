@@ -4,8 +4,12 @@ import { GET } from "../../apps/web/app/api/pubs/route";
 
 const originalApiKey = process.env.IRISHPUB_MAP_API_KEY;
 const originalVercelEnv = process.env.VERCEL_ENV;
+const originalDatabaseUrl = process.env.DATABASE_URL;
 
-function restoreEnvironmentVariable(name: "IRISHPUB_MAP_API_KEY" | "VERCEL_ENV", value: string | undefined) {
+function restoreEnvironmentVariable(
+  name: "IRISHPUB_MAP_API_KEY" | "VERCEL_ENV" | "DATABASE_URL",
+  value: string | undefined,
+) {
   if (value === undefined) delete process.env[name];
   else process.env[name] = value;
 }
@@ -14,24 +18,19 @@ describe("GET /api/pubs", () => {
   afterEach(() => {
     restoreEnvironmentVariable("IRISHPUB_MAP_API_KEY", originalApiKey);
     restoreEnvironmentVariable("VERCEL_ENV", originalVercelEnv);
+    restoreEnvironmentVariable("DATABASE_URL", originalDatabaseUrl);
   });
 
-  it("returns validated pubs locally when API key is not configured", async () => {
+  it("returns an empty list locally when API key and database are not configured", async () => {
     delete process.env.IRISHPUB_MAP_API_KEY;
     delete process.env.VERCEL_ENV;
+    delete process.env.DATABASE_URL;
 
     const response = await GET(new Request("http://localhost/api/pubs"));
     const body = (await response.json()) as { pubs: unknown[] };
 
     expect(response.status).toBe(200);
-    expect(body.pubs.length).toBeGreaterThan(0);
-    expect(body.pubs[0]).toEqual(
-      expect.objectContaining({
-        id: expect.any(String),
-        name: expect.any(String),
-        municipalityCode: expect.stringMatching(/^[0-9]{6}$/),
-      }),
-    );
+    expect(body).toEqual({ pubs: [] });
   });
 
   it("returns a configuration error in Production when the API key is missing", async () => {
@@ -60,9 +59,10 @@ describe("GET /api/pubs", () => {
     expect(invalidKeyResponse.status).toBe(401);
   });
 
-  it("returns pubs when the configured API key matches", async () => {
+  it("returns an empty list when the configured API key matches without a database", async () => {
     process.env.VERCEL_ENV = "production";
     process.env.IRISHPUB_MAP_API_KEY = "test-only-api-key";
+    delete process.env.DATABASE_URL;
 
     const response = await GET(
       new Request("http://localhost/api/pubs", { headers: { "x-api-key": "test-only-api-key" } }),
@@ -70,6 +70,6 @@ describe("GET /api/pubs", () => {
     const body = (await response.json()) as { pubs: unknown[] };
 
     expect(response.status).toBe(200);
-    expect(body.pubs.length).toBeGreaterThan(0);
+    expect(body).toEqual({ pubs: [] });
   });
 });

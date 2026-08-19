@@ -5,6 +5,7 @@ import { Map, Marker, NavigationControl, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { Coordinates } from "../lib/pub-search";
+import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 
 const NON_OPEN_PUB_MARKER_COLOR = "#6b7280";
 
@@ -22,6 +23,7 @@ type PubMapProps = {
   currentLocation?: Coordinates | null;
   selectedPubId?: string | null;
   onSelectPub?: (pubId: string) => void;
+  locale?: Locale;
 };
 
 /**
@@ -40,7 +42,9 @@ export function PubMap({
   currentLocation = null,
   selectedPubId = null,
   onSelectPub = () => undefined,
+  locale = "ja",
 }: PubMapProps) {
+  const t = getTranslation(locale);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markerElementsRef = useRef(new globalThis.Map<string, HTMLButtonElement>());
   const mapRef = useRef<Map | null>(null);
@@ -66,7 +70,7 @@ export function PubMap({
 
     // MapLibre初期化中の同期的なstate更新を避け、フォールバックを次のタスクで表示します。
     const showFallback = () => {
-      window.setTimeout(() => setMapUnavailable(true), 0);
+      setMapUnavailable(true);
     };
 
     if (!canCreateWebglContext()) {
@@ -147,7 +151,12 @@ export function PubMap({
 
     pubs.forEach((pub) => {
       const popup = new Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
-      const markerElement = createMarkerElement(pub, false, () => onSelectPubRef.current(pub.id));
+      const markerElement = createMarkerElement(
+        pub,
+        false,
+        () => onSelectPubRef.current(pub.id),
+        (name) => formatMessage(t.map.selectPub, { name }),
+      );
       const marker = new Marker({ element: markerElement, anchor: "bottom" })
         .setLngLat([pub.longitude, pub.latitude])
         .setPopup(popup)
@@ -156,7 +165,7 @@ export function PubMap({
       markerElementsRef.current.set(pub.id, markerElement);
       markersRef.current.set(pub.id, marker);
     });
-  }, [pubs]);
+  }, [pubs, t.map.selectPub]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -169,14 +178,14 @@ export function PubMap({
     }
 
     const marker = new Marker({
-      element: createCurrentLocationMarkerElement(),
+      element: createCurrentLocationMarkerElement(t.map.currentLocation),
       anchor: "center",
     })
       .setLngLat([currentLocation.longitude, currentLocation.latitude])
       .addTo(map);
 
     currentLocationMarkerRef.current = marker;
-  }, [currentLocation]);
+  }, [currentLocation, t.map.currentLocation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -195,27 +204,21 @@ export function PubMap({
   }, [pubs, selectedPubId]);
 
   return (
-    <div className="map-canvas" ref={containerRef} aria-label="Irish Pub locations">
+    <div className="map-canvas" ref={containerRef} aria-label={t.map.locationsLabel}>
       {mapUnavailable ? (
         <div className="map-fallback" role="status">
-          <h2>地図を表示できませんでした</h2>
-          <p>
-            このブラウザ環境ではWebGLが無効、または利用できないため地図を初期化できません。
-            右側または下部の店舗一覧からIrish Pubを確認してください。
-          </p>
+          <h2>{t.map.unavailableHeading}</h2>
+          <p>{t.map.unavailableDescription}</p>
         </div>
       ) : mapStatus === "error" ? (
         <div className="map-error" role="alert" aria-live="assertive">
-          <h2>地図を読み込めませんでした</h2>
-          <p>
-            地図タイルの読み込みに失敗しました。通信環境を確認して再読み込みしてください。
-            右側または下部の店舗一覧からIrish Pubを確認できます。
-          </p>
+          <h2>{t.map.errorHeading}</h2>
+          <p>{t.map.errorDescription}</p>
         </div>
       ) : mapStatus === "loading" ? (
         <div className="map-loading" role="status" aria-live="polite">
           <span className="map-loading-indicator" aria-hidden="true" />
-          <p>地図を読み込んでいます…</p>
+          <p>{t.map.loading}</p>
         </div>
       ) : null}
     </div>
@@ -244,7 +247,12 @@ function createPopupContent(pub: Pub) {
   return content;
 }
 
-function createMarkerElement(pub: Pub, isSelected: boolean, onSelect: () => void) {
+function createMarkerElement(
+  pub: Pub,
+  isSelected: boolean,
+  onSelect: () => void,
+  selectLabel: (name: string) => string,
+) {
   const marker = document.createElement("button");
   marker.type = "button";
   marker.className = [
@@ -255,7 +263,7 @@ function createMarkerElement(pub: Pub, isSelected: boolean, onSelect: () => void
   ]
     .filter(Boolean)
     .join(" ");
-  marker.setAttribute("aria-label", `店舗を選択: ${pub.name}`);
+  marker.setAttribute("aria-label", selectLabel(pub.name));
   marker.setAttribute("aria-pressed", String(isSelected));
   marker.addEventListener("click", onSelect);
 
@@ -281,12 +289,12 @@ function createMarkerElement(pub: Pub, isSelected: boolean, onSelect: () => void
   return marker;
 }
 
-function createCurrentLocationMarkerElement() {
+function createCurrentLocationMarkerElement(label: string) {
   const marker = document.createElement("div");
   marker.className = "current-location-marker";
   marker.setAttribute("role", "img");
-  marker.setAttribute("aria-label", "現在地");
-  marker.title = "現在地";
+  marker.setAttribute("aria-label", label);
+  marker.title = label;
 
   return marker;
 }

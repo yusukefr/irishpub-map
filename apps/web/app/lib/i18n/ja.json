@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "title": "Irish Pub Map in Japan",
+    "description": "日本国内の Irish Pub を地図から探せるサービス"
+  },
+  "language": {
+    "label": "表示言語",
+    "ja": "日本語",
+    "en": "English"
+  },
+  "home": {
+    "eyebrow": "Irish Pub Finder / Japan",
+    "lead": "現在地や都道府県、好きな過ごし方から。今日の一杯に合う Irish Pub を、地図から探せます。",
+    "findPubs": "パブを探す",
+    "listedInformation": "掲載情報",
+    "listedPubs": "掲載店舗",
+    "howToFind": "探し方",
+    "mapAndFilters": "地図・条件"
+  },
+  "explorer": {
+    "kicker": "Find a pub",
+    "heading": "地図と条件から探す",
+    "resultCount": "{count}件のPubが見つかりました",
+    "searchLabel": "店舗を検索",
+    "searchPlaceholder": "店舗名、エリア",
+    "clear": "クリア",
+    "prefecture": "都道府県",
+    "allPrefectures": "すべての都道府県",
+    "tags": "タグ",
+    "includeClosed": "閉業した店舗を含める",
+    "resetFilters": "条件をリセット",
+    "help": "店舗名・エリア・タグで絞り込み、必要に応じて閉業した店舗を含められます。",
+    "mapAndListLabel": "Irish Pub の地図と一覧"
+  },
+  "list": {
+    "kicker": "Search results",
+    "heading": "掲載店舗",
+    "count": "{count}件",
+    "details": "詳細",
+    "close": "閉じる",
+    "name": "店舗名",
+    "address": "住所",
+    "area": "エリア",
+    "status": "営業状況",
+    "tags": "タグ",
+    "unset": "未設定",
+    "officialWebsite": "公式サイト",
+    "statuses": {
+      "open": "営業中",
+      "temporarily_closed": "一時休業",
+      "closed": "閉業",
+      "unknown": "不明"
+    },
+    "tagLabels": {
+      "guinness": "ギネス",
+      "food": "食事あり",
+      "station-area": "駅近",
+      "craft-beer": "クラフトビール",
+      "live-music": "ライブ音楽",
+      "whiskey": "ウイスキー"
+    }
+  },
+  "map": {
+    "locationsLabel": "Irish Pub の所在地",
+    "currentLocation": "現在地",
+    "unavailableHeading": "地図を表示できませんでした",
+    "unavailableDescription": "このブラウザ環境ではWebGLが無効、または利用できないため地図を初期化できません。右側または下部の店舗一覧からIrish Pubを確認してください。",
+    "errorHeading": "地図を読み込めませんでした",
+    "errorDescription": "地図タイルの読み込みに失敗しました。通信環境を確認して再読み込みしてください。右側または下部の店舗一覧からIrish Pubを確認できます。",
+    "loading": "地図を読み込んでいます…",
+    "selectPub": "店舗を選択: {name}"
+  }
+}

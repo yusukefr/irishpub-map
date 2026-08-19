@@ -94,7 +94,7 @@ node scripts/generate-api-keys.mjs 10 /secure/path/api-keys.txt
 
 生成ファイルは所有者だけが読める権限（`0600`）で保存されます。生成されたキーは秘密情報として扱い、必要なものだけを Vercel の `IRISHPUB_MAP_API_KEY` に登録してください。生成ファイルを Issue、Pull Request、リポジトリ、CI ログへ保存・貼り付けないでください。
 
-Preview Deployment Protection を有効にしている場合、サーバー側から同じ Preview URL の `/api/pubs` を fetch すると Vercel SSO へリダイレクトされることがあります。その場合は Vercel の Protection Bypass for Automation secret を `VERCEL_AUTOMATION_BYPASS_SECRET` として Preview 環境にも設定してください。アプリはこの値を `x-vercel-protection-bypass` ヘッダーとして送信します。未設定でも SSO リダイレクト時は検証済み店舗データへフォールバックし、ページ全体が server error にならないようにしています。
+Preview Deployment Protection を有効にしている場合、サーバー側から同じ Preview URL の `/api/pubs` を fetch すると Vercel SSO へリダイレクトされることがあります。その場合は Vercel の Protection Bypass for Automation secret を `VERCEL_AUTOMATION_BYPASS_SECRET` として Preview 環境にも設定してください。アプリはこの値を `x-vercel-protection-bypass` ヘッダーとして送信します。未設定でもSSOリダイレクト時は静的データを複製せず店舗0件で表示し、ページ全体がserver errorにならないようにしています。実データを表示するには、SSO回避用の設定とDATABASE_URLを構成してください。
 
 管理画面のログインには `ADMIN_USERNAME`、`ADMIN_PASSWORD_HASH`、`ADMIN_SESSION_SECRET` のすべてが必要です。更新操作には、さらに `DATABASE_URL` が必要です。
 
@@ -161,7 +161,7 @@ npm audit --omit=dev
 
 ## 管理画面と Neon Postgres
 
-管理画面は `/admin` です。Vercel Marketplace から Neon を追加し、Production 環境には本番ブランチ、Preview 環境には[Neon Preview ブランチ上限対策](#neon-preview-ブランチ上限対策)で作成した固定ブランチの `DATABASE_URL` を設定してください。初回のデータ取得時に `pubs` テーブルを作成し、既存の `data/pubs.json` を初期投入します。`DATABASE_URL` が未設定の場合、管理画面は初期データを閲覧できますが書き込みはできません。
+管理画面は `/admin` です。Vercel Marketplace から Neon を追加し、Production 環境には本番ブランチ、Preview 環境には[Neon Preview ブランチ上限対策](#neon-preview-ブランチ上限対策)で作成した固定ブランチの `DATABASE_URL` を設定してください。初回のデータ取得時に `pubs` テーブルと各種マスタを作成します。店舗データは管理画面または[開発環境・セットアップ手順の一括インポート](development.md#店舗データの一括インポート)で明示的に投入してください。`DATABASE_URL` が未設定の場合、管理画面は店舗0件を表示できますが書き込みはできません。
 
 パスワードハッシュは、ローカルで生成して Vercel の環境変数にだけ登録します。例:
 

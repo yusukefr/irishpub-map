@@ -2,7 +2,7 @@
 
 ## 現状
 
-Next.js Route Handler で公開 API と管理 API を提供します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境では Neon を読み書きし、未設定時は `data/pubs.json` をフォールバックとして使います。
+Next.js Route Handler で公開 API と管理 API を提供します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境ではNeonを読み書きし、未設定時は空の店舗一覧を返します。
 
 ## 公開 API
 
@@ -46,7 +46,7 @@ Vercel の `VERCEL_ENV=production` を使って Production を判定します。
 
 Web アプリのトップページはサーバー側で `/api/pubs` を fetch します。API key はサーバー側のヘッダーとして付与され、ブラウザには露出しません。
 
-Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL_AUTOMATION_BYPASS_SECRET` に Protection Bypass for Automation secret を設定してください。設定されている場合、サーバー側 fetch は `x-vercel-protection-bypass` ヘッダーを送信します。未設定で SSO リダイレクトされた場合、トップページは server error を避けるため同じ検証処理を通した店舗データへフォールバックします。
+Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL_AUTOMATION_BYPASS_SECRET` に Protection Bypass for Automation secret を設定してください。設定されている場合、サーバー側 fetch は `x-vercel-protection-bypass` ヘッダーを送信します。未設定でSSOへリダイレクトされた場合、トップページは静的データを複製せず店舗0件で表示します。実データを表示するには、SSOを回避できる設定とDATABASE_URLの両方を適切に構成してください。
 
 検索・絞り込みは、取得済みの店舗データに対してブラウザで実行します。そのため `prefecture` や `query` のクエリパラメーターは現在の公開 API では受け付けません。
 

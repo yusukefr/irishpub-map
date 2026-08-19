@@ -1,8 +1,10 @@
 import { headers } from "next/headers";
 import { AppVersionFooter } from "./components/app-version-footer";
 import { PubExplorer } from "./components/pub-explorer";
-import { getValidatedPubs } from "./lib/pub-data";
 import { asPubs } from "@irishpub-map/shared/pub";
+import { LanguageSwitcher } from "./components/language-switcher";
+import { getTranslation } from "./lib/i18n";
+import { getRequestLocale } from "./lib/i18n/server";
 
 const API_KEY_HEADER = "x-api-key";
 const VERCEL_PROTECTION_BYPASS_HEADER = "x-vercel-protection-bypass";
@@ -46,9 +48,9 @@ async function getPubs() {
     return asPubs(data.pubs);
   }
 
-  // Preview ProtectionのSSOへ転送された場合も、公開画面自体はJSONデータで表示します。
+  // Preview ProtectionのSSOへ転送された場合は、静的データを複製せず空の一覧を表示します。
   if (process.env.VERCEL && isVercelSsoRedirect(response)) {
-    return getValidatedPubs();
+    return [];
   }
 
   throw new Error("Failed to fetch pubs.");
@@ -60,40 +62,41 @@ async function getPubs() {
  */
 export default async function Home() {
   const pubList = await getPubs();
+  const locale = await getRequestLocale();
+  const t = getTranslation(locale);
 
   return (
     <main className="page-shell">
       <section className="masthead">
         <div className="masthead-copy">
-          <p className="eyebrow">Irish Pub Finder / Japan</p>
+          <LanguageSwitcher locale={locale} />
+          <p className="eyebrow">{t.home.eyebrow}</p>
           <h1>
             Irish Pub Map
             <span>in Japan</span>
           </h1>
-          <p className="lead">
-            現在地や都道府県、好きな過ごし方から。今日の一杯に合う Irish Pub を、地図から探せます。
-          </p>
+          <p className="lead">{t.home.lead}</p>
           <a className="masthead-link" href="#pub-search">
-            パブを探す
+            {t.home.findPubs}
             <span aria-hidden="true">↓</span>
           </a>
         </div>
-        <dl className="masthead-stats" aria-label="掲載情報">
+        <dl className="masthead-stats" aria-label={t.home.listedInformation}>
           <div>
-            <dt>掲載店舗</dt>
+            <dt>{t.home.listedPubs}</dt>
             <dd>
               {pubList.length}
               <span> pubs</span>
             </dd>
           </div>
           <div>
-            <dt>探し方</dt>
-            <dd>地図・条件</dd>
+            <dt>{t.home.howToFind}</dt>
+            <dd>{t.home.mapAndFilters}</dd>
           </div>
         </dl>
       </section>
 
-      <PubExplorer pubs={pubList} />
+      <PubExplorer pubs={pubList} locale={locale} />
 
       <AppVersionFooter />
     </main>
