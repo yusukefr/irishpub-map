@@ -149,7 +149,8 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
                 role="menuitemradio"
                 aria-checked={isCurrent}
                 aria-current={isCurrent ? "true" : undefined}
-                tabIndex={isCurrent ? 0 : -1}
+                // menu内は矢印キーで移動し、Tabでは次のウィジェットへ抜けられるようにします。
+                tabIndex={-1}
                 onClick={() => selectLocale(option.locale)}
                 onKeyDown={(event) => handleOptionKeyDown(event, index)}
               >

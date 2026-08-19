@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LanguageSwitcher } from "../../apps/web/app/components/language-switcher";
 
@@ -123,6 +123,31 @@ describe("LanguageSwitcher", () => {
     fireEvent.keyDown(trigger, { key: "ArrowDown" });
 
     expect(screen.getByRole("menuitemradio", { name: "日本語" })).toHaveFocus();
+  });
+
+  it("allows Tab to leave the menu after ArrowDown opens it in English", () => {
+    render(
+      <div>
+        <LanguageSwitcher locale="en" />
+        <button type="button">Outside</button>
+      </div>,
+    );
+    const trigger = screen.getByRole("button", { name: "Language: English" });
+    const outside = screen.getByRole("button", { name: "Outside" });
+
+    fireEvent.keyDown(trigger, { key: "ArrowDown" });
+
+    const japaneseOption = screen.getByRole("menuitemradio", { name: "日本語" });
+    expect(japaneseOption).toHaveFocus();
+    for (const option of screen.getAllByRole("menuitemradio")) {
+      expect(option).toHaveAttribute("tabindex", "-1");
+    }
+
+    expect(fireEvent.keyDown(japaneseOption, { key: "Tab" })).toBe(true);
+    act(() => outside.focus());
+
+    expect(outside).toHaveFocus();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 
   it("toggles the menu from the trigger", () => {
