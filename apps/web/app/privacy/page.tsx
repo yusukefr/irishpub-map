@@ -4,58 +4,88 @@ import { getRequestLocale } from "../lib/i18n/server";
 
 const policySections = [
   {
-    title: "1. このページについて",
+    title: "1. 本サービスで取り扱う情報",
     paragraphs: [
-      "このページは、Irish Pub Map の公開画面における情報の取扱いと外部送信を説明するものです。アカウント登録、広告、行動追跡は現在提供していません。",
-      "日本語を正本とします。英語表示は、この日本語版を利用しやすくするための補助であり、内容に差異がある場合は日本語版を優先します。",
+      "本サービスにはユーザー登録機能がなく、氏名、住所、電話番号、メールアドレスなどの個人情報の入力を求める機能はありません。",
+      "現在地周辺のアイリッシュパブを検索・表示するため、利用者が位置情報の利用を許可した場合にのみ、端末から位置情報を取得します。取得した位置情報はブラウザ内で店舗と地図を表示するためだけに利用し、本サービスのサーバーへ緯度・経度を送信したり、データベースへ保存したりしません。",
+      "地図の表示時には、ブラウザからOpenStreetMapのサーバーへ直接通信が行われます。IPアドレス、ブラウザ・端末情報、アクセス日時、参照元、地図表示に必要なリクエスト情報などがOpenStreetMap側へ送信される場合があります。",
+    ],
+    links: [
+      {
+        href: "https://osmfoundation.org/wiki/Privacy_Policy",
+        label: "OpenStreetMap Foundationのプライバシーポリシー",
+      },
     ],
   },
   {
-    title: "2. Vercelによるサイト配信とログ",
+    title: "2. Cookieの利用",
     paragraphs: [
-      "ページ、静的ファイル、APIへアクセスすると、利用者のブラウザからVercel Inc.およびそのインフラ・サブプロセッサへリクエストが送信されます。サイト配信、障害調査、性能維持、セキュリティ、不正利用対策のために利用されます。",
+      "本サービスでは、利用者が選択した表示言語を保持するため、ファーストパーティCookieを使用します。このCookieを広告配信、アクセス解析、サイトをまたいだ追跡、または利用者を識別する目的では使用しません。",
+      "Cookieの内容を本サービス独自のデータベースへ保存することはありません。同一サイトへの通常のアクセス時には、ブラウザの仕組みによりこのCookieがリクエストに含まれ、ホスティング環境であるVercel上の本サービスへ送信されます。ブラウザの設定でCookieを削除または無効にできますが、その場合は表示言語の設定が保持されないことがあります。",
     ],
     items: [
-      "主な情報: IPアドレス、IPから推定した国・都市、アクセス先URL、日時、HTTPヘッダー、ブラウザ・端末情報、応答状態、リクエストID",
-      "保持・削除: Runtime Logs の閲覧期間は利用プランにより異なります（Hobby 1時間、Pro 1日、Enterprise 3日、Observability Plus 30日）。実際のプランや設定、契約終了後の取扱いは運営側で確認・管理します。",
+      "Cookie名: irishpub-map-locale",
+      "保存する値: ja または en",
+      "目的: 日本語・英語の表示設定を、ページ遷移や再読み込み後も維持するため",
+      "保存期間: 設定または変更から30日",
+      "保存場所: 利用者のブラウザ",
+      "主な属性: Path=/; Max-Age=2592000; SameSite=Lax",
     ],
   },
   {
-    title: "3. OpenStreetMapの地図タイル",
+    title: "3. アクセス時に処理される情報",
     paragraphs: [
-      "地図の表示、移動、拡大縮小時には、ブラウザが OpenStreetMap Foundation の tile.openstreetmap.org とグローバルなキャッシュサーバーへ地図画像を直接リクエストします。アプリのサーバーは経由しません。",
+      "本サービスは、Vercel Inc.が提供するVercelを利用して提供されています。サービス提供、通信、セキュリティ確保、不具合調査およびサービス運用のため、アクセスに伴う情報がVercelのシステムで処理される場合があります。",
     ],
     items: [
-      "主な情報: IPアドレス、ブラウザ・端末種別、OS、参照元、日時、要求したタイルURL。URLの z/x/y から表示地域と縮尺を推測できる場合があります。",
-      "目的: 地図画像の配信、運用・セキュリティ・容量計画、匿名化した利用状況の調査。",
-      "保持・削除: OSMFはアクセス記録を一時的なものと説明していますが、タイル要求ログの一律の保持日数、保存地域、個別削除手順は確認できていません。",
+      "IPアドレス",
+      "User-Agentなどのブラウザ・端末情報",
+      "アクセス日時、リクエスト先のURLやパス、HTTPステータスなどの通信情報",
     ],
   },
   {
-    title: "4. 言語設定Cookie",
+    title: "4. 外部サービスへの情報送信",
     paragraphs: [
-      "表示言語を選ぶと、ファーストパーティCookie「irishpub-map-locale」に ja または en を30日間保存します。ページ遷移や再読み込み後も言語を維持するためだけに使い、広告・解析サービスやアプリ独自のデータベースには保存しません。",
-      "Cookieは同一オリジンへの通常のリクエストで、ホスティング先のVercel上のアプリに送信されます。ブラウザのサイトデータ削除で消去でき、別の言語を選ぶと値と期限が上書きされます。",
+      "本サービスでは、サービスの提供および改善に必要な範囲でOpenStreetMapとVercelを利用しています。OpenStreetMapは地図表示のために利用し、地図表示時には利用者のブラウザから直接通信します。Vercelはホスティング、コンテンツ配信、セキュリティ、障害調査、利用状況および性能の把握に利用します。",
+      "本サービスの運営者が、OpenStreetMap側で取得された情報を独自に取得または保存することはありません。",
+    ],
+    links: [{ href: "https://vercel.com/legal/privacy-notice", label: "Vercelのプライバシーポリシー" }],
+  },
+  {
+    title: "5. アクセス解析および性能測定",
+    paragraphs: [
+      "本サービスでは、Vercel Web Analyticsを利用してページビューなどの利用状況を集計・分析し、Vercel Speed Insightsを利用して実際の利用環境における表示速度、応答性、視覚的な安定性などを測定します。これらの情報は、サービスの利用状況の把握、障害や性能劣化の把握、表示速度や機能の改善、アクセス量に応じた運用構成の検討に利用します。",
+      "Web Analyticsではアクセス日時、閲覧したURLやルート、参照元、一部のクエリパラメータ、国・地域などのおおまかな位置情報、OS、ブラウザ、端末種別がVercelへ送信される場合があります。Speed Insightsでは閲覧したURLやルート、ネットワーク速度、ブラウザ、端末種別、OS、国、Web Vitalsなどの測定値、測定日時がVercelへ送信される場合があります。",
+      "Web AnalyticsはデフォルトでCookieを使用しません。本サービスではGoogle Analyticsを利用しておらず、広告を掲載していません。取得した情報を広告配信、広告のパーソナライズ、プロファイリングまたはサイトをまたいだ追跡のために利用しません。",
+    ],
+    links: [
+      { href: "https://vercel.com/docs/analytics/privacy-policy", label: "Vercel Web Analyticsのプライバシー説明" },
+      { href: "https://vercel.com/docs/speed-insights", label: "Vercel Speed Insightsの説明" },
     ],
   },
   {
-    title: "5. 現在地の利用",
+    title: "6. 第三者への提供",
     paragraphs: [
-      "現在地は、利用目的を説明した「現在地から探す」を選んだ後にだけ、ブラウザの許可を得て取得します。座標は都道府県候補の選択、地図の表示範囲、現在地マーカーにだけ利用します。",
-      "生の座標をアプリのAPIやデータベースへ送信・保存したり、CookieやLocal Storageへ保存したりする実装はありません。ページを閉じるか再読み込みすると失われます。ただし、現在地周辺を表示すると、地図タイルの識別子からおおよその表示地域がOpenStreetMap側で推測される場合があります。",
+      "本サービスの運営者は、利用者に関する情報を販売しません。法令に基づく場合を除き、本サービスが取得した利用者に関する情報を、利用者の同意なく第三者へ提供しません。",
+      "ただし、サービスの提供および改善に必要な通信として、このページに記載した外部サービスへ情報が送信される場合があります。",
     ],
   },
   {
-    title: "6. 停止中の計測機能",
+    title: "7. 情報の安全管理",
     paragraphs: [
-      "Vercel Web Analytics と Vercel Speed Insights は現在停止しています。アプリには計測コンポーネントや依存関係がなく、新しいページビューや性能データを送信しません。過去に送信されたデータは、Vercel側の保持期間まで残る可能性があります。",
-      "将来これらを再開・追加する場合は、送信情報、送信先、目的、保持期間、停止方法、必要な通知または同意を改めて確認し、このページを更新します。",
+      "本サービスでは、不正アクセス、漏えい、改ざんなどを防止するため、サービスの性質および取り扱う情報に応じた合理的な安全管理措置を講じるよう努めます。現在位置を示す緯度・経度を本サービスのサーバーおよびデータベースへ保存しない設計を採用しています。",
     ],
   },
   {
-    title: "7. お問い合わせ",
+    title: "8. プライバシーポリシーの変更",
     paragraphs: [
-      "この方針や情報の取扱いに関するご連絡は、Irish Pub Map の公開リポジトリの Issue からお願いします。個別のログやOpenStreetMap側の記録については、提供者の方針により対応できない場合があります。",
+      "本サービスの機能、利用する外部サービスまたは法令などの変更に伴い、このプライバシーポリシーを変更する場合があります。重要な変更がある場合には、本サービス上で分かりやすい方法によりお知らせします。",
+    ],
+  },
+  {
+    title: "9. お問い合わせ",
+    paragraphs: [
+      "このプライバシーポリシーに関するお問い合わせは、Irish Pub Map の公開リポジトリの Issue からお願いします。個別のログやOpenStreetMap側の記録については、提供者の方針により対応できない場合があります。",
     ],
   },
 ];
@@ -72,16 +102,15 @@ export default async function PrivacyPage() {
       <header className="privacy-masthead">
         <LanguageSwitcher locale={locale} />
         <div className="privacy-masthead-copy">
-          <p className="eyebrow">Privacy / External transmission</p>
-          <h1>プライバシーポリシー・外部送信について</h1>
+          <p className="eyebrow">Privacy policy</p>
+          <h1>プライバシーポリシー</h1>
           <p className="lead">
-            Irish Pub Map
-            は、地図で店舗を探すために必要な範囲で情報を取り扱います。何がどこへ送られるかを、利用前に確認できるようにしています。
+            本サービスは、日本国内のアイリッシュパブを検索・閲覧できるサービスです。利用者のプライバシーを尊重し、利用者に関する情報を適切に取り扱います。
           </p>
         </div>
       </header>
 
-      <article className="privacy-content" aria-label="プライバシーポリシー・外部送信について" lang="ja">
+      <article className="privacy-content" aria-label="プライバシーポリシー" lang="ja">
         <div className="privacy-sections">
           {policySections.map((section) => (
             <section className="privacy-section" key={section.title}>
@@ -96,12 +125,24 @@ export default async function PrivacyPage() {
                   ))}
                 </ul>
               ) : null}
+              {section.links ? (
+                <ul className="privacy-external-links">
+                  {section.links.map((link) => (
+                    <li key={link.href}>
+                      <a href={link.href} rel="noreferrer" target="_blank">
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </section>
           ))}
         </div>
         <div className="privacy-record">
           <p>最終更新日: 2026年8月21日</p>
-          <p>変更履歴: 2026年8月21日 初版公開（Vercel、OpenStreetMap、Cookie、現在地、停止中の計測機能を明記）</p>
+          <p>制定日: 2026年8月21日</p>
+          <p>変更履歴: 2026年8月21日 プライバシーポリシーを公開</p>
         </div>
         <a className="privacy-home-link" href="/">
           地図からパブを探す<span aria-hidden="true"> →</span>

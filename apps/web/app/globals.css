@@ -1567,6 +1567,11 @@ body {
 
 .privacy-section p,
 .privacy-section li,
+.privacy-external-links {
+  margin-top: 18px;
+  border-left-color: var(--accent);
+}
+
 .privacy-record {
   color: var(--ink);
   line-height: 1.85;

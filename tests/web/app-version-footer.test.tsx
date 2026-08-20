@@ -11,9 +11,6 @@ describe("AppVersionFooter", () => {
     const versionInfo = screen.getByRole("contentinfo", { name: "アプリのバージョン情報" });
     expect(versionInfo).toHaveTextContent(`v${appVersion.version}`);
     expect(versionInfo).toHaveTextContent(`リリース日 ${appVersion.releaseDate}（JST）`);
-    expect(screen.getByRole("link", { name: "プライバシーポリシー・外部送信について" })).toHaveAttribute(
-      "href",
-      "/privacy",
-    );
+    expect(screen.getByRole("link", { name: "プライバシーポリシー" })).toHaveAttribute("href", "/privacy");
   });
 });

@@ -9,7 +9,7 @@ Irish Pub Map の公開画面について、実装、通信経路、各サービ
 ## 公開方針
 
 - 対象利用者は日本国内の利用者です。英語表示は日本在住の外国人を想定しており、EU/EEAを含む日本国外へ積極的にサービスを提供する意図を示すものではありません。
-- Vercel Web Analytics と Speed Insights は、公開用のプライバシー・外部送信表示が整うまで停止します。
+- Vercel Web Analytics と Speed Insights を利用し、利用状況と実利用環境の性能を把握してサービスを改善します。
 - 言語設定 Cookie は表示言語の維持だけに使い、保存期間を30日とします。
 - 現在地の生の座標はアプリのサーバーやDBへ送信・保存しません。ただし、現在地周辺の地図を表示すると、周辺タイルの識別子が OpenStreetMap へ送信されます。
 
@@ -83,7 +83,7 @@ Vercelのプライバシー通知は、顧客サイトの利用者について�
 - ブラウザやOSが現在地を特定するために利用する測位事業者やネットワーク処理は、アプリの実装からは確認できません。
 - 現在地へ地図を移動した後のOSMタイル要求については、前項のとおり間接的な地域情報の外部送信が発生します。
 
-## 停止している計測
+## 利用する計測
 
 ### Vercel Web Analytics
 
@@ -91,7 +91,7 @@ Web Analyticsを組み込むと、Vercelへページビューが送信されま�
 
 Dashboardで参照できる期間はプランに依存します。公式プラン資料では、Hobbyは1か月、Proは12か月と案内されていますが、プロジェクトの利用プランと集計済みデータの最終削除時期は未確認です。
 
-現在は `@vercel/analytics` の依存関係と計測コンポーネントを削除し、アプリから新しいイベントを送らない状態にします。過去に送信済みのデータはVercel側の保持期間まで残る可能性があります。
+`@vercel/analytics` の依存関係と `Analytics` コンポーネントをルートレイアウトへ追加し、Vercel上の本番環境でページビューなどの利用状況を送信します。開発環境ではこのパッケージは計測しません。
 
 根拠:
 
@@ -106,7 +106,7 @@ Speed Insightsを組み込むと、実利用者の端末からCore Web Vitalsな
 
 公式資料のDashboard参照期間はHobby 7日、Pro 30日、Enterprise 90日です。生のデータポイントの最終削除時期と、このプロジェクトの利用プランは未確認です。
 
-現在は `@vercel/speed-insights` の依存関係と計測コンポーネントを削除し、アプリから新しい性能データを送らない状態にします。
+`@vercel/speed-insights` の依存関係と `SpeedInsights` コンポーネントをルートレイアウトへ追加し、Vercel上の本番環境でWeb Vitalsなどの性能データを送信します。開発環境ではこのパッケージは計測しません。
 
 根拠:
 
@@ -157,9 +157,9 @@ Vercelの現行DPAはProとEnterpriseを対象とし、主要な処理施設は�
 
 - [EDPB Guidelines 3/2018 on the territorial scope of the GDPR](https://www.edpb.europa.eu/documents/guideline/guidelines-32018-on-the-territorial-scope-of-the-gdpr-article-3-version-adopted_en)
 
-## 計測を再開する条件
+## 計測機能を変更する条件
 
-Web AnalyticsまたはSpeed Insightsは、次の条件をすべて満たすPull Requestでのみ再開します。
+Web AnalyticsまたはSpeed Insightsの追加・停止・送信内容の変更は、次の条件をすべて満たすPull Requestでのみ行います。
 
 1. 公開用のプライバシー・外部送信表示に、対象サービスの送信情報、送信先、目的、保持期間、停止方法を記載する。
 2. Vercelプラン、DPA適用状況、Dashboard設定、保持期間を確認し、未確認事項を更新する。
