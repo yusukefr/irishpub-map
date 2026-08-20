@@ -57,6 +57,8 @@ Vercelのプライバシー通知は、顧客サイトの利用者について�
 - [OSMF Tile Usage Policy](https://operations.osmfoundation.org/policies/tiles/)
 - [OSMF Privacy Policy](https://osmfoundation.org/wiki/Privacy_Policy)
 
+標準タイルの利用条件との照合、変更時の確認、商用プロバイダーまたはセルフホストへ切り替える基準は、[OpenStreetMap 標準タイル利用方針](openstreetmap-tile-usage.md)を参照してください。
+
 ### 言語設定 Cookie
 
 | 項目 | 値 |
