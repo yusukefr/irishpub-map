@@ -26,6 +26,8 @@ const GEOLOCATION_OPTIONS: PositionOptions = {
 
 const EMPTY_FOCUS_PUBS: Pub[] = [];
 
+type GeolocationStatus = "idle" | "requesting" | "success" | "no-pubs" | "denied" | "error" | "unsupported";
+
 /**
  * 検索条件、地図、店舗一覧で共有する探索状態を一元管理します。
  * @param {{ pubs: Pub[] }} root0 - 探索対象の店舗一覧。
@@ -38,10 +40,12 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
   const [selectedPrefecture, setSelectedPrefecture] = useState("");
   const [currentPrefecture, setCurrentPrefecture] = useState("");
   const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
+  const [geolocationStatus, setGeolocationStatus] = useState<GeolocationStatus>("idle");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [includeClosed, setIncludeClosed] = useState(false);
   const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
   const hasSelectedPrefecture = useRef(false);
+  const isMounted = useRef(true);
   const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
   const availableTags = useMemo(() => getAvailableTags(pubs), [pubs]);
   const filteredPubs = useMemo(
@@ -65,17 +69,27 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
   };
 
   useEffect(() => {
+    isMounted.current = true;
+
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const requestCurrentLocation = () => {
     const geolocation = navigator.geolocation;
 
     if (!geolocation) {
+      setGeolocationStatus("unsupported");
       return;
     }
 
-    let isMounted = true;
+    setGeolocationStatus("requesting");
 
+    // OSの許可ダイアログは、利用目的を読んだ後の明示操作でのみ開きます。
     geolocation.getCurrentPosition(
       ({ coords }) => {
-        if (!isMounted) {
+        if (!isMounted.current) {
           return;
         }
 
@@ -83,20 +97,44 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
         const nearestPrefecture = getNearestAvailablePrefecture(pubs, location);
         setCurrentLocation(location);
         setCurrentPrefecture(nearestPrefecture);
+        setGeolocationStatus(nearestPrefecture ? "success" : "no-pubs");
 
         // 利用者が既に都道府県を選んだ場合は、遅れて返った位置情報で上書きしません。
         if (!hasSelectedPrefecture.current) {
           setSelectedPrefecture(nearestPrefecture);
         }
       },
-      () => undefined,
+      (error) => {
+        if (!isMounted.current) {
+          return;
+        }
+
+        setGeolocationStatus(error.code === error.PERMISSION_DENIED ? "denied" : "error");
+      },
       GEOLOCATION_OPTIONS,
     );
+  };
 
-    return () => {
-      isMounted = false;
-    };
-  }, [pubs]);
+  const currentLocationAction =
+    geolocationStatus === "requesting"
+      ? t.explorer.currentLocationRequesting
+      : geolocationStatus === "success" || geolocationStatus === "no-pubs"
+        ? t.explorer.currentLocationRefresh
+        : geolocationStatus === "denied" || geolocationStatus === "error"
+          ? t.explorer.currentLocationRetry
+          : t.explorer.currentLocationAction;
+  const currentLocationStatusMessage =
+    geolocationStatus === "success"
+      ? t.explorer.currentLocationSuccess
+      : geolocationStatus === "no-pubs"
+        ? t.explorer.currentLocationNoPubs
+        : geolocationStatus === "denied"
+          ? t.explorer.currentLocationDenied
+          : geolocationStatus === "error"
+            ? t.explorer.currentLocationError
+            : geolocationStatus === "unsupported"
+              ? t.explorer.currentLocationUnsupported
+              : null;
 
   return (
     <div className="pub-explorer">
@@ -137,6 +175,27 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
             >
               クリア
             </button>
+          ) : null}
+        </div>
+        <div className="current-location-control">
+          <p>{t.explorer.currentLocationDescription}</p>
+          {geolocationStatus === "unsupported" ? null : (
+            <button
+              type="button"
+              className="current-location-action"
+              onClick={requestCurrentLocation}
+              disabled={geolocationStatus === "requesting"}
+            >
+              {currentLocationAction}
+            </button>
+          )}
+          {currentLocationStatusMessage ? (
+            <p
+              className={"current-location-status current-location-status-" + geolocationStatus}
+              role={geolocationStatus === "denied" || geolocationStatus === "error" ? "alert" : "status"}
+            >
+              {currentLocationStatusMessage}
+            </p>
           ) : null}
         </div>
         <div className="filter-row">
