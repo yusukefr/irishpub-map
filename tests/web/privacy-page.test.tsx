@@ -19,7 +19,7 @@ describe("PrivacyPage", () => {
       screen.getByRole("heading", { level: 1, name: "プライバシーポリシー・外部送信について" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "2. Vercelによるサイト配信とログ" })).toBeInTheDocument();
-    expect(screen.getByText(/tile.openstreetmap.org/)).toBeInTheDocument();
+    expect(screen.getByText(/tile\.openstreetmap\.org/)).toBeInTheDocument();
     expect(screen.getByText(/irishpub-map-locale/)).toBeInTheDocument();
     expect(screen.getByText(/Vercel Web Analytics と Vercel Speed Insights は現在停止しています/)).toBeInTheDocument();
     expect(screen.getByText("最終更新日: 2026年8月21日")).toBeInTheDocument();
