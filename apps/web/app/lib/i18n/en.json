@@ -30,6 +30,7 @@
     "currentLocationRetry": "Try my location again",
     "currentLocationRequesting": "Getting your location…",
     "currentLocationSuccess": "Your location was used to show the nearest listed area.",
+    "currentLocationNoPubs": "Your location was retrieved, but there are currently no listed pubs.",
     "currentLocationDenied": "Location access was not allowed. You can still search by prefecture or other filters.",
     "currentLocationError": "Your location could not be retrieved. Check your connection or device settings and try again.",
     "currentLocationUnsupported": "Location is not available in this browser. Search by prefecture or other filters instead.",

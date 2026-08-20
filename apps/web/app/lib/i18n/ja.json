@@ -30,6 +30,7 @@
     "currentLocationRetry": "現在地を再試行",
     "currentLocationRequesting": "現在地を取得中…",
     "currentLocationSuccess": "現在地を取得し、近い掲載エリアを表示しました。",
+    "currentLocationNoPubs": "現在地を取得しましたが、現在は掲載店舗がありません。",
     "currentLocationDenied": "位置情報の利用が許可されませんでした。都道府県や検索条件から引き続き探せます。",
     "currentLocationError": "現在地を取得できませんでした。通信や端末の設定を確認して、もう一度お試しください。",
     "currentLocationUnsupported": "このブラウザでは位置情報を利用できません。都道府県や検索条件から探せます。",

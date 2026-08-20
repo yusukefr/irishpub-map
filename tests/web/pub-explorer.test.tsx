@@ -240,6 +240,30 @@ describe("PubExplorer", () => {
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
   });
 
+  it("shows that no listed pub is available when geolocation succeeds with an empty data set", () => {
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((success) => {
+      success({
+        coords: {
+          latitude: 35.658,
+          longitude: 139.701,
+          accuracy: 20,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      });
+    });
+    mockGeolocation({ getCurrentPosition });
+
+    render(<PubExplorer pubs={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: "現在地から探す" }));
+
+    expect(screen.getByText("現在地を取得しましたが、現在は掲載店舗がありません。")).toBeInTheDocument();
+    expect(screen.queryByText("現在地を取得し、近い掲載エリアを表示しました。")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "現在地を更新" })).toBeInTheDocument();
+  });
   it("filters the displayed pubs by selected prefecture", () => {
     render(<PubExplorer pubs={pubs} />);
 

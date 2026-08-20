@@ -26,7 +26,7 @@ const GEOLOCATION_OPTIONS: PositionOptions = {
 
 const EMPTY_FOCUS_PUBS: Pub[] = [];
 
-type GeolocationStatus = "idle" | "requesting" | "success" | "denied" | "error" | "unsupported";
+type GeolocationStatus = "idle" | "requesting" | "success" | "no-pubs" | "denied" | "error" | "unsupported";
 
 /**
  * 検索条件、地図、店舗一覧で共有する探索状態を一元管理します。
@@ -97,7 +97,7 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
         const nearestPrefecture = getNearestAvailablePrefecture(pubs, location);
         setCurrentLocation(location);
         setCurrentPrefecture(nearestPrefecture);
-        setGeolocationStatus("success");
+        setGeolocationStatus(nearestPrefecture ? "success" : "no-pubs");
 
         // 利用者が既に都道府県を選んだ場合は、遅れて返った位置情報で上書きしません。
         if (!hasSelectedPrefecture.current) {
@@ -118,7 +118,7 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
   const currentLocationAction =
     geolocationStatus === "requesting"
       ? t.explorer.currentLocationRequesting
-      : geolocationStatus === "success"
+      : geolocationStatus === "success" || geolocationStatus === "no-pubs"
         ? t.explorer.currentLocationRefresh
         : geolocationStatus === "denied" || geolocationStatus === "error"
           ? t.explorer.currentLocationRetry
@@ -126,13 +126,15 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
   const currentLocationStatusMessage =
     geolocationStatus === "success"
       ? t.explorer.currentLocationSuccess
-      : geolocationStatus === "denied"
-        ? t.explorer.currentLocationDenied
-        : geolocationStatus === "error"
-          ? t.explorer.currentLocationError
-          : geolocationStatus === "unsupported"
-            ? t.explorer.currentLocationUnsupported
-            : null;
+      : geolocationStatus === "no-pubs"
+        ? t.explorer.currentLocationNoPubs
+        : geolocationStatus === "denied"
+          ? t.explorer.currentLocationDenied
+          : geolocationStatus === "error"
+            ? t.explorer.currentLocationError
+            : geolocationStatus === "unsupported"
+              ? t.explorer.currentLocationUnsupported
+              : null;
 
   return (
     <div className="pub-explorer">
