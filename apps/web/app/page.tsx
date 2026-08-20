@@ -98,7 +98,7 @@ export default async function Home() {
 
       <PubExplorer pubs={pubList} locale={locale} />
 
-      <AppVersionFooter />
+      <AppVersionFooter locale={locale} />
     </main>
   );
 }
