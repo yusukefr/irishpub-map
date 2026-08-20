@@ -83,6 +83,15 @@ describe("PubMap", () => {
         zoom: 5,
       }),
     );
+    const mapOptions = maplibreMock.mapConstructor.mock.calls[0][0] as {
+      style: { sources: { osm: { attribution: string; tiles: string[] } } };
+    };
+    expect(mapOptions.style.sources.osm.tiles).toEqual(["https://tile.openstreetmap.org/{z}/{x}/{y}.png"]);
+    expect(mapOptions.style.sources.osm.attribution).toContain("https://www.openstreetmap.org/copyright");
+    expect(mapOptions.style.sources.osm.attribution).toContain("OpenStreetMap contributors");
+    expect(mapOptions.style.sources.osm.attribution).toContain('target="_blank"');
+    expect(mapOptions.style.sources.osm.attribution).toContain('rel="noreferrer"');
+
     expect(maplibreMock.navigationControl).toHaveBeenCalledWith({ visualizePitch: true });
     expect(maplibreMock.mapAddControl).toHaveBeenCalledTimes(1);
     expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();

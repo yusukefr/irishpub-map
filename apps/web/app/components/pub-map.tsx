@@ -12,6 +12,9 @@ const NON_OPEN_PUB_MARKER_COLOR = "#6b7280";
 const DEFAULT_MAP_CENTER: [number, number] = [139.767, 35.681];
 const DEFAULT_MAP_ZOOM = 5;
 const CURRENT_LOCATION_ZOOM = 12;
+
+const OSM_COPYRIGHT_URL = "https://www.openstreetmap.org/copyright";
+const OSM_ATTRIBUTION = `© <a href="${OSM_COPYRIGHT_URL}" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>`;
 const PREFECTURE_MAP_ZOOM = 10;
 const PREFECTURE_MAP_PADDING = 48;
 
@@ -94,7 +97,7 @@ export function PubMap({
               type: "raster",
               tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
               tileSize: 256,
-              attribution: "© OpenStreetMap contributors",
+              attribution: OSM_ATTRIBUTION,
             },
           },
           layers: [
