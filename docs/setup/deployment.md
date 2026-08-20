@@ -53,7 +53,7 @@ GitHub Actions のPR用ワークフローで `npm run update-app-version` が実
 
 ## Web Analytics と Speed Insights
 
-Web Analytics と Speed Insights は、プライバシー表示対応が完了するまで一時停止しています。アプリから計測コンポーネントと依存パッケージを削除しているため、Vercel Dashboard 側の機能が有効でも新しいページビューや Core Web Vitals をアプリから送信しません。
+Web Analytics と Speed Insights を利用します。アプリのルートレイアウトで計測コンポーネントを読み込むため、Vercel上の本番環境ではページビューと Core Web Vitals などの計測情報が送信されます。利用前にVercel Dashboardで両機能を有効にしてください。開発環境では各パッケージは計測しません。
 
 再開する場合は、次の条件をすべて満たした変更を Pull Request でレビューしてください。
 
