@@ -24,8 +24,10 @@ sequenceDiagram
   API-->>Page: { pubs }
   Page-->>Visitor: HTML と店舗データ
   Visitor->>Explorer: 検索・都道府県・タグ・閉業店舗表示を操作
-  opt 位置情報の利用を許可
-    Explorer->>Explorer: 最寄りの掲載都道府県を初期選択
+  opt 「現在地から探す」を選択
+    Explorer->>Visitor: ブラウザの位置情報利用を要求
+    Visitor->>Explorer: 位置情報利用を許可
+    Explorer->>Explorer: 最寄りの掲載都道府県を選択し、地図へ反映
   end
   Explorer-->>Visitor: 地図と店舗一覧を更新
 ```

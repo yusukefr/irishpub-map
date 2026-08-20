@@ -116,8 +116,94 @@ describe("PubExplorer", () => {
     expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
   });
 
-  it("defaults to the nearest available prefecture when geolocation succeeds", async () => {
+  it("does not request geolocation until the visitor selects the current-location action", () => {
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>();
+    mockGeolocation({ getCurrentPosition });
+
+    render(<PubExplorer pubs={pubs} />);
+
+    expect(
+      screen.getByText("現在地に近い掲載都道府県を選択して地図を移動します。", { exact: false }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "現在地から探す" })).toBeInTheDocument();
+    expect(getCurrentPosition).not.toHaveBeenCalled();
+  });
+
+  it("uses the nearest available prefecture only after the current-location action", async () => {
     const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((success) => {
+      success({
+        coords: {
+          latitude: 35.658,
+          longitude: 139.701,
+          accuracy: 20,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      });
+    });
+    mockGeolocation({ getCurrentPosition });
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    render(<PubExplorer pubs={pubs} />);
+    fireEvent.click(screen.getByRole("button", { name: "現在地から探す" }));
+
+    await waitFor(() => expect(screen.getByLabelText("都道府県")).toHaveValue("東京都"));
+    expect(getCurrentPosition).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), {
+      enableHighAccuracy: false,
+      maximumAge: 300000,
+      timeout: 5000,
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(screen.getByText("現在地を取得し、近い掲載エリアを表示しました。")).toBeInTheDocument();
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
+    expect(maplibreMock.mapJumpTo).toHaveBeenLastCalledWith({
+      center: [139.701, 35.658],
+      zoom: 12,
+    });
+  });
+
+  it("keeps filters available and shows a retry action when location access is denied", () => {
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((_success, error) => {
+      error?.({
+        code: 1,
+        message: "denied",
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+      });
+    });
+    mockGeolocation({ getCurrentPosition });
+
+    render(<PubExplorer pubs={pubs} />);
+    fireEvent.click(screen.getByRole("button", { name: "現在地から探す" }));
+
+    expect(screen.getByLabelText("都道府県")).toHaveValue("");
+    expect(screen.getByRole("alert")).toHaveTextContent("位置情報の利用が許可されませんでした。");
+    expect(screen.getByRole("button", { name: "現在地を再試行" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
+    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
+    expect(maplibreMock.mapJumpTo).toHaveBeenLastCalledWith({
+      center: [139.767, 35.681],
+      zoom: 10,
+    });
+  });
+
+  it("retries location retrieval after a temporary error", async () => {
+    let attempts = 0;
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((success, error) => {
+      attempts += 1;
+      if (attempts === 1) {
+        error?.({ code: 3, message: "timeout", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 });
+        return;
+      }
+
       success({
         coords: {
           latitude: 35.658,
@@ -134,41 +220,24 @@ describe("PubExplorer", () => {
     mockGeolocation({ getCurrentPosition });
 
     render(<PubExplorer pubs={pubs} />);
+    fireEvent.click(screen.getByRole("button", { name: "現在地から探す" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("現在地を取得できませんでした。");
+    fireEvent.click(screen.getByRole("button", { name: "現在地を再試行" }));
 
     await waitFor(() => expect(screen.getByLabelText("都道府県")).toHaveValue("東京都"));
-    expect(getCurrentPosition).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), {
-      enableHighAccuracy: false,
-      maximumAge: 300000,
-      timeout: 5000,
-    });
-    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Osaka Sample Pub" })).not.toBeInTheDocument();
-    expect(maplibreMock.mapJumpTo).toHaveBeenLastCalledWith({
-      center: [139.701, 35.658],
-      zoom: 12,
-    });
+    expect(getCurrentPosition).toHaveBeenCalledTimes(2);
   });
 
-  it("keeps all prefectures selected when geolocation fails", () => {
-    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((_success, error) => {
-      error?.({
-        code: 1,
-        message: "denied",
-        PERMISSION_DENIED: 1,
-        POSITION_UNAVAILABLE: 2,
-        TIMEOUT: 3,
-      });
-    });
-    mockGeolocation({ getCurrentPosition });
-
+  it("explains when geolocation is unsupported while leaving filters available", () => {
     render(<PubExplorer pubs={pubs} />);
 
-    expect(screen.getByLabelText("都道府県")).toHaveValue("");
-    expect(screen.getByText("1件のPubが見つかりました")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "現在地から探す" }));
+
+    expect(screen.getByText("このブラウザでは位置情報を利用できません。", { exact: false })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "現在地から探す" })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
-    expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
   });
 
   it("filters the displayed pubs by selected prefecture", () => {
