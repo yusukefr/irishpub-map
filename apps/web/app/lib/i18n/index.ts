@@ -16,9 +16,9 @@ export type Locale = (typeof LANGUAGE_OPTIONS)[number]["locale"];
 /** 現在アプリケーションが提供する表示言語です。 */
 export const LOCALES: readonly Locale[] = LANGUAGE_OPTIONS.map(({ locale }) => locale);
 
-const translations = { ja, en } as const;
 /** 各言語JSONが持つ翻訳辞書の構造です。 */
-export type Translation = (typeof translations)[Locale];
+export type Translation = typeof ja;
+const translations: Record<Locale, Translation> = { ja, en };
 
 /**
  * JSON内のプレースホルダーへ値を補間します。

@@ -149,7 +149,7 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
           </p>
         </div>
         <label className="search-label" htmlFor="pub-search">
-          店舗を検索
+          {t.explorer.searchLabel}
         </label>
         <div className="search-row">
           <span className="search-icon" aria-hidden="true">
@@ -173,7 +173,7 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
                 setSelectedPubId(null);
               }}
             >
-              クリア
+              {t.explorer.clear}
             </button>
           ) : null}
         </div>
@@ -200,7 +200,7 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
         </div>
         <div className="filter-row">
           <label htmlFor="pub-prefecture-filter">
-            都道府県
+            {t.explorer.prefecture}
             <select
               id="pub-prefecture-filter"
               value={selectedPrefecture}
@@ -256,7 +256,7 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
           </label>
           {hasActiveFilters ? (
             <button type="button" className="filter-reset" onClick={resetFilters}>
-              条件をリセット
+              {t.explorer.resetFilters}
             </button>
           ) : null}
         </div>

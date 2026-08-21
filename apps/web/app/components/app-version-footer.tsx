@@ -1,5 +1,5 @@
 import appVersion from "../../../../app-version.json";
-import type { Locale } from "../lib/i18n";
+import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 
 type AppVersionFooterProps = {
   locale: Locale;
@@ -11,13 +11,13 @@ type AppVersionFooterProps = {
  * @returns {JSX.Element} バージョン情報と公開方針への導線を含むフッター。
  */
 export function AppVersionFooter({ locale }: AppVersionFooterProps) {
-  const isJapanese = locale === "ja";
+  const t = getTranslation(locale);
 
   return (
-    <footer className="app-version" aria-label="アプリのバージョン情報">
+    <footer className="app-version" aria-label={t.footer.ariaLabel}>
       <span>v{appVersion.version}</span>
-      <span>Release Date {appVersion.releaseDate}（JST）</span>
-      <a href="/privacy">{isJapanese ? "プライバシーポリシー" : "Privacy policy"}</a>
+      <span>{formatMessage(t.footer.releaseDate, { date: appVersion.releaseDate })}</span>
+      <a href="/privacy">{t.footer.privacyPolicy}</a>
     </footer>
   );
 }
