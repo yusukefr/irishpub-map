@@ -55,6 +55,7 @@ export function PubMap({
   // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
   const onSelectPubRef = useRef(onSelectPub);
   const localeRef = useRef(locale);
+  const hasLoadedMapRef = useRef(false);
   const [mapUnavailable, setMapUnavailable] = useState(false);
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
 
@@ -101,11 +102,14 @@ export function PubMap({
 
       map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
       handleMapLoad = () => {
+        hasLoadedMapRef.current = true;
         updateMapLabelLanguage(map, localeRef.current);
         setMapStatus((status) => (status === "error" ? status : "ready"));
       };
       handleMapError = () => {
-        setMapStatus("error");
+        if (!hasLoadedMapRef.current) {
+          setMapStatus("error");
+        }
       };
       map.on("load", handleMapLoad);
       map.on("error", handleMapError);
@@ -125,6 +129,7 @@ export function PubMap({
       map.off("load", handleMapLoad);
       map.off("error", handleMapError);
       mapRef.current = null;
+      hasLoadedMapRef.current = false;
       map.remove();
     };
   }, []);

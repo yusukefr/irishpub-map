@@ -297,6 +297,16 @@ describe("PubMap", () => {
     expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
   });
 
+  it("keeps the map visible when an individual resource fails after the style has loaded", () => {
+    render(<PubMap pubs={pubs} />);
+
+    act(() => emitMapEvent("load"));
+    act(() => emitMapEvent("error", { error: new Error("Glyph request failed") }));
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
+  });
+
   it("uses a static loading indicator when reduced motion is preferred", () => {
     expect(globalStyles).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
     expect(globalStyles).toMatch(
