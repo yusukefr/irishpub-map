@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Map, Marker, NavigationControl, Popup } from "maplibre-gl";
+import { Map, Marker, NavigationControl, Popup, type ExpressionSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { Coordinates } from "../lib/pub-search";
@@ -13,8 +13,7 @@ const DEFAULT_MAP_CENTER: [number, number] = [139.767, 35.681];
 const DEFAULT_MAP_ZOOM = 5;
 const CURRENT_LOCATION_ZOOM = 12;
 
-const OSM_COPYRIGHT_URL = "https://www.openstreetmap.org/copyright";
-const OSM_ATTRIBUTION = `© <a href="${OSM_COPYRIGHT_URL}" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>`;
+const OPENFREEMAP_BRIGHT_STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
 const PREFECTURE_MAP_ZOOM = 10;
 const PREFECTURE_MAP_PADDING = 48;
 
@@ -55,12 +54,17 @@ export function PubMap({
   const currentLocationMarkerRef = useRef<Marker | null>(null);
   // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
   const onSelectPubRef = useRef(onSelectPub);
+  const localeRef = useRef(locale);
   const [mapUnavailable, setMapUnavailable] = useState(false);
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
     onSelectPubRef.current = onSelectPub;
   }, [onSelectPub]);
+
+  useEffect(() => {
+    localeRef.current = locale;
+  }, [locale]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -90,30 +94,14 @@ export function PubMap({
     try {
       map = new Map({
         container,
-        style: {
-          version: 8,
-          sources: {
-            osm: {
-              type: "raster",
-              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-              tileSize: 256,
-              attribution: OSM_ATTRIBUTION,
-            },
-          },
-          layers: [
-            {
-              id: "osm",
-              type: "raster",
-              source: "osm",
-            },
-          ],
-        },
+        style: OPENFREEMAP_BRIGHT_STYLE_URL,
         center: DEFAULT_MAP_CENTER,
         zoom: DEFAULT_MAP_ZOOM,
       });
 
       map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
       handleMapLoad = () => {
+        updateMapLabelLanguage(map, localeRef.current);
         setMapStatus((status) => (status === "error" ? status : "ready"));
       };
       handleMapError = () => {
@@ -206,6 +194,16 @@ export function PubMap({
     });
   }, [pubs, selectedPubId]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map || mapStatus !== "ready") {
+      return;
+    }
+
+    updateMapLabelLanguage(map, locale);
+  }, [locale, mapStatus]);
+
   return (
     <div className="map-canvas" ref={containerRef} aria-label={t.map.locationsLabel}>
       {mapUnavailable ? (
@@ -226,6 +224,22 @@ export function PubMap({
       ) : null}
     </div>
   );
+}
+
+/**
+ * ベクタースタイルの地名ラベルを選択言語へ切り替えます。
+ * @param {Map} map - 更新対象のMapLibre地図。
+ * @param {Locale} locale - 地名に使う言語。
+ * @returns {void}
+ */
+function updateMapLabelLanguage(map: Map, locale: Locale) {
+  const textField: ExpressionSpecification = ["coalesce", ["get", `name:${locale}`], ["get", "name"]];
+
+  map.getStyle().layers?.forEach((layer) => {
+    if (layer.type === "symbol" && layer.layout?.["text-field"] !== undefined) {
+      map.setLayoutProperty(layer.id, "text-field", textField);
+    }
+  });
 }
 
 /** MapLibreを初期化する前に、ブラウザがWebGLコンテキストを作成できるか確認します。 */
