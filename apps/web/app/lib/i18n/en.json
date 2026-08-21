@@ -24,7 +24,7 @@
     "searchLabel": "Search pubs",
     "searchPlaceholder": "Pub name or area",
     "clear": "Clear",
-    "currentLocationDescription": "Use your location to select the nearest listed prefecture and move the map. Coordinates stay in this browser and are not sent to or stored by the app server or database.",
+    "currentLocationDescription": "Use your location to select the nearest listed prefecture and move the map.",
     "currentLocationAction": "Search from my location",
     "currentLocationRefresh": "Update my location",
     "currentLocationRetry": "Try my location again",

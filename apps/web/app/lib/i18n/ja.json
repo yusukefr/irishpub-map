@@ -24,7 +24,7 @@
     "searchLabel": "店舗を検索",
     "searchPlaceholder": "店舗名、エリア",
     "clear": "クリア",
-    "currentLocationDescription": "現在地に近い掲載都道府県を選択して地図を移動します。座標はこの端末内でのみ利用し、アプリのサーバーやデータベースには送信・保存しません。",
+    "currentLocationDescription": "現在地に近い掲載都道府県を選択して地図を移動します。",
     "currentLocationAction": "現在地から探す",
     "currentLocationRefresh": "現在地を更新",
     "currentLocationRetry": "現在地を再試行",
