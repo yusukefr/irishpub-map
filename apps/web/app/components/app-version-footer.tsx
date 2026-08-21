@@ -16,7 +16,7 @@ export function AppVersionFooter({ locale }: AppVersionFooterProps) {
   return (
     <footer className="app-version" aria-label="アプリのバージョン情報">
       <span>v{appVersion.version}</span>
-      <span>リリース日 {appVersion.releaseDate}（JST）</span>
+      <span>Release Date {appVersion.releaseDate}（JST）</span>
       <a href="/privacy">{isJapanese ? "プライバシーポリシー" : "Privacy policy"}</a>
     </footer>
   );
