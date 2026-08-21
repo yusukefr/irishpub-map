@@ -33,7 +33,7 @@ beforeEach(() => {
 describe("admin UI", () => {
   it("logs in and displays an API error", async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: "失敗" }), { status: 401 }));
-    render(<LoginForm />);
+    render(<LoginForm locale="ja" />);
     fireEvent.change(screen.getByLabelText("ID"), { target: { value: "admin" } });
     fireEvent.change(screen.getByLabelText("パスワード"), { target: { value: "password" } });
     fireEvent.submit(screen.getByRole("button", { name: "ログイン" }).closest("form")!);
@@ -46,7 +46,7 @@ describe("admin UI", () => {
   it("adds, edits, deletes pubs and logs out", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ pub: { ...pub, id: "pub-2", name: "New Pub" } })));
-    render(<AdminPubManager initialPubs={[pub]} databaseConfigured />);
+    render(<AdminPubManager initialPubs={[pub]} databaseConfigured locale="ja" />);
     fireEvent.change(screen.getByLabelText("店舗名"), { target: { value: "New Pub" } });
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "大阪府" } });
     fireEvent.change(screen.getByLabelText("住所"), { target: { value: "大阪市 1-1" } });

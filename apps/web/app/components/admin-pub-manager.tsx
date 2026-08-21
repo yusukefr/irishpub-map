@@ -6,8 +6,9 @@ import type { Pub } from "@irishpub-map/shared/pub";
 import { PREFECTURES } from "@irishpub-map/shared/prefecture";
 import { PUB_STATUS_DEFINITIONS } from "@irishpub-map/shared/status";
 import { normalizeTags } from "@irishpub-map/shared/tag";
+import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 
-type Props = { initialPubs: Pub[]; databaseConfigured: boolean };
+type Props = { initialPubs: Pub[]; databaseConfigured: boolean; locale: Locale };
 const statuses = PUB_STATUS_DEFINITIONS;
 const emptyPub = {
   name: "",
@@ -47,7 +48,8 @@ function toBody(form: FormData) {
  * @param {boolean} root0.databaseConfigured - DB永続化が利用可能かどうか。
  * @returns {JSX.Element} 店舗管理画面。
  */
-export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
+export function AdminPubManager({ initialPubs, databaseConfigured, locale }: Props) {
+  const t = getTranslation(locale);
   const [pubs, setPubs] = useState(initialPubs);
   const [editing, setEditing] = useState<Pub | null>(null);
   const [message, setMessage] = useState("");
@@ -62,7 +64,7 @@ export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
       body: JSON.stringify(toBody(new FormData(form))),
     });
     const body = (await response.json()) as { pub?: Pub; error?: string };
-    if (!response.ok || !body.pub) return setMessage(body.error || "保存に失敗しました。");
+    if (!response.ok || !body.pub) return setMessage(body.error || t.admin.saveFailed);
     setPubs((current) =>
       editing
         ? current.map((pub) => (pub.id === body.pub!.id ? body.pub! : pub))
@@ -70,15 +72,15 @@ export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
     );
     setEditing(null);
     form.reset();
-    setMessage("保存しました。");
+    setMessage(t.admin.saved);
   }
 
   async function remove(pub: Pub) {
-    if (!window.confirm(`「${pub.name}」を削除しますか？`)) return;
+    if (!window.confirm(formatMessage(t.admin.confirmDelete, { name: pub.name }))) return;
     const response = await fetch(`/api/admin/pubs/${pub.id}`, { method: "DELETE" });
-    if (!response.ok) return setMessage("削除に失敗しました。");
+    if (!response.ok) return setMessage(t.admin.deleteFailed);
     setPubs((current) => current.filter((item) => item.id !== pub.id));
-    setMessage("削除しました。");
+    setMessage(t.admin.deleted);
   }
 
   async function logout() {
@@ -104,24 +106,24 @@ export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
         <div className="admin-heading">
           <div>
             <p className="eyebrow">Irish Pub Map</p>
-            <h1>店舗管理</h1>
+            <h1>{t.admin.heading}</h1>
           </div>
           <button type="button" onClick={logout}>
-            ログアウト
+            {t.admin.logout}
           </button>
         </div>
-        {!databaseConfigured ? <p className="admin-error">DATABASE_URL が未設定です。閲覧のみ可能です。</p> : null}
+        {!databaseConfigured ? <p className="admin-error">{t.admin.databaseUnavailable}</p> : null}
         {message ? <p role="status">{message}</p> : null}
         <form className="admin-form admin-pub-form" onSubmit={save} key={editing?.id || "new"}>
-          <h2>{editing ? "店舗を編集" : "店舗を追加"}</h2>
+          <h2>{editing ? t.admin.editPub : t.admin.addPub}</h2>
           <label>
-            店舗名
+            {t.admin.name}
             <input name="name" required defaultValue={values.name} />
           </label>
           <label>
-            都道府県
+            {t.admin.prefecture}
             <select name="prefecture" required defaultValue={values.prefecture}>
-              <option value="">都道府県を選択</option>
+              <option value="">{t.admin.selectPrefecture}</option>
               {PREFECTURES.map((prefecture) => (
                 <option key={prefecture.code} value={prefecture.name}>
                   {prefecture.name}
@@ -130,37 +132,37 @@ export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
             </select>
           </label>
           <label>
-            市区町村
+            {t.admin.city}
             <input name="city" defaultValue={values.city} />
           </label>
           <label>
-            住所
+            {t.admin.address}
             <input name="address" required defaultValue={values.address} />
           </label>
           <label>
-            緯度
+            {t.admin.latitude}
             <input name="latitude" type="number" step="any" required defaultValue={values.latitude} />
           </label>
           <label>
-            経度
+            {t.admin.longitude}
             <input name="longitude" type="number" step="any" required defaultValue={values.longitude} />
           </label>
           <label>
-            タグ（カンマ区切り）
+            {t.admin.tags}
             <input name="tags" defaultValue={values.tags} />
           </label>
           <label>
-            営業状況
+            {t.admin.status}
             <select name="status" defaultValue={values.status}>
               {statuses.map((status) => (
                 <option key={status.code} value={status.value}>
-                  {status.displayName}
+                  {t.list.statuses[status.value]}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            公式サイト
+            {t.admin.officialWebsite}
             <input name="websiteUrl" type="url" defaultValue={values.websiteUrl} />
           </label>
           <label>
@@ -172,16 +174,16 @@ export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
             <input name="instagramUrl" type="url" defaultValue={values.instagramUrl} />
           </label>
           <div className="admin-actions">
-            <button disabled={!databaseConfigured}>{editing ? "更新" : "追加"}</button>
+            <button disabled={!databaseConfigured}>{editing ? t.admin.update : t.admin.add}</button>
             {editing ? (
               <button type="button" onClick={() => setEditing(null)}>
-                キャンセル
+                {t.admin.cancel}
               </button>
             ) : null}
           </div>
         </form>
         <section>
-          <h2>掲載店舗（{pubs.length}件）</h2>
+          <h2>{formatMessage(t.admin.listedPubs, { count: pubs.length })}</h2>
           <ul className="admin-pub-list">
             {pubs.map((pub) => (
               <li key={pub.id}>
@@ -190,10 +192,10 @@ export function AdminPubManager({ initialPubs, databaseConfigured }: Props) {
                 </span>
                 <span>
                   <button type="button" onClick={() => setEditing(pub)}>
-                    編集
+                    {t.admin.edit}
                   </button>
                   <button type="button" onClick={() => remove(pub)} disabled={!databaseConfigured}>
-                    削除
+                    {t.admin.delete}
                   </button>
                 </span>
               </li>

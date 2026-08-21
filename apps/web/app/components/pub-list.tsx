@@ -74,7 +74,7 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
                 </span>
               </div>
               {pub.tags.length > 0 ? (
-                <ul className="pub-tags" aria-label={`${pub.name} のタグ`}>
+                <ul className="pub-tags" aria-label={formatMessage(t.list.pubTagsLabel, { name: pub.name })}>
                   {pub.tags.map((tag) => (
                     <li key={tag}>{getTagLabel(locale, tag)}</li>
                   ))}
@@ -97,8 +97,8 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
                   {isExpanded ? t.list.close : t.list.details}
                 </button>
                 <div className="pub-links">
-                  {pub.websiteUrl ? <WebsiteLink href={pub.websiteUrl} pubName={pub.name} /> : null}
-                  <ExternalServiceLinks pub={pub} />
+                  {pub.websiteUrl ? <WebsiteLink href={pub.websiteUrl} pubName={pub.name} locale={locale} /> : null}
+                  <ExternalServiceLinks pub={pub} locale={locale} />
                 </div>
               </div>
               {isExpanded ? <PubDetails pub={pub} detailsId={detailsId} locale={locale} /> : null}
@@ -119,48 +119,57 @@ type PubDetailsProps = {
 function PubDetails({ pub, detailsId, locale }: PubDetailsProps) {
   const t = getTranslation(locale);
   return (
-    <section className="pub-details" id={detailsId} aria-label={`${pub.name} の詳細`}>
+    <section
+      className="pub-details"
+      id={detailsId}
+      aria-label={formatMessage(t.list.pubDetailsLabel, { name: pub.name })}
+    >
       <dl>
         <div>
-          <dt>店舗名</dt>
+          <dt>{t.list.name}</dt>
           <dd>{pub.name}</dd>
         </div>
         <div>
-          <dt>住所</dt>
+          <dt>{t.list.address}</dt>
           <dd>{pub.address}</dd>
         </div>
         <div>
-          <dt>エリア</dt>
+          <dt>{t.list.area}</dt>
           <dd>{[pub.prefecture, pub.city].filter(Boolean).join(" / ")}</dd>
         </div>
         <div>
-          <dt>営業状況</dt>
+          <dt>{t.list.status}</dt>
           <dd>{t.list.statuses[pub.status]}</dd>
         </div>
         <div>
-          <dt>タグ</dt>
-          <dd>{pub.tags.length > 0 ? pub.tags.map((tag) => getTagLabel(locale, tag)).join(" / ") : "未設定"}</dd>
+          <dt>{t.list.tags}</dt>
+          <dd>{pub.tags.length > 0 ? pub.tags.map((tag) => getTagLabel(locale, tag)).join(" / ") : t.list.unset}</dd>
         </div>
       </dl>
-      <div className="pub-detail-links" aria-label={`${pub.name} external links`}>
-        {pub.websiteUrl ? <WebsiteLink href={pub.websiteUrl} pubName={pub.name} /> : null}
-        <ExternalServiceLinks pub={pub} />
+      <div className="pub-detail-links" aria-label={formatMessage(t.list.externalLinksLabel, { name: pub.name })}>
+        {pub.websiteUrl ? <WebsiteLink href={pub.websiteUrl} pubName={pub.name} locale={locale} /> : null}
+        <ExternalServiceLinks pub={pub} locale={locale} />
       </div>
     </section>
   );
 }
 
-function ExternalServiceLinks({ pub }: { pub: Pub }) {
+function ExternalServiceLinks({ pub, locale }: { pub: Pub; locale: Locale }) {
   if (!pub.googleMapsUrl && !pub.instagramUrl) {
     return null;
   }
 
   return (
-    <div className="pub-service-links" role="group" aria-label={`${pub.name} のサービスリンク`}>
+    <div
+      className="pub-service-links"
+      role="group"
+      aria-label={formatMessage(getTranslation(locale).list.serviceLinksLabel, { name: pub.name })}
+    >
       {pub.googleMapsUrl ? (
         <ExternalIconLink
           href={pub.googleMapsUrl}
           pubName={pub.name}
+          locale={locale}
           service="Google Maps"
           className="google-maps-link"
         >
@@ -168,7 +177,13 @@ function ExternalServiceLinks({ pub }: { pub: Pub }) {
         </ExternalIconLink>
       ) : null}
       {pub.instagramUrl ? (
-        <ExternalIconLink href={pub.instagramUrl} pubName={pub.name} service="Instagram" className="instagram-link">
+        <ExternalIconLink
+          href={pub.instagramUrl}
+          pubName={pub.name}
+          locale={locale}
+          service="Instagram"
+          className="instagram-link"
+        >
           <InstagramIcon />
         </ExternalIconLink>
       ) : null}
@@ -179,19 +194,21 @@ function ExternalServiceLinks({ pub }: { pub: Pub }) {
 type ExternalLinkProps = {
   href: string;
   pubName: string;
+  locale: Locale;
 };
 
-function WebsiteLink({ href, pubName }: ExternalLinkProps) {
+function WebsiteLink({ href, pubName, locale }: ExternalLinkProps) {
+  const t = getTranslation(locale);
   return (
     <a
       className="external-text-link"
       href={href}
       target="_blank"
       rel="noreferrer"
-      aria-label={`${pubName} の公式サイトを新しいタブで開く`}
+      aria-label={formatMessage(t.list.officialWebsiteNewTab, { name: pubName })}
       onClick={(event) => event.stopPropagation()}
     >
-      公式サイト
+      {t.list.officialWebsite}
       <ExternalLinkIcon />
     </a>
   );
@@ -203,14 +220,15 @@ type ExternalIconLinkProps = ExternalLinkProps & {
   children: ReactNode;
 };
 
-function ExternalIconLink({ href, pubName, service, className, children }: ExternalIconLinkProps) {
+function ExternalIconLink({ href, pubName, locale, service, className, children }: ExternalIconLinkProps) {
+  const t = getTranslation(locale);
   return (
     <a
       className={`external-icon-link ${className}`}
       href={href}
       target="_blank"
       rel="noreferrer"
-      aria-label={`${pubName} の${service}を新しいタブで開く`}
+      aria-label={formatMessage(t.list.externalServiceNewTab, { name: pubName, service })}
       title={service}
       onClick={(event) => event.stopPropagation()}
     >

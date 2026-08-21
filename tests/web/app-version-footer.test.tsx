@@ -13,4 +13,12 @@ describe("AppVersionFooter", () => {
     expect(versionInfo).toHaveTextContent(`Release Date ${appVersion.releaseDate}（JST）`);
     expect(screen.getByRole("link", { name: "プライバシーポリシー" })).toHaveAttribute("href", "/privacy");
   });
+  it("renders translated footer text in English", () => {
+    render(<AppVersionFooter locale="en" />);
+
+    expect(screen.getByRole("contentinfo", { name: "App version information" })).toHaveTextContent(
+      `Release date ${appVersion.releaseDate} (JST)`,
+    );
+    expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute("href", "/privacy");
+  });
 });

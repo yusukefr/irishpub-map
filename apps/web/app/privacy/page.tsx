@@ -1,4 +1,5 @@
 import { AppVersionFooter } from "../components/app-version-footer";
+import { getTranslation } from "../lib/i18n";
 import { LanguageSwitcher } from "../components/language-switcher";
 import { getRequestLocale } from "../lib/i18n/server";
 
@@ -96,21 +97,20 @@ const policySections = [
  */
 export default async function PrivacyPage() {
   const locale = await getRequestLocale();
+  const t = getTranslation(locale);
 
   return (
     <main className="privacy-page-shell">
       <header className="privacy-masthead">
         <LanguageSwitcher locale={locale} />
         <div className="privacy-masthead-copy">
-          <p className="eyebrow">Privacy policy</p>
-          <h1>プライバシーポリシー</h1>
-          <p className="lead">
-            本サービスは、日本国内のアイリッシュパブを検索・閲覧できるサービスです。利用者のプライバシーを尊重し、利用者に関する情報を適切に取り扱います。
-          </p>
+          <p className="eyebrow">{t.privacy.eyebrow}</p>
+          <h1>{t.privacy.heading}</h1>
+          <p className="lead">{t.privacy.lead}</p>
         </div>
       </header>
 
-      <article className="privacy-content" aria-label="プライバシーポリシー" lang="ja">
+      <article className="privacy-content" aria-label={t.privacy.articleLabel} lang="ja">
         <div className="privacy-sections">
           {policySections.map((section) => (
             <section className="privacy-section" key={section.title}>
@@ -140,12 +140,13 @@ export default async function PrivacyPage() {
           ))}
         </div>
         <div className="privacy-record">
-          <p>最終更新日: 2026年8月21日</p>
-          <p>制定日: 2026年8月21日</p>
-          <p>変更履歴: 2026年8月21日 プライバシーポリシーを公開</p>
+          <p>{t.privacy.lastUpdated}</p>
+          <p>{t.privacy.effectiveDate}</p>
+          <p>{t.privacy.history}</p>
         </div>
         <a className="privacy-home-link" href="/">
-          地図からパブを探す<span aria-hidden="true"> →</span>
+          {t.privacy.homeLink}
+          <span aria-hidden="true"> →</span>
         </a>
       </article>
 
