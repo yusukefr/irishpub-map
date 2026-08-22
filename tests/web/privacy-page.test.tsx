@@ -18,6 +18,9 @@ describe("PrivacyPage", () => {
     expect(screen.getByRole("heading", { level: 1, name: "プライバシーポリシー" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "5. アクセス解析および性能測定" })).toBeInTheDocument();
     expect(screen.getByText(/OpenFreeMapのサーバーおよび配信に利用されるCDNへ直接通信/)).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/OpenFreeMapが配信する地図データにはOpenMapTilesおよびOpenStreetMapのデータ/),
+    ).toHaveLength(2);
     expect(screen.getByRole("link", { name: "OpenFreeMapのプライバシーポリシー" })).toHaveAttribute(
       "href",
       "https://openfreemap.org/privacy/",
