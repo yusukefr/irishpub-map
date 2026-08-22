@@ -87,7 +87,7 @@ export function PubMap({
     }
 
     let map: Map;
-    let handleMapLoad: () => void;
+    let handleStyleLoad: () => void;
     let handleMapError: () => void;
     markerElements.clear();
     markers.clear();
@@ -101,7 +101,7 @@ export function PubMap({
       });
 
       map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
-      handleMapLoad = () => {
+      handleStyleLoad = () => {
         hasLoadedMapRef.current = true;
         updateMapLabelLanguage(map, localeRef.current);
         setMapStatus((status) => (status === "error" ? status : "ready"));
@@ -111,7 +111,7 @@ export function PubMap({
           setMapStatus("error");
         }
       };
-      map.on("load", handleMapLoad);
+      map.on("style.load", handleStyleLoad);
       map.on("error", handleMapError);
       mapRef.current = map;
     } catch (error) {
@@ -126,7 +126,7 @@ export function PubMap({
       markerElements.clear();
       currentLocationMarkerRef.current?.remove();
       currentLocationMarkerRef.current = null;
-      map.off("load", handleMapLoad);
+      map.off("style.load", handleStyleLoad);
       map.off("error", handleMapError);
       mapRef.current = null;
       hasLoadedMapRef.current = false;

@@ -121,10 +121,10 @@ describe("PubMap", () => {
     );
     expect(screen.queryByText("地図を表示できませんでした")).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("地図を読み込んでいます…");
-    expect(maplibreMock.mapOn).toHaveBeenCalledWith("load", expect.any(Function));
+    expect(maplibreMock.mapOn).toHaveBeenCalledWith("style.load", expect.any(Function));
     expect(maplibreMock.mapOn).toHaveBeenCalledWith("error", expect.any(Function));
 
-    act(() => emitMapEvent("load"));
+    act(() => emitMapEvent("style.load"));
 
     expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
     expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledWith("label_country", "text-field", [
@@ -138,9 +138,17 @@ describe("PubMap", () => {
     expect(maplibreMock.mapRemove).toHaveBeenCalledTimes(1);
   });
 
+  it("stops the loading overlay when the style is ready without waiting for all map resources", () => {
+    render(<PubMap pubs={pubs} />);
+
+    act(() => emitMapEvent("style.load"));
+
+    expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
+  });
+
   it("updates vector map labels in English without rebuilding the map", async () => {
     const { rerender } = render(<PubMap pubs={pubs} locale="ja" />);
-    act(() => emitMapEvent("load"));
+    act(() => emitMapEvent("style.load"));
     maplibreMock.mapSetLayoutProperty.mockClear();
 
     rerender(<PubMap pubs={pubs} locale="en" />);
@@ -300,7 +308,7 @@ describe("PubMap", () => {
   it("keeps the map visible when an individual resource fails after the style has loaded", () => {
     render(<PubMap pubs={pubs} />);
 
-    act(() => emitMapEvent("load"));
+    act(() => emitMapEvent("style.load"));
     act(() => emitMapEvent("error", { error: new Error("Glyph request failed") }));
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
