@@ -87,6 +87,7 @@ describe("pubs database migrations", () => {
       "ALTER TABLE pubs DROP COLUMN name, DROP COLUMN kana, DROP COLUMN city, DROP COLUMN address",
     );
     expect(upSql).toContain("Japanese pub translations are incomplete");
+    expect(upSql).toContain("INSERT INTO municipality_translations");
     expect(upSql).toContain("INSERT INTO schema_migrations (version) VALUES (\x27007_finalize_localization\x27)");
     expect(verifySql).toContain("legacy_columns_remaining");
     expect(verifySql).toContain("tags_without_ja_translation");

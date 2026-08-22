@@ -1,4 +1,10 @@
 BEGIN;
+INSERT INTO municipality_translations (municipality_code, locale, name)
+SELECT m.code, 'ja', pt.name
+FROM municipality_codes m
+JOIN prefecture_translations pt ON pt.prefecture_code = m.prefecture_code AND pt.locale = 'ja'
+WHERE m.municipality_name IS NULL
+ON CONFLICT (municipality_code, locale) DO NOTHING;
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM schema_migrations WHERE version = '006_localize_display_data') THEN RAISE EXCEPTION 'localization preparation is not applied'; END IF;
   IF EXISTS (SELECT 1 FROM schema_migrations WHERE version = '007_finalize_localization') THEN RAISE EXCEPTION 'migration 007_finalize_localization is already applied'; END IF;
