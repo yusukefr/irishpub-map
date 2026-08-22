@@ -9,12 +9,13 @@ const policySections = [
     paragraphs: [
       "本サービスにはユーザー登録機能がなく、氏名、住所、電話番号、メールアドレスなどの個人情報の入力を求める機能はありません。",
       "現在地周辺のアイリッシュパブを検索・表示するため、利用者が位置情報の利用を許可した場合にのみ、端末から位置情報を取得します。取得した位置情報はブラウザ内で店舗と地図を表示するためだけに利用し、本サービスのサーバーへ緯度・経度を送信したり、データベースへ保存したりしません。",
-      "地図の表示時には、ブラウザからOpenStreetMapのサーバーへ直接通信が行われます。IPアドレス、ブラウザ・端末情報、アクセス日時、参照元、地図表示に必要なリクエスト情報などがOpenStreetMap側へ送信される場合があります。",
+      "地図の表示時には、ブラウザからOpenFreeMapのサーバーおよび配信に利用されるCDNへ直接通信が行われます。IPアドレス、ブラウザ・端末情報、アクセス日時、参照元、地図表示に必要なリクエスト情報などがOpenFreeMap側へ送信される場合があります。",
+      "OpenFreeMapが配信する地図データにはOpenMapTilesおよびOpenStreetMapのデータが利用されています。",
     ],
     links: [
       {
-        href: "https://osmfoundation.org/wiki/Privacy_Policy",
-        label: "OpenStreetMap Foundationのプライバシーポリシー",
+        href: "https://openfreemap.org/privacy/",
+        label: "OpenFreeMapのプライバシーポリシー",
       },
     ],
   },
@@ -47,8 +48,8 @@ const policySections = [
   {
     title: "4. 外部サービスへの情報送信",
     paragraphs: [
-      "本サービスでは、サービスの提供および改善に必要な範囲でOpenStreetMapとVercelを利用しています。OpenStreetMapは地図表示のために利用し、地図表示時には利用者のブラウザから直接通信します。Vercelはホスティング、コンテンツ配信、セキュリティ、障害調査、利用状況および性能の把握に利用します。",
-      "本サービスの運営者が、OpenStreetMap側で取得された情報を独自に取得または保存することはありません。",
+      "本サービスでは、サービスの提供および改善に必要な範囲でOpenFreeMapとVercelを利用しています。OpenFreeMapは地図表示のために利用し、地図表示時には利用者のブラウザから直接通信します。OpenFreeMapが配信する地図データにはOpenMapTilesおよびOpenStreetMapのデータが利用されています。Vercelはホスティング、コンテンツ配信、セキュリティ、障害調査、利用状況および性能の把握に利用します。",
+      "本サービスの運営者が、OpenFreeMapまたはVercel側で取得された情報を独自に取得または保存することはありません。",
     ],
     links: [{ href: "https://vercel.com/legal/privacy-notice", label: "Vercelのプライバシーポリシー" }],
   },
@@ -86,7 +87,7 @@ const policySections = [
   {
     title: "9. お問い合わせ",
     paragraphs: [
-      "このプライバシーポリシーに関するお問い合わせは、Irish Pub Map の公開リポジトリの Issue からお願いします。個別のログやOpenStreetMap側の記録については、提供者の方針により対応できない場合があります。",
+      "このプライバシーポリシーに関するお問い合わせは、Irish Pub Map の公開リポジトリの Issue からお願いします。個別のログやOpenFreeMap側の記録、ならびに地図データ提供元であるOpenMapTilesまたはOpenStreetMap側の記録については、提供者の方針により対応できない場合があります。",
     ],
   },
 ];

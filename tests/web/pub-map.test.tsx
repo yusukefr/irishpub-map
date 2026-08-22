@@ -70,6 +70,7 @@ describe("PubMap", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     HTMLCanvasElement.prototype.getContext = originalGetContext;
   });
@@ -83,14 +84,9 @@ describe("PubMap", () => {
         zoom: 5,
       }),
     );
-    const mapOptions = maplibreMock.mapConstructor.mock.calls[0][0] as {
-      style: { sources: { osm: { attribution: string; tiles: string[] } } };
-    };
-    expect(mapOptions.style.sources.osm.tiles).toEqual(["https://tile.openstreetmap.org/{z}/{x}/{y}.png"]);
-    expect(mapOptions.style.sources.osm.attribution).toContain("https://www.openstreetmap.org/copyright");
-    expect(mapOptions.style.sources.osm.attribution).toContain("OpenStreetMap contributors");
-    expect(mapOptions.style.sources.osm.attribution).toContain('target="_blank"');
-    expect(mapOptions.style.sources.osm.attribution).toContain('rel="noreferrer"');
+    const mapOptions = maplibreMock.mapConstructor.mock.calls[0][0] as { style: string };
+    expect(mapOptions.style).toBe("https://tiles.openfreemap.org/styles/bright");
+    expect(maplibreMock.setWorkerUrl).toHaveBeenCalledWith("/maplibre/maplibre-gl-worker.mjs");
 
     expect(maplibreMock.navigationControl).toHaveBeenCalledWith({ visualizePitch: true });
     expect(maplibreMock.mapAddControl).toHaveBeenCalledTimes(1);
@@ -133,10 +129,35 @@ describe("PubMap", () => {
     act(() => emitMapEvent("load"));
 
     expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
+    expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledTimes(9);
+    expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledWith("label_country_1", "text-field", [
+      "coalesce",
+      ["get", "name:ja"],
+      ["get", "name"],
+    ]);
 
     unmount();
 
     expect(maplibreMock.mapRemove).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates only place-name layers when the locale changes without rebuilding the map", () => {
+    const { rerender } = render(<PubMap pubs={pubs} locale="ja" />);
+
+    act(() => emitMapEvent("load"));
+    maplibreMock.mapSetLayoutProperty.mockClear();
+    maplibreMock.mapIsStyleLoaded.mockReturnValue(true);
+
+    rerender(<PubMap pubs={pubs} locale="en" />);
+
+    expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledTimes(9);
+    expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledWith("label_city", "text-field", [
+      "coalesce",
+      ["get", "name:en"],
+      ["get", "name"],
+    ]);
+    expect(maplibreMock.mapSetLayoutProperty).not.toHaveBeenCalledWith("poi_r1", "text-field", expect.anything());
   });
 
   it("uses the same gray marker for every non-open status", () => {
@@ -270,15 +291,31 @@ describe("PubMap", () => {
     expect(maplibreMock.mapRemove).not.toHaveBeenCalled();
   });
 
-  it("shows an error message when map tile loading fails", () => {
-    render(<PubMap pubs={pubs} />);
+  it("keeps the map available when an individual resource error occurs before loading", () => {
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    expect(screen.getByText("地図を読み込んでいます…")).toBeInTheDocument();
+    render(<PubMap pubs={pubs} />);
 
     act(() => emitMapEvent("error", { error: new Error("Tile request failed") }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent("地図タイルの読み込みに失敗しました");
+    expect(consoleWarn).toHaveBeenCalledWith("MapLibre resource error.", expect.any(Error));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByText("地図を読み込んでいます…")).toBeInTheDocument();
+
+    act(() => emitMapEvent("load"));
+
     expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows an error message when the first map load times out", () => {
+    vi.useFakeTimers();
+
+    render(<PubMap pubs={pubs} />);
+
+    act(() => vi.advanceTimersByTime(15_000));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("地図タイルの読み込みに失敗しました");
   });
 
   it("uses a static loading indicator when reduced motion is preferred", () => {

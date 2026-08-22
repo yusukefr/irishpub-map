@@ -8,6 +8,10 @@ export const maplibreMock = {
   mapOff: vi.fn(),
   mapFitBounds: vi.fn(),
   mapJumpTo: vi.fn(),
+  setWorkerUrl: vi.fn(),
+  mapGetLayer: vi.fn().mockReturnValue({}),
+  mapSetLayoutProperty: vi.fn(),
+  mapIsStyleLoaded: vi.fn().mockReturnValue(false),
   markerConstructor: vi.fn(),
   markerSetLngLat: vi.fn(),
   markerSetPopup: vi.fn(),
@@ -32,6 +36,11 @@ export function resetMaplibreMock() {
   maplibreMock.mapOff.mockClear();
   maplibreMock.mapFitBounds.mockClear();
   maplibreMock.mapJumpTo.mockClear();
+  maplibreMock.setWorkerUrl.mockClear();
+  maplibreMock.mapGetLayer.mockClear();
+  maplibreMock.mapSetLayoutProperty.mockClear();
+  maplibreMock.mapIsStyleLoaded.mockReset();
+  maplibreMock.mapIsStyleLoaded.mockReturnValue(false);
   maplibreMock.markerSetLngLat.mockClear();
   maplibreMock.markerSetPopup.mockClear();
   maplibreMock.markerAddTo.mockClear();
@@ -72,6 +81,9 @@ export class Map {
   };
   fitBounds = maplibreMock.mapFitBounds;
   jumpTo = maplibreMock.mapJumpTo;
+  getLayer = maplibreMock.mapGetLayer;
+  setLayoutProperty = maplibreMock.mapSetLayoutProperty;
+  isStyleLoaded = maplibreMock.mapIsStyleLoaded;
   remove = maplibreMock.mapRemove;
 }
 
@@ -92,3 +104,4 @@ export class Popup {
 }
 
 export const NavigationControl = maplibreMock.navigationControl;
+export const setWorkerUrl = maplibreMock.setWorkerUrl;
