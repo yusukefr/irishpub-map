@@ -70,6 +70,7 @@ describe("PubMap", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     HTMLCanvasElement.prototype.getContext = originalGetContext;
   });
@@ -289,15 +290,31 @@ describe("PubMap", () => {
     expect(maplibreMock.mapRemove).not.toHaveBeenCalled();
   });
 
-  it("shows an error message when map tile loading fails", () => {
-    render(<PubMap pubs={pubs} />);
+  it("keeps the map available when an individual resource error occurs before loading", () => {
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    expect(screen.getByText("地図を読み込んでいます…")).toBeInTheDocument();
+    render(<PubMap pubs={pubs} />);
 
     act(() => emitMapEvent("error", { error: new Error("Tile request failed") }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent("地図タイルの読み込みに失敗しました");
+    expect(consoleWarn).toHaveBeenCalledWith("MapLibre resource error.", expect.any(Error));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByText("地図を読み込んでいます…")).toBeInTheDocument();
+
+    act(() => emitMapEvent("load"));
+
     expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows an error message when the first map load times out", () => {
+    vi.useFakeTimers();
+
+    render(<PubMap pubs={pubs} />);
+
+    act(() => vi.advanceTimersByTime(15_000));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("地図タイルの読み込みに失敗しました");
   });
 
   it("uses a static loading indicator when reduced motion is preferred", () => {

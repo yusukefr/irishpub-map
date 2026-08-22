@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Map, Marker, NavigationControl, Popup } from "maplibre-gl";
+import { type ErrorEvent, Map, Marker, NavigationControl, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { Coordinates } from "../lib/pub-search";
@@ -12,6 +12,7 @@ const NON_OPEN_PUB_MARKER_COLOR = "#6b7280";
 const DEFAULT_MAP_CENTER: [number, number] = [139.767, 35.681];
 const DEFAULT_MAP_ZOOM = 5;
 const CURRENT_LOCATION_ZOOM = 12;
+const MAP_LOAD_TIMEOUT_MS = 15_000;
 
 const OPEN_FREE_MAP_BRIGHT_STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
 const PREFECTURE_MAP_ZOOM = 10;
@@ -95,7 +96,9 @@ export function PubMap({
 
     let map: Map;
     let handleMapLoad: () => void;
-    let handleMapError: () => void;
+    let handleMapError: (event: ErrorEvent) => void;
+    let loadTimeoutId: number | undefined;
+    let didLoad = false;
     markerElements.clear();
     markers.clear();
 
@@ -109,12 +112,20 @@ export function PubMap({
       });
 
       map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
+      loadTimeoutId = window.setTimeout(() => {
+        if (!didLoad) {
+          setMapStatus("error");
+        }
+      }, MAP_LOAD_TIMEOUT_MS);
       handleMapLoad = () => {
+        didLoad = true;
+        window.clearTimeout(loadTimeoutId);
         applyMapLanguage(map, localeRef.current);
-        setMapStatus((status) => (status === "error" ? status : "ready"));
+        setMapStatus("ready");
       };
-      handleMapError = () => {
-        setMapStatus("error");
+      handleMapError = (event) => {
+        // タイル等の一部リソース失敗でも発生するため、初回ロード監視を継続します。
+        console.warn("MapLibre resource error.", event.error);
       };
       map.on("load", handleMapLoad);
       map.on("error", handleMapError);
@@ -131,6 +142,7 @@ export function PubMap({
       markerElements.clear();
       currentLocationMarkerRef.current?.remove();
       currentLocationMarkerRef.current = null;
+      window.clearTimeout(loadTimeoutId);
       map.off("load", handleMapLoad);
       map.off("error", handleMapError);
       mapRef.current = null;
