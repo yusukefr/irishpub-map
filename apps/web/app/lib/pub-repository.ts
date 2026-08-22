@@ -10,6 +10,7 @@ type DbPubRow = {
   name: unknown;
   kana: unknown;
   prefecture_code: unknown;
+  prefecture: unknown;
   city: unknown;
   municipality_code: unknown;
   address: unknown;
@@ -43,17 +44,17 @@ export async function getPubs(_locale = "ja") {
   const sql = getSql();
   await ensureTable(sql);
   const rows = (await sql`
-    SELECT p.id::text, p.name, p.kana, p.prefecture_code, p.city, mc.code AS municipality_code, p.address, p.latitude, p.longitude,
+    WITH locale_preference AS (SELECT ${_locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    SELECT p.id::text, pt.name, pt.name_reading AS kana, p.prefecture_code, pref.name AS prefecture, mt.name AS city, p.municipality_code, pt.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code,
-      COALESCE(array_agg(t.name ORDER BY t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
-    FROM pubs AS p
-    LEFT JOIN municipality_codes AS mc
-      ON mc.prefecture_code = p.prefecture_code AND mc.municipality_name = p.city
-    LEFT JOIN pub_tags AS pt ON pt.pub_id = p.id
-    LEFT JOIN tags AS t ON t.id = pt.tag_id
-    GROUP BY p.id, p.name, p.kana, p.prefecture_code, p.city, mc.code, p.address, p.latitude, p.longitude,
-      p.website_url, p.google_maps_url, p.instagram_url, p.status_code
-    ORDER BY mc.code IS NULL, mc.code::bigint, p.name, p.id
+      COALESCE(array_agg(t.key ORDER BY t.key) FILTER (WHERE t.key IS NOT NULL), '{}') AS tags
+    FROM pubs p
+    JOIN LATERAL (SELECT name, name_reading, address FROM pub_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.pub_id=p.id ORDER BY lp.priority LIMIT 1) pt ON TRUE
+    JOIN LATERAL (SELECT tr.name FROM prefecture_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.prefecture_code=p.prefecture_code ORDER BY lp.priority LIMIT 1) pref ON TRUE
+    LEFT JOIN LATERAL (SELECT tr.name FROM municipality_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.municipality_code=p.municipality_code ORDER BY lp.priority LIMIT 1) mt ON TRUE
+    LEFT JOIN pub_tags ptag ON ptag.pub_id=p.id LEFT JOIN tags t ON t.id=ptag.tag_id
+    GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address
+    ORDER BY p.municipality_code::bigint, pt.name, p.id
   `) as DbPubRow[];
   return parseDbPubs(rows);
 }
@@ -331,7 +332,12 @@ function normalizeDbRow(row: DbPubRow) {
 
   const prefectureCode = normalizeNumber(row.prefecture_code);
   const statusCode = normalizeNumber(row.status_code);
-  const prefecture = typeof prefectureCode === "number" ? getPrefectureName(prefectureCode) : undefined;
+  const prefecture =
+    typeof row.prefecture === "string"
+      ? normalizeText(row.prefecture)
+      : typeof prefectureCode === "number"
+        ? getPrefectureName(prefectureCode)
+        : undefined;
   const status = typeof statusCode === "number" ? getPubStatusValue(statusCode) : undefined;
   if (!prefecture || !status) return null;
 
