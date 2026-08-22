@@ -83,14 +83,8 @@ describe("PubMap", () => {
         zoom: 5,
       }),
     );
-    const mapOptions = maplibreMock.mapConstructor.mock.calls[0][0] as {
-      style: { sources: { osm: { attribution: string; tiles: string[] } } };
-    };
-    expect(mapOptions.style.sources.osm.tiles).toEqual(["https://tile.openstreetmap.org/{z}/{x}/{y}.png"]);
-    expect(mapOptions.style.sources.osm.attribution).toContain("https://www.openstreetmap.org/copyright");
-    expect(mapOptions.style.sources.osm.attribution).toContain("OpenStreetMap contributors");
-    expect(mapOptions.style.sources.osm.attribution).toContain('target="_blank"');
-    expect(mapOptions.style.sources.osm.attribution).toContain('rel="noreferrer"');
+    const mapOptions = maplibreMock.mapConstructor.mock.calls[0][0] as { style: string };
+    expect(mapOptions.style).toBe("https://tiles.openfreemap.org/styles/bright");
 
     expect(maplibreMock.navigationControl).toHaveBeenCalledWith({ visualizePitch: true });
     expect(maplibreMock.mapAddControl).toHaveBeenCalledTimes(1);
@@ -133,10 +127,35 @@ describe("PubMap", () => {
     act(() => emitMapEvent("load"));
 
     expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
+    expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledTimes(9);
+    expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledWith("label_country_1", "text-field", [
+      "coalesce",
+      ["get", "name:ja"],
+      ["get", "name"],
+    ]);
 
     unmount();
 
     expect(maplibreMock.mapRemove).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates only place-name layers when the locale changes without rebuilding the map", () => {
+    const { rerender } = render(<PubMap pubs={pubs} locale="ja" />);
+
+    act(() => emitMapEvent("load"));
+    maplibreMock.mapSetLayoutProperty.mockClear();
+    maplibreMock.mapIsStyleLoaded.mockReturnValue(true);
+
+    rerender(<PubMap pubs={pubs} locale="en" />);
+
+    expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledTimes(9);
+    expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledWith("label_city", "text-field", [
+      "coalesce",
+      ["get", "name:en"],
+      ["get", "name"],
+    ]);
+    expect(maplibreMock.mapSetLayoutProperty).not.toHaveBeenCalledWith("poi_r1", "text-field", expect.anything());
   });
 
   it("uses the same gray marker for every non-open status", () => {

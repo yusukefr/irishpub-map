@@ -17,7 +17,11 @@ describe("PrivacyPage", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "プライバシーポリシー" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "5. アクセス解析および性能測定" })).toBeInTheDocument();
-    expect(screen.getByText(/OpenStreetMapのサーバーへ直接通信/)).toBeInTheDocument();
+    expect(screen.getByText(/OpenFreeMapのサーバーおよび配信に利用されるCDNへ直接通信/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "OpenFreeMapのプライバシーポリシー" })).toHaveAttribute(
+      "href",
+      "https://openfreemap.org/privacy/",
+    );
     expect(screen.getByText(/irishpub-map-locale/)).toBeInTheDocument();
     expect(screen.getByText(/Vercel Web Analyticsを利用してページビュー/)).toBeInTheDocument();
     expect(screen.getByText("最終更新日: 2026年8月21日")).toBeInTheDocument();

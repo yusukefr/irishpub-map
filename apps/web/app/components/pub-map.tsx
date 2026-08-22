@@ -13,12 +13,22 @@ const DEFAULT_MAP_CENTER: [number, number] = [139.767, 35.681];
 const DEFAULT_MAP_ZOOM = 5;
 const CURRENT_LOCATION_ZOOM = 12;
 
-const OSM_COPYRIGHT_URL = "https://www.openstreetmap.org/copyright";
-const OSM_ATTRIBUTION = `© <a href="${OSM_COPYRIGHT_URL}" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>`;
+const OPEN_FREE_MAP_BRIGHT_STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
 const PREFECTURE_MAP_ZOOM = 10;
 const PREFECTURE_MAP_PADDING = 48;
 
 const EMPTY_FOCUS_PUBS: Pub[] = [];
+const PLACE_LABEL_LAYER_IDS = [
+  "label_country_1",
+  "label_country_2",
+  "label_country_3",
+  "label_state",
+  "label_city",
+  "label_city_capital",
+  "label_town",
+  "label_village",
+  "label_other",
+] as const;
 
 type PubMapProps = {
   pubs: Pub[];
@@ -51,6 +61,8 @@ export function PubMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markerElementsRef = useRef(new globalThis.Map<string, HTMLButtonElement>());
   const mapRef = useRef<Map | null>(null);
+  // Style の非同期ロード完了時にも最新のサイト言語を反映します。
+  const localeRef = useRef(locale);
   const markersRef = useRef(new globalThis.Map<string, Marker>());
   const currentLocationMarkerRef = useRef<Marker | null>(null);
   // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
@@ -90,30 +102,15 @@ export function PubMap({
     try {
       map = new Map({
         container,
-        style: {
-          version: 8,
-          sources: {
-            osm: {
-              type: "raster",
-              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-              tileSize: 256,
-              attribution: OSM_ATTRIBUTION,
-            },
-          },
-          layers: [
-            {
-              id: "osm",
-              type: "raster",
-              source: "osm",
-            },
-          ],
-        },
+        // OpenFreeMap Bright は多言語属性を持つベクタースタイルです。MapLibre の標準帰属表示で必要な帰属を表示します。
+        style: OPEN_FREE_MAP_BRIGHT_STYLE_URL,
         center: DEFAULT_MAP_CENTER,
         zoom: DEFAULT_MAP_ZOOM,
       });
 
       map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
       handleMapLoad = () => {
+        applyMapLanguage(map, localeRef.current);
         setMapStatus((status) => (status === "error" ? status : "ready"));
       };
       handleMapError = () => {
@@ -140,6 +137,15 @@ export function PubMap({
       map.remove();
     };
   }, []);
+
+  useEffect(() => {
+    localeRef.current = locale;
+    const map = mapRef.current;
+
+    if (map?.isStyleLoaded()) {
+      applyMapLanguage(map, locale);
+    }
+  }, [locale]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -226,6 +232,27 @@ export function PubMap({
       ) : null}
     </div>
   );
+}
+
+/**
+ * OpenFreeMap Bright の主要な地名レイヤーだけを、サイト言語と同じ名称へ切り替えます。
+ * @param {Map} map - Style のロード完了後の MapLibre インスタンス。
+ * @param {Locale} locale - サイト全体で選択された表示言語。
+ * @returns {void}
+ */
+function applyMapLanguage(map: Map, locale: Locale): void {
+  const localizedName: "name:ja" | "name:en" = locale === "ja" ? "name:ja" : "name:en";
+  const textField: ["coalesce", ["get", "name:ja" | "name:en"], ["get", "name"]] = [
+    "coalesce",
+    ["get", localizedName],
+    ["get", "name"],
+  ];
+
+  PLACE_LABEL_LAYER_IDS.forEach((layerId) => {
+    if (map.getLayer(layerId)) {
+      map.setLayoutProperty(layerId, "text-field", textField);
+    }
+  });
 }
 
 /** MapLibreを初期化する前に、ブラウザがWebGLコンテキストを作成できるか確認します。 */
