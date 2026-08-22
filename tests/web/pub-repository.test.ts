@@ -53,6 +53,8 @@ describe("parseDbPubs", () => {
         latitude: 35.6911443,
         longitude: 139.7025086,
         tags: ["guinness", "food"],
+        tagDisplayNames: { guinness: "ギネス", food: "食事あり" },
+        statusDisplayName: "営業中",
         websiteUrl: null,
         municipalityCode: "131041",
       }),

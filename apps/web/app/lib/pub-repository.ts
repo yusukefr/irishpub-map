@@ -193,7 +193,7 @@ async function ensureTable(sql: ReturnType<typeof neon>) {
   }
   await sql`CREATE TABLE IF NOT EXISTS pub_statuses (code SMALLINT PRIMARY KEY, value TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL)`;
   for (const status of PUB_STATUS_DEFINITIONS) {
-    await sql`INSERT INTO pub_statuses (code, value, display_name) VALUES (${status.code}, ${status.value}, ${status.displayName}) ON CONFLICT (code) DO UPDATE SET value = EXCLUDED.value, display_name = EXCLUDED.display_name`;
+    await sql`INSERT INTO pub_statuses (code, value, display_name, key) VALUES (${status.code}, ${status.value}, ${status.displayName}, ${status.value}) ON CONFLICT (code) DO UPDATE SET value = EXCLUDED.value, display_name = EXCLUDED.display_name, key = EXCLUDED.key`;
   }
   await sql`ALTER TABLE pubs DROP CONSTRAINT IF EXISTS pubs_prefecture_code_fkey`;
   await sql`ALTER TABLE pubs DROP CONSTRAINT IF EXISTS pubs_status_code_fkey`;
@@ -281,7 +281,9 @@ function toPub(value: DbPubRow | unknown, id?: string): Pub {
       googleMapsUrl: row.googleMapsUrl,
       instagramUrl: row.instagramUrl,
       tags: row.tags,
+      tagDisplayNames: row.tagDisplayNames,
       status: row.status,
+      statusDisplayName: row.statusDisplayName,
     },
   ])[0];
 }
