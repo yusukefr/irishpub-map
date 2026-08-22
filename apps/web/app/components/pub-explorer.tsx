@@ -236,7 +236,7 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
                       setSelectedPubId(null);
                     }}
                   >
-                    {getTagLabel(locale, tag)}
+                    {pubs.find((pub) => pub.tags.includes(tag))?.tagDisplayNames?.[tag] ?? getTagLabel(locale, tag)}
                   </button>
                 );
               })}

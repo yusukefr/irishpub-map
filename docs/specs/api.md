@@ -8,7 +8,7 @@ Next.js Route Handler で公開 API と管理 API を提供します。公開画
 
 ### `GET /api/pubs`
 
-店舗一覧を返します。レスポンスは `packages/shared` の `Pub` 型に合わせ、API 側で `asPubs` による検証を行います。
+店舗一覧を返します。`locale` には `ja` または `en` を指定できます。指定ロケールの翻訳を優先し、未登録の表示文字列は日本語（`ja`）へフォールバックします。レスポンスは `packages/shared` の `Pub` 型に合わせ、API 側で `asPubs` による検証を行います。
 
 レスポンス例:
 
@@ -26,7 +26,9 @@ Next.js Route Handler で公開 API と管理 API を提供します。公開画
       "googleMapsUrl": null,
       "instagramUrl": null,
       "tags": ["guinness"],
-      "status": "open"
+      "tagDisplayNames": { "guinness": "Guinness" },
+      "status": "open",
+      "statusDisplayName": "Open"
     }
   ]
 }

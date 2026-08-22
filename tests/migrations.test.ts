@@ -79,6 +79,20 @@ describe("pubs database migrations", () => {
     expect(downSql).toContain("CREATE INDEX pub_tags_tag_idx");
   });
 
+  it("defines the final localization migration and verification", async () => {
+    const upSql = await readMigration("007_finalize_localization_up.sql");
+    const verifySql = await readMigration("007_finalize_localization_verify.sql");
+
+    expect(upSql).toContain(
+      "ALTER TABLE pubs DROP COLUMN name, DROP COLUMN kana, DROP COLUMN city, DROP COLUMN address",
+    );
+    expect(upSql).toContain("Japanese pub translations are incomplete");
+    expect(upSql).toContain("INSERT INTO municipality_translations");
+    expect(upSql).toContain("INSERT INTO schema_migrations (version) VALUES (\x27007_finalize_localization\x27)");
+    expect(verifySql).toContain("legacy_columns_remaining");
+    expect(verifySql).toContain("tags_without_ja_translation");
+  });
+
   it("defines the tag name normalization migration, verification, and rollback", async () => {
     const upSql = await readMigration("005_normalize_tag_names_up.sql");
     const verifySql = await readMigration("005_normalize_tag_names_verify.sql");

@@ -22,7 +22,9 @@ const baseRow = {
   google_maps_url: null,
   instagram_url: null,
   tags: ["guinness", "food"],
+  tag_display_names: { guinness: "ギネス", food: "食事あり" },
   status_code: 1,
+  status_display_name: "営業中",
 };
 
 describe("getPubs", () => {
@@ -51,6 +53,8 @@ describe("parseDbPubs", () => {
         latitude: 35.6911443,
         longitude: 139.7025086,
         tags: ["guinness", "food"],
+        tagDisplayNames: { guinness: "ギネス", food: "食事あり" },
+        statusDisplayName: "営業中",
         websiteUrl: null,
         municipalityCode: "131041",
       }),

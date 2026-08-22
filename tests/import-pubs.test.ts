@@ -31,6 +31,7 @@ describe("importPubs", () => {
     let insertIndex = 0;
     const sql = vi.fn(async (strings: TemplateStringsArray) => {
       const query = strings[0].trimStart();
+      if (query.startsWith("SELECT m.code")) return [{ code: "131016" }];
       if (query.startsWith("INSERT INTO tags")) return [{ id: "550e8400-e29b-41d4-a716-446655440301" }];
       if (!query.startsWith("INSERT INTO pubs")) return [];
       insertIndex += 1;

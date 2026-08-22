@@ -73,6 +73,16 @@ node scripts/run-neon-migration.mjs db/migrations/005_normalize_tag_names_verify
 
 005は移行前のタグ名と関係を専用バックアップテーブルへ保持します。verifyで別名・区切り文字の残存、孤立参照、重複が0であることを確認します。詳細は[タグの正規化仕様](../specs/tag-normalization.md)を参照してください。
 
+### 6. 表示用の旧カラムを削除する
+
+006の準備完了と、各翻訳テーブルの日本語行・全店舗の市区町村コードを確認してから実行します。007は旧表示カラムを削除するため、適用後に旧アプリへ戻す場合はDBバックアップから復旧してください。
+
+```bash
+node scripts/run-localization-migration.mjs finalize
+```
+
+verifyでは、`pubs.name`、`pubs.kana`、`pubs.city`、`pubs.address`、各マスタの旧表示カラムがすべて0件であることと、翻訳・市区町村コードの欠損が0件であることを確認します。
+
 ## アプリ切り替え前の確認
 
 PreviewとProductionのそれぞれで、次を確認してから現行アプリへ切り替えます。

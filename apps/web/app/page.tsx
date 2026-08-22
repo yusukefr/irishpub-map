@@ -32,11 +32,11 @@ function isVercelSsoRedirect(response: Response) {
 }
 
 /** 同一オリジンの公開APIから店舗を取得し、レスポンスを共有型で検証します。 */
-async function getPubs() {
+async function getPubs(locale: string) {
   const requestHeaders = await headers();
   const host = requestHeaders.get("host") ?? "localhost:3000";
   const protocol = process.env.VERCEL ? "https" : "http";
-  const response = await fetch(`${protocol}://${host}/api/pubs`, {
+  const response = await fetch(`${protocol}://${host}/api/pubs?locale=${encodeURIComponent(locale)}`, {
     headers: createPubsApiHeaders(),
     redirect: "manual",
     cache: "no-store",
@@ -61,8 +61,8 @@ async function getPubs() {
  * @returns {Promise<JSX.Element>} 店舗探索画面。
  */
 export default async function Home() {
-  const pubList = await getPubs();
   const locale = await getRequestLocale();
+  const pubList = await getPubs(locale);
   const t = getTranslation(locale);
 
   return (

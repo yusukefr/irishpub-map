@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { neon } from "@neondatabase/serverless";
-import tagDefinitions from "../packages/shared/src/tag-definitions.json" with { type: "json" };
+import { getTagLabel, normalizeTags } from "../packages/shared/src/tag.ts";
 
 const DEFAULT_SOURCE_PATH = "pubs.json";
 const PUB_STATUSES = new Set(["open", "temporarily_closed", "closed", "unknown"]);
@@ -54,70 +54,7 @@ const PREFECTURE_NAMES = [
   "鹿児島県",
   "沖縄県",
 ];
-const PREFECTURE_KANAS = [
-  "ﾎｯｶｲﾄﾞｳ",
-  "ｱｵﾓﾘｹﾝ",
-  "ｲﾜﾃｹﾝ",
-  "ﾐﾔｷﾞｹﾝ",
-  "ｱｷﾀｹﾝ",
-  "ﾔﾏｶﾞﾀｹﾝ",
-  "ﾌｸｼﾏｹﾝ",
-  "ｲﾊﾞﾗｷｹﾝ",
-  "ﾄﾁｷﾞｹﾝ",
-  "ｸﾞﾝﾏｹﾝ",
-  "ｻｲﾀﾏｹﾝ",
-  "ﾁﾊﾞｹﾝ",
-  "ﾄｳｷｮｳﾄ",
-  "ｶﾅｶﾞﾜｹﾝ",
-  "ﾆｲｶﾞﾀｹﾝ",
-  "ﾄﾔﾏｹﾝ",
-  "ｲｼｶﾜｹﾝ",
-  "ﾌｸｲｹﾝ",
-  "ﾔﾏﾅｼｹﾝ",
-  "ﾅｶﾞﾉｹﾝ",
-  "ｷﾞﾌｹﾝ",
-  "ｼｽﾞｵｶｹﾝ",
-  "ｱｲﾁｹﾝ",
-  "ﾐｴｹﾝ",
-  "ｼｶﾞｹﾝ",
-  "ｷｮｳﾄﾌ",
-  "ｵｵｻｶﾌ",
-  "ﾋｮｳｺﾞｹﾝ",
-  "ﾅﾗｹﾝ",
-  "ﾜｶﾔﾏｹﾝ",
-  "ﾄｯﾄﾘｹﾝ",
-  "ｼﾏﾈｹﾝ",
-  "ｵｶﾔﾏｹﾝ",
-  "ﾋﾛｼﾏｹﾝ",
-  "ﾔﾏｸﾞﾁｹﾝ",
-  "ﾄｸｼﾏｹﾝ",
-  "ｶｶﾞﾜｹﾝ",
-  "ｴﾋﾒｹﾝ",
-  "ｺｳﾁｹﾝ",
-  "ﾌｸｵｶｹﾝ",
-  "ｻｶﾞｹﾝ",
-  "ﾅｶﾞｻｷｹﾝ",
-  "ｸﾏﾓﾄｹﾝ",
-  "ｵｵｲﾀｹﾝ",
-  "ﾐﾔｻﾞｷｹﾝ",
-  "ｶｺﾞｼﾏｹﾝ",
-  "ｵｷﾅﾜｹﾝ",
-];
 const PUB_STATUS_CODES = { open: 1, temporarily_closed: 2, closed: 3, unknown: 4 };
-
-function normalizeTag(tag) {
-  const normalized = tag
-    .normalize("NFKC")
-    .trim()
-    .toLocaleLowerCase("en-US")
-    .replace(/[\s_]+/g, "-")
-    .replace(/-+/g, "-");
-  return tagDefinitions.aliases[normalized] ?? tagDefinitions.aliases[tag.trim()] ?? normalized;
-}
-
-function normalizeTags(tags) {
-  return [...new Set(tags.map(normalizeTag).filter(Boolean))];
-}
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 /** コマンドライン引数からインポート元のJSONファイルパスを取得します。 */
@@ -139,60 +76,29 @@ export function parsePubs(value) {
   return value.map((pub) => ({ ...pub, tags: normalizeTags(pub.tags) }));
 }
 
-/** Neonの正規化された店舗・マスタ・タグテーブルへ追加し、既存IDは更新せずにスキップします。 */
+/** Phase 4スキーマへ店舗と日本語翻訳を追加し、既存IDは更新せずにスキップします。 */
 export async function importPubs(databaseUrl, pubs, sql) {
   if (!databaseUrl) throw new Error("DATABASE_URL is required.");
   const client = sql || neon(databaseUrl);
 
-  await client`
-    CREATE TABLE IF NOT EXISTS pubs (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      name TEXT NOT NULL CHECK (btrim(name) <> ''),
-      kana TEXT,
-      prefecture_code SMALLINT NOT NULL,
-      city TEXT,
-      address TEXT NOT NULL CHECK (btrim(address) <> ''),
-      latitude DOUBLE PRECISION NOT NULL CHECK (latitude BETWEEN -90 AND 90),
-      longitude DOUBLE PRECISION NOT NULL CHECK (longitude BETWEEN -180 AND 180),
-      website_url TEXT CHECK (website_url IS NULL OR website_url ~* '^https?://'),
-      google_maps_url TEXT CHECK (google_maps_url IS NULL OR google_maps_url ~* '^https?://'),
-      instagram_url TEXT CHECK (instagram_url IS NULL OR instagram_url ~* '^https?://'),
-      status_code SMALLINT NOT NULL,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-  await client`CREATE TABLE IF NOT EXISTS prefectures (code SMALLINT PRIMARY KEY, name TEXT NOT NULL UNIQUE, kana TEXT NOT NULL)`;
-  await client`ALTER TABLE prefectures ADD COLUMN IF NOT EXISTS kana TEXT`;
-  for (const [index, name] of PREFECTURE_NAMES.entries()) {
-    await client`INSERT INTO prefectures (code, name, kana) VALUES (${index + 1}, ${name}, ${PREFECTURE_KANAS[index]}) ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, kana = EXCLUDED.kana`;
-  }
-  await client`CREATE TABLE IF NOT EXISTS pub_statuses (code SMALLINT PRIMARY KEY, value TEXT NOT NULL UNIQUE, display_name TEXT NOT NULL)`;
-  const displayNames = { open: "営業中", temporarily_closed: "一時休業", closed: "閉店", unknown: "不明" };
-  for (const [value, code] of Object.entries(PUB_STATUS_CODES)) {
-    await client`INSERT INTO pub_statuses (code, value, display_name) VALUES (${code}, ${value}, ${displayNames[value]}) ON CONFLICT (code) DO UPDATE SET value = EXCLUDED.value, display_name = EXCLUDED.display_name`;
-  }
-  await client`ALTER TABLE pubs DROP CONSTRAINT IF EXISTS pubs_prefecture_code_fkey`;
-  await client`ALTER TABLE pubs DROP CONSTRAINT IF EXISTS pubs_status_code_fkey`;
-  await client`ALTER TABLE pubs ADD CONSTRAINT pubs_prefecture_code_fkey FOREIGN KEY (prefecture_code) REFERENCES prefectures(code)`;
-  await client`ALTER TABLE pubs ADD CONSTRAINT pubs_status_code_fkey FOREIGN KEY (status_code) REFERENCES pub_statuses(code)`;
-  await client`CREATE TABLE IF NOT EXISTS tags (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL UNIQUE CHECK (btrim(name) <> ''))`;
-  await client`CREATE TABLE IF NOT EXISTS pub_tags (pub_id UUID NOT NULL REFERENCES pubs(id) ON DELETE CASCADE, tag_id UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE, PRIMARY KEY (pub_id, tag_id))`;
-  await client`CREATE INDEX IF NOT EXISTS pubs_prefecture_code_name_idx ON pubs (prefecture_code, name)`;
-  await client`CREATE INDEX IF NOT EXISTS pubs_city_idx ON pubs (city)`;
-  await client`CREATE INDEX IF NOT EXISTS pubs_kana_idx ON pubs (kana)`;
-  await client`CREATE INDEX IF NOT EXISTS pubs_status_code_idx ON pubs (status_code)`;
-  await client`CREATE INDEX IF NOT EXISTS pub_tags_tag_id_idx ON pub_tags (tag_id)`;
-
   let imported = 0;
   let skipped = 0;
   for (const pub of pubs) {
+    const prefectureCode = PREFECTURE_NAMES.indexOf(pub.prefecture) + 1;
+    const municipalityRows = await client`
+      SELECT m.code
+      FROM municipality_codes m
+      JOIN municipality_translations mt ON mt.municipality_code = m.code AND mt.locale = ${"ja"}
+      WHERE m.prefecture_code = ${prefectureCode} AND mt.name = ${pub.city ?? ""}
+    `;
+    if (municipalityRows.length !== 1) throw new Error(`Could not resolve municipality code for ${pub.id}.`);
     const rows = await client`
       INSERT INTO pubs (
-        id, name, kana, prefecture_code, city, address, latitude, longitude,
+        id, prefecture_code, municipality_code, latitude, longitude,
         website_url, google_maps_url, instagram_url, status_code
       ) VALUES (
-        ${pub.id}::uuid, ${pub.name}, ${toNullable(pub.kana)}, ${PREFECTURE_NAMES.indexOf(pub.prefecture) + 1}, ${toNullable(pub.city)}, ${pub.address},
-        ${pub.latitude}, ${pub.longitude}, ${toNullable(pub.websiteUrl)}, ${toNullable(pub.googleMapsUrl)},
+        ${pub.id}::uuid, ${prefectureCode}, ${municipalityRows[0].code}, ${pub.latitude}, ${pub.longitude},
+        ${toNullable(pub.websiteUrl)}, ${toNullable(pub.googleMapsUrl)},
         ${toNullable(pub.instagramUrl)}, ${PUB_STATUS_CODES[pub.status]}
       )
       ON CONFLICT (id) DO NOTHING
@@ -200,14 +106,23 @@ export async function importPubs(databaseUrl, pubs, sql) {
     `;
     if (rows.length === 1) {
       imported += 1;
+      await client`
+        INSERT INTO pub_translations (pub_id, locale, name, name_reading, address)
+        VALUES (${pub.id}::uuid, ${"ja"}, ${pub.name}, ${toNullable(pub.kana)}, ${pub.address})
+      `;
       for (const tag of normalizeTags(pub.tags)) {
         const tagRows = await client`
-          INSERT INTO tags (name)
+          INSERT INTO tags (key)
           VALUES (${tag})
-          ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+          ON CONFLICT (key) DO UPDATE SET key = EXCLUDED.key
           RETURNING id
         `;
         if (tagRows.length !== 1) throw new Error("Could not resolve tag master record.");
+        await client`
+          INSERT INTO tag_translations (tag_id, locale, name)
+          VALUES (${tagRows[0].id}::uuid, ${"ja"}, ${getTagLabel(tag)})
+          ON CONFLICT (tag_id, locale) DO UPDATE SET name = EXCLUDED.name
+        `;
         await client`INSERT INTO pub_tags (pub_id, tag_id) VALUES (${pub.id}::uuid, ${tagRows[0].id}::uuid) ON CONFLICT (pub_id, tag_id) DO NOTHING`;
       }
     } else {

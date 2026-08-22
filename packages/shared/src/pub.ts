@@ -1,4 +1,4 @@
-import { normalizeTags } from "./tag";
+import { normalizeTag, normalizeTags } from "./tag";
 
 /** 店舗の営業状態を表します。 */
 export type PubStatus = "open" | "temporarily_closed" | "closed" | "unknown";
@@ -19,7 +19,11 @@ export type Pub = {
   googleMapsUrl?: string | null;
   instagramUrl?: string | null;
   tags: string[];
+  /** タグキーに対応する、選択ロケールの表示名です。 */
+  tagDisplayNames?: Record<string, string>;
   status: PubStatus;
+  /** 選択ロケールで表示する営業ステータス名です。 */
+  statusDisplayName?: string;
 };
 
 /**
@@ -67,6 +71,8 @@ function isPub(value: unknown): value is Pub {
     isOptionalUrl(pub.instagramUrl) &&
     Array.isArray(pub.tags) &&
     pub.tags.every((tag) => isNonEmptyString(tag)) &&
+    isOptionalStringRecord(pub.tagDisplayNames) &&
+    isOptionalString(pub.statusDisplayName) &&
     isPubStatus(pub.status)
   );
 }
@@ -95,6 +101,16 @@ function isOptionalUrl(value: unknown) {
   );
 }
 
+function isOptionalStringRecord(value: unknown) {
+  return (
+    value === undefined ||
+    (typeof value === "object" &&
+      value !== null &&
+      !Array.isArray(value) &&
+      Object.values(value).every((item) => isNonEmptyString(item)))
+  );
+}
+
 function isLatitude(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) && value >= -90 && value <= 90;
 }
@@ -115,7 +131,19 @@ function normalizePub(pub: Pub): Pub {
     googleMapsUrl: normalizeOptionalUrl(pub.googleMapsUrl),
     instagramUrl: normalizeOptionalUrl(pub.instagramUrl),
     tags: normalizeTags(pub.tags),
+    tagDisplayNames: normalizeTagDisplayNames(pub.tagDisplayNames),
+    statusDisplayName: normalizeOptionalText(pub.statusDisplayName),
   };
+}
+
+function normalizeTagDisplayNames(value: Record<string, string> | undefined) {
+  if (!value) return undefined;
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([tag, displayName]) => [normalizeTag(tag), displayName.trim()] as const)
+      .filter(([, displayName]) => displayName.length > 0),
+  );
 }
 
 function normalizeOptionalMunicipalityCode(value: string | null | undefined) {
