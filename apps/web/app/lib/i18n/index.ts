@@ -20,8 +20,8 @@ export const SUPPORTED_LOCALES = LOCALES;
 
 /**
  * 指定値が現在サポートする表示ロケールかを判定します。
- *  {string | null | undefined} value - 判定するロケール値。
- *  {value is Locale} サポート対象の場合はtrue。
+ * @param {string | null | undefined} value - 判定するロケール値。
+ * @returns {value is Locale} サポート対象の場合はtrue。
  */
 export function isSupportedLocale(value: string | null | undefined): value is Locale {
   return typeof value === "string" && SUPPORTED_LOCALES.includes(value as Locale);

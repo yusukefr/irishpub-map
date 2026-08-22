@@ -20,7 +20,9 @@ type DbPubRow = {
   google_maps_url: unknown;
   instagram_url: unknown;
   tags: unknown;
+  tag_display_names: unknown;
   status_code: unknown;
+  status_display_name: unknown;
 };
 
 let sqlClient: ReturnType<typeof neon> | null = null;
@@ -35,7 +37,8 @@ export function isDatabaseConfigured() {
 }
 
 /**
- * Neon設定時は独立カラムから、未設定時は空の店舗一覧を取得します。
+ * Neon設定時は選択ロケールの翻訳を優先し、未登録時は日本語へフォールバックして店舗一覧を取得します。
+ * @param {string} _locale - 優先して取得する表示ロケール。
  * @returns {Promise<Pub[]>} 検証済みの店舗一覧。
  */
 export async function getPubs(_locale = "ja") {
@@ -46,14 +49,17 @@ export async function getPubs(_locale = "ja") {
   const rows = (await sql`
     WITH locale_preference AS (SELECT ${_locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
     SELECT p.id::text, pt.name, pt.name_reading AS kana, p.prefecture_code, pref.name AS prefecture, mt.name AS city, p.municipality_code, pt.address, p.latitude, p.longitude,
-      p.website_url, p.google_maps_url, p.instagram_url, p.status_code,
-      COALESCE(array_agg(t.key ORDER BY t.key) FILTER (WHERE t.key IS NOT NULL), '{}') AS tags
+      p.website_url, p.google_maps_url, p.instagram_url, p.status_code, st.display_name AS status_display_name,
+      COALESCE(array_agg(t.key ORDER BY t.key) FILTER (WHERE t.key IS NOT NULL), '{}') AS tags,
+      COALESCE(jsonb_object_agg(t.key, tt.name) FILTER (WHERE t.key IS NOT NULL), '{}'::jsonb) AS tag_display_names
     FROM pubs p
     JOIN LATERAL (SELECT name, name_reading, address FROM pub_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.pub_id=p.id ORDER BY lp.priority LIMIT 1) pt ON TRUE
     JOIN LATERAL (SELECT tr.name FROM prefecture_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.prefecture_code=p.prefecture_code ORDER BY lp.priority LIMIT 1) pref ON TRUE
     LEFT JOIN LATERAL (SELECT tr.name FROM municipality_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.municipality_code=p.municipality_code ORDER BY lp.priority LIMIT 1) mt ON TRUE
+    JOIN LATERAL (SELECT display_name FROM pub_status_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.status_code=p.status_code ORDER BY lp.priority LIMIT 1) st ON TRUE
     LEFT JOIN pub_tags ptag ON ptag.pub_id=p.id LEFT JOIN tags t ON t.id=ptag.tag_id
-    GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address
+    LEFT JOIN LATERAL (SELECT name FROM tag_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.tag_id=t.id ORDER BY lp.priority LIMIT 1) tt ON TRUE
+    GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address, st.display_name
     ORDER BY p.municipality_code::bigint, pt.name, p.id
   `) as DbPubRow[];
   return parseDbPubs(rows);
@@ -355,7 +361,9 @@ function normalizeDbRow(row: DbPubRow) {
     googleMapsUrl: normalizeOptionalText(row.google_maps_url),
     instagramUrl: normalizeOptionalText(row.instagram_url),
     tags: normalizeDbTags(row.tags),
+    tagDisplayNames: normalizeDbTagDisplayNames(row.tag_display_names),
     status,
+    statusDisplayName: normalizeOptionalText(row.status_display_name),
   };
 }
 
@@ -379,6 +387,26 @@ function normalizeNumber(value: unknown) {
 
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : value;
+}
+
+function normalizeDbTagDisplayNames(value: unknown) {
+  const parsed = typeof value === "string" ? tryParseJson(value) : value;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
+
+  const entries = Object.entries(parsed).filter(
+    (entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0,
+  );
+  return entries.length > 0
+    ? Object.fromEntries(entries.map(([tag, displayName]) => [tag, displayName.trim()]))
+    : undefined;
+}
+
+function tryParseJson(value: string) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
+  }
 }
 
 function normalizeDbTags(value: unknown) {

@@ -70,13 +70,13 @@ export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefi
                   <p>{[pub.prefecture, pub.city].filter(Boolean).join(" / ")}</p>
                 </div>
                 <span className={["pub-status", STATUS_BADGE_CLASSES[pub.status]].join(" ")}>
-                  {t.list.statuses[pub.status]}
+                  {pub.statusDisplayName ?? t.list.statuses[pub.status]}
                 </span>
               </div>
               {pub.tags.length > 0 ? (
                 <ul className="pub-tags" aria-label={formatMessage(t.list.pubTagsLabel, { name: pub.name })}>
                   {pub.tags.map((tag) => (
-                    <li key={tag}>{getTagLabel(locale, tag)}</li>
+                    <li key={tag}>{pub.tagDisplayNames?.[tag] ?? getTagLabel(locale, tag)}</li>
                   ))}
                 </ul>
               ) : null}
@@ -139,11 +139,15 @@ function PubDetails({ pub, detailsId, locale }: PubDetailsProps) {
         </div>
         <div>
           <dt>{t.list.status}</dt>
-          <dd>{t.list.statuses[pub.status]}</dd>
+          <dd>{pub.statusDisplayName ?? t.list.statuses[pub.status]}</dd>
         </div>
         <div>
           <dt>{t.list.tags}</dt>
-          <dd>{pub.tags.length > 0 ? pub.tags.map((tag) => getTagLabel(locale, tag)).join(" / ") : t.list.unset}</dd>
+          <dd>
+            {pub.tags.length > 0
+              ? pub.tags.map((tag) => pub.tagDisplayNames?.[tag] ?? getTagLabel(locale, tag)).join(" / ")
+              : t.list.unset}
+          </dd>
         </div>
       </dl>
       <div className="pub-detail-links" aria-label={formatMessage(t.list.externalLinksLabel, { name: pub.name })}>
