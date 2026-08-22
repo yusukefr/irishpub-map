@@ -1,0 +1,101 @@
+{
+  "sections": [
+    {
+      "title": "1. Information handled by this service",
+      "paragraphs": [
+        "This service has no user registration feature and does not ask you to enter personal information such as your name, address, telephone number, or email address.",
+        "To search for and display Irish pubs near your current location, this service obtains location information from your device only when you permit its use. The information is used only in your browser to display pubs and the map; latitude and longitude are not sent to this service's servers or stored in its database.",
+        "When displaying the map, your browser communicates directly with OpenFreeMap's servers and the CDN used for delivery. Information such as your IP address, browser and device information, access time, referrer, and request information needed to display the map may be sent to OpenFreeMap.",
+        "Map data provided by OpenFreeMap uses data from OpenMapTiles and OpenStreetMap."
+      ],
+      "links": [
+        {
+          "href": "https://openfreemap.org/privacy/",
+          "label": "OpenFreeMap privacy policy"
+        }
+      ]
+    },
+    {
+      "title": "2. Use of cookies",
+      "paragraphs": [
+        "This service uses a first-party cookie to retain the display language you select. This cookie is not used for advertising, analytics, cross-site tracking, or identifying you.",
+        "The cookie's contents are not stored in a database operated by this service. When you normally access this site, the browser includes the cookie in the request and sends it to this service on Vercel, our hosting environment. You can delete or disable cookies in your browser settings, but your language preference may then not be retained."
+      ],
+      "items": [
+        "Cookie name: irishpub-map-locale",
+        "Stored value: ja or en",
+        "Purpose: To retain the Japanese or English display preference after page navigation and reloads",
+        "Retention period: 30 days after setting or changing the preference",
+        "Storage location: Your browser",
+        "Main attributes: Path=/; Max-Age=2592000; SameSite=Lax"
+      ]
+    },
+    {
+      "title": "3. Information processed when you access this service",
+      "paragraphs": [
+        "This service is provided using Vercel, operated by Vercel Inc. Information associated with access may be processed through Vercel's systems to provide the service, handle communications, maintain security, investigate issues, and operate the service."
+      ],
+      "items": [
+        "IP address",
+        "Browser and device information, including User-Agent",
+        "Communication information such as access times, requested URLs or paths, and HTTP status codes"
+      ]
+    },
+    {
+      "title": "4. Information sent to external services",
+      "paragraphs": [
+        "This service uses OpenFreeMap and Vercel to the extent necessary to provide and improve the service. OpenFreeMap is used to display maps, and your browser communicates with it directly when a map is displayed. Map data provided by OpenFreeMap uses data from OpenMapTiles and OpenStreetMap. Vercel is used for hosting, content delivery, security, incident investigation, and understanding usage and performance.",
+        "The operator of this service does not independently obtain or store information collected by OpenFreeMap or Vercel."
+      ],
+      "links": [
+        {
+          "href": "https://vercel.com/legal/privacy-notice",
+          "label": "Vercel privacy policy"
+        }
+      ]
+    },
+    {
+      "title": "5. Analytics and performance measurement",
+      "paragraphs": [
+        "This service uses Vercel Web Analytics to aggregate and analyze usage, such as page views, and Vercel Speed Insights to measure loading speed, responsiveness, visual stability, and other aspects of real-world use. This information is used to understand service usage, detect incidents and performance degradation, improve speed and features, and consider operational capacity for traffic levels.",
+        "Web Analytics may send Vercel information such as access time, viewed URLs or routes, referrers, certain query parameters, approximate location such as country or region, operating system, browser, and device type. Speed Insights may send information such as viewed URLs or routes, network speed, browser, device type, operating system, country, Web Vitals measurements, and measurement time.",
+        "Web Analytics does not use cookies by default. This service does not use Google Analytics or display advertisements. Collected information is not used for advertising, advertising personalization, profiling, or cross-site tracking."
+      ],
+      "links": [
+        {
+          "href": "https://vercel.com/docs/analytics/privacy-policy",
+          "label": "Vercel Web Analytics privacy information"
+        },
+        {
+          "href": "https://vercel.com/docs/speed-insights",
+          "label": "Vercel Speed Insights information"
+        }
+      ]
+    },
+    {
+      "title": "6. Disclosure to third parties",
+      "paragraphs": [
+        "The operator of this service does not sell information about you. Except where required by law, information about you that this service obtains is not provided to third parties without your consent.",
+        "However, information may be sent to the external services described on this page as communications necessary to provide and improve the service."
+      ]
+    },
+    {
+      "title": "7. Information security",
+      "paragraphs": [
+        "This service strives to implement reasonable security measures appropriate to the nature of the service and the information handled, in order to prevent unauthorized access, leaks, alteration, and similar incidents. It is designed not to store latitude or longitude identifying your current location on this service's servers or in its database."
+      ]
+    },
+    {
+      "title": "8. Changes to this privacy policy",
+      "paragraphs": [
+        "This privacy policy may change as the service, the external services used, or applicable laws change. If there are material changes, we will provide notice through an easy-to-understand method on this service."
+      ]
+    },
+    {
+      "title": "9. Contact",
+      "paragraphs": [
+        "For questions about this privacy policy, please use an Issue in the public Irish Pub Map repository. We may be unable to address individual logs or records held by OpenFreeMap, OpenMapTiles, or OpenStreetMap, according to each provider's policies."
+      ]
+    }
+  ]
+}
