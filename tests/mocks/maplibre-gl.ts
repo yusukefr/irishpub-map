@@ -8,6 +8,7 @@ export const maplibreMock = {
   mapOff: vi.fn(),
   mapFitBounds: vi.fn(),
   mapJumpTo: vi.fn(),
+  setWorkerUrl: vi.fn(),
   mapGetLayer: vi.fn().mockReturnValue({}),
   mapSetLayoutProperty: vi.fn(),
   mapIsStyleLoaded: vi.fn().mockReturnValue(false),
@@ -35,6 +36,7 @@ export function resetMaplibreMock() {
   maplibreMock.mapOff.mockClear();
   maplibreMock.mapFitBounds.mockClear();
   maplibreMock.mapJumpTo.mockClear();
+  maplibreMock.setWorkerUrl.mockClear();
   maplibreMock.mapGetLayer.mockClear();
   maplibreMock.mapSetLayoutProperty.mockClear();
   maplibreMock.mapIsStyleLoaded.mockReset();
@@ -102,3 +104,4 @@ export class Popup {
 }
 
 export const NavigationControl = maplibreMock.navigationControl;
+export const setWorkerUrl = maplibreMock.setWorkerUrl;

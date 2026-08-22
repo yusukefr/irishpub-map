@@ -86,6 +86,7 @@ describe("PubMap", () => {
     );
     const mapOptions = maplibreMock.mapConstructor.mock.calls[0][0] as { style: string };
     expect(mapOptions.style).toBe("https://tiles.openfreemap.org/styles/bright");
+    expect(maplibreMock.setWorkerUrl).toHaveBeenCalledWith("/maplibre/maplibre-gl-worker.mjs");
 
     expect(maplibreMock.navigationControl).toHaveBeenCalledWith({ visualizePitch: true });
     expect(maplibreMock.mapAddControl).toHaveBeenCalledTimes(1);

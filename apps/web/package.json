@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node ./scripts/copy-maplibre-worker.mjs",
     "dev": "next dev",
+    "prebuild": "node ./scripts/copy-maplibre-worker.mjs",
     "build": "next build",
     "lint": "cd ../.. && eslint --config eslint.config.mjs apps/web/app packages/shared/src --max-warnings=0",
     "typecheck": "tsc --noEmit"

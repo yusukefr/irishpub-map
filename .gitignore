@@ -12,6 +12,7 @@ npm-debug.log*
 .vercel
 api-keys.txt
 docs/repository-settings/*.json
+apps/web/public/maplibre/
 
 !.github/
 !.github/ISSUE_TEMPLATE/

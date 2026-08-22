@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { type ErrorEvent, Map, Marker, NavigationControl, Popup } from "maplibre-gl";
+import { type ErrorEvent, Map, Marker, NavigationControl, Popup, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { Coordinates } from "../lib/pub-search";
@@ -15,6 +15,7 @@ const CURRENT_LOCATION_ZOOM = 12;
 const MAP_LOAD_TIMEOUT_MS = 15_000;
 
 const OPEN_FREE_MAP_BRIGHT_STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
+const MAPLIBRE_WORKER_URL = "/maplibre/maplibre-gl-worker.mjs";
 const PREFECTURE_MAP_ZOOM = 10;
 const PREFECTURE_MAP_PADDING = 48;
 
@@ -103,6 +104,8 @@ export function PubMap({
     markers.clear();
 
     try {
+      // Next.jsがWorkerのmodule URLを解決しないため、build前に配置した自サイト配下のWorkerを明示します。
+      setWorkerUrl(MAPLIBRE_WORKER_URL);
       map = new Map({
         container,
         // OpenFreeMap Bright は多言語属性を持つベクタースタイルです。MapLibre の標準帰属表示で必要な帰属を表示します。
