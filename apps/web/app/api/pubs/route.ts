@@ -1,4 +1,5 @@
 import { getPubs } from "../../lib/pub-repository";
+import { isSupportedLocale } from "../../lib/i18n";
 
 const API_KEY_HEADER = "x-api-key";
 
@@ -19,5 +20,10 @@ export async function GET(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  return Response.json({ pubs: await getPubs() });
+  const locale = new URL(request.url).searchParams.get("locale");
+  if (locale !== null && !isSupportedLocale(locale)) {
+    return Response.json({ error: "Unsupported locale." }, { status: 400 });
+  }
+
+  return Response.json({ pubs: await getPubs(locale ?? "ja") });
 }

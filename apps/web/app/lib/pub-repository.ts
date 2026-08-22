@@ -37,7 +37,7 @@ export function isDatabaseConfigured() {
  * Neon設定時は独立カラムから、未設定時は空の店舗一覧を取得します。
  * @returns {Promise<Pub[]>} 検証済みの店舗一覧。
  */
-export async function getPubs() {
+export async function getPubs(_locale = "ja") {
   if (!isDatabaseConfigured()) return [];
 
   const sql = getSql();

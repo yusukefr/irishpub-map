@@ -15,6 +15,17 @@ export const LANGUAGE_OPTIONS = [
 export type Locale = (typeof LANGUAGE_OPTIONS)[number]["locale"];
 /** 現在アプリケーションが提供する表示言語です。 */
 export const LOCALES: readonly Locale[] = LANGUAGE_OPTIONS.map(({ locale }) => locale);
+/** API・Repositoryで受け付ける表示ロケールです。 */
+export const SUPPORTED_LOCALES = LOCALES;
+
+/**
+ * 指定値が現在サポートする表示ロケールかを判定します。
+ *  {string | null | undefined} value - 判定するロケール値。
+ *  {value is Locale} サポート対象の場合はtrue。
+ */
+export function isSupportedLocale(value: string | null | undefined): value is Locale {
+  return typeof value === "string" && SUPPORTED_LOCALES.includes(value as Locale);
+}
 
 /** 各言語JSONが持つ翻訳辞書の構造です。 */
 export type Translation = typeof ja;
