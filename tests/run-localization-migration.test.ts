@@ -9,7 +9,10 @@ describe("getLocalizationMigrationFiles", () => {
     ]);
   });
 
-  it("rejects an unknown phase before running SQL", () => {
-    expect(() => getLocalizationMigrationFiles("finalize")).toThrow("Unknown localization migration phase");
+  it("finalizes localization by deleting legacy display columns", () => {
+    expect(getLocalizationMigrationFiles("finalize")).toEqual([
+      "db/migrations/007_finalize_localization_up.sql",
+      "db/migrations/007_finalize_localization_verify.sql",
+    ]);
   });
 });

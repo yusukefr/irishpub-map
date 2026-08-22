@@ -2,18 +2,23 @@
 
 ## 現行スキーマ
 
-現行の店舗メタデータは次の関係に分けて保存します。
+現行の店舗メタデータと表示翻訳は次の関係に分けて保存します。
 
-| テーブル           | 役割                                             |
-| ------------------ | ------------------------------------------------ |
-| pubs               | 店舗の基本情報、prefecture_code、status_code     |
-| prefectures        | JIS都道府県コード（1〜47）、表示名、カナ         |
-| pub_statuses       | 営業状況の数値コード、外部値、表示名             |
-| municipality_codes | 市区町村コード、市区町村名、カナ                 |
-| tags               | タグIDとタグ名を一意に管理するマスタ             |
-| pub_tags           | 店舗IDとタグIDの対応。店舗IDとタグIDの複合主キー |
+| テーブル                  | 役割                                                                  |
+| ------------------------- | --------------------------------------------------------------------- |
+| pubs                      | 言語非依存の店舗属性、prefecture_code、municipality_code、status_code |
+| pub_translations          | 店舗名、読み、住所をロケール別に保存                                  |
+| prefectures               | JIS都道府県コード（1〜47）                                            |
+| prefecture_translations   | 都道府県表示名をロケール別に保存                                      |
+| pub_statuses              | 営業状況の数値コード                                                  |
+| pub_status_translations   | 営業状況表示名をロケール別に保存                                      |
+| municipality_codes        | 市区町村コード                                                        |
+| municipality_translations | 市区町村表示名をロケール別に保存                                      |
+| tags                      | タグIDと正規化済み内部キーを一意に管理するマスタ                      |
+| tag_translations          | タグ表示名をロケール別に保存                                          |
+| pub_tags                  | 店舗IDとタグIDの対応。店舗IDとタグIDの複合主キー                      |
 
-pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.code を参照します。市区町村コードは `municipality_codes.code` に6桁文字列として保存し、都道府県コードと市区町村名で店舗と対応付けます。都道府県名・カナは prefectures マスタで管理し、municipality_codes には重複して保存しません。`tags.name` は一意で、`pub_tags.pub_id` は `pubs.id`、`pub_tags.tag_id` は `tags.id` を参照します。店舗またはタグを削除すると、対応する `pub_tags` はカスケード削除されます。未使用のタグマスタは自動削除しません。複合主キーにより同じ店舗への同一タグの重複を防ぎます。
+pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.code を参照します。市区町村コードは `municipality_codes.code` に6桁文字列として保存し、`pubs.municipality_code` から参照します。表示名は各翻訳テーブルで管理します。`tags.key` は一意で、`pub_tags.pub_id` は `pubs.id`、`pub_tags.tag_id` は `tags.id` を参照します。店舗またはタグを削除すると、対応する `pub_tags` はカスケード削除されます。未使用のタグマスタは自動削除しません。複合主キーにより同じ店舗への同一タグの重複を防ぎます。
 
 `pub_tags_legacy_20260816` は004適用時の旧形式バックアップです。
 
@@ -26,6 +31,7 @@ pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.co
 | prefecture（都道府県名）      | prefectures.code          |
 | prefecture のカナ             | prefectures.kana          |
 | status（open など）           | pub_statuses.code         |
+| status の表示名               | pub_status_translations   |
 | municipalityCode（6桁コード） | municipality_codes.code   |
 | tags（文字列配列）            | tags と pub_tags の複数行 |
 

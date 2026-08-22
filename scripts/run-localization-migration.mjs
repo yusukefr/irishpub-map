@@ -4,6 +4,7 @@ import { Client } from "@neondatabase/serverless";
 
 const PHASES = {
   prepare: ["db/migrations/006_localize_display_data_up.sql", "db/migrations/006_localize_display_data_verify.sql"],
+  finalize: ["db/migrations/007_finalize_localization_up.sql", "db/migrations/007_finalize_localization_verify.sql"],
 };
 export function getLocalizationMigrationFiles(phase) {
   const files = PHASES[phase];

@@ -4,18 +4,23 @@
 
 Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定された環境では、`apps/web/app/lib/pub-repository.ts` が正規化済みの店舗・マスタ・タグ関係テーブルを読み書きします。未設定時は公開APIと管理画面が空の店舗一覧を返し、更新操作は利用できません。
 
-現行スキーマの根拠は、アプリのリポジトリ層と `db/migrations/002_normalize_pub_metadata_up.sql`、`003_municipality_codes_up.sql`、`004_normalize_pub_tags_up.sql`、`005_normalize_tag_names_up.sql` です。`pubs` の各カラムは[店舗テーブル定義](database-columns.md)、既存DBの変更手順は[店舗テーブル移行手順](../operations/database-migration.md)を参照してください。
+現行スキーマの根拠は、アプリのリポジトリ層と `db/migrations/006_localize_display_data_up.sql`、`007_finalize_localization_up.sql` です。`pubs` の各カラムは[店舗テーブル定義](database-columns.md)、既存DBの変更手順は[店舗テーブル移行手順](../operations/database-migration.md)を参照してください。
 
 ## テーブル
 
-| テーブル             | 用途                                                 |
-| -------------------- | ---------------------------------------------------- |
-| `pubs`               | 店舗の基本情報、都道府県コード、営業状況コードを保存 |
-| `prefectures`        | JIS都道府県コード、表示名、カナを保存                |
-| `pub_statuses`       | 営業状況コード、外部値、表示名を保存                 |
-| `municipality_codes` | 6桁の市区町村コード、市区町村名・カナを保存          |
-| `tags`               | UUIDと正規化済みタグ名を保存                         |
-| `pub_tags`           | 店舗とタグの多対多関係を保存                         |
+| テーブル                    | 用途                                                           |
+| --------------------------- | -------------------------------------------------------------- |
+| `pubs`                      | 言語非依存の店舗属性、都道府県・市区町村・営業状況コードを保存 |
+| `pub_translations`          | 店舗名・読み・住所をロケール別に保存                           |
+| `prefectures`               | JIS都道府県コードを保存                                        |
+| `prefecture_translations`   | 都道府県表示名をロケール別に保存                               |
+| `pub_statuses`              | 営業状況コードを保存                                           |
+| `pub_status_translations`   | 営業状況表示名をロケール別に保存                               |
+| `municipality_codes`        | 6桁の市区町村コードを保存                                      |
+| `municipality_translations` | 市区町村表示名をロケール別に保存                               |
+| `tags`                      | UUIDと正規化済み内部キーを保存                                 |
+| `tag_translations`          | タグ表示名をロケール別に保存                                   |
+| `pub_tags`                  | 店舗とタグの多対多関係を保存                                   |
 
 管理者ユーザーやセッションを保存するテーブルはありません。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理します。
 
@@ -70,7 +75,7 @@ erDiagram
   }
 ```
 
-`pubs` と `municipality_codes` の間に外部キーはありません。公開APIの `municipalityCode` は、取得時に `prefecture_code` と `city` が市区町村マスタに一致した場合だけ付加します。
+`pubs.municipality_code` は `municipality_codes.code` を参照します。公開APIの `municipalityCode` はこの値をそのまま返します。
 
 ## 読み書き
 
