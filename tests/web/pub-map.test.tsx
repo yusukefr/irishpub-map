@@ -83,8 +83,14 @@ describe("PubMap", () => {
         zoom: 5,
       }),
     );
-    const mapOptions = maplibreMock.mapConstructor.mock.calls[0][0] as { style: string };
-    expect(mapOptions.style).toBe("https://tiles.openfreemap.org/styles/bright");
+    const mapOptions = maplibreMock.mapConstructor.mock.calls[0][0] as {
+      style: { sources: { osm: { attribution: string; tiles: string[] } } };
+    };
+    expect(mapOptions.style.sources.osm.tiles).toEqual(["https://tile.openstreetmap.org/{z}/{x}/{y}.png"]);
+    expect(mapOptions.style.sources.osm.attribution).toContain("https://www.openstreetmap.org/copyright");
+    expect(mapOptions.style.sources.osm.attribution).toContain("OpenStreetMap contributors");
+    expect(mapOptions.style.sources.osm.attribution).toContain('target="_blank"');
+    expect(mapOptions.style.sources.osm.attribution).toContain('rel="noreferrer"');
 
     expect(maplibreMock.navigationControl).toHaveBeenCalledWith({ visualizePitch: true });
     expect(maplibreMock.mapAddControl).toHaveBeenCalledTimes(1);
@@ -121,46 +127,16 @@ describe("PubMap", () => {
     );
     expect(screen.queryByText("地図を表示できませんでした")).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("地図を読み込んでいます…");
-    expect(maplibreMock.mapOn).toHaveBeenCalledWith("style.load", expect.any(Function));
+    expect(maplibreMock.mapOn).toHaveBeenCalledWith("load", expect.any(Function));
     expect(maplibreMock.mapOn).toHaveBeenCalledWith("error", expect.any(Function));
 
-    act(() => emitMapEvent("style.load"));
+    act(() => emitMapEvent("load"));
 
     expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
-    expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledWith("label_country", "text-field", [
-      "coalesce",
-      ["get", "name:ja"],
-      ["get", "name"],
-    ]);
 
     unmount();
 
     expect(maplibreMock.mapRemove).toHaveBeenCalledTimes(1);
-  });
-
-  it("stops the loading overlay when the style is ready without waiting for all map resources", () => {
-    render(<PubMap pubs={pubs} />);
-
-    act(() => emitMapEvent("style.load"));
-
-    expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
-  });
-
-  it("updates vector map labels in English without rebuilding the map", async () => {
-    const { rerender } = render(<PubMap pubs={pubs} locale="ja" />);
-    act(() => emitMapEvent("style.load"));
-    maplibreMock.mapSetLayoutProperty.mockClear();
-
-    rerender(<PubMap pubs={pubs} locale="en" />);
-
-    expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
-    await waitFor(() => {
-      expect(maplibreMock.mapSetLayoutProperty).toHaveBeenCalledWith("label_country", "text-field", [
-        "coalesce",
-        ["get", "name:en"],
-        ["get", "name"],
-      ]);
-    });
   });
 
   it("uses the same gray marker for every non-open status", () => {
@@ -302,16 +278,6 @@ describe("PubMap", () => {
     act(() => emitMapEvent("error", { error: new Error("Tile request failed") }));
 
     expect(screen.getByRole("alert")).toHaveTextContent("地図タイルの読み込みに失敗しました");
-    expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
-  });
-
-  it("keeps the map visible when an individual resource fails after the style has loaded", () => {
-    render(<PubMap pubs={pubs} />);
-
-    act(() => emitMapEvent("style.load"));
-    act(() => emitMapEvent("error", { error: new Error("Glyph request failed") }));
-
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
   });
 

@@ -1,29 +1,29 @@
-# OpenFreeMap ベクタータイル利用方針
+# OpenStreetMap 標準タイル利用方針
 
-最終確認日: 2026-08-20
+最終確認日: 2026-08-22
 
-この文書は、公開Web画面で利用する OpenFreeMapが配信するベクタータイルとスタイルの利用条件、帰属表示、将来の切替判断を記録します。地図データはOpenStreetMapに由来し、配信先は `tiles.openfreemap.org` です。
+この文書は、公開Web画面で利用する OpenStreetMap Foundation（OSMF）の標準ラスタタイルについて、[Tile Usage Policy](https://operations.osmfoundation.org/policies/tiles/)との照合結果と、将来の切替判断を記録します。対象は `tile.openstreetmap.org` で配信される標準タイルであり、OpenStreetMapデータ全般や他社タイルサービスの利用条件を置き換えるものではありません。
 
 ## 現在の構成
 
-- ブラウザ上の MapLibre GL JS が、利用者の操作で可視範囲に必要なベクタータイルとスタイルを HTTPS で直接取得します。
-- スタイルURLは `https://tiles.openfreemap.org/styles/bright` です。
+- ブラウザ上の MapLibre GL JS が、利用者の操作で可視範囲に必要なラスタタイルだけを HTTPS で直接取得します。
+- タイルURLは `https://tile.openstreetmap.org/{z}/{x}/{y}.png` です。
 - アプリサーバー、プロキシ、CDNによるタイル中継・独自キャッシュ・プリフェッチ・オフラインダウンロードは実装していません。
-- MapLibreがスタイルに含まれる `OpenFreeMap © OpenMapTiles Data from OpenStreetMap` の帰属を地図上に表示します。帰属は地図の外へ隠したり、別のUIで覆ったりしません。
+- MapLibreの標準帰属コントロールに、`© OpenStreetMap contributors` と [Copyright and License](https://www.openstreetmap.org/copyright) へのリンクを表示します。帰属は地図の外へ隠したり、別のUIで覆ったりしません。
 
-## 利用条件・帰属との照合
+## Tile Usage Policyとの照合
 
 | ポリシー項目 | 実装・運用の確認結果 | 判断 |
 | --- | --- | --- |
-| 正しいHTTPS URL | OpenFreeMapの公開スタイルURLを指定している | 適合 |
+| 正しいHTTPS URL | 標準URLをそのまま指定している | 適合 |
 | 可視の帰属表示 | MapLibreの標準コントロールを使い、著作権・ライセンスページへ遷移できる | 適合 |
 | Referer（Web） | Next.jsの `Referrer-Policy` を上書きしていない。ブラウザ既定のクロスオリジンReferer送信に委ねる | 適合。ただしヘッダー設定変更時に再確認 |
 | User-Agent相当の識別 | ブラウザが通常のUser-Agentを送る。サーバー・プロキシ経由のタイル要求はない | Web利用として適合。ネイティブ化やプロキシ追加時は固有UAを設定 |
-| キャッシュ | ブラウザとOpenFreeMapの配信基盤によるHTTPキャッシュを通常どおり利用する。`no-cache`系ヘッダーを付与しない | 適合 |
+| キャッシュ | ブラウザとOSMF/CDNのHTTPキャッシュを通常どおり利用する。`no-cache`系ヘッダーを付与しない | 適合 |
 | プリフェッチ・一括取得 | 可視範囲外を取得する機能、オフライン地図、タイル収集ジョブはない | 適合 |
 | 接続方式 | 利用者のブラウザがHTTP/2またはHTTP/3を選択可能なHTTPS接続を使う | ブラウザ・配信基盤に委ねる |
 
-OpenFreeMapは無償・SLAなしの公開サービスです。通常の人間による閲覧に限る現在の小規模な利用では継続利用しますが、サービス変更・停止の可能性を前提にします。
+標準タイルはベストエフォートでありSLAはありません。公開画面の通常の人間による閲覧に限る現在の小規模な利用では継続利用しますが、OSMFがアクセスを予告なく制限できることを前提にします。
 
 ## 変更時の確認手順
 
@@ -38,11 +38,11 @@ OpenFreeMapは無償・SLAなしの公開サービスです。通常の人間に
 
 ## 切替判断と対応手順
 
-次のいずれかに該当する場合は、公開OpenFreeMapの継続利用を止め、商用タイルプロバイダーまたはセルフホストへ切り替える検討を開始します。
+次のいずれかに該当する場合は、標準タイルの継続利用を止め、商用タイルプロバイダーまたはセルフホストへ切り替える検討を開始します。
 
-- アクセス増加により、OpenFreeMapの可用性低下・サービス変更が事業継続リスクになる場合
-- 有償サービス、広告、寄付の導線など、プロバイダーの利用条件に適合しない提供形態へ変更する場合
-- オフライン地図、広域プリフェッチ、バックグラウンド一括取得など、公開サービスで満たせない要件が必要な場合
+- アクセス増加により、OSMFの容量制約・ブロック・可用性低下が事業継続リスクになる場合
+- 有償サービス、広告、寄付の導線など、OSMFが特に注意を求める提供形態へ変更する場合
+- オフライン地図、広域プリフェッチ、バックグラウンド一括取得など、標準タイルで許可されない要件が必要な場合
 - サーバー・CDN・ネイティブアプリ経由で、固有User-Agent、Referer、キャッシュを制御する必要がある場合
 - SLA、利用量上限、サポート、地域別配信、独自スタイルなどを契約で担保する必要がある場合
 
@@ -55,6 +55,6 @@ OpenFreeMapは無償・SLAなしの公開サービスです。通常の人間に
 
 ## 根拠
 
-- [OpenFreeMap Terms of Service](https://openfreemap.org/tos/)
+- [OSMF Tile Usage Policy](https://operations.osmfoundation.org/policies/tiles/)
 - [OpenStreetMap Copyright and License](https://www.openstreetmap.org/copyright)
-- [OpenFreeMap Quick Start Guide](https://openfreemap.org/quick_start/)
+- [OpenStreetMap Attribution Guidelines](https://osmfoundation.org/wiki/Licence/Attribution_Guidelines)

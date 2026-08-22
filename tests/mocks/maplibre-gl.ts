@@ -8,8 +8,6 @@ export const maplibreMock = {
   mapOff: vi.fn(),
   mapFitBounds: vi.fn(),
   mapJumpTo: vi.fn(),
-  mapGetStyle: vi.fn(),
-  mapSetLayoutProperty: vi.fn(),
   markerConstructor: vi.fn(),
   markerSetLngLat: vi.fn(),
   markerSetPopup: vi.fn(),
@@ -34,8 +32,6 @@ export function resetMaplibreMock() {
   maplibreMock.mapOff.mockClear();
   maplibreMock.mapFitBounds.mockClear();
   maplibreMock.mapJumpTo.mockClear();
-  maplibreMock.mapGetStyle.mockClear();
-  maplibreMock.mapSetLayoutProperty.mockClear();
   maplibreMock.markerSetLngLat.mockClear();
   maplibreMock.markerSetPopup.mockClear();
   maplibreMock.markerAddTo.mockClear();
@@ -76,13 +72,6 @@ export class Map {
   };
   fitBounds = maplibreMock.mapFitBounds;
   jumpTo = maplibreMock.mapJumpTo;
-  getStyle = maplibreMock.mapGetStyle.mockReturnValue({
-    layers: [
-      { id: "label_country", type: "symbol", layout: { "text-field": ["get", "name"] } },
-      { id: "water", type: "fill" },
-    ],
-  });
-  setLayoutProperty = maplibreMock.mapSetLayoutProperty;
   remove = maplibreMock.mapRemove;
 }
 

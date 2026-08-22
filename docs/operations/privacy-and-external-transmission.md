@@ -11,7 +11,7 @@ Irish Pub Map の公開画面について、実装、通信経路、各サービ
 - 対象利用者は日本国内の利用者です。英語表示は日本在住の外国人を想定しており、EU/EEAを含む日本国外へ積極的にサービスを提供する意図を示すものではありません。
 - Vercel Web Analytics と Speed Insights を利用し、利用状況と実利用環境の性能を把握してサービスを改善します。
 - 言語設定 Cookie は表示言語の維持だけに使い、保存期間を30日とします。
-- 現在地の生の座標はアプリのサーバーやDBへ送信・保存しません。ただし、現在地周辺の地図を表示すると、周辺タイルの識別子がOpenFreeMapへ送信されます。
+- 現在地の生の座標はアプリのサーバーやDBへ送信・保存しません。ただし、現在地周辺の地図を表示すると、周辺タイルの識別子が OpenStreetMap へ送信されます。
 
 ## 現在利用している送信・保存
 
@@ -38,26 +38,26 @@ Vercelのプライバシー通知は、顧客サイトの利用者について�
 - [Vercel Data Processing Addendum](https://vercel.com/legal/dpa)
 - [Vercel Security and Subprocessors](https://security.vercel.com/)
 
-### OpenFreeMap ベクタータイル
+### OpenStreetMap 標準タイル
 
 | 項目 | 整理結果 |
 | --- | --- |
 | 発生条件 | MapLibreが地図を表示・移動・拡大縮小すると発生する |
 | 送信元 | 利用者のブラウザ。アプリサーバーを経由せず直接送信する |
-| 送信先 | OpenFreeMapの `tiles.openfreemap.org` と、その配信基盤 |
+| 送信先 | OpenStreetMap Foundation が運用する `tile.openstreetmap.org` と、そのグローバルなキャッシュサーバー |
 | 主な情報 | IPアドレス、ブラウザ・端末種別、OS、参照元、日時、要求したタイルのURL。URLの `z/x/y` から表示地域と縮尺を推測できる |
 | 目的 | 地図画像の配信、サービスの運用・セキュリティ・容量計画、匿名化した利用状況の調査 |
-| 保持 | OpenFreeMapは通常のサーバーログにIPアドレスを保存せず、匿名化ログを継続保持すると説明している。セキュリティ上の事案ではIPアドレスを最大30日間一時保存する場合がある。配信基盤の保持はその方針に従う |
+| 保持 | OSMF Privacy Policy はアクセス記録を一時的なものと説明するが、タイル要求ログの一律の保持日数は明示していない。Piwikの詳細利用情報は180日とされるが、これをタイル要求ログ全体の保持期間とは扱わない |
 | 削除 | 一時的なIPアドレスや関連ログは個別アクセス・削除への対応が一般に困難と説明されている。タイル要求に関連するデータの保存地域と個別削除手順は未確認 |
 
-現在地が得られた場合も、緯度・経度そのものをOpenFreeMapへ送るAPIは呼びません。ただし、地図をその位置へ移動した結果、現在地周辺のタイル識別子が要求されるため、おおよその閲覧地域はOpenFreeMap側で推測できます。
+現在地が得られた場合も、緯度・経度そのものをOSMへ送るAPIは呼びません。ただし、地図をその位置へ移動した結果、現在地周辺のタイル識別子が要求されるため、おおよその閲覧地域はOSM側で推測できます。
 
 根拠:
 
-- [OpenFreeMap Terms of Service](https://openfreemap.org/tos/)
-- [OpenFreeMap Privacy Policy](https://openfreemap.org/privacy/)
+- [OSMF Tile Usage Policy](https://operations.osmfoundation.org/policies/tiles/)
+- [OSMF Privacy Policy](https://osmfoundation.org/wiki/Privacy_Policy)
 
-OpenFreeMapベクタータイルの利用条件との照合、変更時の確認、商用プロバイダーまたはセルフホストへ切り替える基準は、[OpenFreeMap ベクタータイル利用方針](openstreetmap-tile-usage.md)を参照してください。
+標準タイルの利用条件との照合、変更時の確認、商用プロバイダーまたはセルフホストへ切り替える基準は、[OpenStreetMap 標準タイル利用方針](openstreetmap-tile-usage.md)を参照してください。
 
 ### 言語設定 Cookie
 
