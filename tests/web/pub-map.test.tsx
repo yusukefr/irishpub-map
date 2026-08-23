@@ -135,6 +135,10 @@ describe("PubMap", () => {
       closeOnClick: true,
       className: "pub-map-popup",
     });
+    expect(maplibreMock.popupSetLngLat).toHaveBeenNthCalledWith(1, [139.767, 35.681]);
+    expect(maplibreMock.popupSetLngLat).toHaveBeenNthCalledWith(2, [135.502, 34.693]);
+    expect(maplibreMock.popupSetLngLat).toHaveBeenNthCalledWith(3, [135.768, 35.011]);
+    expect(maplibreMock.markerSetPopup).not.toHaveBeenCalled();
     expect(maplibreMock.popupSetMaxWidth).toHaveBeenCalledWith("min(320px, calc(100vw - 32px))");
     expect(maplibreMock.popupSetDOMContent).toHaveBeenCalledTimes(3);
 
@@ -230,16 +234,37 @@ describe("PubMap", () => {
     expect(maplibreMock.popupRemove).toHaveBeenCalledTimes(1);
   });
 
-  it("leaves popup opening to MapLibre click and tap handling on touch devices", () => {
+  it("keeps a hover-open popup pinned after the marker is clicked", () => {
+    vi.useFakeTimers();
+    mockHoverCapability(true);
+    render(<PubMap pubs={[pubs[0]]} />);
+
+    const marker = (maplibreMock.markerConstructor.mock.calls[0][0] as { element: HTMLElement }).element;
+
+    fireEvent.mouseEnter(marker);
+    expect(maplibreMock.popupAddTo).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(marker);
+    fireEvent.mouseLeave(marker);
+    act(() => vi.advanceTimersByTime(160));
+
+    expect(maplibreMock.popupAddTo).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.popupRemove).not.toHaveBeenCalled();
+  });
+
+  it("opens on marker tap and closes on an outside tap on touch devices", () => {
     mockHoverCapability(false);
     render(<PubMap pubs={[pubs[0]]} />);
 
     const marker = (maplibreMock.markerConstructor.mock.calls[0][0] as { element: HTMLElement }).element;
-    fireEvent.mouseEnter(marker);
+    fireEvent.click(marker);
 
-    expect(maplibreMock.popupAddTo).not.toHaveBeenCalled();
-    expect(maplibreMock.markerSetPopup).toHaveBeenCalledTimes(1);
-    expect(maplibreMock.popupConstructor).toHaveBeenCalledWith(expect.objectContaining({ closeOnClick: true }));
+    expect(maplibreMock.popupAddTo).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.markerSetPopup).not.toHaveBeenCalled();
+
+    act(() => emitMapEvent("click"));
+
+    expect(maplibreMock.popupRemove).toHaveBeenCalledTimes(1);
   });
 
   it("uses the same gray marker for every non-open status", () => {

@@ -68,7 +68,7 @@ export function PubMap({
   // Style の非同期ロード完了時にも最新のサイト言語を反映します。
   const localeRef = useRef(locale);
   const markersRef = useRef(new globalThis.Map<string, Marker>());
-  const activeHoverPopupRef = useRef<Popup | null>(null);
+  const activePopupRef = useRef<Popup | null>(null);
   const currentLocationMarkerRef = useRef<Marker | null>(null);
   // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
   const onSelectPubRef = useRef(onSelectPub);
@@ -185,6 +185,7 @@ export function PubMap({
         closeOnClick: true,
         className: "pub-map-popup",
       })
+        .setLngLat([pub.longitude, pub.latitude])
         .setMaxWidth("min(320px, calc(100vw - 32px))")
         .setDOMContent(popupContent);
       const markerElement = createMarkerElement(
@@ -195,12 +196,11 @@ export function PubMap({
       );
       const marker = new Marker({ element: markerElement, anchor: "bottom" })
         .setLngLat([pub.longitude, pub.latitude])
-        .setPopup(popup)
         .addTo(map);
 
       markerElementsRef.current.set(pub.id, markerElement);
       markersRef.current.set(pub.id, marker);
-      popupInteractionCleanups.push(enableHoverPopup(markerElement, popupContent, popup, map, activeHoverPopupRef));
+      popupInteractionCleanups.push(enablePopupInteractions(markerElement, popupContent, popup, map, activePopupRef));
     });
 
     return () => {
@@ -440,20 +440,18 @@ function createInstagramIcon() {
   return icon;
 }
 
-/** hover可能端末だけMarkerとPopupの間を移動できる表示制御を追加します。 */
-function enableHoverPopup(
+/** hoverの一時表示とclick・tapの固定表示を競合させずに制御します。 */
+function enablePopupInteractions(
   markerElement: HTMLElement,
   popupContent: HTMLElement,
   popup: Popup,
   map: Map,
   activePopupRef: { current: Popup | null },
 ) {
-  if (!window.matchMedia?.(HOVER_POINTER_MEDIA_QUERY).matches) {
-    return () => undefined;
-  }
-
+  const canHover = window.matchMedia?.(HOVER_POINTER_MEDIA_QUERY).matches ?? false;
   let markerHovered = false;
   let popupHovered = false;
+  let pinned = false;
   let closeTimeoutId: number | undefined;
 
   const cancelClose = () => {
@@ -473,11 +471,8 @@ function enableHoverPopup(
   const scheduleClose = () => {
     cancelClose();
     closeTimeoutId = window.setTimeout(() => {
-      if (!markerHovered && !popupHovered) {
+      if (!markerHovered && !popupHovered && !pinned) {
         popup.remove();
-        if (activePopupRef.current === popup) {
-          activePopupRef.current = null;
-        }
       }
     }, POPUP_CLOSE_DELAY_MS);
   };
@@ -497,18 +492,36 @@ function enableHoverPopup(
     popupHovered = false;
     scheduleClose();
   };
+  const handleMarkerClick = (event: MouseEvent) => {
+    event.stopPropagation();
+    pinned = true;
+    openPopup();
+  };
+  const handlePopupClose = () => {
+    pinned = false;
+    if (activePopupRef.current === popup) {
+      activePopupRef.current = null;
+    }
+  };
 
-  markerElement.addEventListener("mouseenter", handleMarkerEnter);
-  markerElement.addEventListener("mouseleave", handleMarkerLeave);
-  popupContent.addEventListener("mouseenter", handlePopupEnter);
-  popupContent.addEventListener("mouseleave", handlePopupLeave);
+  markerElement.addEventListener("click", handleMarkerClick);
+  popup.on("close", handlePopupClose);
+  if (canHover) {
+    markerElement.addEventListener("mouseenter", handleMarkerEnter);
+    markerElement.addEventListener("mouseleave", handleMarkerLeave);
+    popupContent.addEventListener("mouseenter", handlePopupEnter);
+    popupContent.addEventListener("mouseleave", handlePopupLeave);
+  }
 
   return () => {
     cancelClose();
+    markerElement.removeEventListener("click", handleMarkerClick);
     markerElement.removeEventListener("mouseenter", handleMarkerEnter);
     markerElement.removeEventListener("mouseleave", handleMarkerLeave);
     popupContent.removeEventListener("mouseenter", handlePopupEnter);
     popupContent.removeEventListener("mouseleave", handlePopupLeave);
+    popup.remove();
+    popup.off("close", handlePopupClose);
     if (activePopupRef.current === popup) {
       activePopupRef.current = null;
     }

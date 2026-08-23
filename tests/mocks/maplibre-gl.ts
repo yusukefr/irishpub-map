@@ -18,12 +18,15 @@ export const maplibreMock = {
   markerAddTo: vi.fn(),
   markerRemove: vi.fn(),
   popupConstructor: vi.fn(),
+  popupSetLngLat: vi.fn(),
   popupSetHTML: vi.fn(),
   popupSetDOMContent: vi.fn(),
   popupSetMaxWidth: vi.fn(),
   popupAddTo: vi.fn(),
   popupIsOpen: vi.fn(),
   popupRemove: vi.fn(),
+  popupOn: vi.fn(),
+  popupOff: vi.fn(),
   navigationControl: vi.fn(),
   mapConstructor: vi.fn(),
   shouldThrowMapConstructor: false,
@@ -51,12 +54,15 @@ export function resetMaplibreMock() {
   maplibreMock.markerAddTo.mockClear();
   maplibreMock.markerRemove.mockClear();
   maplibreMock.popupConstructor.mockClear();
+  maplibreMock.popupSetLngLat.mockClear();
   maplibreMock.popupSetHTML.mockClear();
   maplibreMock.popupSetDOMContent.mockClear();
   maplibreMock.popupSetMaxWidth.mockClear();
   maplibreMock.popupAddTo.mockClear();
   maplibreMock.popupIsOpen.mockClear();
   maplibreMock.popupRemove.mockClear();
+  maplibreMock.popupOn.mockClear();
+  maplibreMock.popupOff.mockClear();
   maplibreMock.navigationControl.mockClear();
   maplibreMock.mapConstructor.mockClear();
   mapEventListeners.clear();
@@ -110,9 +116,19 @@ export class Marker {
 
 export class Popup {
   private open = false;
+  private map: Map | null = null;
+  private readonly closeOnClick: boolean;
+  private readonly closeListeners = new Set<() => void>();
+  private readonly handleMapClick = () => this.remove();
 
-  constructor(options?: unknown) {
+  constructor(options?: { closeOnClick?: boolean }) {
     maplibreMock.popupConstructor(options);
+    this.closeOnClick = options?.closeOnClick ?? true;
+  }
+
+  setLngLat(lngLat: unknown) {
+    maplibreMock.popupSetLngLat(lngLat);
+    return this;
   }
 
   setHTML(html: string) {
@@ -132,7 +148,11 @@ export class Popup {
 
   addTo(map: Map) {
     maplibreMock.popupAddTo(map);
+    this.map = map;
     this.open = true;
+    if (this.closeOnClick) {
+      map.on("click", this.handleMapClick);
+    }
     return this;
   }
 
@@ -141,9 +161,33 @@ export class Popup {
     return this.open;
   }
 
+  on(type: string, listener: () => void) {
+    maplibreMock.popupOn(type, listener);
+    if (type === "close") {
+      this.closeListeners.add(listener);
+    }
+    return this;
+  }
+
+  off(type: string, listener: () => void) {
+    maplibreMock.popupOff(type, listener);
+    if (type === "close") {
+      this.closeListeners.delete(listener);
+    }
+    return this;
+  }
+
   remove = () => {
+    if (!this.open) {
+      return this;
+    }
+    if (this.closeOnClick) {
+      this.map?.off("click", this.handleMapClick);
+    }
+    this.map = null;
     maplibreMock.popupRemove();
     this.open = false;
+    this.closeListeners.forEach((listener) => listener());
     return this;
   };
 }
