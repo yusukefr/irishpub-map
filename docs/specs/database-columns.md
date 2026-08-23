@@ -1,55 +1,130 @@
-# 店舗テーブル定義（現行スキーマ）
+# テーブル・カラム定義
 
 ## 概要
 
-Neon Postgresの `pubs` は言語に依存しない基本属性だけを保持します。店舗名・読み・住所は `pub_translations`、都道府県・市区町村・営業状況・タグの表示名は各翻訳テーブルから取得し、選択ロケールの `Pub` 形式へ変換します。
+この文書は、Issue #262で確認したNeon上の実スキーマを基準に、現在存在するアプリケーション用テーブルのカラム・制約・インデックスを定義します。現在のアプリケーション実装を照合に用い、`db/migrations` は設計経緯を確認するための補助資料として扱います。表示文言は翻訳テーブル、言語に依存しない値は親テーブル、店舗とタグの関係は中間テーブルに保存します。
 
-現行定義の根拠は `apps/web/app/lib/pub-repository.ts`、`db/migrations/006_localize_display_data_up.sql`、`007_finalize_localization_up.sql` です。旧JSONB構成からの移行は[店舗テーブル移行手順](../operations/database-migration.md)を参照してください。
+`NULL` 欄の「不可」は `NOT NULL` または主キー制約、「可」はDB制約上NULLを許可することを表します。
 
-## `pubs` のDDL
+## `pubs`
 
-```sql
-CREATE TABLE pubs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL CHECK (btrim(name) <> ''),
-  kana TEXT,
-  prefecture_code SMALLINT NOT NULL REFERENCES prefectures(code),
-  city TEXT,
-  address TEXT NOT NULL CHECK (btrim(address) <> ''),
-  latitude DOUBLE PRECISION NOT NULL CHECK (latitude BETWEEN -90 AND 90),
-  longitude DOUBLE PRECISION NOT NULL CHECK (longitude BETWEEN -180 AND 180),
-  website_url TEXT CHECK (website_url IS NULL OR website_url ~* '^https?://'),
-  google_maps_url TEXT CHECK (google_maps_url IS NULL OR google_maps_url ~* '^https?://'),
-  instagram_url TEXT CHECK (instagram_url IS NULL OR instagram_url ~* '^https?://'),
-  status_code SMALLINT NOT NULL REFERENCES pub_statuses(code),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-```
+| カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
+| --- | --- | --- | --- | --- | --- |
+| `id` | UUID | 不可 | PK | `gen_random_uuid()` | 店舗ID |
+| `prefecture_code` | SMALLINT | 不可 | FK → `prefectures.code` | なし | 都道府県コード |
+| `municipality_code` | TEXT | 可 | FK → `municipality_codes.code` | なし | 6桁の市区町村コード |
+| `latitude` | DOUBLE PRECISION | 不可 |  | なし | -90以上90以下 |
+| `longitude` | DOUBLE PRECISION | 不可 |  | なし | -180以上180以下 |
+| `website_url` | TEXT | 可 |  | なし | NULLまたはHTTP(S) URL |
+| `google_maps_url` | TEXT | 可 |  | なし | NULLまたはHTTP(S) URL |
+| `instagram_url` | TEXT | 可 |  | なし | NULLまたはHTTP(S) URL |
+| `status_code` | SMALLINT | 不可 | FK → `pub_statuses.code` | なし | 営業状況コード |
+| `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | Repositoryが更新時にも現在時刻を設定 |
 
-## カラム
+`municipality_code` はDB上ではNULLを許可します。Repositoryは、新規・更新データについて市区町村コードを解決できることを別途検証します。
 
-| カラム                                              | 型               | NULL | 制約・用途                           |
-| --------------------------------------------------- | ---------------- | ---- | ------------------------------------ |
-| `id`                                                | UUID             | 不可 | RFC 4122 UUIDの主キー                |
-| `prefecture_code`                                   | SMALLINT         | 不可 | `prefectures.code` を参照            |
-| `municipality_code`                                 | TEXT             | 不可 | `municipality_codes.code` を参照     |
-| `latitude` / `longitude`                            | DOUBLE PRECISION | 不可 | 緯度-90〜90、経度-180〜180           |
-| `website_url` / `google_maps_url` / `instagram_url` | TEXT             | 可   | NULLまたはHTTP(S) URL                |
-| `status_code`                                       | SMALLINT         | 不可 | `pub_statuses.code` を参照           |
-| `updated_at`                                        | TIMESTAMPTZ      | 不可 | 既定値 `NOW()`。更新時にアプリが更新 |
+## `pub_translations`
 
-タグは `pubs` の配列カラムには保存しません。`tags` と `pub_tags` の関係を取得時に配列へ集約します。`municipalityCode` は `pubs.municipality_code` から返します。入力時は日本語の市区町村名を `municipality_translations` で解決し、一意に一致しないデータは拒否します。
+| カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
+| --- | --- | --- | --- | --- | --- |
+| `pub_id` | UUID | 不可 | PK、FK → `pubs.id` ON DELETE CASCADE | なし | 店舗ID |
+| `locale` | TEXT | 不可 | PK | なし | 空白のみを禁止 |
+| `name` | TEXT | 不可 |  | なし | 空白のみを禁止。店舗表示名 |
+| `name_reading` | TEXT | 可 |  | なし | NULLまたは空白以外。店舗名の読み |
+| `address` | TEXT | 不可 |  | なし | 空白のみを禁止。店舗住所 |
+| `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 翻訳の更新日時 |
+
+主キーは `(pub_id, locale)` です。
+
+## `prefectures`
+
+| カラム | 型       | NULL | キー・参照 | DEFAULT | CHECK・用途              |
+| ------ | -------- | ---- | ---------- | ------- | ------------------------ |
+| `code` | SMALLINT | 不可 | PK         | なし    | 1以上47以下のJIS順コード |
+
+## `prefecture_translations`
+
+| カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
+| --- | --- | --- | --- | --- | --- |
+| `prefecture_code` | SMALLINT | 不可 | PK、FK → `prefectures.code` ON DELETE CASCADE | なし | 都道府県コード |
+| `locale` | TEXT | 不可 | PK、`name` と複合UNIQUE | なし | 空白のみを禁止 |
+| `name` | TEXT | 不可 | `locale` と複合UNIQUE | なし | 空白のみを禁止。都道府県表示名 |
+| `name_reading` | TEXT | 可 |  | なし | NULLまたは空白以外。表示名の読み |
+
+主キーは `(prefecture_code, locale)`、追加の一意制約は `(locale, name)` です。
+
+## `municipality_codes`
+
+| カラム            | 型       | NULL | キー・参照              | DEFAULT | CHECK・用途            |
+| ----------------- | -------- | ---- | ----------------------- | ------- | ---------------------- |
+| `code`            | TEXT     | 不可 | PK                      | なし    | 数字6桁                |
+| `prefecture_code` | SMALLINT | 不可 | FK → `prefectures.code` | なし    | 所属する都道府県コード |
+
+## `municipality_translations`
+
+| カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
+| --- | --- | --- | --- | --- | --- |
+| `municipality_code` | TEXT | 不可 | PK、FK → `municipality_codes.code` ON DELETE CASCADE | なし | 市区町村コード |
+| `locale` | TEXT | 不可 | PK | なし | 空白のみを禁止 |
+| `name` | TEXT | 不可 |  | なし | 空白のみを禁止。市区町村表示名 |
+| `name_reading` | TEXT | 可 |  | なし | NULLまたは空白以外。表示名の読み |
+
+主キーは `(municipality_code, locale)` です。
+
+## `pub_statuses`
+
+| カラム | 型       | NULL | キー・参照 | DEFAULT | CHECK・用途                  |
+| ------ | -------- | ---- | ---------- | ------- | ---------------------------- |
+| `code` | SMALLINT | 不可 | PK         | なし    | 営業状況コード               |
+| `key`  | TEXT     | 不可 | UNIQUE     | なし    | 言語非依存の営業状況内部キー |
+
+## `pub_status_translations`
+
+| カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
+| --- | --- | --- | --- | --- | --- |
+| `status_code` | SMALLINT | 不可 | PK、FK → `pub_statuses.code` ON DELETE CASCADE | なし | 営業状況コード |
+| `locale` | TEXT | 不可 | PK | なし | 空白のみを禁止 |
+| `display_name` | TEXT | 不可 |  | なし | 空白のみを禁止。営業状況表示名 |
+
+主キーは `(status_code, locale)` です。
+
+## `tags`
+
+| カラム | 型   | NULL | キー・参照 | DEFAULT             | CHECK・用途                |
+| ------ | ---- | ---- | ---------- | ------------------- | -------------------------- |
+| `id`   | UUID | 不可 | PK         | `gen_random_uuid()` | タグID                     |
+| `key`  | TEXT | 不可 | UNIQUE     | なし                | 言語非依存の正規化済みキー |
+
+## `tag_translations`
+
+| カラム   | 型   | NULL | キー・参照                           | DEFAULT | CHECK・用途                |
+| -------- | ---- | ---- | ------------------------------------ | ------- | -------------------------- |
+| `tag_id` | UUID | 不可 | PK、FK → `tags.id` ON DELETE CASCADE | なし    | タグID                     |
+| `locale` | TEXT | 不可 | PK、`name` と複合UNIQUE              | なし    | 空白のみを禁止             |
+| `name`   | TEXT | 不可 | `locale` と複合UNIQUE                | なし    | 空白のみを禁止。タグ表示名 |
+
+主キーは `(tag_id, locale)`、追加の一意制約は `(locale, name)` です。
+
+## `pub_tags`
+
+| カラム   | 型   | NULL | キー・参照                           | DEFAULT | CHECK・用途 |
+| -------- | ---- | ---- | ------------------------------------ | ------- | ----------- |
+| `pub_id` | UUID | 不可 | PK、FK → `pubs.id` ON DELETE CASCADE | なし    | 店舗ID      |
+| `tag_id` | UUID | 不可 | PK、FK → `tags.id` ON DELETE CASCADE | なし    | タグID      |
+
+主キーは `(pub_id, tag_id)` で、同じ店舗への同一タグの重複を防ぎます。
 
 ## インデックス
 
-アプリと移行SQLは、次の検索・並び替え用B-treeインデックスを作成します。
+主キー・UNIQUE制約によって作成されるインデックスに加え、次のB-treeインデックスを使用します。
 
-- `prefecture_code`
-- `municipality_code`
-- `status_code`
-
-表示文言は `pub_translations`、`prefecture_translations`、`municipality_translations`、`pub_status_translations`、`tag_translations` にロケールごとに保存します。タグの逆引きには `pub_tags(tag_id)` を使用します。002から移行したDBには `prefecture_code, name` の同等インデックスが旧名 `pubs_prefecture_name_idx` で残る場合があります。アプリが新規作成する名前は `pubs_prefecture_code_name_idx` です。
+| インデックス名               | テーブル   | カラム              | 用途                       |
+| ---------------------------- | ---------- | ------------------- | -------------------------- |
+| `pubs_prefecture_code_idx`   | `pubs`     | `prefecture_code`   | 都道府県による店舗絞り込み |
+| `pubs_municipality_code_idx` | `pubs`     | `municipality_code` | 市区町村コードによる検索   |
+| `pubs_status_code_idx`       | `pubs`     | `status_code`       | 営業状況による店舗絞り込み |
+| `pub_tags_tag_id_idx`        | `pub_tags` | `tag_id`            | タグから店舗関係を逆引き   |
 
 ## アプリケーション境界
 
-`pub-repository` はDBドライバーの値を共有 `Pub` 型へ正規化して検証します。一部の行だけが不正な場合はその行を除外して件数をサーバーログへ記録し、全行が不正な場合はエラーにします。この境界処理はDB制約の代替ではありません。
+Repositoryは、選択ロケールと日本語の優先順位を使って各翻訳テーブルをJOINし、DBドライバーの値を共有 `Pub` 型へ正規化して検証します。一部の行だけが不正な場合はその行を除外して件数をサーバーログへ記録し、取得行がすべて不正な場合はエラーにします。この境界処理はDB制約の代替ではありません。
