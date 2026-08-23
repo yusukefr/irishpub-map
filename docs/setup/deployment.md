@@ -170,7 +170,7 @@ npm run check:sensitive-data
 
 管理画面は `/admin` です。Vercel Marketplace から Neon を追加し、Production 環境には本番ブランチ、Preview 環境には[Neon Preview ブランチ上限対策](#neon-preview-ブランチ上限対策)で作成した固定ブランチの `DATABASE_URL` を設定してください。店舗データは管理画面または[開発環境・セットアップ手順の一括インポート](development.md#店舗データの一括インポート)で明示的に投入します。
 
-`pub-repository` は既存スキーマを自動移行しません。また、`municipality_codes` が存在しない、または空の場合は読み出しを停止します。新規の空DBは[一括インポート手順](development.md#店舗データの一括インポート)に従って、公開APIへ接続する前に準備してください。`DATABASE_URL` が未設定の場合、管理画面は店舗0件を表示できますが書き込みはできません。
+`pub-repository` と一括インポート処理は、テーブルや参照データを作成しません。店舗データを投入する前に、[データベース定義](../specs/database.md)に記載した現行スキーマと、都道府県・営業状況・市区町村の参照データが構築済みであることを確認してください。空DBから現行スキーマを構築する正式な手順は、このリポジトリでは提供していません。`municipality_codes` が存在しない、または空の場合、`pub-repository` は読み出しを停止します。`DATABASE_URL` が未設定の場合、管理画面は店舗0件を表示できますが書き込みはできません。
 
 パスワードハッシュは、ローカルで生成して Vercel の環境変数にだけ登録します。例:
 
