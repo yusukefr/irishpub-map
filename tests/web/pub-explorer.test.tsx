@@ -74,6 +74,11 @@ function mockGeolocation(geolocation: Partial<Geolocation> | undefined) {
   });
 }
 
+/** 初期状態で折りたたまれている詳細条件を開きます。 */
+function openDetailedFilters() {
+  fireEvent.click(screen.getByRole("button", { name: "条件を指定" }));
+}
+
 describe("PubExplorer", () => {
   beforeEach(() => {
     resetMaplibreMock();
@@ -91,6 +96,29 @@ describe("PubExplorer", () => {
     render(<PubExplorer pubs={pubs} />);
 
     expect(screen.getByLabelText("店舗を検索")).toHaveAttribute("placeholder", "店舗名、エリア");
+  });
+
+  it("keeps detailed filters out of the primary flow and exposes their state", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    const toggle = screen.getByRole("button", { name: "条件を指定" });
+    const filterDetails = document.getElementById("pub-filter-options");
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveAttribute("aria-controls", "pub-filter-options");
+    expect(filterDetails).toHaveAttribute("hidden");
+    expect(screen.queryByRole("combobox", { name: "都道府県" })).not.toBeInTheDocument();
+
+    openDetailedFilters();
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(filterDetails).not.toHaveAttribute("hidden");
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
+    expect(screen.getByLabelText("詳細条件1件を適用中")).toHaveTextContent("1");
+
+    fireEvent.click(screen.getByRole("button", { name: /条件を閉じる/ }));
+    expect(filterDetails).toHaveAttribute("hidden");
+    expect(screen.queryByRole("combobox", { name: "都道府県" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("詳細条件1件を適用中")).toBeInTheDocument();
   });
 
   it("filters the displayed pubs by pub name", () => {
@@ -123,7 +151,7 @@ describe("PubExplorer", () => {
     render(<PubExplorer pubs={pubs} />);
 
     expect(
-      screen.getByText("現在地に近い掲載都道府県を選択して地図を移動します。", { exact: false }),
+      screen.getByText("現在地に近い掲載エリアへ地図を移動します。位置情報は保存しません。", { exact: false }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "現在地から探す" })).toBeInTheDocument();
     expect(getCurrentPosition).not.toHaveBeenCalled();
@@ -148,6 +176,7 @@ describe("PubExplorer", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
     fireEvent.click(screen.getByRole("button", { name: "現在地から探す" }));
 
     await waitFor(() => expect(screen.getByLabelText("都道府県")).toHaveValue("東京都"));
@@ -180,6 +209,7 @@ describe("PubExplorer", () => {
     mockGeolocation({ getCurrentPosition });
 
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
     fireEvent.click(screen.getByRole("button", { name: "現在地から探す" }));
 
     expect(screen.getByLabelText("都道府県")).toHaveValue("");
@@ -220,6 +250,7 @@ describe("PubExplorer", () => {
     mockGeolocation({ getCurrentPosition });
 
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
     fireEvent.click(screen.getByRole("button", { name: "現在地から探す" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent("現在地を取得できませんでした。");
@@ -231,6 +262,7 @@ describe("PubExplorer", () => {
 
   it("explains when geolocation is unsupported while leaving filters available", () => {
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
 
     fireEvent.click(screen.getByRole("button", { name: "現在地から探す" }));
 
@@ -266,6 +298,7 @@ describe("PubExplorer", () => {
   });
   it("filters the displayed pubs by selected prefecture", () => {
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
 
     expect(screen.getByRole("option", { name: "すべての都道府県" })).toBeInTheDocument();
 
@@ -282,6 +315,7 @@ describe("PubExplorer", () => {
 
   it("links selected pub cards and map markers in both directions", () => {
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
     fireEvent.click(screen.getByRole("checkbox", { name: "閉業した店舗を含める" }));
 
     const kyotoCard = screen.getByRole("heading", { name: "Kyoto Sample Pub" }).closest("article");
@@ -307,6 +341,7 @@ describe("PubExplorer", () => {
 
   it("clears the selected pub when filters hide it", () => {
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
     const tokyoCard = screen.getByRole("heading", { name: "Tokyo Sample Pub" }).closest("article");
 
     expect(tokyoCard).not.toBeNull();
@@ -323,6 +358,7 @@ describe("PubExplorer", () => {
 
   it("filters the displayed pubs by tag", () => {
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
 
     fireEvent.click(screen.getByRole("button", { name: "ギネス" }));
 
@@ -333,6 +369,7 @@ describe("PubExplorer", () => {
 
   it("filters the displayed pubs by every selected tag", () => {
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
 
     fireEvent.click(screen.getByRole("button", { name: "ギネス" }));
     fireEvent.click(screen.getByRole("button", { name: "食事あり" }));
@@ -345,6 +382,7 @@ describe("PubExplorer", () => {
 
   it("shows open pubs by default and includes closed pubs with a switch", () => {
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
     const closedToggle = screen.getByRole("checkbox", { name: "閉業した店舗を含める" });
 
     expect(closedToggle).not.toBeChecked();
@@ -363,6 +401,7 @@ describe("PubExplorer", () => {
 
   it("keeps the map instance when tag and status filters change", () => {
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
 
     fireEvent.click(screen.getByRole("button", { name: "ライブ音楽" }));
 
@@ -379,6 +418,7 @@ describe("PubExplorer", () => {
 
   it("combines search, prefecture, tag, and status filters", () => {
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
 
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "東京都" } });
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
@@ -392,6 +432,7 @@ describe("PubExplorer", () => {
 
   it("resets all active search conditions", () => {
     render(<PubExplorer pubs={pubs} />);
+    openDetailedFilters();
 
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "京都府" } });
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "京都府" } });

@@ -807,11 +807,10 @@ body {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
-  align-items: end;
-  gap: clamp(32px, 8vw, 120px);
-  min-height: 330px;
-  padding: 96px clamp(20px, 6vw, 96px) 84px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(28px, 5vw, 72px);
+  padding: 68px clamp(20px, 6vw, 96px) 42px;
   overflow: hidden;
   background:
     radial-gradient(circle at 84% 8%, rgb(255 239 184 / 28%), transparent 16rem),
@@ -843,7 +842,7 @@ body {
 }
 
 .masthead-copy {
-  max-width: 780px;
+  max-width: 900px;
 }
 
 .language-switcher {
@@ -946,74 +945,46 @@ body {
 }
 
 .masthead h1 {
-  display: grid;
-  gap: 4px;
-  margin: 12px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin: 6px 0 0;
   color: #fffdf8;
-  font-size: clamp(2.6rem, 6vw, 5.4rem);
+  font-size: clamp(2.2rem, 4.2vw, 3.75rem);
   letter-spacing: -0.045em;
-  line-height: 0.98;
+  line-height: 1.05;
 }
 
 .masthead h1 span {
   color: var(--gold);
-  font-size: 0.56em;
+  font-size: 0.48em;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .lead {
-  max-width: 620px;
-  margin: 20px 0 0;
+  max-width: 720px;
+  margin: 10px 0 0;
   color: #f9f4e4;
-  font-size: clamp(1rem, 1.5vw, 1.13rem);
-  line-height: 1.85;
-}
-
-.masthead-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  margin-top: 28px;
-  padding: 0 18px;
-  border: 1px solid rgb(255 255 255 / 32%);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 10%);
-  color: #fffdf8;
-  font-size: 0.94rem;
-  font-weight: 800;
-  text-decoration: none;
-  transition:
-    background-color 160ms ease,
-    transform 160ms ease;
-}
-
-.masthead-link:hover {
-  background: rgb(255 255 255 / 20%);
-  text-decoration: none;
-  transform: translateY(-1px);
-}
-
-.masthead-link span {
-  color: var(--gold);
-  font-size: 1.15rem;
+  font-size: clamp(0.96rem, 1.3vw, 1.06rem);
+  line-height: 1.65;
 }
 
 .masthead-stats {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(150px, 1fr);
   gap: 1px;
   margin: 0;
   overflow: hidden;
   border: 1px solid rgb(255 255 255 / 20%);
-  border-radius: 16px;
+  border-radius: 14px;
   background: rgb(255 255 255 / 18%);
   backdrop-filter: blur(10px);
 }
 
 .masthead-stats > div {
-  padding: 18px;
+  padding: 13px 16px;
   background: rgb(5 40 30 / 48%);
 }
 
@@ -1024,7 +995,7 @@ body {
 }
 
 .masthead-stats dd {
-  margin: 8px 0 0;
+  margin: 3px 0 0;
   color: #fffdf8;
   font-size: clamp(1.1rem, 2vw, 1.45rem);
   font-weight: 800;
@@ -1039,15 +1010,15 @@ body {
 
 .pub-explorer {
   width: min(100% - 32px, 1320px);
-  margin: -42px auto 0;
+  margin: -24px auto 0;
   position: relative;
   z-index: 2;
 }
 
 .search-panel {
   display: grid;
-  gap: 18px;
-  padding: clamp(20px, 3vw, 32px);
+  gap: 12px;
+  padding: 16px clamp(16px, 2vw, 22px);
   border: 1px solid rgb(207 219 209 / 90%);
   border-radius: 18px;
   background: rgb(255 253 248 / 96%);
@@ -1062,11 +1033,90 @@ body {
 }
 
 .search-panel h2 {
-  margin: 5px 0 0;
+  margin: 3px 0 0;
   color: var(--ink);
-  font-size: clamp(1.32rem, 2.4vw, 1.75rem);
+  font-size: clamp(1.18rem, 2vw, 1.45rem);
   letter-spacing: -0.02em;
   line-height: 1.35;
+}
+
+.primary-search-controls {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.35fr) minmax(360px, 1fr);
+  align-items: end;
+  gap: 14px;
+}
+
+.search-control {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.search-panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #9db4a6;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.filter-toggle:hover,
+.filter-toggle[aria-expanded="true"] {
+  border-color: var(--accent-strong);
+  background: #edf8f1;
+}
+
+.filter-toggle-active {
+  border-color: #d2a23f;
+  background: var(--gold-soft);
+}
+
+.filter-toggle-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.filter-toggle-chevron {
+  color: var(--accent);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.filter-details {
+  display: grid;
+  gap: 10px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+
+.filter-details[hidden] {
+  display: none;
 }
 
 .search-label,
@@ -1097,7 +1147,7 @@ body {
 }
 
 .tag-filter-options button {
-  min-height: 36px;
+  min-height: 44px;
   padding: 6px 10px;
   border: 1px solid #afc2b5;
   border-radius: 999px;
@@ -1133,12 +1183,11 @@ body {
   position: relative;
   display: flex;
   gap: 10px;
-  max-width: 720px;
 }
 
 .search-row input {
   width: 100%;
-  min-height: 50px;
+  min-height: 48px;
   padding: 0 16px 0 46px;
   border: 1px solid #afc2b5;
   border-radius: 12px;
@@ -1165,7 +1214,7 @@ body {
 
 .search-row button,
 .filter-reset {
-  min-height: 50px;
+  min-height: 48px;
   padding: 0 16px;
   border: 1px solid var(--accent-strong);
   border-radius: 12px;
@@ -1210,7 +1259,7 @@ body {
 
 .filter-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  grid-template-columns: minmax(190px, 0.75fr) minmax(280px, 1.5fr) auto auto;
   align-items: end;
   gap: 14px;
 }
@@ -1254,8 +1303,9 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px 16px;
-  padding: 13px 14px;
+  gap: 8px 12px;
+  min-height: 72px;
+  padding: 8px 10px;
   border: 1px solid #cce4d5;
   border-radius: 12px;
   background: #f5fbf7;
@@ -1306,7 +1356,7 @@ body {
   grid-template-columns: minmax(0, 1fr) 380px;
   align-items: start;
   gap: 28px;
-  padding: 28px 0 68px;
+  padding: 18px 0 68px;
 }
 
 .map-canvas {
@@ -1403,14 +1453,16 @@ body {
 
 @media (max-width: 980px) {
   .masthead {
-    grid-template-columns: 1fr;
-    gap: 30px;
-    min-height: 0;
-    padding-bottom: 72px;
+    gap: 20px;
+    padding-bottom: 38px;
   }
 
-  .masthead-stats {
-    max-width: 500px;
+  .primary-search-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-row {
+    grid-template-columns: minmax(180px, 0.75fr) minmax(280px, 1.5fr);
   }
 
   .map-layout {
@@ -1420,41 +1472,38 @@ body {
 
 @media (max-width: 680px) {
   .masthead {
-    padding: 84px 24px 64px;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 66px 20px 32px;
   }
 
   .language-switcher {
-    top: 16px;
-    right: 16px;
+    top: 12px;
+    right: 12px;
   }
 
   .masthead h1 {
-    font-size: clamp(2.5rem, 13vw, 4rem);
+    font-size: clamp(2rem, 10vw, 2.8rem);
   }
 
   .masthead-stats {
-    width: 100%;
+    width: auto;
+    justify-self: start;
   }
 
   .masthead-stats > div {
-    padding: 15px;
+    padding: 11px 14px;
   }
 
   .pub-explorer {
     width: min(100% - 24px, 1320px);
-    margin-top: -30px;
+    margin-top: -16px;
   }
 
   .search-panel {
-    gap: 16px;
-    padding: 20px;
-    border-radius: 14px;
-  }
-
-  .search-panel-heading {
-    align-items: start;
-    flex-direction: column;
     gap: 12px;
+    padding: 16px;
+    border-radius: 14px;
   }
 
   .filter-row {
@@ -1462,7 +1511,8 @@ body {
     gap: 12px;
   }
 
-  .filter-reset {
+  .filter-reset,
+  .current-location-action {
     width: 100%;
   }
 
@@ -1470,25 +1520,26 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .current-location-action {
-    width: 100%;
+  .search-panel-footer {
+    align-items: center;
   }
 
-  .search-row {
-    flex-direction: column;
+  .search-result-count {
+    padding: 7px 9px;
+    font-size: 0.82rem;
   }
 
-  .search-row button {
-    width: 100%;
+  .filter-toggle {
+    padding-inline: 12px;
   }
 
   .map-layout {
     gap: 24px;
-    padding-top: 24px;
+    padding-top: 16px;
   }
 
   .map-canvas {
-    min-height: 440px;
+    min-height: 420px;
     border-radius: 14px;
   }
 

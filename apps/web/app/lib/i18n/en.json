@@ -10,12 +10,9 @@
   },
   "home": {
     "eyebrow": "Irish Pub Finder / Japan",
-    "lead": "Find an Irish pub for today’s drink by location, prefecture, or the kind of experience you are looking for.",
-    "findPubs": "Find a pub",
+    "lead": "Find Irish pubs across Japan quickly using the map and filters.",
     "listedInformation": "Directory information",
-    "listedPubs": "Listed pubs",
-    "howToFind": "Browse by",
-    "mapAndFilters": "Map and filters"
+    "listedPubs": "Listed pubs"
   },
   "explorer": {
     "kicker": "Find a pub",
@@ -24,7 +21,7 @@
     "searchLabel": "Search pubs",
     "searchPlaceholder": "Pub name or area",
     "clear": "Clear",
-    "currentLocationDescription": "Use your location to select the nearest listed prefecture and move the map.",
+    "currentLocationDescription": "Move the map to the nearest listed area. Your location is not stored.",
     "currentLocationAction": "Search from my location",
     "currentLocationRefresh": "Update my location",
     "currentLocationRetry": "Try my location again",
@@ -34,6 +31,9 @@
     "currentLocationDenied": "Location access was not allowed. You can still search by prefecture or other filters.",
     "currentLocationError": "Your location could not be retrieved. Check your connection or device settings and try again.",
     "currentLocationUnsupported": "Location is not available in this browser. Search by prefecture or other filters instead.",
+    "showFilters": "Filters",
+    "hideFilters": "Hide filters",
+    "activeFilterCount": "{count} detailed filter(s) active",
     "prefecture": "Prefecture",
     "allPrefectures": "All prefectures",
     "tags": "Tags",
