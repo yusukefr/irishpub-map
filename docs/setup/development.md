@@ -105,11 +105,9 @@ cp .env.example .env.local
 
 ## 店舗データの一括インポート
 
-インポート先は正規化後の `pubs`、`prefectures`、`pub_statuses`、`tags`、`pub_tags` です。既存JSONB構成を使う環境は、[店舗テーブル移行手順](../operations/database-migration.md)の001〜005を順番に実行してからインポートしてください。
+インポート先は正規化後の `pubs`、`prefectures`、`pub_statuses`、`tags`、`pub_tags` です。対象DBは[データベース定義](../specs/database.md)に記載した現行スキーマを使用してください。
 
 `scripts/import-pubs.mjs` は、JSON形式の店舗データをNeonへ追加します。`id` が既に存在する店舗は更新せずにスキップするため、同じファイルを再実行しても安全です。入力は `packages/shared` の `Pub` 型と同じ形式の配列です。リポジトリには店舗JSONを同梱していません。引数を省略した場合だけ、リポジトリルートの `pubs.json` を読み込みます。
-
-移行後の `pubs` は独立カラム構成です。既存の JSONB 構成を移行する場合は、先に [店舗テーブル移行手順](../operations/database-migration.md) を Preview／Production ごとに実行してください。
 
 Neonの接続文字列は、ローカルのシェル環境変数として一時的に設定して実行します。接続文字列は出力・コミットしません。ProductionとPreviewの接続先が異なる場合は、それぞれ実行します。
 

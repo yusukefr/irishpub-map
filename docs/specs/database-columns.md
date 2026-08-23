@@ -2,7 +2,7 @@
 
 ## 概要
 
-この文書は、`db/migrations/001`〜`007`を順に適用した後のアプリケーション用テーブルとMigration管理テーブルについて、カラム・制約・インデックスを定義します。表示文言は翻訳テーブル、言語に依存しない値は親テーブル、店舗とタグの関係は中間テーブルに保存します。
+この文書は、Issue #262で確認したNeon上の実スキーマを基準に、現在存在するアプリケーション用テーブルのカラム・制約・インデックスを定義します。現在のアプリケーション実装を照合に用い、`db/migrations` は設計経緯を確認するための補助資料として扱います。表示文言は翻訳テーブル、言語に依存しない値は親テーブル、店舗とタグの関係は中間テーブルに保存します。
 
 `NULL` 欄の「不可」は `NOT NULL` または主キー制約、「可」はDB制約上NULLを許可することを表します。
 
@@ -21,7 +21,7 @@
 | `status_code` | SMALLINT | 不可 | FK → `pub_statuses.code` | なし | 営業状況コード |
 | `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | Repositoryが更新時にも現在時刻を設定 |
 
-`municipality_code` はDB上ではNULLを許可します。Migration 006・007とRepositoryは、既存データおよび新規・更新データについて市区町村コードを解決できることを別途保証します。
+`municipality_code` はDB上ではNULLを許可します。Repositoryは、新規・更新データについて市区町村コードを解決できることを別途検証します。
 
 ## `pub_translations`
 
@@ -113,13 +113,6 @@
 | `tag_id` | UUID | 不可 | PK、FK → `tags.id` ON DELETE CASCADE | なし    | タグID      |
 
 主キーは `(pub_id, tag_id)` で、同じ店舗への同一タグの重複を防ぎます。
-
-## `schema_migrations`
-
-| カラム       | 型          | NULL | キー・参照 | DEFAULT | CHECK・用途               |
-| ------------ | ----------- | ---- | ---------- | ------- | ------------------------- |
-| `version`    | TEXT        | 不可 | PK         | なし    | 適用済みMigrationの識別子 |
-| `applied_at` | TIMESTAMPTZ | 不可 |            | `NOW()` | 適用日時                  |
 
 ## インデックス
 

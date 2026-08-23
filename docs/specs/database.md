@@ -4,7 +4,7 @@
 
 Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定された環境では、`apps/web/app/lib/pub-repository.ts` が正規化済みの店舗・マスタ・翻訳・タグ関係テーブルを読み書きします。未設定時は公開APIと管理画面が空の店舗一覧を返し、更新操作は利用できません。
 
-現行スキーマの根拠は、`db/migrations/001`〜`007`を順に適用した最終状態と `apps/web/app/lib/pub-repository.ts` です。カラム・制約・インデックスの詳細は[テーブル・カラム定義](database-columns.md)を参照してください。
+現行スキーマは、Issue #262で確認したNeon上の実スキーマを基準とし、`apps/web/app/lib/pub-repository.ts` など現在のアプリケーション実装と照合しています。`db/migrations` は設計経緯を確認するための補助資料であり、現行スキーマの根拠にはしません。カラム・制約・インデックスの詳細は[テーブル・カラム定義](database-columns.md)を参照してください。
 
 ## テーブル
 
@@ -21,7 +21,6 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 | `tags`                      | タグUUIDと正規化済み内部キーを保存                             |
 | `tag_translations`          | タグ表示名をロケール別に保存                                   |
 | `pub_tags`                  | 店舗とタグの多対多関係を保存                                   |
-| `schema_migrations`         | 適用済みのスキーマMigrationを記録                              |
 
 管理者ユーザーやセッションを保存するテーブルはありません。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理します。
 
@@ -102,15 +101,11 @@ erDiagram
     UUID pub_id PK, FK
     UUID tag_id PK, FK
   }
-  SCHEMA_MIGRATIONS {
-    TEXT version PK
-    TIMESTAMPTZ applied_at
-  }
 ```
 
 翻訳テーブルは親IDと `locale` の複合主キーを持ちます。`prefecture_translations` と `tag_translations` は、同じロケール内で表示名が重複しないよう `UNIQUE (locale, name)` も持ちます。
 
-`pubs.municipality_code` はDB上ではNULLを許可しますが、Migration 006・007は既存店舗の解決漏れがないことを検証し、Repositoryの追加・更新処理も日本語の市区町村表示名から一意にコードを解決できない入力を拒否します。
+`pubs.municipality_code` はDB上ではNULLを許可します。Repositoryの追加・更新処理は、日本語の市区町村表示名から一意にコードを解決できない入力を拒否します。
 
 ## 翻訳の選択
 
@@ -134,6 +129,5 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 - [正規化方針](database-normalization.md)
 - [店舗データ仕様](data.md)
 - [タグの正規化仕様](tag-normalization.md)
-- [店舗テーブル移行手順](../operations/database-migration.md)
 - [API 方針](api.md)
 - [システム構成](../architecture/system-overview.md)
