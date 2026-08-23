@@ -1115,6 +1115,10 @@ body {
   border-top: 1px solid var(--line);
 }
 
+.filter-details[hidden] {
+  display: none;
+}
+
 .search-label,
 .filter-row label {
   color: var(--ink);

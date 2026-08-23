@@ -102,17 +102,22 @@ describe("PubExplorer", () => {
     render(<PubExplorer pubs={pubs} />);
 
     const toggle = screen.getByRole("button", { name: "条件を指定" });
+    const filterDetails = document.getElementById("pub-filter-options");
+
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(toggle).toHaveAttribute("aria-controls", "pub-filter-options");
-    expect(screen.queryByLabelText("都道府県")).not.toBeInTheDocument();
+    expect(filterDetails).toHaveAttribute("hidden");
+    expect(screen.queryByRole("combobox", { name: "都道府県" })).not.toBeInTheDocument();
 
     openDetailedFilters();
     expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(filterDetails).not.toHaveAttribute("hidden");
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
     expect(screen.getByLabelText("詳細条件1件を適用中")).toHaveTextContent("1");
 
     fireEvent.click(screen.getByRole("button", { name: /条件を閉じる/ }));
-    expect(screen.queryByLabelText("都道府県")).not.toBeInTheDocument();
+    expect(filterDetails).toHaveAttribute("hidden");
+    expect(screen.queryByRole("combobox", { name: "都道府県" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("詳細条件1件を適用中")).toBeInTheDocument();
   });
 

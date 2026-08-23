@@ -226,73 +226,71 @@ export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
             </span>
           </button>
         </div>
-        {isFiltersExpanded ? (
-          <div className="filter-details" id="pub-filter-options">
-            <div className="filter-row">
-              <label htmlFor="pub-prefecture-filter">
-                {t.explorer.prefecture}
-                <select
-                  id="pub-prefecture-filter"
-                  value={selectedPrefecture}
-                  onChange={(event) => {
-                    hasSelectedPrefecture.current = true;
-                    setSelectedPrefecture(event.target.value);
-                    setSelectedPubId(null);
-                  }}
-                >
-                  <option value="">{t.explorer.allPrefectures}</option>
-                  {availablePrefectures.map((prefecture) => (
-                    <option value={prefecture} key={prefecture}>
-                      {prefecture}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <fieldset className="tag-filter">
-                <legend>{t.explorer.tags}</legend>
-                <div className="tag-filter-options">
-                  {availableTags.map((tag) => {
-                    const isSelected = selectedTags.includes(tag);
+        <div className="filter-details" id="pub-filter-options" hidden={!isFiltersExpanded}>
+          <div className="filter-row">
+            <label htmlFor="pub-prefecture-filter">
+              {t.explorer.prefecture}
+              <select
+                id="pub-prefecture-filter"
+                value={selectedPrefecture}
+                onChange={(event) => {
+                  hasSelectedPrefecture.current = true;
+                  setSelectedPrefecture(event.target.value);
+                  setSelectedPubId(null);
+                }}
+              >
+                <option value="">{t.explorer.allPrefectures}</option>
+                {availablePrefectures.map((prefecture) => (
+                  <option value={prefecture} key={prefecture}>
+                    {prefecture}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <fieldset className="tag-filter">
+              <legend>{t.explorer.tags}</legend>
+              <div className="tag-filter-options">
+                {availableTags.map((tag) => {
+                  const isSelected = selectedTags.includes(tag);
 
-                    return (
-                      <button
-                        type="button"
-                        key={tag}
-                        aria-pressed={isSelected}
-                        onClick={() => {
-                          setSelectedTags((current) =>
-                            isSelected ? current.filter((item) => item !== tag) : [...current, tag],
-                          );
-                          setSelectedPubId(null);
-                        }}
-                      >
-                        {pubs.find((pub) => pub.tags.includes(tag))?.tagDisplayNames?.[tag] ?? getTagLabel(locale, tag)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-              <label className="closed-filter">
-                <input
-                  type="checkbox"
-                  checked={includeClosed}
-                  aria-label={t.explorer.includeClosed}
-                  onChange={(event) => {
-                    setIncludeClosed(event.target.checked);
-                    setSelectedPubId(null);
-                  }}
-                />
-                <span>{t.explorer.includeClosed}</span>
-              </label>
-              {hasActiveFilters ? (
-                <button type="button" className="filter-reset" onClick={resetFilters}>
-                  {t.explorer.resetFilters}
-                </button>
-              ) : null}
-            </div>
-            <p className="search-help">{t.explorer.help}</p>
+                  return (
+                    <button
+                      type="button"
+                      key={tag}
+                      aria-pressed={isSelected}
+                      onClick={() => {
+                        setSelectedTags((current) =>
+                          isSelected ? current.filter((item) => item !== tag) : [...current, tag],
+                        );
+                        setSelectedPubId(null);
+                      }}
+                    >
+                      {pubs.find((pub) => pub.tags.includes(tag))?.tagDisplayNames?.[tag] ?? getTagLabel(locale, tag)}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+            <label className="closed-filter">
+              <input
+                type="checkbox"
+                checked={includeClosed}
+                aria-label={t.explorer.includeClosed}
+                onChange={(event) => {
+                  setIncludeClosed(event.target.checked);
+                  setSelectedPubId(null);
+                }}
+              />
+              <span>{t.explorer.includeClosed}</span>
+            </label>
+            {hasActiveFilters ? (
+              <button type="button" className="filter-reset" onClick={resetFilters}>
+                {t.explorer.resetFilters}
+              </button>
+            ) : null}
           </div>
-        ) : null}
+          <p className="search-help">{t.explorer.help}</p>
+        </div>
       </section>
 
       <section className="map-layout" aria-label={t.explorer.mapAndListLabel}>
