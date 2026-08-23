@@ -5,7 +5,7 @@ import { type ErrorEvent, Map, Marker, NavigationControl, Popup, setWorkerUrl } 
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { Coordinates } from "../lib/pub-search";
-import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
+import { formatMessage, getTranslation, type Locale, type Translation } from "../lib/i18n";
 
 const NON_OPEN_PUB_MARKER_COLOR = "#6b7280";
 
@@ -13,6 +13,8 @@ const DEFAULT_MAP_CENTER: [number, number] = [139.767, 35.681];
 const DEFAULT_MAP_ZOOM = 5;
 const CURRENT_LOCATION_ZOOM = 12;
 const MAP_LOAD_TIMEOUT_MS = 15_000;
+const POPUP_CLOSE_DELAY_MS = 160;
+const HOVER_POINTER_MEDIA_QUERY = "(hover: hover) and (pointer: fine)";
 
 const OPEN_FREE_MAP_BRIGHT_STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
 const MAPLIBRE_WORKER_URL = "/maplibre/maplibre-gl-worker.mjs";
@@ -66,6 +68,7 @@ export function PubMap({
   // Style の非同期ロード完了時にも最新のサイト言語を反映します。
   const localeRef = useRef(locale);
   const markersRef = useRef(new globalThis.Map<string, Marker>());
+  const activeHoverPopupRef = useRef<Popup | null>(null);
   const currentLocationMarkerRef = useRef<Marker | null>(null);
   // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
   const onSelectPubRef = useRef(onSelectPub);
@@ -172,9 +175,18 @@ export function PubMap({
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current.clear();
     markerElementsRef.current.clear();
+    const popupInteractionCleanups: Array<() => void> = [];
 
     pubs.forEach((pub) => {
-      const popup = new Popup({ offset: 18 }).setDOMContent(createPopupContent(pub));
+      const popupContent = createPopupContent(pub, t);
+      const popup = new Popup({
+        offset: 18,
+        closeButton: false,
+        closeOnClick: true,
+        className: "pub-map-popup",
+      })
+        .setMaxWidth("min(320px, calc(100vw - 32px))")
+        .setDOMContent(popupContent);
       const markerElement = createMarkerElement(
         pub,
         false,
@@ -188,8 +200,13 @@ export function PubMap({
 
       markerElementsRef.current.set(pub.id, markerElement);
       markersRef.current.set(pub.id, marker);
+      popupInteractionCleanups.push(enableHoverPopup(markerElement, popupContent, popup, map, activeHoverPopupRef));
     });
-  }, [pubs, t.map.selectPub]);
+
+    return () => {
+      popupInteractionCleanups.forEach((cleanup) => cleanup());
+    };
+  }, [pubs, t]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -280,16 +297,222 @@ function canCreateWebglContext() {
   );
 }
 
-function createPopupContent(pub: Pub) {
+function createPopupContent(pub: Pub, t: Translation) {
   const content = document.createElement("div");
-  const name = document.createElement("strong");
-  name.textContent = pub.name;
-  const location = document.createElement("span");
-  location.textContent = `${pub.prefecture}${pub.city ? ` / ${pub.city}` : ""}`;
+  content.className = "pub-map-popup-card";
 
-  content.append(name, document.createElement("br"), location);
+  const name = document.createElement("h3");
+  name.className = "pub-map-popup-name";
+  name.textContent = pub.name;
+  const address = document.createElement("p");
+  address.className = "pub-map-popup-address";
+  address.textContent = pub.address;
+
+  content.append(name, address);
+
+  const links = [
+    createPopupLink(pub.websiteUrl, {
+      className: "pub-map-popup-website",
+      label: formatMessage(t.list.officialWebsiteNewTab, { name: pub.name }),
+      text: t.list.officialWebsite,
+      icon: createExternalLinkIcon(),
+    }),
+    createPopupLink(pub.googleMapsUrl, {
+      className: "pub-map-popup-icon-link",
+      label: formatMessage(t.list.externalServiceNewTab, { name: pub.name, service: "Google Maps" }),
+      title: "Google Maps",
+      icon: createMapPinIcon(),
+    }),
+    createPopupLink(pub.instagramUrl, {
+      className: "pub-map-popup-icon-link",
+      label: formatMessage(t.list.externalServiceNewTab, { name: pub.name, service: "Instagram" }),
+      title: "Instagram",
+      icon: createInstagramIcon(),
+    }),
+  ].filter((link): link is HTMLAnchorElement => link !== null);
+
+  if (links.length > 0) {
+    const linkGroup = document.createElement("div");
+    linkGroup.className = "pub-map-popup-links";
+    linkGroup.setAttribute("role", "group");
+    linkGroup.setAttribute("aria-label", formatMessage(t.list.externalLinksLabel, { name: pub.name }));
+    linkGroup.append(...links);
+    content.append(linkGroup);
+  }
 
   return content;
+}
+
+type PopupLinkOptions = {
+  className: string;
+  label: string;
+  text?: string;
+  title?: string;
+  icon: SVGSVGElement;
+};
+
+function createPopupLink(href: string | null | undefined, options: PopupLinkOptions) {
+  const safeHref = getSafeExternalUrl(href);
+
+  if (!safeHref) {
+    return null;
+  }
+
+  const link = document.createElement("a");
+  link.className = options.className;
+  link.href = safeHref;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.setAttribute("aria-label", options.label);
+
+  if (options.title) {
+    link.title = options.title;
+  }
+
+  if (options.text) {
+    const label = document.createElement("span");
+    label.textContent = options.text;
+    link.append(label);
+  }
+
+  link.append(options.icon);
+  return link;
+}
+
+function getSafeExternalUrl(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function createSvgIcon() {
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("aria-hidden", "true");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  return icon;
+}
+
+function createExternalLinkIcon() {
+  const icon = createSvgIcon();
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", "M14 4h6v6M20 4l-9 9M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5");
+  icon.append(path);
+  return icon;
+}
+
+function createMapPinIcon() {
+  const icon = createSvgIcon();
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", "M20 10c0 5-8 10-8 10S4 15 4 10a8 8 0 1 1 16 0Z");
+  const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  circle.setAttribute("cx", "12");
+  circle.setAttribute("cy", "10");
+  circle.setAttribute("r", "2.5");
+  icon.append(path, circle);
+  return icon;
+}
+
+function createInstagramIcon() {
+  const icon = createSvgIcon();
+  const outline = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  outline.setAttribute("x", "3.5");
+  outline.setAttribute("y", "3.5");
+  outline.setAttribute("width", "17");
+  outline.setAttribute("height", "17");
+  outline.setAttribute("rx", "4.5");
+  const lens = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  lens.setAttribute("cx", "12");
+  lens.setAttribute("cy", "12");
+  lens.setAttribute("r", "4");
+  const indicator = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  indicator.setAttribute("cx", "17.3");
+  indicator.setAttribute("cy", "6.8");
+  indicator.setAttribute("r", "1");
+  indicator.classList.add("icon-fill");
+  icon.append(outline, lens, indicator);
+  return icon;
+}
+
+/** hover可能端末だけMarkerとPopupの間を移動できる表示制御を追加します。 */
+function enableHoverPopup(
+  markerElement: HTMLElement,
+  popupContent: HTMLElement,
+  popup: Popup,
+  map: Map,
+  activePopupRef: { current: Popup | null },
+) {
+  if (!window.matchMedia?.(HOVER_POINTER_MEDIA_QUERY).matches) {
+    return () => undefined;
+  }
+
+  let markerHovered = false;
+  let popupHovered = false;
+  let closeTimeoutId: number | undefined;
+
+  const cancelClose = () => {
+    window.clearTimeout(closeTimeoutId);
+    closeTimeoutId = undefined;
+  };
+  const openPopup = () => {
+    cancelClose();
+    if (activePopupRef.current !== popup) {
+      activePopupRef.current?.remove();
+      activePopupRef.current = popup;
+    }
+    if (!popup.isOpen()) {
+      popup.addTo(map);
+    }
+  };
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimeoutId = window.setTimeout(() => {
+      if (!markerHovered && !popupHovered) {
+        popup.remove();
+        if (activePopupRef.current === popup) {
+          activePopupRef.current = null;
+        }
+      }
+    }, POPUP_CLOSE_DELAY_MS);
+  };
+  const handleMarkerEnter = () => {
+    markerHovered = true;
+    openPopup();
+  };
+  const handleMarkerLeave = () => {
+    markerHovered = false;
+    scheduleClose();
+  };
+  const handlePopupEnter = () => {
+    popupHovered = true;
+    cancelClose();
+  };
+  const handlePopupLeave = () => {
+    popupHovered = false;
+    scheduleClose();
+  };
+
+  markerElement.addEventListener("mouseenter", handleMarkerEnter);
+  markerElement.addEventListener("mouseleave", handleMarkerLeave);
+  popupContent.addEventListener("mouseenter", handlePopupEnter);
+  popupContent.addEventListener("mouseleave", handlePopupLeave);
+
+  return () => {
+    cancelClose();
+    markerElement.removeEventListener("mouseenter", handleMarkerEnter);
+    markerElement.removeEventListener("mouseleave", handleMarkerLeave);
+    popupContent.removeEventListener("mouseenter", handlePopupEnter);
+    popupContent.removeEventListener("mouseleave", handlePopupLeave);
+    if (activePopupRef.current === popup) {
+      activePopupRef.current = null;
+    }
+  };
 }
 
 function createMarkerElement(

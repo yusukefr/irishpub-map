@@ -17,8 +17,13 @@ export const maplibreMock = {
   markerSetPopup: vi.fn(),
   markerAddTo: vi.fn(),
   markerRemove: vi.fn(),
+  popupConstructor: vi.fn(),
   popupSetHTML: vi.fn(),
   popupSetDOMContent: vi.fn(),
+  popupSetMaxWidth: vi.fn(),
+  popupAddTo: vi.fn(),
+  popupIsOpen: vi.fn(),
+  popupRemove: vi.fn(),
   navigationControl: vi.fn(),
   mapConstructor: vi.fn(),
   shouldThrowMapConstructor: false,
@@ -45,8 +50,13 @@ export function resetMaplibreMock() {
   maplibreMock.markerSetPopup.mockClear();
   maplibreMock.markerAddTo.mockClear();
   maplibreMock.markerRemove.mockClear();
+  maplibreMock.popupConstructor.mockClear();
   maplibreMock.popupSetHTML.mockClear();
   maplibreMock.popupSetDOMContent.mockClear();
+  maplibreMock.popupSetMaxWidth.mockClear();
+  maplibreMock.popupAddTo.mockClear();
+  maplibreMock.popupIsOpen.mockClear();
+  maplibreMock.popupRemove.mockClear();
   maplibreMock.navigationControl.mockClear();
   maplibreMock.mapConstructor.mockClear();
   mapEventListeners.clear();
@@ -99,8 +109,43 @@ export class Marker {
 }
 
 export class Popup {
-  setHTML = maplibreMock.popupSetHTML.mockReturnThis();
-  setDOMContent = maplibreMock.popupSetDOMContent.mockReturnThis();
+  private open = false;
+
+  constructor(options?: unknown) {
+    maplibreMock.popupConstructor(options);
+  }
+
+  setHTML(html: string) {
+    maplibreMock.popupSetHTML(html);
+    return this;
+  }
+
+  setDOMContent(content: Node) {
+    maplibreMock.popupSetDOMContent(content);
+    return this;
+  }
+
+  setMaxWidth(maxWidth: string) {
+    maplibreMock.popupSetMaxWidth(maxWidth);
+    return this;
+  }
+
+  addTo(map: Map) {
+    maplibreMock.popupAddTo(map);
+    this.open = true;
+    return this;
+  }
+
+  isOpen() {
+    maplibreMock.popupIsOpen();
+    return this.open;
+  }
+
+  remove = () => {
+    maplibreMock.popupRemove();
+    this.open = false;
+    return this;
+  };
 }
 
 export const NavigationControl = maplibreMock.navigationControl;

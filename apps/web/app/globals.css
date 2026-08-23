@@ -256,6 +256,86 @@ h1 {
   transform: translateY(-2px);
 }
 
+.pub-map-popup .maplibregl-popup-content {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 12px 30px rgb(22 35 28 / 22%);
+}
+
+.pub-map-popup-card {
+  min-width: min(260px, calc(100vw - 32px));
+  color: var(--ink);
+}
+
+.pub-map-popup-name {
+  margin: 0;
+  padding: 16px 16px 6px;
+  color: var(--accent-strong);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.pub-map-popup-address {
+  margin: 0;
+  padding: 0 16px 14px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.pub-map-popup-links {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid var(--line);
+  background: var(--background);
+}
+
+.pub-map-popup-links a {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: var(--accent-strong);
+  text-decoration: none;
+}
+
+.pub-map-popup-links a:hover {
+  background: var(--gold-soft);
+}
+
+.pub-map-popup-links svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.pub-map-popup-links .icon-fill {
+  fill: currentcolor;
+  stroke: none;
+}
+
+.pub-map-popup-website {
+  gap: 6px;
+  padding: 0 10px;
+  font-weight: 700;
+}
+
+.pub-map-popup-website svg {
+  width: 16px;
+  height: 16px;
+}
+
 .current-location-marker {
   position: relative;
   width: 18px;
