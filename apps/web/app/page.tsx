@@ -76,10 +76,6 @@ export default async function Home() {
             <span>in Japan</span>
           </h1>
           <p className="lead">{t.home.lead}</p>
-          <a className="masthead-link" href="#pub-search">
-            {t.home.findPubs}
-            <span aria-hidden="true">↓</span>
-          </a>
         </div>
         <dl className="masthead-stats" aria-label={t.home.listedInformation}>
           <div>
@@ -88,10 +84,6 @@ export default async function Home() {
               {pubList.length}
               <span> pubs</span>
             </dd>
-          </div>
-          <div>
-            <dt>{t.home.howToFind}</dt>
-            <dd>{t.home.mapAndFilters}</dd>
           </div>
         </dl>
       </section>

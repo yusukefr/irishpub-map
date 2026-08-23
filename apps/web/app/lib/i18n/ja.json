@@ -10,12 +10,9 @@
   },
   "home": {
     "eyebrow": "Irish Pub Finder / Japan",
-    "lead": "現在地や都道府県、好きな過ごし方から。今日の一杯に合う Irish Pub を、地図から探せます。",
-    "findPubs": "パブを探す",
+    "lead": "日本全国の Irish Pub を、地図と条件からすばやく探せます。",
     "listedInformation": "掲載情報",
-    "listedPubs": "掲載店舗",
-    "howToFind": "探し方",
-    "mapAndFilters": "地図・条件"
+    "listedPubs": "掲載店舗"
   },
   "explorer": {
     "kicker": "Find a pub",
@@ -24,7 +21,7 @@
     "searchLabel": "店舗を検索",
     "searchPlaceholder": "店舗名、エリア",
     "clear": "クリア",
-    "currentLocationDescription": "現在地に近い掲載都道府県を選択して地図を移動します。",
+    "currentLocationDescription": "現在地に近い掲載エリアへ地図を移動します。位置情報は保存しません。",
     "currentLocationAction": "現在地から探す",
     "currentLocationRefresh": "現在地を更新",
     "currentLocationRetry": "現在地を再試行",
@@ -34,6 +31,9 @@
     "currentLocationDenied": "位置情報の利用が許可されませんでした。都道府県や検索条件から引き続き探せます。",
     "currentLocationError": "現在地を取得できませんでした。通信や端末の設定を確認して、もう一度お試しください。",
     "currentLocationUnsupported": "このブラウザでは位置情報を利用できません。都道府県や検索条件から探せます。",
+    "showFilters": "条件を指定",
+    "hideFilters": "条件を閉じる",
+    "activeFilterCount": "詳細条件{count}件を適用中",
     "prefecture": "都道府県",
     "allPrefectures": "すべての都道府県",
     "tags": "タグ",
