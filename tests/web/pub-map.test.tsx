@@ -1,6 +1,6 @@
 // MapLibre初期化、ピン、表示範囲、WebGLフォールバックを保証するテストです。
 import { readFileSync } from "node:fs";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PubMap } from "../../apps/web/app/components/pub-map";
 import type { Pub } from "../../packages/shared/src/pub";
@@ -18,7 +18,7 @@ const pubs: Pub[] = [
     longitude: 139.767,
     websiteUrl: "https://example.com",
     googleMapsUrl: "https://maps.example.com",
-    instagramUrl: null,
+    instagramUrl: "https://instagram.example.com/tokyo-sample",
     tags: ["guinness"],
     status: "open",
   },
@@ -53,6 +53,22 @@ const pubs: Pub[] = [
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
 
 /** WebGLの利用可否を切り替え、通常表示とフォールバックを再現します。 */
+function mockHoverCapability(canHover: boolean) {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn().mockReturnValue({
+      matches: canHover,
+      media: "(hover: hover) and (pointer: fine)",
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }),
+  );
+}
+
 function mockWebglContext(context: object | null) {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((contextId: string) => {
     if (contextId === "webgl" || contextId === "experimental-webgl") {
@@ -67,11 +83,13 @@ describe("PubMap", () => {
   beforeEach(() => {
     resetMaplibreMock();
     mockWebglContext({});
+    mockHoverCapability(false);
   });
 
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     HTMLCanvasElement.prototype.getContext = originalGetContext;
   });
 
@@ -111,16 +129,42 @@ describe("PubMap", () => {
     expect(closedMarkerOptions.element).toHaveClass("pub-map-marker-closed");
     expect(closedMarkerOptions.element).toHaveStyle({ "--pub-marker-color": "#6b7280" });
     expect(maplibreMock.popupSetHTML).not.toHaveBeenCalled();
+    expect(maplibreMock.popupConstructor).toHaveBeenNthCalledWith(1, {
+      offset: 18,
+      closeButton: false,
+      closeOnClick: true,
+      className: "pub-map-popup",
+    });
+    expect(maplibreMock.popupSetLngLat).toHaveBeenNthCalledWith(1, [139.767, 35.681]);
+    expect(maplibreMock.popupSetLngLat).toHaveBeenNthCalledWith(2, [135.502, 34.693]);
+    expect(maplibreMock.popupSetLngLat).toHaveBeenNthCalledWith(3, [135.768, 35.011]);
+    expect(maplibreMock.markerSetPopup).not.toHaveBeenCalled();
+    expect(maplibreMock.popupSetMaxWidth).toHaveBeenCalledWith("min(320px, calc(100vw - 32px))");
     expect(maplibreMock.popupSetDOMContent).toHaveBeenCalledTimes(3);
-    expect((maplibreMock.popupSetDOMContent.mock.calls[0][0] as HTMLElement).textContent).toBe(
-      "Tokyo Sample Pub東京都 / 千代田区",
-    );
-    expect((maplibreMock.popupSetDOMContent.mock.calls[1][0] as HTMLElement).textContent).toBe(
-      "Osaka Sample Pub大阪府",
-    );
-    expect((maplibreMock.popupSetDOMContent.mock.calls[2][0] as HTMLElement).textContent).toBe(
-      "Closed Sample Pub京都府",
-    );
+
+    const tokyoPopup = maplibreMock.popupSetDOMContent.mock.calls[0][0] as HTMLElement;
+    expect(within(tokyoPopup).getByRole("heading", { name: "Tokyo Sample Pub" })).toBeTruthy();
+    expect(within(tokyoPopup).getByText("東京都千代田区1-1-1")).toBeTruthy();
+    expect(within(tokyoPopup).getByRole("group", { name: "Tokyo Sample Pub の外部リンク" })).toBeTruthy();
+    const popupLinks = within(tokyoPopup).getAllByRole("link");
+    expect(popupLinks).toHaveLength(3);
+    expect(
+      within(tokyoPopup).getByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" }),
+    ).toHaveAttribute("href", "https://example.com/");
+    expect(
+      within(tokyoPopup).getByRole("link", { name: "Tokyo Sample Pub のGoogle Mapsを新しいタブで開く" }),
+    ).toHaveAttribute("title", "Google Maps");
+    expect(
+      within(tokyoPopup).getByRole("link", { name: "Tokyo Sample Pub のInstagramを新しいタブで開く" }),
+    ).toHaveAttribute("title", "Instagram");
+    popupLinks.forEach((link) => {
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    });
+
+    const osakaPopup = maplibreMock.popupSetDOMContent.mock.calls[1][0] as HTMLElement;
+    expect(within(osakaPopup).getByText("大阪府大阪市1-1-1")).toBeTruthy();
+    expect(within(osakaPopup).queryByRole("link")).toBeNull();
     expect(screen.queryByText("地図を表示できませんでした")).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("地図を読み込んでいます…");
     expect(maplibreMock.mapOn).toHaveBeenCalledWith("load", expect.any(Function));
@@ -158,6 +202,69 @@ describe("PubMap", () => {
       ["get", "name"],
     ]);
     expect(maplibreMock.mapSetLayoutProperty).not.toHaveBeenCalledWith("poi_r1", "text-field", expect.anything());
+
+    const englishPopup = maplibreMock.popupSetDOMContent.mock.calls[3][0] as HTMLElement;
+    expect(
+      within(englishPopup).getByRole("link", { name: "Open Tokyo Sample Pub's website in a new tab" }),
+    ).toBeTruthy();
+    expect(
+      within(englishPopup).getByRole("link", { name: "Open Tokyo Sample Pub on Google Maps in a new tab" }),
+    ).toBeTruthy();
+  });
+
+  it("keeps the popup open while moving from a marker to its interactive content", () => {
+    vi.useFakeTimers();
+    mockHoverCapability(true);
+    render(<PubMap pubs={[pubs[0]]} />);
+
+    const marker = (maplibreMock.markerConstructor.mock.calls[0][0] as { element: HTMLElement }).element;
+    const popupContent = maplibreMock.popupSetDOMContent.mock.calls[0][0] as HTMLElement;
+
+    fireEvent.mouseEnter(marker);
+    expect(maplibreMock.popupAddTo).toHaveBeenCalledTimes(1);
+
+    fireEvent.mouseLeave(marker);
+    act(() => vi.advanceTimersByTime(100));
+    fireEvent.mouseEnter(popupContent);
+    act(() => vi.advanceTimersByTime(160));
+    expect(maplibreMock.popupRemove).not.toHaveBeenCalled();
+
+    fireEvent.mouseLeave(popupContent);
+    act(() => vi.advanceTimersByTime(160));
+    expect(maplibreMock.popupRemove).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a hover-open popup pinned after the marker is clicked", () => {
+    vi.useFakeTimers();
+    mockHoverCapability(true);
+    render(<PubMap pubs={[pubs[0]]} />);
+
+    const marker = (maplibreMock.markerConstructor.mock.calls[0][0] as { element: HTMLElement }).element;
+
+    fireEvent.mouseEnter(marker);
+    expect(maplibreMock.popupAddTo).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(marker);
+    fireEvent.mouseLeave(marker);
+    act(() => vi.advanceTimersByTime(160));
+
+    expect(maplibreMock.popupAddTo).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.popupRemove).not.toHaveBeenCalled();
+  });
+
+  it("opens on marker tap and closes on an outside tap on touch devices", () => {
+    mockHoverCapability(false);
+    render(<PubMap pubs={[pubs[0]]} />);
+
+    const marker = (maplibreMock.markerConstructor.mock.calls[0][0] as { element: HTMLElement }).element;
+    fireEvent.click(marker);
+
+    expect(maplibreMock.popupAddTo).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.markerSetPopup).not.toHaveBeenCalled();
+
+    act(() => emitMapEvent("click"));
+
+    expect(maplibreMock.popupRemove).toHaveBeenCalledTimes(1);
   });
 
   it("uses the same gray marker for every non-open status", () => {
@@ -252,8 +359,7 @@ describe("PubMap", () => {
       ...pubs[0],
       id: "html-like-sample",
       name: '<img src=x onerror="alert(1)">',
-      prefecture: "<script>prefecture</script>",
-      city: "中央区<script>alert(1)</script>",
+      address: "<script>address</script>",
     };
 
     render(<PubMap pubs={[htmlLikePub]} />);
@@ -262,11 +368,24 @@ describe("PubMap", () => {
     expect(maplibreMock.popupSetDOMContent).toHaveBeenCalledTimes(1);
 
     const popupContent = maplibreMock.popupSetDOMContent.mock.calls[0][0] as HTMLElement;
-    expect(popupContent.textContent).toBe(
-      '<img src=x onerror="alert(1)"><script>prefecture</script> / 中央区<script>alert(1)</script>',
-    );
+    expect(popupContent.textContent).toContain('<img src=x onerror="alert(1)"><script>address</script>');
     expect(popupContent.querySelector("img")).toBeNull();
     expect(popupContent.querySelector("script")).toBeNull();
+  });
+
+  it("omits external links with unsupported or malformed URLs", () => {
+    const unsafeUrlPub: Pub = {
+      ...pubs[0],
+      websiteUrl: "javascript:alert(1)",
+      googleMapsUrl: "data:text/html,unsafe",
+      instagramUrl: "not-a-url",
+    };
+
+    render(<PubMap pubs={[unsafeUrlPub]} />);
+
+    const popupContent = maplibreMock.popupSetDOMContent.mock.calls[0][0] as HTMLElement;
+    expect(within(popupContent).queryByRole("link")).toBeNull();
+    expect(within(popupContent).queryByRole("group")).toBeNull();
   });
 
   it("shows a fallback message when WebGL is unavailable", async () => {
@@ -316,6 +435,11 @@ describe("PubMap", () => {
     act(() => vi.advanceTimersByTime(15_000));
 
     expect(screen.getByRole("alert")).toHaveTextContent("地図タイルの読み込みに失敗しました");
+  });
+
+  it("provides pointer cues and 44px popup link targets", () => {
+    expect(globalStyles).toMatch(/\.pub-map-marker \{[\s\S]*cursor: pointer;/);
+    expect(globalStyles).toMatch(/\.pub-map-popup-links a \{[\s\S]*min-width: 44px;[\s\S]*min-height: 44px;/);
   });
 
   it("uses a static loading indicator when reduced motion is preferred", () => {
