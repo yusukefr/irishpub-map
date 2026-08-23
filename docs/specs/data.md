@@ -2,15 +2,11 @@
 
 ## 概要
 
-DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、タグを pub_tags の複数行、市区町村コードを municipality_codes のマスタとして保存します。公開APIはNeonの店舗データを返し、市区町村名から `municipalityCode` を解決できた場合に付加します。
+公開API、Web、管理画面は `packages/shared/src/pub.ts` の共有 `Pub` 型を使用します。永続化時は、言語に依存しない属性を `pubs`、表示文言を各翻訳テーブル、タグを `tags` と `pub_tags` に分けて保存します。DB構成は[データベース定義書](database.md)、カラムと制約は[テーブル・カラム定義](database-columns.md)を参照してください。
 
-型定義と検証ロジックは `packages/shared/src/pub.ts` にあります。Neon Postgres の項目別カラム、制約、インデックスは[項目別カラムの定義](database-columns.md)を参照してください。既存 DB の移行は[移行手順](../operations/database-migration.md)に従います。
+店舗データはNeon Postgresを正とします。`DATABASE_URL` が未設定の環境では公開APIと管理画面は空の店舗一覧を表示し、更新操作は利用できません。
 
-店舗データはNeonの `pubs` テーブルを正とします。`DATABASE_URL` が未設定の環境では公開APIと管理画面は空の店舗一覧を表示し、更新操作は利用できません。新規データは管理画面または一括インポート手順でNeonへ投入します。
-
-読み出した配列は `asPubs` で検証します。配列以外、必須項目の欠落、不正な緯度経度、重複した `id`、未定義の `status` を含むデータは受け付けません。タグは `packages/shared/src/tag-definitions.json` の内部キーへ正規化し、店舗内の重複を除去します。詳細は [タグの正規化仕様](tag-normalization.md) を参照してください。
-
-## データ形式
+## APIデータ形式
 
 ```json
 {
@@ -19,6 +15,7 @@ DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、�
   "kana": "ざだぶりなーず あいりっしゅぱぶ しんじゅく",
   "prefecture": "東京都",
   "city": "新宿区",
+  "municipalityCode": "131041",
   "address": "東京都新宿区...",
   "latitude": 35.0,
   "longitude": 139.0,
@@ -26,48 +23,62 @@ DBでは都道府県を prefectures.code、営業状況を pub_statuses.code、�
   "googleMapsUrl": "https://maps.google.com/...",
   "instagramUrl": null,
   "tags": ["guinness", "live-music", "food"],
-  "status": "unknown"
+  "tagDisplayNames": {
+    "guinness": "ギネス",
+    "live-music": "ライブ音楽",
+    "food": "食事あり"
+  },
+  "status": "open",
+  "statusDisplayName": "営業中"
 }
 ```
 
 ## フィールド
 
-| フィールド         | 型             | 必須 | 説明                                      |
-| ------------------ | -------------- | ---- | ----------------------------------------- |
-| `id`               | string         | yes  | 店舗を一意に識別するRFC 4122 UUID         |
-| `name`             | string         | yes  | 店舗名                                    |
-| `kana`             | string         | no   | 店舗名の読み（ひらがな）。かな検索に使用  |
-| `prefecture`       | string         | yes  | DB登録時は共有定義の47都道府県名に限定    |
-| `city`             | string         | no   | 市区町村                                  |
-| `municipalityCode` | string or null | no   | 市区町村マスタから解決した6桁の団体コード |
-| `address`          | string         | yes  | 住所                                      |
-| `latitude`         | number         | yes  | 緯度                                      |
-| `longitude`        | number         | yes  | 経度                                      |
-| `websiteUrl`       | string \| null | no   | HTTP(S)の公式サイト URL                   |
-| `googleMapsUrl`    | string \| null | no   | HTTP(S)のGoogle Maps URL                  |
-| `instagramUrl`     | string \| null | no   | HTTP(S)のInstagram URL                    |
-| `tags`             | string[]       | yes  | 検索・絞り込み用タグ                      |
-| `status`           | string         | yes  | 店舗状態                                  |
+| フィールド | 型 | 必須 | DBでの取得元・説明 |
+| --- | --- | --- | --- |
+| `id` | string | yes | `pubs.id`。RFC 4122 UUID |
+| `name` | string | yes | 選択ロケールの `pub_translations.name` |
+| `kana` | string \| null | no | 選択ロケールの `pub_translations.name_reading` |
+| `prefecture` | string | yes | 選択ロケールの `prefecture_translations.name` |
+| `city` | string \| null | no | 選択ロケールの `municipality_translations.name` |
+| `municipalityCode` | string \| null | no | `pubs.municipality_code`。有効な場合は数字6桁 |
+| `address` | string | yes | 選択ロケールの `pub_translations.address` |
+| `latitude` | number | yes | `pubs.latitude` |
+| `longitude` | number | yes | `pubs.longitude` |
+| `websiteUrl` | string \| null | no | `pubs.website_url`。HTTP(S) URL |
+| `googleMapsUrl` | string \| null | no | `pubs.google_maps_url`。HTTP(S) URL |
+| `instagramUrl` | string \| null | no | `pubs.instagram_url`。HTTP(S) URL |
+| `tags` | string[] | yes | `pub_tags` で関連付く `tags.key` |
+| `tagDisplayNames` | Record<string, string> | no | 内部キーを選択ロケールの `tag_translations.name` へ対応付けた値 |
+| `status` | string | yes | `pubs.status_code` に対応する共有営業状況値 |
+| `statusDisplayName` | string | no | 選択ロケールの `pub_status_translations.display_name` |
 
-## `status`
+## ロケール
 
-現在利用できる値:
+一覧取得では要求ロケールの翻訳を優先し、登録がない場合は日本語（`ja`）へフォールバックします。店舗、都道府県、市区町村、営業状況、タグは同じ優先順位で選択します。言語に依存しないID、コード、緯度経度、URL、タグ関係はロケールによって変わりません。
+
+## 営業状況
+
+共有 `Pub` 型で利用できる値は次の4つです。
 
 - `open`
 - `temporarily_closed`
 - `closed`
 - `unknown`
 
-## 管理画面からの更新
+DBでは数値の `pubs.status_code` と `pub_statuses.code` で関連付け、内部キーを `pub_statuses.key`、表示名を `pub_status_translations.display_name` に保存します。
 
-- 新規作成時の `id` はサーバーが UUID を発行します。
-- 更新時は URL に指定した `id` を維持します。
-- 作成、更新、削除には `DATABASE_URL` と有効な管理者セッションが必要です。
-- `city` と各 URL 項目は省略または `null` にできます。`tags` は文字列の配列です。
-- `municipalityCode` は保存せず、読み出し時に `prefecture` と `city` に一致する市区町村マスタから付加します。
+## 検証と保存
 
-## 運用メモ
+- 読み出した店舗は `asPubs` で検証します。必須項目の欠落、不正な緯度経度、重複ID、未定義の営業状況を含む値は受け付けません。
+- 新規作成時の `id` はサーバーがUUIDを発行します。更新時はURLに指定した `id` を維持します。
+- 作成・更新では日本語の市区町村名を `municipality_translations` から一意に解決し、`pubs.municipality_code` に保存します。解決できない場合はエラーにします。
+- 店舗名、読み、住所の作成・更新は、日本語の `pub_translations` へ保存します。
+- タグは共有定義で正規化・重複排除し、`tags`、`tag_translations`、`pub_tags` へ保存します。
+- URL項目は省略または `null` にできます。DB制約はHTTP(S) URLだけを許可します。
+- 削除時は、店舗翻訳と店舗・タグ関係が外部キーによってカスケード削除されます。
 
-- Web とモバイルで同じデータ形式を使えるように維持します。
-- 店舗データを追加する場合は、重複しない `id` を付けます。
-- 緯度経度は地図表示に使うため、数値で管理します。
+## 運用
+
+新規データは管理画面または `scripts/import-pubs.mjs` でNeonへ投入します。一括投入は既存UUIDを更新せずスキップします。リポジトリには店舗データのスナップショットを保存しません。

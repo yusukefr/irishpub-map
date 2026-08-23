@@ -1,57 +1,53 @@
-# 店舗メタデータ正規化
+# データベース正規化方針
 
-## 現行スキーマ
+## 目的
 
-現行の店舗メタデータと表示翻訳は次の関係に分けて保存します。
+店舗検索で利用するコード・表示文言・多対多関係を分離し、同じ意味の値を重複保存せず、日本語と英語の表示を同じ店舗データへ関連付けます。物理カラムと制約は[テーブル・カラム定義](database-columns.md)を正とし、この文書では現行スキーマの分離方針を説明します。
 
-| テーブル                  | 役割                                                                  |
-| ------------------------- | --------------------------------------------------------------------- |
-| pubs                      | 言語非依存の店舗属性、prefecture_code、municipality_code、status_code |
-| pub_translations          | 店舗名、読み、住所をロケール別に保存                                  |
-| prefectures               | JIS都道府県コード（1〜47）                                            |
-| prefecture_translations   | 都道府県表示名をロケール別に保存                                      |
-| pub_statuses              | 営業状況の数値コード                                                  |
-| pub_status_translations   | 営業状況表示名をロケール別に保存                                      |
-| municipality_codes        | 市区町村コード                                                        |
-| municipality_translations | 市区町村表示名をロケール別に保存                                      |
-| tags                      | タグIDと正規化済み内部キーを一意に管理するマスタ                      |
-| tag_translations          | タグ表示名をロケール別に保存                                          |
-| pub_tags                  | 店舗IDとタグIDの対応。店舗IDとタグIDの複合主キー                      |
+## 責務の分離
 
-pubs.prefecture_code は prefectures.code、pubs.status_code は pub_statuses.code を参照します。市区町村コードは `municipality_codes.code` に6桁文字列として保存し、`pubs.municipality_code` から参照します。表示名は各翻訳テーブルで管理します。`tags.key` は一意で、`pub_tags.pub_id` は `pubs.id`、`pub_tags.tag_id` は `tags.id` を参照します。店舗またはタグを削除すると、対応する `pub_tags` はカスケード削除されます。未使用のタグマスタは自動削除しません。複合主キーにより同じ店舗への同一タグの重複を防ぎます。
+| 分類 | テーブル | 保持する値 |
+| --- | --- | --- |
+| 店舗の言語非依存属性 | `pubs` | コード、緯度経度、URL、更新日時 |
+| 店舗の表示文言 | `pub_translations` | 店舗名、読み、住所 |
+| 都道府県マスタ | `prefectures`、`prefecture_translations` | JIS順コード、ロケール別の名前と読み |
+| 市区町村マスタ | `municipality_codes`、`municipality_translations` | 6桁コード、所属都道府県、ロケール別の名前と読み |
+| 営業状況マスタ | `pub_statuses`、`pub_status_translations` | 数値コード、内部キー、ロケール別の表示名 |
+| タグマスタ | `tags`、`tag_translations` | UUID、内部キー、ロケール別の表示名 |
+| 店舗とタグの関係 | `pub_tags` | 店舗IDとタグIDの組 |
 
-`pub_tags_legacy_20260816` は004適用時の旧形式バックアップです。
+親テーブルは言語に依存しない識別子と属性だけを持ち、表示文言は親IDと `locale` を複合主キーとする翻訳テーブルに保存します。これにより、表示言語を追加しても店舗・コード・関係を複製する必要がありません。
 
-## 外部形式との対応
+## コードと表示文言
 
-アプリケーションの共有 Pub 型と公開APIには、市区町村コードを解決できた場合の `municipalityCode` が追加されます。既存の店舗JSONにコードを直接記録せず、CSVまたはDBマスタから派生させます。
+- `pubs.prefecture_code` は `prefectures.code` を参照します。都道府県名は `prefecture_translations` から取得します。
+- `pubs.municipality_code` は `municipality_codes.code` を参照します。市区町村名は `municipality_translations` から取得します。
+- `pubs.status_code` は `pub_statuses.code` を参照します。営業状況の内部キーは `pub_statuses.key`、表示名は `pub_status_translations.display_name` です。
+- `pub_tags.tag_id` は `tags.id` を参照します。検索・API用の内部キーは `tags.key`、表示名は `tag_translations.name` です。
 
-| 外部項目                      | DBでの保存                |
-| ----------------------------- | ------------------------- |
-| prefecture（都道府県名）      | prefectures.code          |
-| prefecture のカナ             | prefectures.kana          |
-| status（open など）           | pub_statuses.code         |
-| status の表示名               | pub_status_translations   |
-| municipalityCode（6桁コード） | municipality_codes.code   |
-| tags（文字列配列）            | tags と pub_tags の複数行 |
+コードや内部キーは画面表示に直接使用せず、表示文言と分離します。Repositoryは要求ロケールを優先し、その翻訳がない場合は日本語（`ja`）へフォールバックします。
 
-取得時はリポジトリがマスタを表示名・外部値へ戻し、タグ行を配列へ集約します。DATABASE_URL未設定時は静的データへフォールバックせず、空の店舗一覧を返します。タグの内部キー・表示名・別名・棚卸しは [タグの正規化仕様](tag-normalization.md) を正とします。
+## リレーションと削除
 
-## コードと表示
+- 店舗とタグは `pub_tags` を介した多対多です。`(pub_id, tag_id)` の複合主キーで重複を防ぎます。
+- 店舗を削除すると、その店舗の `pub_translations` と `pub_tags` がカスケード削除されます。
+- タグを削除すると、そのタグの `tag_translations` と `pub_tags` がカスケード削除されます。
+- 都道府県、市区町村、営業状況を参照中の店舗にはカスケード削除を設定していません。
+- 使用されなくなったタグの親レコードは、店舗更新時に自動削除しません。
 
-都道府県は JIS 順の 1〜47 を採用します。営業状況は次の固定対応です。
+## アプリケーション境界
 
-| code | value              | 表示名   |
-| ---: | ------------------ | -------- |
-|    1 | open               | 営業中   |
-|    2 | temporarily_closed | 一時休業 |
-|    3 | closed             | 閉店     |
-|    4 | unknown            | 不明     |
+共有 `Pub` 型は、DBの正規化された複数行をAPI・Web・将来のモバイルアプリで扱いやすい1店舗単位の形式へ戻します。
 
-管理画面の選択肢と検索の都道府県順は packages/shared の同じ定義を参照します。
+| 共有 `Pub` の値           | DBでの取得元                                      |
+| ------------------------- | ------------------------------------------------- |
+| `name`、`kana`、`address` | 選択された `pub_translations`                     |
+| `prefecture`              | 選択された `prefecture_translations.name`         |
+| `city`                    | 選択された `municipality_translations.name`       |
+| `municipalityCode`        | `pubs.municipality_code`                          |
+| `status`                  | `pubs.status_code` に対応する共有営業状況定義     |
+| `statusDisplayName`       | 選択された `pub_status_translations.display_name` |
+| `tags`                    | `pub_tags` と `tags.key`                          |
+| `tagDisplayNames`         | 選択された `tag_translations.name`                |
 
-## 移行と初期化
-
-旧JSONB構成からは、001（項目別カラム）、002（都道府県・営業状況・タグ関係）、003（市区町村コード）、004（タグマスタ）、005（タグ名）の順に適用します。003はCSVを `psql` のクライアント側 `\\copy` で取り込み、それ以外はNodeのNeonクライアントで実行します。コマンド、verify項目、逆順のロールバックは[店舗テーブル移行手順](../operations/database-migration.md)へ集約します。
-
-アプリは旧形式や途中まで適用されたDBを自動変換しません。新規の空DBでは一括インポートが店舗・都道府県・営業状況・タグ関連テーブルを作成しますが、公開APIを使う前に003を別途適用する必要があります。店舗データは管理画面または一括インポートで明示的に投入し、リポジトリへスナップショットを保存しません。
+作成・更新時は、日本語の都道府県名と市区町村名からコードを解決し、言語非依存属性を `pubs`、日本語の店舗文言を `pub_translations`、タグ関係を `pub_tags` に保存します。市区町村が一意に解決できない入力は保存しません。
