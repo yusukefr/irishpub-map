@@ -101,7 +101,7 @@ FKの削除動作は、店舗翻訳、各マスタ翻訳、`pub_tags` に `ON DE
 - 選択したすべてのタグIDが `tags` に存在する。タグは0件でもよい。
 - 選択したタグに日本語表示名が存在する。
 
-公開条件は複数テーブルを参照する業務ルールなのでDB制約だけに依存しません。公開状態を変更するApplication Serviceで検証し、不足項目をまとめて返します。非公開へ戻す操作には公開条件を適用しません。
+公開条件は複数テーブルを参照する業務ルールなのでDB制約だけに依存しません。公開状態を変更するApplication Serviceで検証し、不足項目をまとめて返します。加えて、公開済み店舗の通常更新では、更新後のスナップショットにPublish Validationを適用します。不足項目を作る更新は `422` で拒否し、管理者の意図なしに自動で非公開へ変更しません。非公開へ戻す操作には公開条件を適用しません。
 
 ## 後続マイグレーションの要件
 
@@ -116,6 +116,8 @@ FKの削除動作は、店舗翻訳、各マスタ翻訳、`pub_tags` に `ON DE
 | `pub_translations.address` | `DROP NOT NULL`。CHECKを `address IS NULL OR btrim(address) <> ''` に変更 |
 
 `pubs.municipality_code` はすでにNULL可能なので変更不要です。`pub_translations.name` は下書きの唯一の必須表示情報として `NOT NULL` と非空CHECKを維持します。既存値は変更せず、新規NULL許可が既存データを損なわないことを検証SQLで確認します。
+
+既存店舗を公開のまま移行する前に、マイグレーション内のpreflightで全既存店舗へPublish Validation相当のSQL検証を実行します。日本語店舗名・住所、都道府県・市区町村とその所属関係、座標、営業ステータス、公開表示に必要な日本語マスタ翻訳のいずれかが不足する場合は例外でマイグレーション全体を失敗させます。不足店舗だけを暗黙に非公開へ変更せず、データを補完してから再実行します。preflight成功後に限り、同じトランザクション内で既存店舗を `is_published = TRUE` にします。
 
 ## 型とDTO
 
@@ -212,14 +214,14 @@ type SetPubPublicationInput = { isPublished: boolean };
 
 Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`createAdminPub`、`updateAdminPub`、`setAdminPubPublication`、`deleteAdminPub` というApplication Serviceを境界にします。
 
-| メソッド | パス                              | 入力・用途                                            |
-| -------- | --------------------------------- | ----------------------------------------------------- |
-| `GET`    | `/api/admin/pubs`                 | 公開・非公開を含む管理一覧                            |
-| `POST`   | `/api/admin/pubs`                 | `CreatePubInput`。常に非公開で作成                    |
-| `GET`    | `/api/admin/pubs/:id`             | `AdminPub` の詳細                                     |
-| `PUT`    | `/api/admin/pubs/:id`             | `UpdatePubInput` による全体更新。公開状態は変更しない |
-| `PATCH`  | `/api/admin/pubs/:id/publication` | 公開時だけPublish Validationを実行                    |
-| `DELETE` | `/api/admin/pubs/:id`             | 店舗削除。翻訳とタグ関係はFKでカスケード削除          |
+| メソッド | パス | 入力・用途 |
+| --- | --- | --- |
+| `GET` | `/api/admin/pubs` | 公開・非公開を含む管理一覧 |
+| `POST` | `/api/admin/pubs` | `CreatePubInput`。常に非公開で作成 |
+| `GET` | `/api/admin/pubs/:id` | `AdminPub` の詳細 |
+| `PUT` | `/api/admin/pubs/:id` | `UpdatePubInput` による全体更新。公開状態は変更せず、公開済みなら更新後のPublish Validationを行う |
+| `PATCH` | `/api/admin/pubs/:id/publication` | 公開時だけPublish Validationを実行 |
+| `DELETE` | `/api/admin/pubs/:id` | 店舗削除。翻訳とタグ関係はFKでカスケード削除 |
 
 入力不正はフィールドコードを含む `422`、未認証は `401`、Origin不一致は `403`、対象なしは `404`、参照競合は `409`、DB未設定は `503` とします。エラー本文やログへ入力値、接続情報、認証情報を含めません。
 
@@ -230,7 +232,10 @@ Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`creat
 - `sql.transaction(tx => [...], { isolationLevel: "ReadCommitted" })` を使います。
 - UUIDはApplication Serviceで先に生成し、後続SQLが前のSQL結果へ依存しない形にします。
 - マスタ存在・所属関係は保存前に検証し、保存時もFKを最終防衛線にします。
-- 更新対象の存在確認と行ロックを同じトランザクションに含めます。対象なしなら関連クエリを無操作にし、結果から `404` を返します。
+- HTTPドライバーのcallbackは非 `async` で、前段結果をJavaScriptで確認してから分岐できないため、非対話型transactionを維持する案Aを採用します。
+- 最初の `SELECT ... FOR UPDATE` で対象行と公開状態をロックします。後続の `UPDATE`、翻訳、タグ関係の各SQLは、`WHERE EXISTS` またはCTEで「対象が存在し、非公開または更新後入力が公開条件を満たす」場合だけ実行します。
+- トランザクション完了後、ロック対象が0件なら `404`、対象が存在して公開条件のgateを通らなかった場合は `422` を返します。関連INSERTも同じgateを使い、対象なしでFK違反を発生させません。
+- 通常更新と公開切替の両方が同じ行ロックとPublish Validationを使うため、競合時は直列化され、公開条件の確認と更新が原子的に行われます。
 - 値はすべてタグ付きテンプレートのパラメータとして渡し、外部入力から動的SQLを構築しません。
 - いずれかが失敗した場合は全体をロールバックし、部分保存を残しません。
 
