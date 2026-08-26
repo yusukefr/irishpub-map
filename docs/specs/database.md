@@ -4,7 +4,9 @@
 
 Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定された環境では、`apps/web/app/lib/pub-repository.ts` が正規化済みの店舗・マスタ・翻訳・タグ関係テーブルを読み書きします。未設定時は公開APIと管理画面が空の店舗一覧を返し、更新操作は利用できません。
 
-現行スキーマは、Issue #262で確認したNeon上の実スキーマを基準とし、`apps/web/app/lib/pub-repository.ts` など現在のアプリケーション実装と照合しています。`db/migrations` は設計経緯を確認するための補助資料であり、現行スキーマの根拠にはしません。カラム・制約・インデックスの詳細は[テーブル・カラム定義](database-columns.md)を参照してください。
+現行スキーマは、Issue #262で確認し、Issue #272で再確認したNeon上の実スキーマを基準とします。`apps/web/app/lib/pub-repository.ts` など現在のアプリケーション実装とも照合しています。`db/migrations` は設計経緯を確認するための補助資料であり、現行スキーマの根拠にはしません。カラム・制約・インデックスの詳細は[テーブル・カラム定義](database-columns.md)を参照してください。
+
+親Issue #264で導入予定の下書き保存、公開条件、型とトランザクションの設計は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)に分離しています。予定されているNULL制約や `is_published` は、対応マイグレーションが実装されるまでこの現行スキーマには含めません。
 
 ## テーブル
 
@@ -130,4 +132,5 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 - [店舗データ仕様](data.md)
 - [タグの正規化仕様](tag-normalization.md)
 - [API 方針](api.md)
+- [管理店舗の下書き・公開設計](admin-pub-lifecycle.md)
 - [システム構成](../architecture/system-overview.md)
