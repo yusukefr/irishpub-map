@@ -67,6 +67,8 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 `POST` と `PUT` の JSON 本文は `Pub` と同じフィールドを使います。新規作成時の `id` はサーバーで生成され、更新時は URL の `:id` が使われます。フィールドの詳細は[店舗データ仕様](data.md)を参照してください。
 
+親Issue #264の管理画面改修では、この現行契約を公開用・管理用DTOへ分離し、公開切替専用API、同一Origin検証、構造化Validationエラーを追加します。Issue #272で確定した未実装の契約は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+
 ## 今後の拡張候補
 
 - `GET /api/pubs/:id`: 店舗詳細を返す
