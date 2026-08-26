@@ -4,7 +4,7 @@
 
 この文書は、親Issue #264の管理画面改修に先立ち、Issue #272で確定した後続実装の設計です。2026年8月26日時点のNeon実スキーマとアプリケーション実装を基準にしています。
 
-ここで定義する下書き用DTO、公開状態、Repository、Application Service、APIはまだ実装されていません。現行挙動は[店舗データ仕様](data.md)と[API方針](api.md)、現行の物理制約は[テーブル・カラム定義](database-columns.md)を参照してください。
+Issue #273で公開状態カラム、既存店舗の公開移行、公開・管理Repositoryの取得分離を実装しました。ここで定義するNULL許容の下書き用DTO、公開切替、Application Service、更新APIはまだ実装されていません。現行挙動は[店舗データ仕様](data.md)と[API方針](api.md)、現行の物理制約は[テーブル・カラム定義](database-columns.md)を参照してください。
 
 ## 結論
 
@@ -103,13 +103,13 @@ FKの削除動作は、店舗翻訳、各マスタ翻訳、`pub_tags` に `ON DE
 
 公開条件は複数テーブルを参照する業務ルールなのでDB制約だけに依存しません。公開状態を変更するApplication Serviceで検証し、不足項目をまとめて返します。加えて、公開済み店舗の通常更新では、更新後のスナップショットにPublish Validationを適用します。不足項目を作る更新は `422` で拒否し、管理者の意図なしに自動で非公開へ変更しません。非公開へ戻す操作には公開条件を適用しません。
 
-## 後続マイグレーションの要件
+## マイグレーションの要件
 
-本IssueではDDLを変更しません。後続実装ではNeon実スキーマを再確認し、少なくとも次を変更します。
+Issue #273のマイグレーション008で公開状態を追加しました。下書き用NULL制約は後続実装で変更します。
 
 | 対象 | 後続変更 |
 | --- | --- |
-| `pubs.is_published` | `BOOLEAN NOT NULL DEFAULT FALSE` を追加。同一マイグレーション内で既存店舗を `TRUE` にする |
+| `pubs.is_published` | 実装済み。`BOOLEAN NOT NULL DEFAULT FALSE` を追加し、同一マイグレーション内で既存店舗を `TRUE` にする |
 | `pubs.prefecture_code` | `DROP NOT NULL` |
 | `pubs.latitude` / `longitude` | `DROP NOT NULL`。NULLを許容する既存範囲CHECKは維持 |
 | `pubs.status_code` | `DROP NOT NULL` |
@@ -117,7 +117,7 @@ FKの削除動作は、店舗翻訳、各マスタ翻訳、`pub_tags` に `ON DE
 
 `pubs.municipality_code` はすでにNULL可能なので変更不要です。`pub_translations.name` は下書きの唯一の必須表示情報として `NOT NULL` と非空CHECKを維持します。既存値は変更せず、新規NULL許可が既存データを損なわないことを検証SQLで確認します。
 
-既存店舗を公開のまま移行する前に、マイグレーション内のpreflightで全既存店舗へPublish Validation相当のSQL検証を実行します。日本語店舗名・住所、都道府県・市区町村とその所属関係、座標、営業ステータス、公開表示に必要な日本語マスタ翻訳のいずれかが不足する場合は例外でマイグレーション全体を失敗させます。不足店舗だけを暗黙に非公開へ変更せず、データを補完してから再実行します。preflight成功後に限り、同じトランザクション内で既存店舗を `is_published = TRUE` にします。
+マイグレーション008は、既存店舗を公開のまま移行する前に、全既存店舗へPublish Validation相当のSQL preflightを実行します。日本語店舗名・住所、都道府県・市区町村とその所属関係、座標、営業ステータス、公開表示に必要な日本語マスタ翻訳のいずれかが不足する場合は例外でマイグレーション全体を失敗させます。不足店舗だけを暗黙に非公開へ変更せず、データを補完してから再実行します。preflight成功後に限り、同じトランザクション内で既存店舗を `is_published = TRUE` にします。
 
 ## 型とDTO
 
@@ -210,7 +210,7 @@ type SetPubPublicationInput = { isPublished: boolean };
 管理詳細: getAdminPub(id): Promise<AdminPub | null>
 ```
 
-`getPublishedPubs` は `pubs.is_published = TRUE` をSQLで絞り込み、公開必須項目を内部JOINして検証します。条件を満たさない行が万一存在した場合は公開レスポンスから除外し、行内容を含めず件数をログへ記録します。管理取得は公開・非公開の両方をNULL許容の `AdminPub` として返し、公開用関数を流用しません。
+Issue #273で `getPublishedPubs` と `getAdminPubs` を分離しました。`getPublishedPubs` は `pubs.is_published = TRUE` をSQLで絞り込み、既存の必須項目を内部JOINして共有 `Pub` として検証します。`getAdminPubs` は公開・非公開の両方を取得し、移行段階では現行 `Pub` に `isPublished` を加えて返します。NULL許容の完全な `AdminPub` と管理詳細取得は下書き用制約の変更と合わせて後続実装します。
 
 Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`createAdminPub`、`updateAdminPub`、`setAdminPubPublication`、`deleteAdminPub` というApplication Serviceを境界にします。
 
@@ -264,11 +264,10 @@ Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`creat
 
 ## 後続Issueの実装順序
 
-1. `is_published` と下書き用NULL制約を安全なマイグレーションで追加する。
-2. `PublicPub` / `AdminPub` / 入力DTOとDraft / Publish Validationを実装する。
-3. `getPublishedPubs` と管理取得を分離し、公開APIのSQL絞り込みを追加する。
-4. 共通の管理認証・同一Origin検証を追加する。
-5. Application Serviceとトランザクションを使う管理更新APIを実装する。
-6. 管理画面の一覧、フォーム、タグ、ステータス管理を実装する。
+1. `is_published` を安全なマイグレーションで追加し、公開・管理取得を分離する（Issue #273で実装済み）。
+2. 下書き用NULL制約、`PublicPub` / `AdminPub` / 入力DTOとDraft / Publish Validationを実装する。
+3. 共通の管理認証・同一Origin検証を追加する。
+4. Application Serviceとトランザクションを使う管理更新・公開切替APIを実装する。
+5. 管理画面の一覧、フォーム、公開切替、タグ、ステータス管理を実装する。
 
 各後続Issueでコード、対応テスト、DB・API・プロダクト仕様を同じPR内で同期します。

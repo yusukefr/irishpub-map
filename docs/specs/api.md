@@ -8,7 +8,7 @@ Next.js Route Handler で公開 API と管理 API を提供します。公開画
 
 ### `GET /api/pubs`
 
-店舗一覧を返します。`locale` には `ja` または `en` を指定できます。指定ロケールの翻訳を優先し、未登録の表示文字列は日本語（`ja`）へフォールバックします。レスポンスは `packages/shared` の `Pub` 型に合わせ、API 側で `asPubs` による検証を行います。
+公開状態の店舗一覧だけを返します。Repositoryが `pubs.is_published = TRUE` をSQLで絞り込み、`isPublished` 自体は公開レスポンスへ含めません。`locale` には `ja` または `en` を指定できます。指定ロケールの翻訳を優先し、未登録の表示文字列は日本語（`ja`）へフォールバックします。レスポンスは `packages/shared` の `Pub` 型に合わせ、API 側で `asPubs` による検証を行います。
 
 レスポンス例:
 
@@ -60,14 +60,14 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 | --- | --- | --- | --- |
 | `POST` | `/api/admin/login` | `200` と `Set-Cookie` | 資格情報不一致は `401`、管理者設定なしは `503` |
 | `POST` | `/api/admin/logout` | `200` と期限切れの Cookie | なし |
-| `GET` | `/api/admin/pubs` | `200` と `{ pubs, databaseConfigured }` | 未認証は `401` |
-| `POST` | `/api/admin/pubs` | `201` と `{ pub }` | 未認証は `401`、不正データは `400`、DB 未設定は `503` |
-| `PUT` | `/api/admin/pubs/:id` | `200` と `{ pub }` | 未認証は `401`、不正データは `400`、対象なしは `404`、DB 未設定は `503` |
+| `GET` | `/api/admin/pubs` | `200` と `{ pubs, databaseConfigured }`。各店舗に `isPublished` を含む | 未認証は `401` |
+| `POST` | `/api/admin/pubs` | `201` と `{ pub }`。`pub` に `isPublished` を含む | 未認証は `401`、不正データは `400`、DB 未設定は `503` |
+| `PUT` | `/api/admin/pubs/:id` | `200` と `{ pub }`。`pub` に `isPublished` を含む | 未認証は `401`、不正データは `400`、対象なしは `404`、DB 未設定は `503` |
 | `DELETE` | `/api/admin/pubs/:id` | `200` と `{ ok: true }` | 未認証は `401`、対象なしは `404`、DB 未設定は `503` |
 
-`POST` と `PUT` の JSON 本文は `Pub` と同じフィールドを使います。新規作成時の `id` はサーバーで生成され、更新時は URL の `:id` が使われます。フィールドの詳細は[店舗データ仕様](data.md)を参照してください。
+`POST` と `PUT` の JSON 本文は `Pub` と同じフィールドを使います。公開状態は入力に含めず、新規作成時の `id` はサーバーで生成され、DB既定値により非公開になります。更新時は URL の `:id` が使われます。フィールドの詳細は[店舗データ仕様](data.md)を参照してください。
 
-親Issue #264の管理画面改修では、この現行契約を公開用・管理用DTOへ分離し、公開切替専用API、同一Origin検証、構造化Validationエラーを追加します。Issue #272で確定した未実装の契約は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+Issue #273では取得Repositoryを公開用と管理用へ分離し、管理一覧の現行 `Pub` に `isPublished` を追加しました。親Issue #264の後続改修で、NULL許容の管理用DTO、公開切替専用API、同一Origin検証、構造化Validationエラーを追加します。確定した契約は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 ## 今後の拡張候補
 

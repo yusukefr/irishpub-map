@@ -23,7 +23,11 @@ type DbPubRow = {
   tag_display_names: unknown;
   status_code: unknown;
   status_display_name: unknown;
+  is_published: unknown;
 };
+
+/** 管理画面で公開状態と既存の店舗情報を同時に扱う取得モデルです。 */
+export type AdminPub = Pub & { isPublished: boolean };
 
 let sqlClient: ReturnType<typeof neon> | null = null;
 
@@ -36,18 +40,31 @@ export function isDatabaseConfigured() {
 }
 
 /**
- * Neon設定時は選択ロケールの翻訳を優先し、未登録時は日本語へフォールバックして店舗一覧を取得します。
- * @param {string} _locale - 優先して取得する表示ロケール。
- * @returns {Promise<Pub[]>} 検証済みの店舗一覧。
+ * 公開中の店舗だけを、選択ロケールから日本語へフォールバックして取得します。
+ * @param {string} locale - 優先して取得する表示ロケール。
+ * @returns {Promise<Pub[]>} 公開条件をSQLで適用した検証済み店舗一覧。
  */
-export async function getPubs(_locale = "ja") {
+export async function getPublishedPubs(locale = "ja") {
+  return parseDbPubs(await getDbPubRows(locale, false));
+}
+
+/**
+ * 管理者向けに公開・非公開の両方を公開状態付きで取得します。
+ * @param {string} locale - 優先して取得する表示ロケール。
+ * @returns {Promise<AdminPub[]>} 公開状態を含む検証済み店舗一覧。
+ */
+export async function getAdminPubs(locale = "ja") {
+  return parseDbAdminPubs(await getDbPubRows(locale, true));
+}
+
+async function getDbPubRows(locale: string, includeUnpublished: boolean) {
   if (!isDatabaseConfigured()) return [];
 
   const sql = getSql();
   const rows = (await sql`
-    WITH locale_preference AS (SELECT ${_locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
     SELECT p.id::text, pt.name, pt.name_reading AS kana, p.prefecture_code, pref.name AS prefecture, mt.name AS city, p.municipality_code, pt.address, p.latitude, p.longitude,
-      p.website_url, p.google_maps_url, p.instagram_url, p.status_code, st.display_name AS status_display_name,
+      p.website_url, p.google_maps_url, p.instagram_url, p.status_code, st.display_name AS status_display_name, p.is_published,
       COALESCE(array_agg(t.key ORDER BY t.key) FILTER (WHERE t.key IS NOT NULL), '{}') AS tags,
       COALESCE(jsonb_object_agg(t.key, tt.name) FILTER (WHERE t.key IS NOT NULL), '{}'::jsonb) AS tag_display_names
     FROM pubs p
@@ -57,16 +74,17 @@ export async function getPubs(_locale = "ja") {
     JOIN LATERAL (SELECT display_name FROM pub_status_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.status_code=p.status_code ORDER BY lp.priority LIMIT 1) st ON TRUE
     LEFT JOIN pub_tags ptag ON ptag.pub_id=p.id LEFT JOIN tags t ON t.id=ptag.tag_id
     LEFT JOIN LATERAL (SELECT name FROM tag_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.tag_id=t.id ORDER BY lp.priority LIMIT 1) tt ON TRUE
+    WHERE p.is_published = TRUE OR ${includeUnpublished}
     GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address, st.display_name
     ORDER BY p.municipality_code::bigint, pt.name, p.id
   `) as DbPubRow[];
-  return parseDbPubs(rows);
+  return rows;
 }
 
 /**
  * 外部入力を店舗型として検証し、新しいUUIDを付けて独立カラムへ永続化します。
  * @param {unknown} value - 検証・登録する外部入力。
- * @returns {Promise<Pub>} 登録した店舗。
+ * @returns {Promise<AdminPub>} 公開状態を含む登録した店舗。
  */
 export async function createPub(value: unknown) {
   const pub = toPub(value, randomUUID());
@@ -79,7 +97,7 @@ export async function createPub(value: unknown) {
  * 外部入力を既存UUIDの店舗型として検証し、独立カラムを更新します。
  * @param {string} id - 更新対象の店舗ID。
  * @param {unknown} value - 検証・保存する店舗データ。
- * @returns {Promise<Pub | null>} 更新した店舗、または対象がない場合のnull。
+ * @returns {Promise<AdminPub | null>} 公開状態を含む更新した店舗、または対象がない場合のnull。
  */
 export async function updatePub(id: string, value: unknown) {
   const pub = toPub(value, id);
@@ -147,7 +165,7 @@ async function replacePubTags(sql: ReturnType<typeof neon>, pubId: string, tags:
 }
 
 async function getPubById(_sql: ReturnType<typeof neon>, id: string) {
-  return (await getPubs()).find((pub) => pub.id === id) ?? null;
+  return (await getAdminPubs()).find((pub) => pub.id === id) ?? null;
 }
 
 async function resolveMunicipalityCode(sql: ReturnType<typeof neon>, pub: Pub) {
@@ -246,6 +264,39 @@ export function parseDbPubs(rows: unknown[]) {
   }
 
   return asPubs(pubs);
+}
+
+/**
+ * DB行を管理用店舗へ変換し、公開状態が不正な行を公開情報と同様に拒否します。
+ * @param {unknown[]} rows - DBドライバーから返された行。
+ * @returns {AdminPub[]} 公開状態を含む検証済み管理店舗一覧。
+ */
+export function parseDbAdminPubs(rows: unknown[]) {
+  const pubs: AdminPub[] = [];
+  let skippedCount = 0;
+
+  for (const value of rows) {
+    try {
+      const row = value as DbPubRow;
+      if (typeof row.is_published !== "boolean") throw new Error("Invalid publication state.");
+      pubs.push({ ...toPub(row), isPublished: row.is_published });
+    } catch {
+      skippedCount += 1;
+    }
+  }
+
+  if (skippedCount > 0) {
+    console.error("Skipped invalid admin pub rows from the database.", {
+      skippedCount,
+      totalCount: rows.length,
+    });
+  }
+
+  if (rows.length > 0 && pubs.length === 0) {
+    throw new Error("No valid admin pub data found in database.");
+  }
+
+  return pubs;
 }
 
 function normalizeDbRow(row: DbPubRow) {

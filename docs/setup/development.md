@@ -125,6 +125,8 @@ DATABASE_URL="$NEON_PRODUCTION_DATABASE_URL" npm run import-pubs -- path/to/pubs
 
 実行結果は `Imported <追加件数>, skipped <既存ID件数>, total <入力件数>` の形式で表示されます。無効な形式や入力内で重複する `id` がある場合は、DBへの書き込み前にエラーで停止します。
 
+マイグレーション008適用後に一括投入した店舗は、DB既定値により非公開になります。公開切替機能が導入されるまでは公開APIへ表示されません。
+
 パスワードハッシュはローカルで生成し、値をリポジトリに保存しません。
 
 ```bash
