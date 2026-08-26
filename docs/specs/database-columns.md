@@ -4,7 +4,7 @@
 
 この文書は、Issue #262で確認し、Issue #272で2026年8月26日に再確認したNeon上の実スキーマを基準に、現在存在するアプリケーション用テーブルのカラム・制約・インデックスを定義します。再確認では記載内容との意味上の差異はありませんでした。現在のアプリケーション実装を照合に用い、`db/migrations` は設計経緯を確認するための補助資料として扱います。表示文言は翻訳テーブル、言語に依存しない値は親テーブル、店舗とタグの関係は中間テーブルに保存します。
 
-下書き保存のために後続Issueで変更する予定のNULL制約と `is_published` は、現行スキーマへ適用されるまでこの表へ先行記載しません。確定した変更要件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+Issue #273のマイグレーション008で `is_published` を追加しました。下書き保存のために後続Issueで変更するNULL制約は、現行スキーマへ適用されるまでこの表へ先行記載しません。確定した変更要件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 `NULL` 欄の「不可」は `NOT NULL` または主キー制約、「可」はDB制約上NULLを許可することを表します。
 
@@ -21,6 +21,7 @@
 | `google_maps_url` | TEXT | 可 |  | なし | NULLまたはHTTP(S) URL |
 | `instagram_url` | TEXT | 可 |  | なし | NULLまたはHTTP(S) URL |
 | `status_code` | SMALLINT | 不可 | FK → `pub_statuses.code` | なし | 営業状況コード |
+| `is_published` | BOOLEAN | 不可 |  | `FALSE` | 公開APIへの掲載状態。既存店舗は移行時に `TRUE` |
 | `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | Repositoryが更新時にも現在時刻を設定 |
 
 `municipality_code` はDB上ではNULLを許可します。Repositoryは、新規・更新データについて市区町村コードを解決できることを別途検証します。

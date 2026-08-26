@@ -13,7 +13,7 @@ sequenceDiagram
 
   Visitor->>Page: GET /
   Page->>API: サーバー側 fetch（必要時は API key を付与）
-  API->>Repository: getPubs()
+  API->>Repository: getPublishedPubs()
   alt DATABASE_URL が設定済み
     Repository->>Neon: pubs を読み出す
     Neon-->>Repository: 店舗データ

@@ -1,5 +1,5 @@
 import { getAdminSession } from "../../../lib/admin-auth";
-import { createPub, getPubs, isDatabaseConfigured } from "../../../lib/pub-repository";
+import { createPub, getAdminPubs, isDatabaseConfigured } from "../../../lib/pub-repository";
 
 function authorized(request: Request) {
   return Boolean(getAdminSession(request.headers.get("cookie")));
@@ -13,7 +13,7 @@ function authorized(request: Request) {
  */
 export async function GET(request: Request) {
   if (!authorized(request)) return Response.json({ error: "Unauthorized" }, { status: 401 });
-  return Response.json({ pubs: await getPubs(), databaseConfigured: isDatabaseConfigured() });
+  return Response.json({ pubs: await getAdminPubs(), databaseConfigured: isDatabaseConfigured() });
 }
 
 /**

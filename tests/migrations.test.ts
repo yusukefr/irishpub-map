@@ -106,4 +106,24 @@ describe("pubs database migrations", () => {
     expect(downSql).toContain("tag_name_normalization_pub_tags_backup_20260817");
     expect(downSql).toContain("tags_normalized_20260817");
   });
+
+  it("adds publication state after validating existing public data", async () => {
+    const upSql = await readMigration("008_add_pub_publication_state_up.sql");
+    const verifySql = await readMigration("008_add_pub_publication_state_verify.sql");
+
+    const preflightPosition = upSql.indexOf("existing pubs do not satisfy publication requirements");
+    const addColumnPosition = upSql.indexOf("ADD COLUMN is_published BOOLEAN");
+
+    expect(preflightPosition).toBeGreaterThanOrEqual(0);
+    expect(addColumnPosition).toBeGreaterThan(preflightPosition);
+    expect(upSql).toContain("municipality.prefecture_code = pub.prefecture_code");
+    expect(upSql).toContain("assigned tags require Japanese display names before publication");
+    expect(upSql).toContain("SET is_published = TRUE");
+    expect(upSql).toContain("ALTER COLUMN is_published SET DEFAULT FALSE");
+    expect(upSql).toContain("ALTER COLUMN is_published SET NOT NULL");
+    expect(upSql).toContain("INSERT INTO schema_migrations (version)\nVALUES ('008_add_pub_publication_state')");
+    expect(verifySql).toContain("publication_column");
+    expect(verifySql).toContain("unpublished_existing_pubs");
+    expect(verifySql).toContain("publication_migration_recorded");
+  });
 });

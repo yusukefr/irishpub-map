@@ -172,6 +172,15 @@ npm run check:sensitive-data
 
 `pub-repository` と一括インポート処理は、テーブルや参照データを作成しません。店舗データを投入する前に、[データベース定義](../specs/database.md)に記載した現行スキーマと、都道府県・営業状況・市区町村の参照データが構築済みであることを確認してください。空DBから現行スキーマを構築する正式な手順は、このリポジトリでは提供していません。`municipality_codes` が存在しない、または空の場合、`pub-repository` は読み出しを停止します。`DATABASE_URL` が未設定の場合、管理画面は店舗0件を表示できますが書き込みはできません。
 
+Issue #273以降のアプリケーションをデプロイする前に、接続先の各Neonブランチへマイグレーション008を適用し、検証SQLを実行します。up SQLは既存店舗が公開条件を満たさない場合、DDL適用前に停止します。接続文字列はシェルの一時変数で渡し、リポジトリへ保存しません。
+
+```bash
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/008_add_pub_publication_state_up.sql
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/008_add_pub_publication_state_verify.sql
+```
+
+マイグレーション適用後の新規店舗と一括インポート店舗は非公開で作成されます。公開切替機能が導入されるまでは、公開APIへ表示されない点に注意してください。アプリケーションだけをロールバックする場合、公開状態を失わないよう追加したカラムは削除せず残します。
+
 パスワードハッシュは、ローカルで生成して Vercel の環境変数にだけ登録します。例:
 
 ```bash

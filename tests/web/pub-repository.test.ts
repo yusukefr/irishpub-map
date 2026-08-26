@@ -1,12 +1,23 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { getPubs, parseDbPubs } from "../../apps/web/app/lib/pub-repository";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getAdminPubs, getPublishedPubs, parseDbAdminPubs, parseDbPubs } from "../../apps/web/app/lib/pub-repository";
+
+const databaseMock = vi.hoisted(() => ({
+  queries: [] as Array<{ text: string; values: unknown[] }>,
+  rows: [] as Array<Record<string, unknown>>,
+}));
+
+vi.mock("@neondatabase/serverless", () => ({
+  neon:
+    () =>
+    (strings: TemplateStringsArray, ...values: unknown[]) => {
+      const text = strings.join("?");
+      const includeUnpublished = values.find((value) => typeof value === "boolean") === true;
+      databaseMock.queries.push({ text, values });
+      return Promise.resolve(databaseMock.rows.filter((row) => includeUnpublished || row.is_published === true));
+    },
+}));
 
 const originalDatabaseUrl = process.env.DATABASE_URL;
-
-function restoreDatabaseUrl() {
-  if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
-  else process.env.DATABASE_URL = originalDatabaseUrl;
-}
 
 const baseRow = {
   id: "550e8400-e29b-41d4-a716-446655440001",
@@ -25,15 +36,58 @@ const baseRow = {
   tag_display_names: { guinness: "ギネス", food: "食事あり" },
   status_code: 1,
   status_display_name: "営業中",
+  is_published: true,
 };
 
-describe("getPubs", () => {
-  afterEach(restoreDatabaseUrl);
+beforeEach(() => {
+  databaseMock.queries = [];
+  databaseMock.rows = [];
+});
 
-  it("returns an empty list when the database is not configured", async () => {
+afterEach(() => {
+  if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
+  else process.env.DATABASE_URL = originalDatabaseUrl;
+});
+
+describe("publication-aware pub queries", () => {
+  it("returns an empty public list when the database is not configured", async () => {
     delete process.env.DATABASE_URL;
 
-    await expect(getPubs()).resolves.toEqual([]);
+    await expect(getPublishedPubs()).resolves.toEqual([]);
+    expect(databaseMock.queries).toEqual([]);
+  });
+
+  it("returns only published pubs without exposing publication metadata", async () => {
+    process.env.DATABASE_URL = "postgres://test-only";
+    databaseMock.rows = [baseRow, { ...baseRow, id: "550e8400-e29b-41d4-a716-446655440002", is_published: false }];
+
+    const pubs = await getPublishedPubs("en");
+
+    expect(pubs.map((pub) => pub.id)).toEqual([baseRow.id]);
+    expect(pubs[0]).not.toHaveProperty("isPublished");
+    expect(databaseMock.queries[0].text).toContain("WHERE p.is_published = TRUE OR");
+    expect(databaseMock.queries[0].values).toContain(false);
+  });
+
+  it("returns published and unpublished pubs with their state for administrators", async () => {
+    process.env.DATABASE_URL = "postgres://test-only";
+    databaseMock.rows = [baseRow, { ...baseRow, id: "550e8400-e29b-41d4-a716-446655440002", is_published: false }];
+
+    const pubs = await getAdminPubs();
+
+    expect(pubs.map(({ id, isPublished }) => ({ id, isPublished }))).toEqual([
+      { id: "550e8400-e29b-41d4-a716-446655440001", isPublished: true },
+      { id: "550e8400-e29b-41d4-a716-446655440002", isPublished: false },
+    ]);
+    expect(databaseMock.queries[0].values).toContain(true);
+  });
+});
+
+describe("parseDbAdminPubs", () => {
+  it("rejects rows without a boolean publication state", () => {
+    expect(() => parseDbAdminPubs([{ ...baseRow, is_published: null }])).toThrow(
+      "No valid admin pub data found in database.",
+    );
   });
 });
 

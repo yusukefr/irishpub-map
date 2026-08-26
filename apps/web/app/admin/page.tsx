@@ -4,7 +4,7 @@ import { getTranslation } from "../lib/i18n";
 import { getRequestLocale } from "../lib/i18n/server";
 import { AdminPubManager } from "../components/admin-pub-manager";
 import { getAdminSession, isAdminConfigured } from "../lib/admin-auth";
-import { getPubs, isDatabaseConfigured } from "../lib/pub-repository";
+import { getAdminPubs, isDatabaseConfigured } from "../lib/pub-repository";
 
 /**
  * 管理設定とセッションを検証し、認証済み管理画面を表示します。
@@ -24,5 +24,7 @@ export default async function AdminPage() {
     );
   const session = getAdminSession((await cookies()).toString());
   if (!session) redirect("/admin/login");
-  return <AdminPubManager initialPubs={await getPubs()} databaseConfigured={isDatabaseConfigured()} locale={locale} />;
+  return (
+    <AdminPubManager initialPubs={await getAdminPubs()} databaseConfigured={isDatabaseConfigured()} locale={locale} />
+  );
 }
