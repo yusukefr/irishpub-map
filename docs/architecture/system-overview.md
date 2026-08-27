@@ -17,10 +17,11 @@ flowchart TB
   subgraph vercel[Vercel / Next.js アプリ]
     publicPage["公開ページ /"]
     publicApi["公開 API<br/>GET /api/pubs"]
-    adminPage["管理画面<br/>/admin, /admin/login"]
+    adminPage["管理画面<br/>/admin/{pubs,tags,statuses}, /admin/login"]
     adminApi["管理 API<br/>/api/admin/*"]
     auth[admin-auth]
     repository[pub-repository]
+    masterRepository[master-repository]
   end
 
   neon[(Neon Postgres<br/>店舗・各種マスタテーブル)]
@@ -37,8 +38,10 @@ flowchart TB
   adminPage --> repository
   adminApi --> auth
   adminApi --> repository
+  adminApi --> masterRepository
 
   repository -->|"DATABASE_URL 設定時"| neon
+  masterRepository -->|"DATABASE_URL 設定時"| neon
 
   github --> actions
   github --> vercel
@@ -60,6 +63,7 @@ flowchart TB
 | ブラウザ             | 検索・絞り込み、位置情報の取得、地図描画、管理画面の操作                |
 | Next.js ページ / API | 公開画面のデータ取得、HTTP API、管理画面へのアクセス制御                |
 | `pub-repository`     | Neonの初期化、店舗データの CRUD                                         |
+| `master-repository`  | 都道府県、市区町村、タグ、営業ステータスを管理用DTOへ変換して参照       |
 | `admin-auth`         | 認証情報の検証、署名付き管理者セッション Cookie の発行・検証            |
 | GitHub Actions       | 追跡済みファイルの機密情報検査、Lint、テスト、ビルド、任意の Slack 通知 |
 
