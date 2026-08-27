@@ -8,12 +8,14 @@ describe("getTagLabel", () => {
     expect(getTagLabel("food")).toBe("食事あり");
     expect(getTagLabel("station-area")).toBe("駅近");
     expect(getTagLabel("craft-beer")).toBe("クラフトビール");
+    expect(getTagLabel("darts")).toBe("ダーツ");
     expect(getTagLabel("live-music")).toBe("ライブ音楽");
   });
 
   it("normalizes explicit aliases and mechanical separators", () => {
     expect(normalizeTag(" WHISKY ")).toBe("whiskey");
     expect(normalizeTag("ウイスキー")).toBe("whiskey");
+    expect(normalizeTag("ダーツ")).toBe("darts");
     expect(normalizeTags(["ギネス", "guinness", "craft_beer"])).toEqual(["guinness", "craft-beer"]);
   });
 

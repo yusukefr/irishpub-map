@@ -2,16 +2,14 @@
 
 BEGIN;
 
+-- 実スキーマを正として運用してきた環境にも、今回以降の適用履歴を記録できるようにします。
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  version TEXT PRIMARY KEY,
+  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM schema_migrations
-    WHERE version = '007_finalize_localization'
-  ) THEN
-    RAISE EXCEPTION 'final localization migration is not applied';
-  END IF;
-
   IF EXISTS (
     SELECT 1
     FROM schema_migrations
