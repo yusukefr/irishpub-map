@@ -4,6 +4,7 @@
     "food": "食事あり",
     "station-area": "駅近",
     "craft-beer": "クラフトビール",
+    "darts": "ダーツ",
     "live-music": "ライブ音楽",
     "whiskey": "ウイスキー"
   },
@@ -12,6 +13,7 @@
     "食事あり": "food",
     "駅近": "station-area",
     "クラフトビール": "craft-beer",
+    "ダーツ": "darts",
     "ライブ音楽": "live-music",
     "whisky": "whiskey",
     "ウイスキー": "whiskey"
