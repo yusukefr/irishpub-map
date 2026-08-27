@@ -116,6 +116,7 @@ describe("pubs database migrations", () => {
 
     expect(preflightPosition).toBeGreaterThanOrEqual(0);
     expect(addColumnPosition).toBeGreaterThan(preflightPosition);
+    expect(upSql).toContain("CREATE TABLE IF NOT EXISTS schema_migrations");
     expect(upSql).toContain("municipality.prefecture_code = pub.prefecture_code");
     expect(upSql).toContain("assigned tags require Japanese display names before publication");
     expect(upSql).toContain("SET is_published = TRUE");
