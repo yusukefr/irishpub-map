@@ -1,3 +1,4 @@
+import type { AdminApiErrorCode, AdminFieldErrorCode } from "@irishpub-map/shared/admin-api-error";
 import { getAdminSession, isAdminConfigured } from "./admin-auth";
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -9,9 +10,7 @@ const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  */
 export function getAdminMutationOriginError(request: Request) {
   if (!MUTATION_METHODS.has(request.method)) return null;
-  return request.headers.get("origin") === new URL(request.url).origin
-    ? null
-    : Response.json({ error: "Forbidden" }, { status: 403 });
+  return request.headers.get("origin") === new URL(request.url).origin ? null : adminApiErrorResponse("forbidden", 403);
 }
 
 /**
@@ -21,9 +20,35 @@ export function getAdminMutationOriginError(request: Request) {
  */
 export function getAdminApiAuthorizationError(request: Request) {
   if (!isAdminConfigured() || !getAdminSession(request.headers.get("cookie"))) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return adminApiErrorResponse("unauthorized", 401);
   }
   return getAdminMutationOriginError(request);
+}
+
+/**
+ * JSON本文を受け付ける管理APIのContent-Typeを検証します。
+ * @param {Request} request - JSON本文を持つ管理APIリクエスト。
+ * @returns {Response | null} JSON以外の場合は415、検証成功時はnull。
+ */
+export function getAdminJsonContentTypeError(request: Request) {
+  return request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() === "application/json"
+    ? null
+    : adminApiErrorResponse("invalid_content_type", 415);
+}
+
+/**
+ * 管理APIの機械可読なエラー契約を生成します。
+ * @param {AdminApiErrorCode} errorCode - Clientが翻訳へ変換する安定したエラーコード。
+ * @param {number} status - エラー理由に対応するHTTP Status。
+ * @param {Record<string, AdminFieldErrorCode>} [fieldErrors] - Validation時のフィールド別理由。
+ * @returns {Response} UI文言や内部例外を含まないJSONレスポンス。
+ */
+export function adminApiErrorResponse(
+  errorCode: AdminApiErrorCode,
+  status: number,
+  fieldErrors?: Partial<Record<string, AdminFieldErrorCode>>,
+) {
+  return Response.json({ errorCode, ...(fieldErrors ? { fieldErrors } : {}) }, { status });
 }
 
 /**
@@ -31,5 +56,5 @@ export function getAdminApiAuthorizationError(request: Request) {
  * @returns {Response} 一般化した500レスポンス。
  */
 export function adminMasterErrorResponse() {
-  return Response.json({ error: "Could not load master data." }, { status: 500 });
+  return adminApiErrorResponse("internal_error", 500);
 }

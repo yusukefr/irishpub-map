@@ -115,12 +115,31 @@ describe("AdminTagManager", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
 
     resolveResponse(
-      new Response(
-        JSON.stringify({ error: "入力内容を確認してください。", fieldErrors: { key: "keyは重複しています。" } }),
-        { status: 422 },
-      ),
+      new Response(JSON.stringify({ errorCode: "validation_error", fieldErrors: { key: "invalid_format" } }), {
+        status: 422,
+      }),
     );
-    expect(await screen.findByRole("alert")).toHaveTextContent("keyは重複しています。");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "keyは小文字英数字と単語間のハイフンだけを使用してください。",
+    );
+  });
+
+  it("translates field validation and conflicts into English", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ errorCode: "validation_error", fieldErrors: { nameJa: "required" } }), {
+          status: 422,
+        }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ errorCode: "tag_conflict" }), { status: 409 }));
+    render(<AdminTagManager initialTags={[]} databaseConfigured locale="en" />);
+    const form = screen.getByRole("button", { name: "Add" }).closest("form")!;
+    fireEvent.submit(form);
+    expect(await screen.findByRole("alert")).toHaveTextContent("The Japanese display name is required.");
+    fireEvent.submit(form);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "A tag with the same key or display name already exists.",
+    );
   });
 
   it("disables all mutation controls when the database is not configured", () => {

@@ -1,16 +1,6 @@
 import { AdminTagValidationError } from "@irishpub-map/shared/admin-tag";
+import { adminApiErrorResponse } from "./admin-api";
 import { TagRepositoryError } from "./tag-repository";
-
-/**
- * JSONを受け付ける管理タグAPIのContent-Typeを検証します。
- * @param {Request} request - JSON本文を持つ管理APIリクエスト。
- * @returns {Response | null} JSON以外の場合は415、検証成功時はnull。
- */
-export function getAdminTagContentTypeError(request: Request) {
-  return request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() === "application/json"
-    ? null
-    : Response.json({ error: "Content-Typeはapplication/jsonを指定してください。" }, { status: 415 });
-}
 
 /**
  * 管理タグのValidation・競合・存在・使用中エラーを内部情報なしのHTTPレスポンスへ変換します。
@@ -19,14 +9,14 @@ export function getAdminTagContentTypeError(request: Request) {
  */
 export function adminTagErrorResponse(error: unknown) {
   if (error instanceof AdminTagValidationError) {
-    return Response.json({ error: "入力内容を確認してください。", fieldErrors: error.fieldErrors }, { status: 422 });
+    return adminApiErrorResponse("validation_error", 422, error.fieldErrors);
   }
   if (error instanceof TagRepositoryError) {
-    if (error.code === "not_found") return Response.json({ error: "タグが見つかりません。" }, { status: 404 });
-    if (error.code === "in_use") return Response.json({ error: "使用中のタグは削除できません。" }, { status: 409 });
-    return Response.json({ error: "同じkeyまたは表示名のタグが存在します。" }, { status: 409 });
+    if (error.code === "not_found") return adminApiErrorResponse("tag_not_found", 404);
+    if (error.code === "in_use") return adminApiErrorResponse("tag_in_use", 409);
+    return adminApiErrorResponse("tag_conflict", 409);
   }
-  return Response.json({ error: "タグを処理できませんでした。" }, { status: 500 });
+  return adminApiErrorResponse("internal_error", 500);
 }
 
 /**

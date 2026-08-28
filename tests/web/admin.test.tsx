@@ -31,16 +31,40 @@ beforeEach(() => {
 });
 
 describe("admin UI", () => {
-  it("logs in and displays an API error", async () => {
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: "失敗" }), { status: 401 }));
+  it("logs in and translates an API error into Japanese", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ errorCode: "invalid_credentials" }), { status: 401 }),
+    );
     render(<LoginForm locale="ja" />);
     fireEvent.change(screen.getByLabelText("ID"), { target: { value: "admin" } });
     fireEvent.change(screen.getByLabelText("パスワード"), { target: { value: "password" } });
     fireEvent.submit(screen.getByRole("button", { name: "ログイン" }).closest("form")!);
-    expect(await screen.findByRole("alert")).toHaveTextContent("失敗");
+    expect(await screen.findByRole("alert")).toHaveTextContent("ID またはパスワードが正しくありません。");
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true })));
     fireEvent.submit(screen.getByRole("button", { name: "ログイン" }).closest("form")!);
     await waitFor(() => expect(push).toHaveBeenCalledWith("/admin"));
+  });
+
+  it("translates login errors into English and safely handles unknown responses", async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ errorCode: "invalid_credentials" }), { status: 401 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "database connection detail" }), { status: 500 }));
+    render(<LoginForm locale="en" />);
+    const form = screen.getByRole("button", { name: "Sign in" }).closest("form")!;
+    fireEvent.submit(form);
+    expect(await screen.findByRole("alert")).toHaveTextContent("The ID or password is incorrect.");
+    fireEvent.submit(form);
+    expect(await screen.findByRole("alert")).toHaveTextContent("An unexpected error occurred.");
+  });
+
+  it.each([
+    ["ja", "店舗データが正しくありません。"],
+    ["en", "The pub data is invalid."],
+  ] as const)("translates pub validation errors for %s", async (locale, expected) => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ errorCode: "invalid_pub_data" }), { status: 400 }));
+    render(<AdminPubManager initialPubs={[]} databaseConfigured locale={locale} />);
+    fireEvent.submit(screen.getByRole("button", { name: locale === "ja" ? "追加" : "Add" }).closest("form")!);
+    expect(await screen.findByRole("status")).toHaveTextContent(expected);
   });
 
   it("adds, edits, and deletes pubs", async () => {

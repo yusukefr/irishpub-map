@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { getAdminApiErrorMessage } from "../lib/admin-api-client";
 import { getTranslation, type Locale } from "../lib/i18n";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 
 /**
  * 管理者ログインAPIを呼び出し、認証結果を画面へ反映するフォームです。
@@ -27,15 +29,20 @@ export function LoginForm({ locale }: LoginFormProps) {
     setSubmitting(true);
     setError("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: form.get("username"), password: form.get("password") }),
-    });
-    if (response.ok) router.push("/admin");
-    else {
-      const body = (await response.json().catch(() => ({ error: t.admin.loginFailed }))) as { error: string };
-      setError(body.error);
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: form.get("username"), password: form.get("password") }),
+      });
+      if (response.ok) {
+        router.push("/admin");
+        return;
+      }
+      setError(getAdminApiErrorMessage(locale, await response.json().catch(() => null)));
+    } catch {
+      setError(getAdminApiErrorMessage(locale, null));
+    } finally {
       setSubmitting(false);
     }
   }

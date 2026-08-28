@@ -56,6 +56,21 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 管理 API は有効な管理者セッション Cookie を必要とします。ログイン用の環境変数が未設定の場合、ログイン API は `503` を返します。`DATABASE_URL` が未設定の場合、管理画面での一覧取得はできますが、更新系 API は `503` を返します。
 
+失敗レスポンスは表示文言ではなく、安定した `errorCode` を返します。管理画面のClientが現在のlocaleに応じて日本語または英語へ翻訳します。Validationでは必要に応じてフィールド別の理由コードも返します。
+
+```json
+{ "errorCode": "invalid_credentials" }
+```
+
+```json
+{
+  "errorCode": "validation_error",
+  "fieldErrors": { "key": "invalid_format" }
+}
+```
+
+共通コードは `unauthorized`、`forbidden`、`invalid_json`、`invalid_content_type`、`database_unavailable`、`internal_error` です。ログイン、店舗、タグ、マスタ固有のコードには `invalid_credentials`、`auth_not_configured`、`invalid_pub_data`、`pub_not_found`、`tag_conflict`、`tag_not_found`、`tag_in_use`、`invalid_tag_id`、`invalid_prefecture_code` があります。フィールド理由は `required`、`too_long`、`invalid_format`、`invalid_type`、`leading_or_trailing_space`、`immutable` です。未知のコードやJSONでないレスポンスはClientで一般化し、APIは例外文、DB・SQL・接続情報を返しません。HTTPステータスは従来どおり、認証 `401`、権限 `403`、入力 `400` / `415` / `422`、対象なし `404`、競合 `409`、設定不足 `503`、内部エラー `500` を使います。
+
 | メソッド | パス | 成功時 | 主な失敗時 |
 | --- | --- | --- | --- |
 | `POST` | `/api/admin/login` | `200` と `Set-Cookie` | Origin不正は `403`、資格情報不一致は `401`、管理者設定なしは `503` |
@@ -81,7 +96,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 管理APIは共通認証ヘルパーで、管理者設定が揃い、有効な署名済みセッションを持つリクエストだけを許可します。変更系リクエストは共通の同一Origin検証も通し、`Origin` の欠落・不一致を `403` で拒否します。現行は単一管理者モデルのため、このセッションを管理権限として扱います。Repositoryの例外時はDB・SQL・接続情報を含まない一般化したエラーを返します。
 
-Issue #273では取得Repositoryを公開用と管理用へ分離し、管理一覧の現行 `Pub` に `isPublished` を追加しました。Issue #274では管理ページ・APIの共通認証と同一Origin検証を追加しました。Issue #275ではタグ管理のCRUD、日英翻訳、使用店舗数、使用中削除拒否を追加します。親Issue #264の後続改修で、NULL許容の管理用DTO、公開切替専用API、構造化Validationエラーを追加します。確定した契約は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+Issue #273では取得Repositoryを公開用と管理用へ分離し、管理一覧の現行 `Pub` に `isPublished` を追加しました。Issue #274では管理ページ・APIの共通認証と同一Origin検証を追加しました。Issue #275ではタグ管理のCRUD、日英翻訳、使用店舗数、使用中削除拒否を追加しました。Issue #286では管理APIのエラーをコード化し、Client側の日英翻訳へ統一しました。親Issue #264の後続改修で、NULL許容の管理用DTO、公開切替専用API、構造化Validationエラーを追加します。確定した契約は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 ## 今後の拡張候補
 

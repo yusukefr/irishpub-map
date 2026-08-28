@@ -5,9 +5,11 @@ import type { Pub } from "@irishpub-map/shared/pub";
 import { PREFECTURES } from "@irishpub-map/shared/prefecture";
 import { PUB_STATUS_DEFINITIONS } from "@irishpub-map/shared/status";
 import { normalizeTags } from "@irishpub-map/shared/tag";
+import { getAdminApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 
 type Props = { initialPubs: Pub[]; databaseConfigured: boolean; locale: Locale };
+type ApiResponse = { pub?: Pub; errorCode?: unknown };
 const statuses = PUB_STATUS_DEFINITIONS;
 const emptyPub = {
   name: "",
@@ -55,29 +57,39 @@ export function AdminPubManager({ initialPubs, databaseConfigured, locale }: Pro
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.target as HTMLFormElement;
-    const response = await fetch(editing ? `/api/admin/pubs/${editing.id}` : "/api/admin/pubs", {
-      method: editing ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(toBody(new FormData(form))),
-    });
-    const body = (await response.json()) as { pub?: Pub; error?: string };
-    if (!response.ok || !body.pub) return setMessage(body.error || t.admin.saveFailed);
-    setPubs((current) =>
-      editing
-        ? current.map((pub) => (pub.id === body.pub!.id ? body.pub! : pub))
-        : [...current, body.pub!].toSorted((a, b) => a.name.localeCompare(b.name, "ja")),
-    );
-    setEditing(null);
-    form.reset();
-    setMessage(t.admin.saved);
+    try {
+      const response = await fetch(editing ? `/api/admin/pubs/${editing.id}` : "/api/admin/pubs", {
+        method: editing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toBody(new FormData(form))),
+      });
+      const body = (await response.json().catch(() => ({}))) as ApiResponse;
+      if (!response.ok || !body.pub) return setMessage(getAdminApiErrorMessage(locale, body));
+      const savedPub = body.pub;
+      setPubs((current) =>
+        editing
+          ? current.map((pub) => (pub.id === savedPub.id ? savedPub : pub))
+          : [...current, savedPub].toSorted((a, b) => a.name.localeCompare(b.name, "ja")),
+      );
+      setEditing(null);
+      form.reset();
+      setMessage(t.admin.saved);
+    } catch {
+      setMessage(getAdminApiErrorMessage(locale, null));
+    }
   }
 
   async function remove(pub: Pub) {
     if (!window.confirm(formatMessage(t.admin.confirmDelete, { name: pub.name }))) return;
-    const response = await fetch(`/api/admin/pubs/${pub.id}`, { method: "DELETE" });
-    if (!response.ok) return setMessage(t.admin.deleteFailed);
-    setPubs((current) => current.filter((item) => item.id !== pub.id));
-    setMessage(t.admin.deleted);
+    try {
+      const response = await fetch(`/api/admin/pubs/${pub.id}`, { method: "DELETE" });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) return setMessage(getAdminApiErrorMessage(locale, body));
+      setPubs((current) => current.filter((item) => item.id !== pub.id));
+      setMessage(t.admin.deleted);
+    } catch {
+      setMessage(getAdminApiErrorMessage(locale, null));
+    }
   }
 
   const values = editing

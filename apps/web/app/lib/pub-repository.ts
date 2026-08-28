@@ -29,6 +29,15 @@ type DbPubRow = {
 /** 管理画面で公開状態と既存の店舗情報を同時に扱う取得モデルです。 */
 export type AdminPub = Pub & { isPublished: boolean };
 
+/** 管理画面から受け取った店舗入力が共有契約を満たさない場合のエラーです。 */
+export class PubInputValidationError extends Error {
+  /** 入力由来の失敗をRepository内部エラーと区別して生成します。 */
+  constructor() {
+    super("Invalid pub input.");
+    this.name = "PubInputValidationError";
+  }
+}
+
 let sqlClient: ReturnType<typeof neon> | null = null;
 
 /**
@@ -190,8 +199,12 @@ function toPub(row: DbPubRow): Pub;
 function toPub(value: unknown, id: string): Pub;
 function toPub(value: DbPubRow | unknown, id?: string): Pub {
   if (id !== undefined) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid pub data.");
-    return asPubs([{ ...(value as Record<string, unknown>), id }])[0];
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new PubInputValidationError();
+    try {
+      return asPubs([{ ...(value as Record<string, unknown>), id }])[0];
+    } catch {
+      throw new PubInputValidationError();
+    }
   }
 
   const row = normalizeDbRow(value as DbPubRow);
