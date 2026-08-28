@@ -71,6 +71,8 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 共通コードは `unauthorized`、`forbidden`、`invalid_json`、`invalid_content_type`、`database_unavailable`、`internal_error` です。ログイン、店舗、タグ、マスタ固有のコードには `invalid_credentials`、`auth_not_configured`、`invalid_pub_data`、`pub_not_found`、`tag_conflict`、`tag_not_found`、`tag_in_use`、`invalid_tag_id`、`invalid_prefecture_code` があります。フィールド理由は `required`、`too_long`、`invalid_format`、`invalid_type`、`leading_or_trailing_space`、`immutable` です。未知のコードやJSONでないレスポンスはClientで一般化し、APIは例外文、DB・SQL・接続情報を返しません。HTTPステータスは従来どおり、認証 `401`、権限 `403`、入力 `400` / `415` / `422`、対象なし `404`、競合 `409`、設定不足 `503`、内部エラー `500` を使います。
 
+営業ステータス管理固有のコードは、不正なURLパラメーターの `invalid_status_code` と、更新対象が存在しない `status_not_found` です。
+
 | メソッド | パス | 成功時 | 主な失敗時 |
 | --- | --- | --- | --- |
 | `POST` | `/api/admin/login` | `200` と `Set-Cookie` | Origin不正は `403`、資格情報不一致は `401`、管理者設定なしは `503` |
@@ -84,6 +86,8 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 | `PATCH` | `/api/admin/tags/:id` | `200` と `{ tag }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、ID不正は `400`、対象なしは `404`、重複は `409`、Content-Type不正は `415`、入力不正は `422`、DB未設定は `503` |
 | `DELETE` | `/api/admin/tags/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、ID不正は `400`、対象なしは `404`、使用中は `409`、DB未設定は `503` |
 | `GET` | `/api/admin/master/statuses` | `200` と `{ statuses }` | 未認証は `401`、取得失敗は `500` |
+| `GET` | `/api/admin/statuses` | `200` と `{ statuses, databaseConfigured }`。固定keyと日英表示名を含む | 未認証は `401`、取得失敗は `500` |
+| `PATCH` | `/api/admin/statuses/:code` | `200` と `{ status }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、code不正は `400`、入力不正は `422`、対象なしは `404`、DB未設定は `503` |
 | `POST` | `/api/admin/pubs` | `201` と `{ pub }`。`pub` に `isPublished` を含む | 未認証は `401`、Origin不正は `403`、不正データは `400`、DB 未設定は `503` |
 | `PUT` | `/api/admin/pubs/:id` | `200` と `{ pub }`。`pub` に `isPublished` を含む | 未認証は `401`、Origin不正は `403`、不正データは `400`、対象なしは `404`、DB 未設定は `503` |
 | `DELETE` | `/api/admin/pubs/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、対象なしは `404`、DB 未設定は `503` |
@@ -91,6 +95,8 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 `POST` と `PUT` の JSON 本文は `Pub` と同じフィールドを使います。公開状態は入力に含めず、新規作成時の `id` はサーバーで生成され、DB既定値により非公開になります。更新時は URL の `:id` が使われます。フィールドの詳細は[店舗データ仕様](data.md)を参照してください。
 
 タグ管理APIの入力、transaction、使用中削除拒否は[管理タグ仕様](tag-management.md)を参照してください。作成時は `key` と必須の `nameJa`、任意の `nameEn` を受け付け、更新時は `nameJa` と `nameEn` だけを受け付けます。
+
+営業ステータス管理APIの固定key、日英表示名、transaction更新は[管理ステータス仕様](status-management.md)を参照してください。更新本文は必須の `nameJa` と任意の `nameEn` だけを利用し、余分な `key` は更新対象にしません。
 
 参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスは `{ code, key, name }` です。表示名は日本語を既定とし、Repositoryは将来のロケール指定に備えて日本語フォールバックを持ちます。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
 

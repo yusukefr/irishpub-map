@@ -126,7 +126,9 @@
       "tag_conflict": "同じkeyまたは表示名のタグが存在します。",
       "tag_not_found": "タグが見つかりません。",
       "tag_in_use": "使用中のタグは削除できません。",
-      "invalid_tag_id": "タグIDが正しくありません。"
+      "invalid_tag_id": "タグIDが正しくありません。",
+      "invalid_status_code": "営業ステータスコードが正しくありません。",
+      "status_not_found": "営業ステータスが見つかりません。"
     },
     "tagFieldErrors": {
       "key": {
@@ -136,6 +138,16 @@
         "leading_or_trailing_space": "keyの前後に空白は使用できません。",
         "immutable": "keyは作成後に変更できません。"
       },
+      "nameJa": {
+        "required": "日本語表示名は必須です。",
+        "too_long": "日本語表示名は{max}文字以内で入力してください。"
+      },
+      "nameEn": {
+        "invalid_type": "英語表示名を文字列で入力してください。",
+        "too_long": "英語表示名は{max}文字以内で入力してください。"
+      }
+    },
+    "statusFieldErrors": {
       "nameJa": {
         "required": "日本語表示名は必須です。",
         "too_long": "日本語表示名は{max}文字以内で入力してください。"
@@ -172,6 +184,15 @@
     "saving": "保存中…",
     "deleting": "削除中…",
     "statusesHeading": "ステータス管理",
+    "statusesDescription": "営業ステータスのシステム識別子を維持したまま、日英表示名を編集できます。",
+    "editStatus": "ステータス編集",
+    "statusKey": "key",
+    "statusKeyDescription": "システム識別子のため変更できません。",
+    "statusNameJa": "日本語",
+    "statusNameEn": "English（任意）",
+    "listedStatuses": "登録ステータス（{count}件）",
+    "noStatuses": "営業ステータスが登録されていません。",
+    "statusSaved": "ステータス表示名を更新しました。",
     "referenceFoundationDescription": "参照マスタの取得基盤を利用できます。登録・編集・削除は後続対応です。",
     "logout": "ログアウト",
     "databaseUnavailable": "DATABASE_URL が未設定です。閲覧のみ可能です。",

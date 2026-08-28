@@ -11,6 +11,12 @@ export {
 } from "./admin-api-error";
 export type { AdminApiErrorCode, AdminApiErrorResponse, AdminFieldErrorCode } from "./admin-api-error";
 export {
+  ADMIN_STATUS_NAME_MAX_LENGTH,
+  AdminStatusValidationError,
+  parseUpdateAdminPubStatusInput,
+} from "./admin-status";
+export type { AdminPubStatus, AdminStatusFieldErrors, UpdateAdminPubStatusInput } from "./admin-status";
+export {
   ADMIN_TAG_KEY_MAX_LENGTH,
   ADMIN_TAG_NAME_MAX_LENGTH,
   AdminTagValidationError,

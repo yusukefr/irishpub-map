@@ -18,6 +18,8 @@ export const ADMIN_API_ERROR_CODES = [
   "tag_not_found",
   "tag_in_use",
   "invalid_tag_id",
+  "invalid_status_code",
+  "status_not_found",
 ] as const;
 
 /** 管理APIが返す、表示言語に依存しないエラーコードです。 */

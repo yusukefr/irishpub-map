@@ -1,17 +1,20 @@
-import { getTranslation } from "../../../lib/i18n";
+import { AdminStatusManager } from "../../../components/admin-status-manager";
+import { requireAdminSession } from "../../../lib/admin-server";
 import { getRequestLocale } from "../../../lib/i18n/server";
+import { getAdminPubStatuses } from "../../../lib/status-repository";
 
 /**
- * 後続の営業ステータス管理機能を配置する認証済みページを表示します。
- * @returns {Promise<JSX.Element>} 営業ステータス管理の準備状態を示すページ。
+ * 管理者セッションを検証してから、固定keyと日英表示名を含む営業ステータス管理機能を表示します。
+ * @returns {Promise<JSX.Element>} 認証済み営業ステータス管理画面。
  */
 export default async function AdminStatusesPage() {
-  const t = getTranslation(await getRequestLocale()).admin;
+  await requireAdminSession();
+  const [locale, statuses] = await Promise.all([getRequestLocale(), getAdminPubStatuses()]);
   return (
-    <section className="admin-panel admin-wide">
-      <p className="eyebrow">Master data</p>
-      <h1>{t.statusesHeading}</h1>
-      <p>{t.referenceFoundationDescription}</p>
-    </section>
+    <AdminStatusManager
+      initialStatuses={statuses}
+      databaseConfigured={Boolean(process.env.DATABASE_URL)}
+      locale={locale}
+    />
   );
 }

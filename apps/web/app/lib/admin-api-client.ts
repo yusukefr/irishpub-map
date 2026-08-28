@@ -4,6 +4,7 @@ import {
   type AdminApiErrorCode,
   type AdminFieldErrorCode,
 } from "@irishpub-map/shared/admin-api-error";
+import { ADMIN_STATUS_NAME_MAX_LENGTH, type AdminStatusFieldErrors } from "@irishpub-map/shared/admin-status";
 import {
   ADMIN_TAG_KEY_MAX_LENGTH,
   ADMIN_TAG_NAME_MAX_LENGTH,
@@ -40,6 +41,31 @@ export function getAdminTagApiErrorMessage(locale: Locale, value: unknown) {
   return translateTagFieldError(getTranslation(locale), fieldError[0], fieldError[1]);
 }
 
+/**
+ * 営業ステータスAPIのフィールド別Validationを優先し、現在のlocaleの文言へ変換します。
+ * @param {Locale} locale - 現在の画面表示言語。
+ * @param {unknown} value - APIから受け取った未検証JSON。
+ * @returns {string} フィールド別文言、APIエラー文言、または安全な一般エラー。
+ */
+export function getAdminStatusApiErrorMessage(locale: Locale, value: unknown) {
+  const fieldError = getFirstFieldError<keyof AdminStatusFieldErrors>(value, ["nameJa", "nameEn"]);
+  if (!fieldError) return getAdminApiErrorMessage(locale, value);
+  const messages = getTranslation(locale).admin.statusFieldErrors;
+  if (fieldError[0] === "nameJa") {
+    if (fieldError[1] === "required") return messages.nameJa.required;
+    if (fieldError[1] === "too_long") {
+      return formatMessage(messages.nameJa.too_long, { max: ADMIN_STATUS_NAME_MAX_LENGTH });
+    }
+  }
+  if (fieldError[0] === "nameEn") {
+    if (fieldError[1] === "invalid_type") return messages.nameEn.invalid_type;
+    if (fieldError[1] === "too_long") {
+      return formatMessage(messages.nameEn.too_long, { max: ADMIN_STATUS_NAME_MAX_LENGTH });
+    }
+  }
+  return getTranslation(locale).admin.errors.validation_error;
+}
+
 function getErrorCode(value: unknown): AdminApiErrorCode {
   if (!value || typeof value !== "object" || Array.isArray(value)) return "internal_error";
   const { errorCode } = value as { errorCode?: unknown };
@@ -47,10 +73,17 @@ function getErrorCode(value: unknown): AdminApiErrorCode {
 }
 
 function getFirstTagFieldError(value: unknown): [keyof AdminTagFieldErrors, AdminFieldErrorCode] | null {
+  return getFirstFieldError(value, ["key", "nameJa", "nameEn"]);
+}
+
+function getFirstFieldError<Field extends string>(
+  value: unknown,
+  fields: readonly Field[],
+): [Field, AdminFieldErrorCode] | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const { fieldErrors } = value as { fieldErrors?: unknown };
   if (!fieldErrors || typeof fieldErrors !== "object" || Array.isArray(fieldErrors)) return null;
-  for (const field of ["key", "nameJa", "nameEn"] as const) {
+  for (const field of fields) {
     const code = (fieldErrors as Record<string, unknown>)[field];
     if (isAdminFieldErrorCode(code)) return [field, code];
   }
