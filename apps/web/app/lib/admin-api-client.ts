@@ -1,5 +1,6 @@
 import {
   isAdminApiErrorCode,
+  isAdminFieldErrorCode,
   type AdminApiErrorCode,
   type AdminFieldErrorCode,
 } from "@irishpub-map/shared/admin-api-error";
@@ -51,20 +52,9 @@ function getFirstTagFieldError(value: unknown): [keyof AdminTagFieldErrors, Admi
   if (!fieldErrors || typeof fieldErrors !== "object" || Array.isArray(fieldErrors)) return null;
   for (const field of ["key", "nameJa", "nameEn"] as const) {
     const code = (fieldErrors as Record<string, unknown>)[field];
-    if (isTagFieldErrorCode(code)) return [field, code];
+    if (isAdminFieldErrorCode(code)) return [field, code];
   }
   return null;
-}
-
-function isTagFieldErrorCode(value: unknown): value is AdminFieldErrorCode {
-  return (
-    value === "required" ||
-    value === "too_long" ||
-    value === "invalid_format" ||
-    value === "invalid_type" ||
-    value === "leading_or_trailing_space" ||
-    value === "immutable"
-  );
 }
 
 function translateTagFieldError(translation: Translation, field: keyof AdminTagFieldErrors, code: AdminFieldErrorCode) {

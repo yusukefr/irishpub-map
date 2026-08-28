@@ -3,7 +3,12 @@ export { asPubs } from "./pub";
 export { PREFECTURES, getPrefectureCode, getPrefectureName } from "./prefecture";
 export { PUB_STATUS_DEFINITIONS, getPubStatusCode, getPubStatusValue } from "./status";
 export type { MunicipalityOption, PrefectureOption, PubStatusOption, TagOption } from "./admin-master";
-export { isAdminApiErrorCode } from "./admin-api-error";
+export {
+  ADMIN_API_ERROR_CODES,
+  ADMIN_FIELD_ERROR_CODES,
+  isAdminApiErrorCode,
+  isAdminFieldErrorCode,
+} from "./admin-api-error";
 export type { AdminApiErrorCode, AdminApiErrorResponse, AdminFieldErrorCode } from "./admin-api-error";
 export {
   ADMIN_TAG_KEY_MAX_LENGTH,
