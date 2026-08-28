@@ -126,7 +126,9 @@
       "tag_conflict": "A tag with the same key or display name already exists.",
       "tag_not_found": "The tag was not found.",
       "tag_in_use": "Tags in use cannot be deleted.",
-      "invalid_tag_id": "The tag ID is invalid."
+      "invalid_tag_id": "The tag ID is invalid.",
+      "invalid_status_code": "The status code is invalid.",
+      "status_not_found": "The status was not found."
     },
     "tagFieldErrors": {
       "key": {
@@ -136,6 +138,16 @@
         "leading_or_trailing_space": "Key cannot start or end with whitespace.",
         "immutable": "Key cannot be changed after creation."
       },
+      "nameJa": {
+        "required": "The Japanese display name is required.",
+        "too_long": "The Japanese display name must be {max} characters or fewer."
+      },
+      "nameEn": {
+        "invalid_type": "Enter the English display name as text.",
+        "too_long": "The English display name must be {max} characters or fewer."
+      }
+    },
+    "statusFieldErrors": {
       "nameJa": {
         "required": "The Japanese display name is required.",
         "too_long": "The Japanese display name must be {max} characters or fewer."
@@ -172,6 +184,15 @@
     "saving": "Saving…",
     "deleting": "Deleting…",
     "statusesHeading": "Status management",
+    "statusesDescription": "Edit Japanese and English display names while keeping system status keys unchanged.",
+    "editStatus": "Edit status",
+    "statusKey": "Key",
+    "statusKeyDescription": "This system identifier cannot be changed.",
+    "statusNameJa": "Japanese",
+    "statusNameEn": "English (optional)",
+    "listedStatuses": "Statuses ({count})",
+    "noStatuses": "No statuses have been registered.",
+    "statusSaved": "Status display names updated.",
     "referenceFoundationDescription": "The reference master data foundation is available. Create, edit, and delete operations will follow.",
     "logout": "Sign out",
     "databaseUnavailable": "DATABASE_URL is not set. You can browse only.",

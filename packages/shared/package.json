@@ -11,6 +11,7 @@
     "./status": "./src/status.ts",
     "./admin-master": "./src/admin-master.ts",
     "./admin-api-error": "./src/admin-api-error.ts",
+    "./admin-status": "./src/admin-status.ts",
     "./admin-tag": "./src/admin-tag.ts"
   }
 }
