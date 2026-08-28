@@ -1,5 +1,9 @@
-import { getAdminApiAuthorizationError } from "../../../lib/admin-api";
-import { createPub, getAdminPubs, isDatabaseConfigured } from "../../../lib/pub-repository";
+import {
+  adminApiErrorResponse,
+  getAdminApiAuthorizationError,
+  getAdminJsonContentTypeError,
+} from "../../../lib/admin-api";
+import { createPub, getAdminPubs, isDatabaseConfigured, PubInputValidationError } from "../../../lib/pub-repository";
 
 /**
  * 認証済み管理者へ店舗一覧とDB設定状態を返します。
@@ -9,7 +13,11 @@ import { createPub, getAdminPubs, isDatabaseConfigured } from "../../../lib/pub-
 export async function GET(request: Request) {
   const authorizationError = getAdminApiAuthorizationError(request);
   if (authorizationError) return authorizationError;
-  return Response.json({ pubs: await getAdminPubs(), databaseConfigured: isDatabaseConfigured() });
+  try {
+    return Response.json({ pubs: await getAdminPubs(), databaseConfigured: isDatabaseConfigured() });
+  } catch {
+    return adminApiErrorResponse("internal_error", 500);
+  }
 }
 
 /**
@@ -20,10 +28,20 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const authorizationError = getAdminApiAuthorizationError(request);
   if (authorizationError) return authorizationError;
-  if (!isDatabaseConfigured()) return Response.json({ error: "Database is not configured." }, { status: 503 });
+  if (!isDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
+  const contentTypeError = getAdminJsonContentTypeError(request);
+  if (contentTypeError) return contentTypeError;
+  let body: unknown;
   try {
-    return Response.json({ pub: await createPub(await request.json()) }, { status: 201 });
+    body = await request.json();
   } catch {
-    return Response.json({ error: "店舗データが正しくありません。" }, { status: 400 });
+    return adminApiErrorResponse("invalid_json", 400);
+  }
+  try {
+    return Response.json({ pub: await createPub(body) }, { status: 201 });
+  } catch (error) {
+    return error instanceof PubInputValidationError
+      ? adminApiErrorResponse("invalid_pub_data", 400)
+      : adminApiErrorResponse("internal_error", 500);
   }
 }

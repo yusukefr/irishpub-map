@@ -8,10 +8,11 @@ import {
   type AdminTag,
   type AdminTagFieldErrors,
 } from "@irishpub-map/shared/admin-tag";
+import { getAdminTagApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 
 type Props = { initialTags: AdminTag[]; databaseConfigured: boolean; locale: Locale };
-type ApiResponse = { tag?: AdminTag; error?: string; fieldErrors?: AdminTagFieldErrors };
+type ApiResponse = { tag?: AdminTag; errorCode?: unknown; fieldErrors?: AdminTagFieldErrors };
 
 /**
  * 管理者向けのタグ一覧、日英表示名の登録・編集、未使用タグ削除を管理します。
@@ -51,7 +52,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
       });
       const result = (await response.json().catch(() => ({}))) as ApiResponse;
       if (!response.ok || !result.tag) {
-        setError(formatApiError(result, t.tagSaveFailed));
+        setError(getAdminTagApiErrorMessage(locale, result));
         return;
       }
       const savedTag = result.tag;
@@ -64,7 +65,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
       form.reset();
       setMessage(t.tagSaved);
     } catch {
-      setError(t.tagSaveFailed);
+      setError(getAdminTagApiErrorMessage(locale, null));
     } finally {
       setBusyAction(null);
     }
@@ -79,14 +80,14 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
       const response = await fetch(`/api/admin/tags/${tag.id}`, { method: "DELETE" });
       const result = (await response.json().catch(() => ({}))) as ApiResponse;
       if (!response.ok) {
-        setError(result.error || t.tagDeleteFailed);
+        setError(getAdminTagApiErrorMessage(locale, result));
         return;
       }
       setTags((current) => current.filter((currentTag) => currentTag.id !== tag.id));
       if (editing?.id === tag.id) setEditing(null);
       setMessage(t.tagDeleted);
     } catch {
-      setError(t.tagDeleteFailed);
+      setError(getAdminTagApiErrorMessage(locale, null));
     } finally {
       setBusyAction(null);
     }
@@ -214,9 +215,4 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
       </section>
     </section>
   );
-}
-
-function formatApiError(result: ApiResponse, fallback: string) {
-  const fieldMessage = result.fieldErrors ? Object.values(result.fieldErrors).find(Boolean) : null;
-  return fieldMessage || result.error || fallback;
 }

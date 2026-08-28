@@ -1,3 +1,5 @@
+import type { AdminFieldErrorCode } from "./admin-api-error";
+
 /** タグ内部キーとして受け付ける最大文字数です。 */
 export const ADMIN_TAG_KEY_MAX_LENGTH = 64;
 /** タグ表示名として受け付ける最大文字数です。 */
@@ -23,7 +25,7 @@ export type CreateAdminTagInput = {
 export type UpdateAdminTagInput = Omit<CreateAdminTagInput, "key">;
 
 /** 管理タグ入力のフィールド別Validationエラーです。 */
-export type AdminTagFieldErrors = Partial<Record<keyof CreateAdminTagInput, string>>;
+export type AdminTagFieldErrors = Partial<Record<keyof CreateAdminTagInput, AdminFieldErrorCode>>;
 
 /** 管理タグ入力が契約を満たさない場合にフィールド別エラーを保持します。 */
 export class AdminTagValidationError extends Error {
@@ -60,7 +62,7 @@ export function parseCreateAdminTagInput(value: unknown): CreateAdminTagInput {
 export function parseUpdateAdminTagInput(value: unknown): UpdateAdminTagInput {
   const input = asRecord(value);
   const fieldErrors: AdminTagFieldErrors = {};
-  if (input && "key" in input) fieldErrors.key = "keyは作成後に変更できません。";
+  if (input && "key" in input) fieldErrors.key = "immutable";
   const nameJa = validateRequiredName(input?.nameJa, "nameJa", fieldErrors);
   const nameEn = validateOptionalName(input?.nameEn, fieldErrors);
   if (Object.keys(fieldErrors).length > 0) throw new AdminTagValidationError(fieldErrors);
@@ -73,26 +75,26 @@ function asRecord(value: unknown) {
 
 function validateKey(value: unknown, fieldErrors: AdminTagFieldErrors) {
   if (typeof value !== "string" || !value) {
-    fieldErrors.key = "keyは必須です。";
+    fieldErrors.key = "required";
     return null;
   }
-  if (value !== value.trim()) fieldErrors.key = "keyの前後に空白は使用できません。";
+  if (value !== value.trim()) fieldErrors.key = "leading_or_trailing_space";
   else if (value.length > ADMIN_TAG_KEY_MAX_LENGTH) {
-    fieldErrors.key = `keyは${ADMIN_TAG_KEY_MAX_LENGTH}文字以内で入力してください。`;
+    fieldErrors.key = "too_long";
   } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)) {
-    fieldErrors.key = "keyは小文字英数字と単語間のハイフンだけを使用してください。";
+    fieldErrors.key = "invalid_format";
   }
   return value;
 }
 
 function validateRequiredName(value: unknown, field: "nameJa", fieldErrors: AdminTagFieldErrors) {
   if (typeof value !== "string" || !value.trim()) {
-    fieldErrors[field] = "日本語表示名は必須です。";
+    fieldErrors[field] = "required";
     return null;
   }
   const normalized = value.trim();
   if (normalized.length > ADMIN_TAG_NAME_MAX_LENGTH) {
-    fieldErrors[field] = `日本語表示名は${ADMIN_TAG_NAME_MAX_LENGTH}文字以内で入力してください。`;
+    fieldErrors[field] = "too_long";
   }
   return normalized;
 }
@@ -100,13 +102,13 @@ function validateRequiredName(value: unknown, field: "nameJa", fieldErrors: Admi
 function validateOptionalName(value: unknown, fieldErrors: AdminTagFieldErrors) {
   if (value === undefined || value === null || value === "") return null;
   if (typeof value !== "string") {
-    fieldErrors.nameEn = "英語表示名を文字列で入力してください。";
+    fieldErrors.nameEn = "invalid_type";
     return null;
   }
   const normalized = value.trim();
   if (!normalized) return null;
   if (normalized.length > ADMIN_TAG_NAME_MAX_LENGTH) {
-    fieldErrors.nameEn = `英語表示名は${ADMIN_TAG_NAME_MAX_LENGTH}文字以内で入力してください。`;
+    fieldErrors.nameEn = "too_long";
   }
   return normalized;
 }

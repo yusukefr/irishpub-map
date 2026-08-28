@@ -74,6 +74,7 @@ describe("admin master APIs", () => {
 
     const invalid = await getMunicipalities(adminRequest("/api/admin/master/municipalities?prefectureCode=23x"));
     expect(invalid.status).toBe(400);
+    await expect(invalid.json()).resolves.toEqual({ errorCode: "invalid_prefecture_code" });
     expect(repositoryMocks.getMunicipalitiesByPrefecture).not.toHaveBeenCalled();
 
     const valid = await getMunicipalities(adminRequest("/api/admin/master/municipalities?prefectureCode=23"));
@@ -89,6 +90,6 @@ describe("admin master APIs", () => {
     const response = await getTags(adminRequest("/api/admin/master/tags"));
 
     expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: "Could not load master data." });
+    await expect(response.json()).resolves.toEqual({ errorCode: "internal_error" });
   });
 });

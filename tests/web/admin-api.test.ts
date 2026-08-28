@@ -42,10 +42,11 @@ describe("admin API request validation", () => {
 
   it.each([undefined, "https://attacker.example"])(
     "rejects authenticated mutation requests with a missing or mismatched Origin: %s",
-    (origin) => {
+    async (origin) => {
       const response = getAdminApiAuthorizationError(authenticatedRequest("POST", origin));
 
       expect(response?.status).toBe(403);
+      await expect(response?.json()).resolves.toEqual({ errorCode: "forbidden" });
     },
   );
 
@@ -64,6 +65,31 @@ describe("admin API request validation", () => {
 
     expect(loginResponse.status).toBe(403);
     expect(logoutResponse.status).toBe(403);
+    await expect(loginResponse.json()).resolves.toEqual({ errorCode: "forbidden" });
+    await expect(logoutResponse.json()).resolves.toEqual({ errorCode: "forbidden" });
+  });
+
+  it("returns stable login codes without exposing credential details", async () => {
+    const invalid = await login(
+      new Request(`${requestOrigin}/api/admin/login`, {
+        method: "POST",
+        headers: { origin: requestOrigin, "content-type": "application/json" },
+        body: JSON.stringify({ username: "admin", password: "incorrect" }),
+      }),
+    );
+    expect(invalid.status).toBe(401);
+    await expect(invalid.json()).resolves.toEqual({ errorCode: "invalid_credentials" });
+
+    delete process.env.ADMIN_PASSWORD_HASH;
+    const unavailable = await login(
+      new Request(`${requestOrigin}/api/admin/login`, {
+        method: "POST",
+        headers: { origin: requestOrigin, "content-type": "application/json" },
+        body: "{}",
+      }),
+    );
+    expect(unavailable.status).toBe(503);
+    await expect(unavailable.json()).resolves.toEqual({ errorCode: "auth_not_configured" });
   });
 
   it("allows same-origin logout", () => {

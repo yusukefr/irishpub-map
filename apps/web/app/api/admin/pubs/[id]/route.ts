@@ -1,5 +1,9 @@
-import { getAdminApiAuthorizationError } from "../../../../lib/admin-api";
-import { deletePub, isDatabaseConfigured, updatePub } from "../../../../lib/pub-repository";
+import {
+  adminApiErrorResponse,
+  getAdminApiAuthorizationError,
+  getAdminJsonContentTypeError,
+} from "../../../../lib/admin-api";
+import { deletePub, isDatabaseConfigured, PubInputValidationError, updatePub } from "../../../../lib/pub-repository";
 
 /**
  * 指定IDの店舗を検証済み入力で更新します。
@@ -11,12 +15,22 @@ import { deletePub, isDatabaseConfigured, updatePub } from "../../../../lib/pub-
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
   const authorizationError = getAdminApiAuthorizationError(request);
   if (authorizationError) return authorizationError;
-  if (!isDatabaseConfigured()) return Response.json({ error: "Database is not configured." }, { status: 503 });
+  if (!isDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
+  const contentTypeError = getAdminJsonContentTypeError(request);
+  if (contentTypeError) return contentTypeError;
+  let body: unknown;
   try {
-    const pub = await updatePub((await context.params).id, await request.json());
-    return pub ? Response.json({ pub }) : Response.json({ error: "Not found" }, { status: 404 });
+    body = await request.json();
   } catch {
-    return Response.json({ error: "店舗データが正しくありません。" }, { status: 400 });
+    return adminApiErrorResponse("invalid_json", 400);
+  }
+  try {
+    const pub = await updatePub((await context.params).id, body);
+    return pub ? Response.json({ pub }) : adminApiErrorResponse("pub_not_found", 404);
+  } catch (error) {
+    return error instanceof PubInputValidationError
+      ? adminApiErrorResponse("invalid_pub_data", 400)
+      : adminApiErrorResponse("internal_error", 500);
   }
 }
 /**
@@ -29,8 +43,12 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
   const authorizationError = getAdminApiAuthorizationError(request);
   if (authorizationError) return authorizationError;
-  if (!isDatabaseConfigured()) return Response.json({ error: "Database is not configured." }, { status: 503 });
-  return (await deletePub((await context.params).id))
-    ? Response.json({ ok: true })
-    : Response.json({ error: "Not found" }, { status: 404 });
+  if (!isDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
+  try {
+    return (await deletePub((await context.params).id))
+      ? Response.json({ ok: true })
+      : adminApiErrorResponse("pub_not_found", 404);
+  } catch {
+    return adminApiErrorResponse("internal_error", 500);
+  }
 }

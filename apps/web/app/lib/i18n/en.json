@@ -108,6 +108,43 @@
     "login": "Sign in",
     "loggingIn": "Signing in…",
     "loginFailed": "Sign in failed.",
+    "errors": {
+      "unauthorized": "Authentication is required. Please sign in again.",
+      "forbidden": "This operation is not allowed.",
+      "invalid_request": "The request is invalid.",
+      "invalid_json": "The JSON body is invalid.",
+      "invalid_content_type": "Set Content-Type to application/json.",
+      "validation_error": "Check the information you entered.",
+      "not_found": "The requested data was not found.",
+      "database_unavailable": "The database is unavailable.",
+      "internal_error": "An unexpected error occurred.",
+      "invalid_credentials": "The ID or password is incorrect.",
+      "auth_not_configured": "Administrator authentication is not configured.",
+      "invalid_prefecture_code": "The prefecture code is invalid.",
+      "invalid_pub_data": "The pub data is invalid.",
+      "pub_not_found": "The pub was not found.",
+      "tag_conflict": "A tag with the same key or display name already exists.",
+      "tag_not_found": "The tag was not found.",
+      "tag_in_use": "Tags in use cannot be deleted.",
+      "invalid_tag_id": "The tag ID is invalid."
+    },
+    "tagFieldErrors": {
+      "key": {
+        "required": "Key is required.",
+        "too_long": "Key must be {max} characters or fewer.",
+        "invalid_format": "Use lowercase letters, numbers, and single hyphens between words for the key.",
+        "leading_or_trailing_space": "Key cannot start or end with whitespace.",
+        "immutable": "Key cannot be changed after creation."
+      },
+      "nameJa": {
+        "required": "The Japanese display name is required.",
+        "too_long": "The Japanese display name must be {max} characters or fewer."
+      },
+      "nameEn": {
+        "invalid_type": "Enter the English display name as text.",
+        "too_long": "The English display name must be {max} characters or fewer."
+      }
+    },
     "configurationRequired": "Admin setup is required",
     "configurationDescription": "Set the administrator environment variables.",
     "heading": "Pub management",

@@ -1,4 +1,8 @@
-import { adminMasterErrorResponse, getAdminApiAuthorizationError } from "../../../../lib/admin-api";
+import {
+  adminApiErrorResponse,
+  adminMasterErrorResponse,
+  getAdminApiAuthorizationError,
+} from "../../../../lib/admin-api";
 import { getMunicipalitiesByPrefecture } from "../../../../lib/master-repository";
 
 /**
@@ -12,7 +16,7 @@ export async function GET(request: Request) {
 
   const value = new URL(request.url).searchParams.get("prefectureCode");
   if (!value || !/^(?:[1-9]|[1-3][0-9]|4[0-7])$/.test(value)) {
-    return Response.json({ error: "Invalid prefectureCode." }, { status: 400 });
+    return adminApiErrorResponse("invalid_prefecture_code", 400);
   }
 
   try {

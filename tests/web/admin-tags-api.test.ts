@@ -79,6 +79,7 @@ describe("admin tags API", () => {
 
     const unauthorized = await GET(new Request(`${origin}/api/admin/tags`));
     expect(unauthorized.status).toBe(401);
+    await expect(unauthorized.json()).resolves.toEqual({ errorCode: "unauthorized" });
   });
 
   it("creates a normalized Japanese-only tag with authentication and exact Origin", async () => {
@@ -107,7 +108,8 @@ describe("admin tags API", () => {
     );
     expect(invalid.status).toBe(422);
     await expect(invalid.json()).resolves.toMatchObject({
-      fieldErrors: { key: expect.any(String), nameJa: expect.any(String) },
+      errorCode: "validation_error",
+      fieldErrors: { key: "invalid_format", nameJa: "required" },
     });
     expect(repositoryMocks.createAdminTag).not.toHaveBeenCalled();
   });
@@ -120,7 +122,7 @@ describe("admin tags API", () => {
     );
 
     expect(response.status).toBe(409);
-    await expect(response.json()).resolves.toEqual({ error: "同じkeyまたは表示名のタグが存在します。" });
+    await expect(response.json()).resolves.toEqual({ errorCode: "tag_conflict" });
   });
 
   it("updates display names without accepting a key change", async () => {
@@ -138,17 +140,19 @@ describe("admin tags API", () => {
       context(),
     );
     expect(keyChange.status).toBe(422);
+    await expect(keyChange.json()).resolves.toEqual({
+      errorCode: "validation_error",
+      fieldErrors: { key: "immutable" },
+    });
   });
 
   it("returns 400 for an invalid id and 404 for a missing tag", async () => {
-    expect(
-      (
-        await PATCH(
-          adminRequest("/api/admin/tags/invalid", "PATCH", JSON.stringify({ nameJa: "表示名" })),
-          context("invalid"),
-        )
-      ).status,
-    ).toBe(400);
+    const invalidId = await PATCH(
+      adminRequest("/api/admin/tags/invalid", "PATCH", JSON.stringify({ nameJa: "表示名" })),
+      context("invalid"),
+    );
+    expect(invalidId.status).toBe(400);
+    await expect(invalidId.json()).resolves.toEqual({ errorCode: "invalid_tag_id" });
 
     repositoryMocks.updateAdminTag.mockRejectedValue(new repositoryMocks.TagRepositoryError("not_found"));
     const missing = await PATCH(
@@ -156,6 +160,7 @@ describe("admin tags API", () => {
       context(),
     );
     expect(missing.status).toBe(404);
+    await expect(missing.json()).resolves.toEqual({ errorCode: "tag_not_found" });
   });
 
   it("deletes an unused tag and rejects an in-use tag", async () => {
@@ -166,20 +171,22 @@ describe("admin tags API", () => {
     repositoryMocks.deleteAdminTag.mockRejectedValueOnce(new repositoryMocks.TagRepositoryError("in_use"));
     const inUse = await DELETE(adminRequest(`/api/admin/tags/${tagId}`, "DELETE"), context());
     expect(inUse.status).toBe(409);
-    await expect(inUse.json()).resolves.toEqual({ error: "使用中のタグは削除できません。" });
+    await expect(inUse.json()).resolves.toEqual({ errorCode: "tag_in_use" });
   });
 
   it("returns 503 without a database and hides unexpected repository errors", async () => {
     delete process.env.DATABASE_URL;
-    expect(
-      (await POST(adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "food", nameJa: "食事" })))).status,
-    ).toBe(503);
+    const unavailable = await POST(
+      adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "food", nameJa: "食事" })),
+    );
+    expect(unavailable.status).toBe(503);
+    await expect(unavailable.json()).resolves.toEqual({ errorCode: "database_unavailable" });
 
     process.env.DATABASE_URL = "postgres://test-only";
     repositoryMocks.getAdminTags.mockRejectedValue(new Error("database connection detail"));
     const response = await GET(adminRequest("/api/admin/tags"));
     expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: "タグを処理できませんでした。" });
+    await expect(response.json()).resolves.toEqual({ errorCode: "internal_error" });
   });
 });
 

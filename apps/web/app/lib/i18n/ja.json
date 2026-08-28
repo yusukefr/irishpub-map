@@ -108,6 +108,43 @@
     "login": "ログイン",
     "loggingIn": "ログイン中…",
     "loginFailed": "ログインに失敗しました。",
+    "errors": {
+      "unauthorized": "認証が必要です。もう一度ログインしてください。",
+      "forbidden": "この操作は許可されていません。",
+      "invalid_request": "リクエストが正しくありません。",
+      "invalid_json": "JSON本文が正しくありません。",
+      "invalid_content_type": "Content-Typeにはapplication/jsonを指定してください。",
+      "validation_error": "入力内容を確認してください。",
+      "not_found": "対象のデータが見つかりません。",
+      "database_unavailable": "データベースを利用できません。",
+      "internal_error": "処理中にエラーが発生しました。",
+      "invalid_credentials": "ID またはパスワードが正しくありません。",
+      "auth_not_configured": "管理者認証が設定されていません。",
+      "invalid_prefecture_code": "都道府県コードが正しくありません。",
+      "invalid_pub_data": "店舗データが正しくありません。",
+      "pub_not_found": "店舗が見つかりません。",
+      "tag_conflict": "同じkeyまたは表示名のタグが存在します。",
+      "tag_not_found": "タグが見つかりません。",
+      "tag_in_use": "使用中のタグは削除できません。",
+      "invalid_tag_id": "タグIDが正しくありません。"
+    },
+    "tagFieldErrors": {
+      "key": {
+        "required": "keyは必須です。",
+        "too_long": "keyは{max}文字以内で入力してください。",
+        "invalid_format": "keyは小文字英数字と単語間のハイフンだけを使用してください。",
+        "leading_or_trailing_space": "keyの前後に空白は使用できません。",
+        "immutable": "keyは作成後に変更できません。"
+      },
+      "nameJa": {
+        "required": "日本語表示名は必須です。",
+        "too_long": "日本語表示名は{max}文字以内で入力してください。"
+      },
+      "nameEn": {
+        "invalid_type": "英語表示名を文字列で入力してください。",
+        "too_long": "英語表示名は{max}文字以内で入力してください。"
+      }
+    },
     "configurationRequired": "管理画面の設定が必要です",
     "configurationDescription": "管理者用の環境変数を設定してください。",
     "heading": "店舗管理",

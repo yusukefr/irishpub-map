@@ -1,6 +1,10 @@
 import { parseUpdateAdminTagInput } from "@irishpub-map/shared/admin-tag";
-import { getAdminApiAuthorizationError } from "../../../../lib/admin-api";
-import { adminTagErrorResponse, getAdminTagContentTypeError, isAdminTagId } from "../../../../lib/admin-tag-api";
+import {
+  adminApiErrorResponse,
+  getAdminApiAuthorizationError,
+  getAdminJsonContentTypeError,
+} from "../../../../lib/admin-api";
+import { adminTagErrorResponse, isAdminTagId } from "../../../../lib/admin-tag-api";
 import { deleteAdminTag, updateAdminTag } from "../../../../lib/tag-repository";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -14,16 +18,16 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function PATCH(request: Request, context: RouteContext) {
   const authorizationError = getAdminApiAuthorizationError(request);
   if (authorizationError) return authorizationError;
-  if (!process.env.DATABASE_URL) return Response.json({ error: "Database is not configured." }, { status: 503 });
-  const contentTypeError = getAdminTagContentTypeError(request);
+  if (!process.env.DATABASE_URL) return adminApiErrorResponse("database_unavailable", 503);
+  const contentTypeError = getAdminJsonContentTypeError(request);
   if (contentTypeError) return contentTypeError;
   const { id } = await context.params;
-  if (!isAdminTagId(id)) return Response.json({ error: "タグIDが正しくありません。" }, { status: 400 });
+  if (!isAdminTagId(id)) return adminApiErrorResponse("invalid_tag_id", 400);
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "JSON本文が正しくありません。" }, { status: 400 });
+    return adminApiErrorResponse("invalid_json", 400);
   }
   try {
     return Response.json({ tag: await updateAdminTag(id, parseUpdateAdminTagInput(body)) });
@@ -41,9 +45,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 export async function DELETE(request: Request, context: RouteContext) {
   const authorizationError = getAdminApiAuthorizationError(request);
   if (authorizationError) return authorizationError;
-  if (!process.env.DATABASE_URL) return Response.json({ error: "Database is not configured." }, { status: 503 });
+  if (!process.env.DATABASE_URL) return adminApiErrorResponse("database_unavailable", 503);
   const { id } = await context.params;
-  if (!isAdminTagId(id)) return Response.json({ error: "タグIDが正しくありません。" }, { status: 400 });
+  if (!isAdminTagId(id)) return adminApiErrorResponse("invalid_tag_id", 400);
   try {
     await deleteAdminTag(id);
     return Response.json({ ok: true });

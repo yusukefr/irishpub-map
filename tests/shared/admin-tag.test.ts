@@ -36,8 +36,8 @@ describe("admin tag validation", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(AdminTagValidationError);
       expect((error as AdminTagValidationError).fieldErrors).toMatchObject({
-        key: expect.any(String),
-        nameJa: expect.any(String),
+        key: "too_long",
+        nameJa: "too_long",
       });
     }
   });

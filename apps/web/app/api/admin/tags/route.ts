@@ -1,6 +1,10 @@
 import { parseCreateAdminTagInput } from "@irishpub-map/shared/admin-tag";
-import { getAdminApiAuthorizationError } from "../../../lib/admin-api";
-import { adminTagErrorResponse, getAdminTagContentTypeError } from "../../../lib/admin-tag-api";
+import {
+  adminApiErrorResponse,
+  getAdminApiAuthorizationError,
+  getAdminJsonContentTypeError,
+} from "../../../lib/admin-api";
+import { adminTagErrorResponse } from "../../../lib/admin-tag-api";
 import { createAdminTag, getAdminTags } from "../../../lib/tag-repository";
 
 /**
@@ -26,14 +30,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const authorizationError = getAdminApiAuthorizationError(request);
   if (authorizationError) return authorizationError;
-  if (!process.env.DATABASE_URL) return Response.json({ error: "Database is not configured." }, { status: 503 });
-  const contentTypeError = getAdminTagContentTypeError(request);
+  if (!process.env.DATABASE_URL) return adminApiErrorResponse("database_unavailable", 503);
+  const contentTypeError = getAdminJsonContentTypeError(request);
   if (contentTypeError) return contentTypeError;
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "JSON本文が正しくありません。" }, { status: 400 });
+    return adminApiErrorResponse("invalid_json", 400);
   }
   try {
     return Response.json({ tag: await createAdminTag(parseCreateAdminTagInput(body)) }, { status: 201 });
