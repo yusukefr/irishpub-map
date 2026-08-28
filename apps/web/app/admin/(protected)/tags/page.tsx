@@ -1,17 +1,14 @@
-import { getTranslation } from "../../../lib/i18n";
+import { AdminTagManager } from "../../../components/admin-tag-manager";
+import { requireAdminSession } from "../../../lib/admin-server";
 import { getRequestLocale } from "../../../lib/i18n/server";
+import { getAdminTags } from "../../../lib/tag-repository";
 
 /**
- * 後続のタグ管理機能を配置する認証済みページを表示します。
- * @returns {Promise<JSX.Element>} タグ管理の準備状態を示すページ。
+ * 管理者セッションを検証してから、日英翻訳と使用店舗数を含むタグ管理機能を表示します。
+ * @returns {Promise<JSX.Element>} 認証済みタグ管理画面。
  */
 export default async function AdminTagsPage() {
-  const t = getTranslation(await getRequestLocale()).admin;
-  return (
-    <section className="admin-panel admin-wide">
-      <p className="eyebrow">Master data</p>
-      <h1>{t.tagsHeading}</h1>
-      <p>{t.referenceFoundationDescription}</p>
-    </section>
-  );
+  await requireAdminSession();
+  const [locale, tags] = await Promise.all([getRequestLocale(), getAdminTags()]);
+  return <AdminTagManager initialTags={tags} databaseConfigured={Boolean(process.env.DATABASE_URL)} locale={locale} />;
 }
