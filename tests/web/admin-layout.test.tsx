@@ -3,21 +3,15 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const layoutMocks = vi.hoisted(() => ({
-  getAdminSession: vi.fn(),
   isAdminConfigured: vi.fn(),
-  redirect: vi.fn(),
+  requireAdminSession: vi.fn(),
 }));
 
-vi.mock("next/headers", () => ({ cookies: () => Promise.resolve(new Map()) }));
-vi.mock("next/navigation", () => ({
-  redirect: (path: string) => {
-    layoutMocks.redirect(path);
-    throw new Error(`redirect:${path}`);
-  },
-}));
 vi.mock("../../apps/web/app/lib/admin-auth", () => ({
-  getAdminSession: layoutMocks.getAdminSession,
   isAdminConfigured: layoutMocks.isAdminConfigured,
+}));
+vi.mock("../../apps/web/app/lib/admin-server", () => ({
+  requireAdminSession: layoutMocks.requireAdminSession,
 }));
 vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: () => Promise.resolve("ja") }));
 vi.mock("../../apps/web/app/components/admin-navigation", () => ({
@@ -27,9 +21,8 @@ vi.mock("../../apps/web/app/components/admin-navigation", () => ({
 import AdminLayout from "../../apps/web/app/admin/(protected)/layout";
 
 beforeEach(() => {
-  layoutMocks.getAdminSession.mockReset();
   layoutMocks.isAdminConfigured.mockReset();
-  layoutMocks.redirect.mockReset();
+  layoutMocks.requireAdminSession.mockReset();
 });
 
 describe("AdminLayout", () => {
@@ -39,19 +32,19 @@ describe("AdminLayout", () => {
 
     expect(screen.getByRole("heading", { name: "管理画面の設定が必要です" })).toBeInTheDocument();
     expect(screen.queryByText("protected")).not.toBeInTheDocument();
+    expect(layoutMocks.requireAdminSession).not.toHaveBeenCalled();
   });
 
   it("redirects an unauthenticated request before rendering protected content", async () => {
     layoutMocks.isAdminConfigured.mockReturnValue(true);
-    layoutMocks.getAdminSession.mockReturnValue(null);
+    layoutMocks.requireAdminSession.mockRejectedValue(new Error("redirect:/admin/login"));
 
     await expect(AdminLayout({ children: <p>protected</p> })).rejects.toThrow("redirect:/admin/login");
-    expect(layoutMocks.redirect).toHaveBeenCalledWith("/admin/login");
   });
 
   it("renders navigation and content for an authenticated administrator", async () => {
     layoutMocks.isAdminConfigured.mockReturnValue(true);
-    layoutMocks.getAdminSession.mockReturnValue({ username: "admin", expiresAt: Date.now() + 1000 });
+    layoutMocks.requireAdminSession.mockResolvedValue(undefined);
     render(await AdminLayout({ children: <p>protected</p> }));
 
     expect(screen.getByRole("navigation", { name: "管理機能" })).toBeInTheDocument();

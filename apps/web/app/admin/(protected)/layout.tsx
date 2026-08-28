@@ -1,7 +1,6 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { AdminNavigation } from "../../components/admin-navigation";
-import { getAdminSession, isAdminConfigured } from "../../lib/admin-auth";
+import { isAdminConfigured } from "../../lib/admin-auth";
+import { requireAdminSession } from "../../lib/admin-server";
 import { getTranslation } from "../../lib/i18n";
 import { getRequestLocale } from "../../lib/i18n/server";
 
@@ -25,7 +24,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     );
   }
 
-  if (!getAdminSession((await cookies()).toString())) redirect("/admin/login");
+  await requireAdminSession();
 
   return (
     <div className="admin-layout">
