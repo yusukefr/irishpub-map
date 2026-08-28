@@ -43,7 +43,7 @@ describe("admin UI", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/admin"));
   });
 
-  it("adds, edits, deletes pubs and logs out", async () => {
+  it("adds, edits, and deletes pubs", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ pub: { ...pub, id: "pub-2", name: "New Pub" } })));
     render(<AdminPubManager initialPubs={[pub]} databaseConfigured locale="ja" />);
@@ -63,9 +63,5 @@ describe("admin UI", () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true })));
     fireEvent.click(screen.getAllByRole("button", { name: "削除" })[1]);
     await waitFor(() => expect(screen.queryByText("Updated")).not.toBeInTheDocument());
-
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true })));
-    fireEvent.click(screen.getByRole("button", { name: "ログアウト" }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/admin/login"));
   });
 });

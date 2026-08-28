@@ -13,9 +13,13 @@ vi.mock("../../apps/web/app/lib/pub-repository", () => repositoryMocks);
 import { GET } from "../../apps/web/app/api/admin/pubs/route";
 
 const originalSessionSecret = process.env.ADMIN_SESSION_SECRET;
+const originalAdminUsername = process.env.ADMIN_USERNAME;
+const originalPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
 beforeEach(() => {
   process.env.ADMIN_SESSION_SECRET = "test-only-session-secret";
+  process.env.ADMIN_USERNAME = "admin";
+  process.env.ADMIN_PASSWORD_HASH = "test-only-hash";
   repositoryMocks.getAdminPubs.mockReset();
   repositoryMocks.getAdminPubs.mockResolvedValue([
     { id: "pub-1", name: "Published", isPublished: true },
@@ -28,6 +32,10 @@ beforeEach(() => {
 afterEach(() => {
   if (originalSessionSecret === undefined) delete process.env.ADMIN_SESSION_SECRET;
   else process.env.ADMIN_SESSION_SECRET = originalSessionSecret;
+  if (originalAdminUsername === undefined) delete process.env.ADMIN_USERNAME;
+  else process.env.ADMIN_USERNAME = originalAdminUsername;
+  if (originalPasswordHash === undefined) delete process.env.ADMIN_PASSWORD_HASH;
+  else process.env.ADMIN_PASSWORD_HASH = originalPasswordHash;
 });
 
 describe("GET /api/admin/pubs", () => {

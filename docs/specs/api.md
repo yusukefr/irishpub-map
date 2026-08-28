@@ -58,16 +58,24 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 | メソッド | パス | 成功時 | 主な失敗時 |
 | --- | --- | --- | --- |
-| `POST` | `/api/admin/login` | `200` と `Set-Cookie` | 資格情報不一致は `401`、管理者設定なしは `503` |
-| `POST` | `/api/admin/logout` | `200` と期限切れの Cookie | なし |
+| `POST` | `/api/admin/login` | `200` と `Set-Cookie` | Origin不正は `403`、資格情報不一致は `401`、管理者設定なしは `503` |
+| `POST` | `/api/admin/logout` | `200` と期限切れの Cookie | Origin不正は `403` |
 | `GET` | `/api/admin/pubs` | `200` と `{ pubs, databaseConfigured }`。各店舗に `isPublished` を含む | 未認証は `401` |
-| `POST` | `/api/admin/pubs` | `201` と `{ pub }`。`pub` に `isPublished` を含む | 未認証は `401`、不正データは `400`、DB 未設定は `503` |
-| `PUT` | `/api/admin/pubs/:id` | `200` と `{ pub }`。`pub` に `isPublished` を含む | 未認証は `401`、不正データは `400`、対象なしは `404`、DB 未設定は `503` |
-| `DELETE` | `/api/admin/pubs/:id` | `200` と `{ ok: true }` | 未認証は `401`、対象なしは `404`、DB 未設定は `503` |
+| `GET` | `/api/admin/master/prefectures` | `200` と `{ prefectures }` | 未認証は `401`、取得失敗は `500` |
+| `GET` | `/api/admin/master/municipalities?prefectureCode=:code` | `200` と `{ municipalities }` | 未認証は `401`、都道府県コード不正は `400`、取得失敗は `500` |
+| `GET` | `/api/admin/master/tags` | `200` と `{ tags }` | 未認証は `401`、取得失敗は `500` |
+| `GET` | `/api/admin/master/statuses` | `200` と `{ statuses }` | 未認証は `401`、取得失敗は `500` |
+| `POST` | `/api/admin/pubs` | `201` と `{ pub }`。`pub` に `isPublished` を含む | 未認証は `401`、Origin不正は `403`、不正データは `400`、DB 未設定は `503` |
+| `PUT` | `/api/admin/pubs/:id` | `200` と `{ pub }`。`pub` に `isPublished` を含む | 未認証は `401`、Origin不正は `403`、不正データは `400`、対象なしは `404`、DB 未設定は `503` |
+| `DELETE` | `/api/admin/pubs/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、対象なしは `404`、DB 未設定は `503` |
 
 `POST` と `PUT` の JSON 本文は `Pub` と同じフィールドを使います。公開状態は入力に含めず、新規作成時の `id` はサーバーで生成され、DB既定値により非公開になります。更新時は URL の `:id` が使われます。フィールドの詳細は[店舗データ仕様](data.md)を参照してください。
 
-Issue #273では取得Repositoryを公開用と管理用へ分離し、管理一覧の現行 `Pub` に `isPublished` を追加しました。親Issue #264の後続改修で、NULL許容の管理用DTO、公開切替専用API、同一Origin検証、構造化Validationエラーを追加します。確定した契約は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスは `{ code, key, name }` です。表示名は日本語を既定とし、Repositoryは将来のロケール指定に備えて日本語フォールバックを持ちます。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
+
+管理APIは共通認証ヘルパーで、管理者設定が揃い、有効な署名済みセッションを持つリクエストだけを許可します。変更系リクエストは共通の同一Origin検証も通し、`Origin` の欠落・不一致を `403` で拒否します。現行は単一管理者モデルのため、このセッションを管理権限として扱います。Repositoryの例外時はDB・SQL・接続情報を含まない一般化したエラーを返します。
+
+Issue #273では取得Repositoryを公開用と管理用へ分離し、管理一覧の現行 `Pub` に `isPublished` を追加しました。Issue #274では管理ページ・APIの共通認証と同一Origin検証を追加します。親Issue #264の後続改修で、NULL許容の管理用DTO、公開切替専用API、構造化Validationエラーを追加します。確定した契約は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 ## 今後の拡張候補
 

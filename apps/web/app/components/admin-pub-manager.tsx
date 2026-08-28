@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import type { Pub } from "@irishpub-map/shared/pub";
 import { PREFECTURES } from "@irishpub-map/shared/prefecture";
@@ -53,8 +52,6 @@ export function AdminPubManager({ initialPubs, databaseConfigured, locale }: Pro
   const [pubs, setPubs] = useState(initialPubs);
   const [editing, setEditing] = useState<Pub | null>(null);
   const [message, setMessage] = useState("");
-  const router = useRouter();
-
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.target as HTMLFormElement;
@@ -83,11 +80,6 @@ export function AdminPubManager({ initialPubs, databaseConfigured, locale }: Pro
     setMessage(t.admin.deleted);
   }
 
-  async function logout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
-  }
-
   const values = editing
     ? {
         ...editing,
@@ -101,108 +93,103 @@ export function AdminPubManager({ initialPubs, databaseConfigured, locale }: Pro
       }
     : emptyPub;
   return (
-    <main className="admin-shell">
-      <section className="admin-panel admin-wide">
-        <div className="admin-heading">
-          <div>
-            <p className="eyebrow">Irish Pub Map</p>
-            <h1>{t.admin.heading}</h1>
-          </div>
-          <button type="button" onClick={logout}>
-            {t.admin.logout}
-          </button>
+    <section className="admin-panel admin-wide">
+      <div className="admin-heading">
+        <div>
+          <p className="eyebrow">Irish Pub Map</p>
+          <h1>{t.admin.heading}</h1>
         </div>
-        {!databaseConfigured ? <p className="admin-error">{t.admin.databaseUnavailable}</p> : null}
-        {message ? <p role="status">{message}</p> : null}
-        <form className="admin-form admin-pub-form" onSubmit={save} key={editing?.id || "new"}>
-          <h2>{editing ? t.admin.editPub : t.admin.addPub}</h2>
-          <label>
-            {t.admin.name}
-            <input name="name" required defaultValue={values.name} />
-          </label>
-          <label>
-            {t.admin.prefecture}
-            <select name="prefecture" required defaultValue={values.prefecture}>
-              <option value="">{t.admin.selectPrefecture}</option>
-              {PREFECTURES.map((prefecture) => (
-                <option key={prefecture.code} value={prefecture.name}>
-                  {prefecture.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            {t.admin.city}
-            <input name="city" defaultValue={values.city} />
-          </label>
-          <label>
-            {t.admin.address}
-            <input name="address" required defaultValue={values.address} />
-          </label>
-          <label>
-            {t.admin.latitude}
-            <input name="latitude" type="number" step="any" required defaultValue={values.latitude} />
-          </label>
-          <label>
-            {t.admin.longitude}
-            <input name="longitude" type="number" step="any" required defaultValue={values.longitude} />
-          </label>
-          <label>
-            {t.admin.tags}
-            <input name="tags" defaultValue={values.tags} />
-          </label>
-          <label>
-            {t.admin.status}
-            <select name="status" defaultValue={values.status}>
-              {statuses.map((status) => (
-                <option key={status.code} value={status.value}>
-                  {t.list.statuses[status.value]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            {t.admin.officialWebsite}
-            <input name="websiteUrl" type="url" defaultValue={values.websiteUrl} />
-          </label>
-          <label>
-            Google Maps
-            <input name="googleMapsUrl" type="url" defaultValue={values.googleMapsUrl} />
-          </label>
-          <label>
-            Instagram
-            <input name="instagramUrl" type="url" defaultValue={values.instagramUrl} />
-          </label>
-          <div className="admin-actions">
-            <button disabled={!databaseConfigured}>{editing ? t.admin.update : t.admin.add}</button>
-            {editing ? (
-              <button type="button" onClick={() => setEditing(null)}>
-                {t.admin.cancel}
-              </button>
-            ) : null}
-          </div>
-        </form>
-        <section>
-          <h2>{formatMessage(t.admin.listedPubs, { count: pubs.length })}</h2>
-          <ul className="admin-pub-list">
-            {pubs.map((pub) => (
-              <li key={pub.id}>
-                <span>
-                  <strong>{pub.name}</strong> {pub.prefecture} / {pub.address}
-                </span>
-                <span>
-                  <button type="button" onClick={() => setEditing(pub)}>
-                    {t.admin.edit}
-                  </button>
-                  <button type="button" onClick={() => remove(pub)} disabled={!databaseConfigured}>
-                    {t.admin.delete}
-                  </button>
-                </span>
-              </li>
+      </div>
+      {!databaseConfigured ? <p className="admin-error">{t.admin.databaseUnavailable}</p> : null}
+      {message ? <p role="status">{message}</p> : null}
+      <form className="admin-form admin-pub-form" onSubmit={save} key={editing?.id || "new"}>
+        <h2>{editing ? t.admin.editPub : t.admin.addPub}</h2>
+        <label>
+          {t.admin.name}
+          <input name="name" required defaultValue={values.name} />
+        </label>
+        <label>
+          {t.admin.prefecture}
+          <select name="prefecture" required defaultValue={values.prefecture}>
+            <option value="">{t.admin.selectPrefecture}</option>
+            {PREFECTURES.map((prefecture) => (
+              <option key={prefecture.code} value={prefecture.name}>
+                {prefecture.name}
+              </option>
             ))}
-          </ul>
-        </section>
+          </select>
+        </label>
+        <label>
+          {t.admin.city}
+          <input name="city" defaultValue={values.city} />
+        </label>
+        <label>
+          {t.admin.address}
+          <input name="address" required defaultValue={values.address} />
+        </label>
+        <label>
+          {t.admin.latitude}
+          <input name="latitude" type="number" step="any" required defaultValue={values.latitude} />
+        </label>
+        <label>
+          {t.admin.longitude}
+          <input name="longitude" type="number" step="any" required defaultValue={values.longitude} />
+        </label>
+        <label>
+          {t.admin.tags}
+          <input name="tags" defaultValue={values.tags} />
+        </label>
+        <label>
+          {t.admin.status}
+          <select name="status" defaultValue={values.status}>
+            {statuses.map((status) => (
+              <option key={status.code} value={status.value}>
+                {t.list.statuses[status.value]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t.admin.officialWebsite}
+          <input name="websiteUrl" type="url" defaultValue={values.websiteUrl} />
+        </label>
+        <label>
+          Google Maps
+          <input name="googleMapsUrl" type="url" defaultValue={values.googleMapsUrl} />
+        </label>
+        <label>
+          Instagram
+          <input name="instagramUrl" type="url" defaultValue={values.instagramUrl} />
+        </label>
+        <div className="admin-actions">
+          <button disabled={!databaseConfigured}>{editing ? t.admin.update : t.admin.add}</button>
+          {editing ? (
+            <button type="button" onClick={() => setEditing(null)}>
+              {t.admin.cancel}
+            </button>
+          ) : null}
+        </div>
+      </form>
+      <section>
+        <h2>{formatMessage(t.admin.listedPubs, { count: pubs.length })}</h2>
+        <ul className="admin-pub-list">
+          {pubs.map((pub) => (
+            <li key={pub.id}>
+              <span>
+                <strong>{pub.name}</strong> {pub.prefecture} / {pub.address}
+              </span>
+              <span>
+                <button type="button" onClick={() => setEditing(pub)}>
+                  {t.admin.edit}
+                </button>
+                <button type="button" onClick={() => remove(pub)} disabled={!databaseConfigured}>
+                  {t.admin.delete}
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
       </section>
-    </main>
+    </section>
   );
 }

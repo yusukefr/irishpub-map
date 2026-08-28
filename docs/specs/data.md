@@ -8,6 +8,8 @@
 
 この文書の `Pub` は現行の公開・表示用データ形式です。公開APIは公開状態の店舗だけをこの型で返し、公開状態そのものは含めません。管理一覧は移行段階の形式として `Pub & { isPublished: boolean }` を返します。親Issue #264の後続改修では、未完成の下書きをこの型へ混在させず、公開用 `PublicPub`、NULL許容の管理用 `AdminPub`、作成・更新入力を分離します。確定した後続設計は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
+管理画面の選択肢は `packages/shared/src/admin-master.ts` の `PrefectureOption`、`MunicipalityOption`、`TagOption`、`PubStatusOption` を使用します。これらは表示に必要なコード・ID・内部キー・表示名だけを持ち、DBの行や監査用カラムをそのまま公開しません。
+
 ## APIデータ形式
 
 ```json

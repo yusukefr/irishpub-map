@@ -248,16 +248,14 @@ Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`creat
 - 管理画面と店舗管理APIは、サーバー側で署名と有効期限を検証した管理セッションを要求しています。
 - Cookieは `HttpOnly; Secure; SameSite=Lax; Path=/`、有効期限は8時間です。
 - 管理者は1種類でロールがないため、有効な管理セッションを更新権限と同義にしています。
-- 更新APIはセッションを検証しますが、Origin / Referer検証とCSRF Tokenはありません。
+- `POST` / `PUT` / `PATCH` / `DELETE` は `Origin` を必須にし、リクエスト先Originとの完全一致を検証します。不一致または欠落は `403` にします。ログイン・ログアウトも対象です。
+- 同一Origin検証とSameSite Cookieを組み合わせ、現時点ではCSRF Tokenを追加していません。
 
 ### 後続実装の必須方針
 
-- すべての `/api/admin/*` は共通のサーバー側認証関数を通します。
-- `POST` / `PUT` / `PATCH` / `DELETE` は `Origin` を必須にし、リクエスト先Originとの完全一致を検証します。不一致または欠落は `403` にします。
 - 管理Cookieは `SameSite=Strict` へ強化し、`HttpOnly`、`Secure`、署名、有効期限を維持します。
 - JSON更新APIは `Content-Type: application/json` を必須にします。
-- 同一Origin検証とSameSite Cookieを組み合わせ、初期実装ではCSRF Tokenを追加しません。クロスOriginの管理クライアントを許可する場合は別途設計します。
-- ログイン・ログアウトもCookie状態を変えるため同一Origin検証の対象にします。
+- クロスOriginの管理クライアントを許可する場合は、認証・CSRF対策を含めて別途設計します。
 - `prefectureCode`、`municipalityCode`、`status`、`tagIds` をDBで再検証し、表示名や公開可否を信用しません。
 
 公開APIのAPIキーは一般向け取得の保護であり、管理セッションやCSRF対策の代替にはしません。
@@ -266,7 +264,7 @@ Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`creat
 
 1. `is_published` を安全なマイグレーションで追加し、公開・管理取得を分離する（Issue #273で実装済み）。
 2. 下書き用NULL制約、`PublicPub` / `AdminPub` / 入力DTOとDraft / Publish Validationを実装する。
-3. 共通の管理認証・同一Origin検証を追加する。
+3. 共通の管理認証・同一Origin検証を追加する（Issue #274で実装）。
 4. Application Serviceとトランザクションを使う管理更新・公開切替APIを実装する。
 5. 管理画面の一覧、フォーム、公開切替、タグ、ステータス管理を実装する。
 

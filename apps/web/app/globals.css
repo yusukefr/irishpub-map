@@ -759,6 +759,78 @@ h1 {
   min-height: 100vh;
   padding: 48px 16px;
 }
+.admin-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  min-height: 100vh;
+}
+.admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 32px 20px;
+  background: var(--accent-strong);
+  color: #fffdf7;
+}
+.admin-sidebar .eyebrow {
+  color: #f0c05a;
+}
+.admin-brand {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.admin-navigation,
+.admin-navigation ul {
+  display: grid;
+  gap: 10px;
+}
+.admin-navigation {
+  align-content: space-between;
+  flex: 1;
+}
+.admin-navigation ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-navigation a,
+.admin-navigation button {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid rgb(255 255 255 / 36%);
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.admin-navigation a[aria-current="page"] {
+  border-color: #f0c05a;
+  background: #f0c05a;
+  color: var(--accent-strong);
+}
+.admin-navigation a:hover,
+.admin-navigation button:hover {
+  background: rgb(255 255 255 / 14%);
+  text-decoration: none;
+}
+.admin-navigation a[aria-current="page"]:hover {
+  background: #f0c05a;
+}
+.admin-navigation a:focus-visible,
+.admin-navigation button:focus-visible {
+  outline: 3px solid #f0c05a;
+  outline-offset: 2px;
+}
+.admin-content {
+  min-width: 0;
+  padding: 48px clamp(16px, 4vw, 56px);
+}
 .admin-panel {
   width: min(100%, 520px);
   margin: 0 auto;
@@ -806,7 +878,7 @@ h1 {
 .admin-form button,
 .admin-heading button,
 .admin-pub-list button {
-  min-height: 38px;
+  min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--accent-strong);
   border-radius: 6px;
@@ -841,6 +913,26 @@ h1 {
   gap: 8px;
 }
 @media (max-width: 640px) {
+  .admin-layout {
+    grid-template-columns: 1fr;
+  }
+  .admin-sidebar {
+    gap: 18px;
+    padding: 20px 16px;
+  }
+  .admin-navigation {
+    gap: 14px;
+  }
+  .admin-navigation ul {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .admin-navigation a {
+    justify-content: center;
+    padding-inline: 6px;
+  }
+  .admin-content {
+    padding: 24px 16px 40px;
+  }
   .admin-pub-form {
     grid-template-columns: 1fr;
   }

@@ -39,14 +39,14 @@ VercelのPreview Deployment Protectionが公開APIのサーバー側fetchをSSO�
 ```mermaid
 sequenceDiagram
   actor Admin as 管理者
-  participant AdminPage as /admin
+  participant AdminPage as /admin/pubs
   participant Login as POST /api/admin/login
   participant Auth as admin-auth
   participant AdminAPI as /api/admin/pubs
   participant Repository as pub-repository
   participant Neon as Neon Postgres
 
-  Admin->>AdminPage: GET /admin（セッション Cookie）
+  Admin->>AdminPage: GET /admin または /admin/pubs（セッション Cookie）
   AdminPage->>Auth: セッションを検証
   alt 有効なセッションがない
     Auth-->>AdminPage: 未認証
@@ -85,3 +85,28 @@ sequenceDiagram
 ```
 
 管理 API のリクエストとレスポンス、HTTP ステータスの詳細は[API 方針](../specs/api.md)を参照してください。
+
+## 管理画面が参照マスタを取得する
+
+```mermaid
+sequenceDiagram
+  actor Admin as 管理者
+  participant MasterAPI as /api/admin/master/*
+  participant Auth as admin-api / admin-auth
+  participant Repository as master-repository
+  participant Neon as Neon Postgres
+
+  Admin->>MasterAPI: GET（セッション Cookie、必要時はprefectureCode）
+  MasterAPI->>Auth: 管理者設定・署名・有効期限を検証
+  alt 未認証または管理者設定不足
+    Auth-->>MasterAPI: 拒否
+    MasterAPI-->>Admin: 401
+  else 認証済み
+    Auth-->>MasterAPI: 許可
+    MasterAPI->>Repository: 管理用DTOを取得
+    Repository->>Neon: パラメータ化した参照クエリ
+    Neon-->>Repository: マスタ行
+    Repository-->>MasterAPI: 必要最小限のDTO
+    MasterAPI-->>Admin: 200
+  end
+```
