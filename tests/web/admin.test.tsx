@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginForm } from "../../apps/web/app/components/admin-login-form";
 import { AdminPubManager } from "../../apps/web/app/components/admin-pub-manager";
+import { parseAdminPubWriteInput } from "../../packages/shared/src/admin-pub";
 
 const push = vi.fn();
 const refresh = vi.fn();
@@ -13,8 +14,10 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 const pub = {
   id: "550e8400-e29b-41d4-a716-446655440001",
   name: "The Pub",
+  kana: "ザ パブ",
   prefecture: "東京都",
   city: "渋谷区",
+  municipalityCode: "131130",
   address: "神南 1-1",
   latitude: 35.1,
   longitude: 139.1,
@@ -22,6 +25,7 @@ const pub = {
   googleMapsUrl: null,
   instagramUrl: null,
   tags: ["guinness"],
+  tagDisplayNames: { guinness: "ギネス" },
   status: "open" as const,
   statusDisplayName: "営業中",
   prefectureCode: 13,
@@ -29,6 +33,25 @@ const pub = {
   tagItems: [{ id: "550e8400-e29b-41d4-a716-446655440010", key: "guinness", name: "ギネス" }],
   isPublished: false,
   updatedAt: "2026-08-29T01:00:00.000Z",
+};
+
+const pubDetail = {
+  id: pub.id,
+  isPublished: false,
+  prefectureCode: 13,
+  municipalityCode: "131130",
+  latitude: 35.1,
+  longitude: 139.1,
+  websiteUrl: null,
+  googleMapsUrl: null,
+  instagramUrl: null,
+  status: "open" as const,
+  translations: {
+    ja: { name: "The Pub", nameReading: "ザ パブ", address: "神南 1-1" },
+    en: { name: "The Pub", nameReading: null, address: "1-1 Jinnan" },
+  },
+  tagIds: ["550e8400-e29b-41d4-a716-446655440010"],
+  updatedAt: pub.updatedAt,
 };
 
 const managerProps = {
@@ -91,26 +114,167 @@ describe("admin UI", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(expected);
   });
 
-  it("adds, edits, and deletes pubs", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ pub: { ...pub, id: "pub-2", name: "New Pub" } })));
-    render(<AdminPubManager {...managerProps} />);
-    fireEvent.change(screen.getAllByLabelText("店舗名")[0], { target: { value: "New Pub" } });
-    fireEvent.change(screen.getAllByLabelText("都道府県")[0], { target: { value: "大阪府" } });
-    fireEvent.change(screen.getByLabelText("住所"), { target: { value: "大阪市 1-1" } });
-    fireEvent.change(screen.getByLabelText("緯度"), { target: { value: "34.1" } });
-    fireEvent.change(screen.getByLabelText("経度"), { target: { value: "135.1" } });
+  it("saves a name-only draft with explicit null values", async () => {
+    const draft = {
+      ...pubDetail,
+      prefectureCode: null,
+      municipalityCode: null,
+      latitude: null,
+      longitude: null,
+      status: null,
+      translations: { ja: { name: "Draft Pub", nameReading: null, address: null }, en: null },
+      tagIds: [],
+    };
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ pub: draft })));
+    render(<AdminPubManager {...managerProps} initialPage={{ pubs: [], total: 0, page: 1, pageSize: 50 }} />);
+
+    fireEvent.change(screen.getAllByLabelText("店舗名")[0], { target: { value: "Draft Pub" } });
     fireEvent.submit(screen.getByRole("button", { name: "追加" }).closest("form")!);
     expect(await screen.findByText("保存しました。")).toBeInTheDocument();
 
+    const payload = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+    expect(parseAdminPubWriteInput(payload)).toEqual({
+      prefectureCode: null,
+      municipalityCode: null,
+      latitude: null,
+      longitude: null,
+      websiteUrl: null,
+      googleMapsUrl: null,
+      instagramUrl: null,
+      status: null,
+      translations: { ja: { name: "Draft Pub", nameReading: null, address: null }, en: null },
+      tagIds: [],
+    });
+  });
+
+  it("sends parser-compatible payloads while adding, editing, and deleting pubs", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ municipalities: [{ code: "271004", prefectureCode: 27, name: "大阪市北区" }] })),
+    );
+    render(<AdminPubManager {...managerProps} />);
+    fireEvent.change(screen.getAllByLabelText("店舗名")[0], { target: { value: "New Pub" } });
+    fireEvent.change(screen.getAllByLabelText("都道府県")[0], { target: { value: "27" } });
+    expect(await screen.findByRole("option", { name: "大阪市北区" })).toBeInTheDocument();
+    fireEvent.change(screen.getAllByLabelText("市区町村")[0], { target: { value: "271004" } });
+    fireEvent.change(screen.getByLabelText("住所"), { target: { value: "大阪市 1-1" } });
+    fireEvent.change(screen.getByLabelText("緯度"), { target: { value: "34.1" } });
+    fireEvent.change(screen.getByLabelText("経度"), { target: { value: "135.1" } });
+    const tagSelect = screen.getByLabelText("タグ（複数選択可）") as HTMLSelectElement;
+    tagSelect.options[0].selected = true;
+    fireEvent.change(screen.getAllByLabelText("営業状況")[0], { target: { value: "open" } });
+
+    const createdPub = {
+      ...pubDetail,
+      id: "550e8400-e29b-41d4-a716-446655440002",
+      prefectureCode: 27,
+      municipalityCode: "271004",
+      latitude: 34.1,
+      longitude: 135.1,
+      translations: { ja: { name: "New Pub", nameReading: null, address: "大阪市 1-1" }, en: null },
+    };
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ pub: createdPub })));
+    fireEvent.submit(screen.getByRole("button", { name: "追加" }).closest("form")!);
+    expect(await screen.findByText("保存しました。")).toBeInTheDocument();
+
+    const createCall = fetchMock.mock.calls.find(
+      ([url, init]) => url === "/api/admin/pubs" && (init as RequestInit).method === "POST",
+    );
+    expect(createCall).toBeDefined();
+    expect(parseAdminPubWriteInput(JSON.parse(String((createCall![1] as RequestInit).body)))).toEqual({
+      prefectureCode: 27,
+      municipalityCode: "271004",
+      latitude: 34.1,
+      longitude: 135.1,
+      websiteUrl: null,
+      googleMapsUrl: null,
+      instagramUrl: null,
+      status: "open",
+      translations: { ja: { name: "New Pub", nameReading: null, address: "大阪市 1-1" }, en: null },
+      tagIds: [managerProps.tags[0].id],
+    });
+
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ pub: pubDetail })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ municipalities: managerProps.municipalities })));
     fireEvent.click(screen.getAllByRole("button", { name: "編集" })[0]);
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ pub: { ...pub, name: "Updated" } })));
-    fireEvent.submit(screen.getByRole("button", { name: "更新" }).closest("form")!);
-    expect(await screen.findByText("Updated")).toBeInTheDocument();
+    const updateButton = await screen.findByRole("button", { name: "更新" });
+    fireEvent.change(screen.getAllByLabelText("店舗名")[0], { target: { value: "Updated" } });
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          pub: {
+            ...pubDetail,
+            translations: { ...pubDetail.translations, ja: { ...pubDetail.translations.ja, name: "Updated" } },
+          },
+        }),
+      ),
+    );
+    fireEvent.submit(updateButton.closest("form")!);
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          ([url, init]) => url === `/api/admin/pubs/${pub.id}` && (init as RequestInit | undefined)?.method === "PUT",
+        ),
+      ).toBe(true),
+    );
+    const updateCall = fetchMock.mock.calls.find(
+      ([url, init]) => url === `/api/admin/pubs/${pub.id}` && (init as RequestInit | undefined)?.method === "PUT",
+    )!;
+    expect(parseAdminPubWriteInput(JSON.parse(String((updateCall[1] as RequestInit).body))).translations).toEqual({
+      ja: { name: "Updated", nameReading: "ザ パブ", address: "神南 1-1" },
+      en: pubDetail.translations.en,
+    });
 
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true })));
     fireEvent.click(screen.getByRole("button", { name: "削除" }));
-    await waitFor(() => expect(screen.queryByText("Updated")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText("The Pub")).not.toBeInTheDocument());
+  });
+
+  it("clears the form municipality and reports master lookup failures", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("network"));
+    render(<AdminPubManager {...managerProps} />);
+
+    const formPrefecture = screen.getAllByLabelText("都道府県")[0];
+    fireEvent.change(formPrefecture, { target: { value: "27" } });
+    expect(await screen.findByRole("status")).toHaveTextContent("処理中にエラーが発生しました。");
+
+    fireEvent.change(formPrefecture, { target: { value: "" } });
+    expect(screen.getAllByLabelText("市区町村")[0]).toBeDisabled();
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ errorCode: "database_unavailable" }), { status: 503 }),
+    );
+    fireEvent.change(formPrefecture, { target: { value: "13" } });
+    expect(await screen.findByRole("status")).toHaveTextContent("データベースを利用できません。");
+  });
+
+  it("edits a location-less draft and reports edit and publication network failures", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          pub: { ...pubDetail, prefectureCode: null, municipalityCode: null, status: null },
+        }),
+      ),
+    );
+    render(<AdminPubManager {...managerProps} />);
+
+    fireEvent.click(screen.getAllByRole("button", { name: "編集" })[0]);
+    expect(await screen.findByRole("button", { name: "更新" })).toBeInTheDocument();
+    expect(screen.getAllByLabelText("都道府県")[0]).toHaveValue("");
+    expect(screen.getAllByLabelText("市区町村")[0]).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+
+    fetchMock.mockRejectedValueOnce(new Error("network"));
+    fireEvent.click(screen.getAllByRole("button", { name: "編集" })[0]);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole("status")).toHaveTextContent("処理中にエラーが発生しました。");
+
+    fetchMock.mockRejectedValueOnce(new Error("network"));
+    fireEvent.click(screen.getByRole("button", { name: "公開する" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    expect(screen.getByRole("status")).toHaveTextContent("処理中にエラーが発生しました。");
   });
 
   it("resets municipality options when the prefecture changes", async () => {
@@ -123,7 +287,9 @@ describe("admin UI", () => {
 
     fireEvent.change(screen.getAllByLabelText("都道府県")[1], { target: { value: "27" } });
     await waitFor(() => expect(screen.getByRole("option", { name: "大阪市北区" })).toBeInTheDocument());
-    expect(screen.getAllByLabelText("市区町村")[1]).toHaveValue("");
+    const searchMunicipality = screen.getAllByLabelText("市区町村")[1];
+    expect(searchMunicipality).toHaveValue("");
+    fireEvent.change(searchMunicipality, { target: { value: "271004" } });
   });
 
   it("ignores an older municipality response after another prefecture is selected", async () => {

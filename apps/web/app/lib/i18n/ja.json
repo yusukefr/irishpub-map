@@ -206,7 +206,7 @@
     "address": "住所",
     "latitude": "緯度",
     "longitude": "経度",
-    "tags": "タグ（カンマ区切り）",
+    "tags": "タグ（複数選択可）",
     "status": "営業状況",
     "officialWebsite": "公式サイト",
     "update": "更新",

@@ -206,7 +206,7 @@
     "address": "Address",
     "latitude": "Latitude",
     "longitude": "Longitude",
-    "tags": "Tags (comma-separated)",
+    "tags": "Tags (multiple selection)",
     "status": "Status",
     "officialWebsite": "Website",
     "update": "Update",
