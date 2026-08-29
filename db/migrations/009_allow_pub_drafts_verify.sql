@@ -18,12 +18,12 @@ WHERE table_schema = 'public'
 
 SELECT
   'translation_address_constraint' AS check_name,
-  pg_get_constraintdef(constraint.oid) AS definition
-FROM pg_constraint AS constraint
+  pg_get_constraintdef(con.oid) AS definition
+FROM pg_constraint AS con
 JOIN pg_class AS relation
-  ON relation.oid = constraint.conrelid
+  ON relation.oid = con.conrelid
 WHERE relation.relname = 'pub_translations'
-  AND constraint.conname = 'pub_translations_address_check';
+  AND con.conname = 'pub_translations_address_check';
 
 -- 制約緩和後も、公開中の店舗に下書き相当の欠損が生じていないことを確認します。
 SELECT

@@ -142,5 +142,7 @@ describe("pubs database migrations", () => {
     expect(verifySql).toContain("draft_nullable_columns");
     expect(verifySql).toContain("published_drafts");
     expect(verifySql).toContain("draft_migration_recorded");
+    expect(verifySql).toContain("pg_get_constraintdef(con.oid)");
+    expect(verifySql).not.toMatch(/\bAS constraint\b/i);
   });
 });
