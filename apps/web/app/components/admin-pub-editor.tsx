@@ -487,6 +487,9 @@ export function AdminPubEditor({
                   }
                 />
               </label>
+              {errorFor("englishName", "translations.en.name") ? (
+                <FieldError id="admin-pub-english-name-error" message={t.admin.errors.validation_error} />
+              ) : null}
               <label htmlFor="admin-pub-english-address">
                 {t.admin.englishAddress}
                 <input

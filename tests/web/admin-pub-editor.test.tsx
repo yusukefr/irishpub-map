@@ -211,4 +211,24 @@ describe("AdminPubEditor", () => {
     expect(screen.getByRole("button", { name: "追加" }).closest("form")).not.toBeNull();
     expect(screen.getByLabelText("Address")).toBeInvalid();
   });
+  it("英語NameのAPIバリデーションエラーを入力欄へ関連付ける", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ errorCode: "validation_error", fieldErrors: { "translations.en.name": "required" } }),
+        {
+          status: 422,
+        },
+      ),
+    );
+    render(<AdminPubEditor {...props} />);
+    fireEvent.change(screen.getByLabelText("店舗名"), { target: { value: "店舗" } });
+    fireEvent.click(screen.getByLabelText("英語情報を登録する"));
+    const englishName = screen.getByLabelText("Name");
+    fireEvent.change(englishName, { target: { value: " " } });
+    fireEvent.change(screen.getByLabelText("Address"), { target: { value: "Address" } });
+    fireEvent.submit(screen.getByRole("button", { name: "追加" }).closest("form")!);
+    await waitFor(() => expect(englishName).toHaveAttribute("aria-invalid", "true"));
+    expect(englishName).toHaveAttribute("aria-describedby", "admin-pub-english-name-error");
+    expect(screen.getByText("入力内容を確認してください。", { selector: ".admin-field-error" })).toBeInTheDocument();
+  });
 });
