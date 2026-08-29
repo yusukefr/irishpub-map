@@ -4,16 +4,23 @@ import { ADMIN_SESSION_COOKIE, createAdminSession } from "../../apps/web/app/lib
 
 const repositoryMocks = vi.hoisted(() => ({
   PubInputValidationError: class PubInputValidationError extends Error {},
+  PubPublicationValidationError: class PubPublicationValidationError extends Error {
+    constructor(readonly missingFields: string[]) {
+      super();
+    }
+  },
   createPub: vi.fn(),
   deletePub: vi.fn(),
-  getAdminPubs: vi.fn(),
+  getAdminPubPage: vi.fn(),
   isDatabaseConfigured: vi.fn(),
+  setAdminPubPublication: vi.fn(),
   updatePub: vi.fn(),
 }));
 
 vi.mock("../../apps/web/app/lib/pub-repository", () => repositoryMocks);
 
 import { DELETE, PUT } from "../../apps/web/app/api/admin/pubs/[id]/route";
+import { PATCH } from "../../apps/web/app/api/admin/pubs/[id]/publication/route";
 import { GET, POST } from "../../apps/web/app/api/admin/pubs/route";
 
 const originalSessionSecret = process.env.ADMIN_SESSION_SECRET;
@@ -24,15 +31,21 @@ beforeEach(() => {
   process.env.ADMIN_SESSION_SECRET = "test-only-session-secret";
   process.env.ADMIN_USERNAME = "admin";
   process.env.ADMIN_PASSWORD_HASH = "test-only-hash";
-  repositoryMocks.getAdminPubs.mockReset();
-  repositoryMocks.getAdminPubs.mockResolvedValue([
-    { id: "pub-1", name: "Published", isPublished: true },
-    { id: "pub-2", name: "Draft", isPublished: false },
-  ]);
+  repositoryMocks.getAdminPubPage.mockReset();
+  repositoryMocks.getAdminPubPage.mockResolvedValue({
+    pubs: [
+      { id: "pub-1", name: "Published", isPublished: true },
+      { id: "pub-2", name: "Draft", isPublished: false },
+    ],
+    total: 2,
+    page: 1,
+    pageSize: 50,
+  });
   repositoryMocks.isDatabaseConfigured.mockReset();
   repositoryMocks.isDatabaseConfigured.mockReturnValue(true);
   repositoryMocks.createPub.mockReset();
   repositoryMocks.deletePub.mockReset();
+  repositoryMocks.setAdminPubPublication.mockReset();
   repositoryMocks.updatePub.mockReset();
 });
 
@@ -51,7 +64,7 @@ describe("GET /api/admin/pubs", () => {
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ errorCode: "unauthorized" });
-    expect(repositoryMocks.getAdminPubs).not.toHaveBeenCalled();
+    expect(repositoryMocks.getAdminPubPage).not.toHaveBeenCalled();
   });
 
   it("returns both publication states to an authenticated administrator", async () => {
@@ -67,16 +80,143 @@ describe("GET /api/admin/pubs", () => {
         { id: "pub-1", name: "Published", isPublished: true },
         { id: "pub-2", name: "Draft", isPublished: false },
       ],
+      total: 2,
+      page: 1,
+      pageSize: 50,
       databaseConfigured: true,
     });
     expect(response.status).toBe(200);
   });
 
   it("hides unexpected repository errors", async () => {
-    repositoryMocks.getAdminPubs.mockRejectedValue(new Error("database connection detail"));
+    repositoryMocks.getAdminPubPage.mockRejectedValue(new Error("database connection detail"));
     const response = await GET(adminRequest("/api/admin/pubs"));
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({ errorCode: "internal_error" });
+  });
+
+  it("validates and forwards combined search conditions", async () => {
+    const response = await GET(
+      adminRequest(
+        "/api/admin/pubs?name=Irish&prefecture=23&municipality=231002&status=open&tag=550e8400-e29b-41d4-a716-446655440010&published=false&page=2",
+      ),
+    );
+    expect(response.status).toBe(200);
+    expect(repositoryMocks.getAdminPubPage).toHaveBeenCalledWith(
+      {
+        name: "Irish",
+        prefectureCode: 23,
+        municipalityCode: "231002",
+        statusKey: "open",
+        tagId: "550e8400-e29b-41d4-a716-446655440010",
+        isPublished: false,
+        page: 2,
+      },
+      "ja",
+    );
+  });
+
+  it("uses the request locale for pub display values", async () => {
+    const session = createAdminSession("admin");
+    const response = await GET(
+      new Request("http://localhost/api/admin/pubs", {
+        headers: { cookie: `${ADMIN_SESSION_COOKIE}=${session}; irishpub-map-locale=en` },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(repositoryMocks.getAdminPubPage).toHaveBeenCalledWith({ page: 1 }, "en");
+  });
+
+  it("rejects invalid search parameters before reading pubs", async () => {
+    const response = await GET(adminRequest("/api/admin/pubs?published=yes"));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ errorCode: "invalid_request" });
+    expect(repositoryMocks.getAdminPubPage).not.toHaveBeenCalled();
+  });
+});
+
+describe("PATCH /api/admin/pubs/:id/publication", () => {
+  const pubId = "550e8400-e29b-41d4-a716-446655440001";
+
+  it("requires authentication, same-origin JSON, and a valid UUID", async () => {
+    const unauthenticated = await PATCH(
+      new Request(`http://localhost/api/admin/pubs/${pubId}/publication`, {
+        method: "PATCH",
+        headers: { origin: "http://localhost", "content-type": "application/json" },
+        body: JSON.stringify({ isPublished: true }),
+      }),
+      context(pubId),
+    );
+    expect(unauthenticated.status).toBe(401);
+
+    const forbidden = await PATCH(
+      adminRequest(
+        `/api/admin/pubs/${pubId}/publication`,
+        "PATCH",
+        JSON.stringify({ isPublished: true }),
+        "https://evil.example",
+      ),
+      context(pubId),
+    );
+    expect(forbidden.status).toBe(403);
+
+    const invalidId = await PATCH(
+      adminRequest("/api/admin/pubs/invalid/publication", "PATCH", JSON.stringify({ isPublished: true })),
+      context("invalid"),
+    );
+    expect(invalidId.status).toBe(400);
+    expect(repositoryMocks.setAdminPubPublication).not.toHaveBeenCalled();
+  });
+
+  it("publishes and unpublishes through the dedicated repository operation", async () => {
+    repositoryMocks.setAdminPubPublication.mockResolvedValueOnce({ id: pubId, isPublished: true, unchanged: false });
+    const published = await PATCH(
+      adminRequest(`/api/admin/pubs/${pubId}/publication`, "PATCH", JSON.stringify({ isPublished: true })),
+      context(pubId),
+    );
+    expect(published.status).toBe(200);
+    await expect(published.json()).resolves.toEqual({
+      publication: { id: pubId, isPublished: true, unchanged: false },
+    });
+
+    repositoryMocks.setAdminPubPublication.mockResolvedValueOnce({ id: pubId, isPublished: false, unchanged: false });
+    const unpublished = await PATCH(
+      adminRequest(`/api/admin/pubs/${pubId}/publication`, "PATCH", JSON.stringify({ isPublished: false })),
+      context(pubId),
+    );
+    expect(unpublished.status).toBe(200);
+    expect(repositoryMocks.setAdminPubPublication).toHaveBeenLastCalledWith(pubId, false);
+  });
+
+  it("returns missing publication fields without changing state", async () => {
+    repositoryMocks.setAdminPubPublication.mockRejectedValue(
+      new repositoryMocks.PubPublicationValidationError(["address", "latitude"]),
+    );
+    const response = await PATCH(
+      adminRequest(`/api/admin/pubs/${pubId}/publication`, "PATCH", JSON.stringify({ isPublished: true })),
+      context(pubId),
+    );
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({
+      errorCode: "publication_requirements_not_met",
+      missingFields: ["address", "latitude"],
+    });
+  });
+
+  it("rejects malformed input and reports a missing pub", async () => {
+    const invalid = await PATCH(
+      adminRequest(`/api/admin/pubs/${pubId}/publication`, "PATCH", JSON.stringify({ isPublished: "yes" })),
+      context(pubId),
+    );
+    expect(invalid.status).toBe(422);
+
+    repositoryMocks.setAdminPubPublication.mockResolvedValue(null);
+    const missing = await PATCH(
+      adminRequest(`/api/admin/pubs/${pubId}/publication`, "PATCH", JSON.stringify({ isPublished: true })),
+      context(pubId),
+    );
+    expect(missing.status).toBe(404);
   });
 });
 
@@ -114,13 +254,13 @@ describe("admin pub mutations", () => {
   });
 });
 
-function adminRequest(path: string, method = "GET", body?: string) {
+function adminRequest(path: string, method = "GET", body?: string, origin = "http://localhost") {
   const session = createAdminSession("admin");
   return new Request(`http://localhost${path}`, {
     method,
     headers: {
       cookie: `${ADMIN_SESSION_COOKIE}=${session}`,
-      ...(method === "GET" ? {} : { origin: "http://localhost" }),
+      ...(method === "GET" ? {} : { origin }),
       ...(body === undefined ? {} : { "content-type": "application/json" }),
     },
     body,

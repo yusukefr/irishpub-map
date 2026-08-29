@@ -4,7 +4,7 @@
 
 この文書は、親Issue #264の管理画面改修に先立ち、Issue #272で確定した後続実装の設計です。2026年8月26日時点のNeon実スキーマとアプリケーション実装を基準にしています。
 
-Issue #273で公開状態カラム、既存店舗の公開移行、公開・管理Repositoryの取得分離を実装しました。ここで定義するNULL許容の下書き用DTO、公開切替、Application Service、更新APIはまだ実装されていません。現行挙動は[店舗データ仕様](data.md)と[API方針](api.md)、現行の物理制約は[テーブル・カラム定義](database-columns.md)を参照してください。
+Issue #273で公開状態カラム、既存店舗の公開移行、公開・管理Repositoryの取得分離を実装しました。Issue #277で現行の必須カラムを前提とする管理一覧、検索・ページング、公開切替とPublish Validationを実装しました。ここで定義するNULL許容の完全な下書き用DTOと通常更新時のPublish Validationはまだ実装されていません。現行挙動は[店舗データ仕様](data.md)と[API方針](api.md)、現行の物理制約は[テーブル・カラム定義](database-columns.md)を参照してください。
 
 ## 結論
 
@@ -210,17 +210,17 @@ type SetPubPublicationInput = { isPublished: boolean };
 管理詳細: getAdminPub(id): Promise<AdminPub | null>
 ```
 
-Issue #273で `getPublishedPubs` と `getAdminPubs` を分離しました。`getPublishedPubs` は `pubs.is_published = TRUE` をSQLで絞り込み、既存の必須項目を内部JOINして共有 `Pub` として検証します。`getAdminPubs` は公開・非公開の両方を取得し、移行段階では現行 `Pub` に `isPublished` を加えて返します。NULL許容の完全な `AdminPub` と管理詳細取得は下書き用制約の変更と合わせて後続実装します。
+Issue #273で `getPublishedPubs` と `getAdminPubs` を分離しました。`getPublishedPubs` は `pubs.is_published = TRUE` をSQLで絞り込み、既存の必須項目を内部JOINして共有 `Pub` として検証します。Issue #277の `getAdminPubPage` は公開・非公開を対象とし、管理一覧DTO、複数条件のAND検索、更新日時順、50件ページングと総件数を返します。NULL許容の完全な `AdminPub` と管理詳細取得は下書き用制約の変更と合わせて後続実装します。
 
 Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`createAdminPub`、`updateAdminPub`、`setAdminPubPublication`、`deleteAdminPub` というApplication Serviceを境界にします。
 
 | メソッド | パス | 入力・用途 |
 | --- | --- | --- |
-| `GET` | `/api/admin/pubs` | 公開・非公開を含む管理一覧 |
+| `GET` | `/api/admin/pubs` | 公開・非公開を含む管理一覧。検索条件と50件ページングに対応 |
 | `POST` | `/api/admin/pubs` | `CreatePubInput`。常に非公開で作成 |
 | `GET` | `/api/admin/pubs/:id` | `AdminPub` の詳細 |
 | `PUT` | `/api/admin/pubs/:id` | `UpdatePubInput` による全体更新。公開状態は変更せず、公開済みなら更新後のPublish Validationを行う |
-| `PATCH` | `/api/admin/pubs/:id/publication` | 公開時だけPublish Validationを実行 |
+| `PATCH` | `/api/admin/pubs/:id/publication` | Issue #277で実装済み。公開時だけPublish Validationを実行し、不足項目をまとめて返す |
 | `DELETE` | `/api/admin/pubs/:id` | 店舗削除。翻訳とタグ関係はFKでカスケード削除 |
 
 入力不正はフィールドコードを含む `422`、未認証は `401`、Origin不一致は `403`、対象なしは `404`、参照競合は `409`、DB未設定は `503` とします。エラー本文やログへ入力値、接続情報、認証情報を含めません。
@@ -265,7 +265,7 @@ Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`creat
 1. `is_published` を安全なマイグレーションで追加し、公開・管理取得を分離する（Issue #273で実装済み）。
 2. 下書き用NULL制約、`PublicPub` / `AdminPub` / 入力DTOとDraft / Publish Validationを実装する。
 3. 共通の管理認証・同一Origin検証を追加する（Issue #274で実装）。
-4. Application Serviceとトランザクションを使う管理更新・公開切替APIを実装する。
-5. 管理画面の一覧、フォーム、公開切替、タグ、ステータス管理を実装する。
+4. 公開切替APIと管理一覧・検索・ページングを実装する（Issue #277で実装済み）。NULL許容DTO導入後に通常更新のApplication Serviceとトランザクションを追加する。
+5. 管理画面の一覧、公開切替、タグ、ステータス管理を実装する（実装済み）。下書き対応フォームは後続実装とする。
 
 各後続Issueでコード、対応テスト、DB・API・プロダクト仕様を同じPR内で同期します。

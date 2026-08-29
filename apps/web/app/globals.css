@@ -913,6 +913,139 @@ h1 {
   display: flex;
   gap: 8px;
 }
+.admin-pub-search-section,
+.admin-pub-results {
+  margin-top: 32px;
+}
+.admin-pub-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f7faf8;
+}
+.admin-pub-filters label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+.admin-pub-filters input,
+.admin-pub-filters select {
+  min-height: 44px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  font: inherit;
+}
+.admin-pub-filter-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 12px;
+}
+.admin-pub-filter-actions button,
+.admin-pub-filter-actions a,
+.admin-pub-row-actions button,
+.admin-pub-pagination a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid var(--accent-strong);
+  border-radius: 6px;
+  background: var(--accent-strong);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+.admin-pub-filter-actions a,
+.admin-pub-pagination a {
+  background: transparent;
+  color: var(--accent-strong);
+}
+.admin-pub-row-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.admin-pub-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.admin-pub-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+}
+.admin-pub-table th,
+.admin-pub-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.admin-pub-table thead th {
+  background: #edf5f0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.admin-pub-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.admin-publication-badge {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.admin-publication-badge.is-published {
+  background: #d9f2e4;
+  color: #075235;
+}
+.admin-publication-badge.is-unpublished {
+  background: #ecefed;
+  color: #46534c;
+}
+.admin-pub-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 230px;
+}
+.admin-pub-row-actions button {
+  min-height: 40px;
+  padding-inline: 10px;
+  font-size: 0.84rem;
+}
+.admin-pub-pagination {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+.admin-pub-pagination > :last-child {
+  justify-self: end;
+}
+.admin-empty {
+  padding: 28px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  text-align: center;
+}
 @media (max-width: 640px) {
   .admin-layout {
     grid-template-columns: 1fr;
@@ -941,6 +1074,72 @@ h1 {
   .admin-pub-list li {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .admin-pub-filters {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .admin-pub-filter-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-pub-table-wrap {
+    overflow: visible;
+    border: 0;
+  }
+  .admin-pub-table,
+  .admin-pub-table tbody,
+  .admin-pub-table tr,
+  .admin-pub-table th,
+  .admin-pub-table td {
+    display: block;
+    width: 100%;
+  }
+  .admin-pub-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .admin-pub-table tr {
+    margin-bottom: 14px;
+    padding: 6px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+  }
+  .admin-pub-table th,
+  .admin-pub-table td {
+    display: grid;
+    grid-template-columns: minmax(90px, 34%) minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px 0;
+    overflow-wrap: anywhere;
+  }
+  .admin-pub-table th::before,
+  .admin-pub-table td::before {
+    color: var(--muted);
+    content: attr(data-label);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .admin-pub-row-actions {
+    min-width: 0;
+  }
+  .admin-pub-row-actions button {
+    flex: 1 1 100%;
+    min-height: 44px;
+  }
+  .admin-pub-pagination {
+    grid-template-columns: 1fr 1fr;
+  }
+  .admin-pub-pagination > span:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: center;
   }
 }
 

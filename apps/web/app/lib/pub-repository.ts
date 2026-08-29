@@ -1,5 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
+import {
+  ADMIN_PUB_PAGE_SIZE,
+  type AdminPubListItem,
+  type AdminPubListTag,
+  type AdminPubPage,
+  type AdminPubSearchCondition,
+} from "@irishpub-map/shared/admin-pub";
 import { getPrefectureCode, getPrefectureName } from "@irishpub-map/shared/prefecture";
 import { getPubStatusCode, getPubStatusValue } from "@irishpub-map/shared/status";
 import { asPubs, type Pub } from "@irishpub-map/shared/pub";
@@ -26,6 +33,38 @@ type DbPubRow = {
   is_published: unknown;
 };
 
+type DbAdminPubListRow = DbPubRow & {
+  prefecture_code: unknown;
+  status_key: unknown;
+  tag_items: unknown;
+  updated_at: unknown;
+  total_count: unknown;
+};
+
+type DbCountRow = {
+  total_count: unknown;
+};
+
+type AdminPubCountCondition = {
+  name: string | null;
+  prefectureCode: number | null;
+  municipalityCode: string | null;
+  statusKey: AdminPubSearchCondition["statusKey"] | null;
+  tagId: string | null;
+  isPublished: boolean | null;
+};
+
+type PublicationSnapshotRow = {
+  is_published: unknown;
+  has_name: unknown;
+  has_address: unknown;
+  has_prefecture: unknown;
+  has_municipality: unknown;
+  has_latitude: unknown;
+  has_longitude: unknown;
+  has_status: unknown;
+};
+
 /** 管理画面で公開状態と既存の店舗情報を同時に扱う取得モデルです。 */
 export type AdminPub = Pub & { isPublished: boolean };
 
@@ -35,6 +74,18 @@ export class PubInputValidationError extends Error {
   constructor() {
     super("Invalid pub input.");
     this.name = "PubInputValidationError";
+  }
+}
+
+/** 公開条件を満たさない店舗の不足項目をAPIへ安全に伝える業務エラーです。 */
+export class PubPublicationValidationError extends Error {
+  /**
+   * 公開条件不足を、表示値やDB内部情報を含まないフィールドコードで生成します。
+   * @param {string[]} missingFields - 公開に必要だが不足している項目コード。
+   */
+  constructor(readonly missingFields: string[]) {
+    super("Pub does not meet publication requirements.");
+    this.name = "PubPublicationValidationError";
   }
 }
 
@@ -64,6 +115,157 @@ export async function getPublishedPubs(locale = "ja") {
  */
 export async function getAdminPubs(locale = "ja") {
   return parseDbAdminPubs(await getDbPubRows(locale, true));
+}
+
+/**
+ * 管理者向け店舗を複数条件のAND検索と固定件数ページングで取得します。
+ * @param {AdminPubSearchCondition} condition - 検証済み検索条件。
+ * @param {string} locale - 優先して取得する表示ロケール。
+ * @returns {Promise<AdminPubPage>} 公開・非公開を含む管理店舗ページ。
+ */
+export async function getAdminPubPage(condition: AdminPubSearchCondition, locale = "ja"): Promise<AdminPubPage> {
+  if (!isDatabaseConfigured()) return { pubs: [], total: 0, page: condition.page, pageSize: ADMIN_PUB_PAGE_SIZE };
+
+  const name = condition.name ?? null;
+  const prefectureCode = condition.prefectureCode ?? null;
+  const municipalityCode = condition.municipalityCode ?? null;
+  const statusKey = condition.statusKey ?? null;
+  const tagId = condition.tagId ?? null;
+  const isPublished = condition.isPublished ?? null;
+  const offset = (condition.page - 1) * ADMIN_PUB_PAGE_SIZE;
+  const rows = (await getSql()`
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    SELECT p.id::text, pt.name, pt.name_reading AS kana, p.prefecture_code, pref.name AS prefecture,
+      mt.name AS city, p.municipality_code, pt.address, p.latitude, p.longitude, p.website_url,
+      p.google_maps_url, p.instagram_url, p.status_code, status.key AS status_key,
+      st.display_name AS status_display_name, p.is_published, p.updated_at,
+      COALESCE(array_agg(tag.key ORDER BY tag.key) FILTER (WHERE tag.key IS NOT NULL), '{}') AS tags,
+      COALESCE(jsonb_object_agg(tag.key, COALESCE(tag_translation.name, tag.key)) FILTER (WHERE tag.key IS NOT NULL), '{}'::jsonb) AS tag_display_names,
+      COALESCE(jsonb_agg(jsonb_build_object('id', tag.id::text, 'key', tag.key, 'name', COALESCE(tag_translation.name, tag.key)) ORDER BY tag.key)
+        FILTER (WHERE tag.id IS NOT NULL), '[]'::jsonb) AS tag_items,
+      COUNT(*) OVER()::int AS total_count
+    FROM pubs AS p
+    JOIN LATERAL (SELECT name, name_reading, address FROM pub_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.pub_id=p.id ORDER BY preference.priority LIMIT 1) AS pt ON TRUE
+    JOIN LATERAL (SELECT name FROM prefecture_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.prefecture_code=p.prefecture_code ORDER BY preference.priority LIMIT 1) AS pref ON TRUE
+    LEFT JOIN LATERAL (SELECT name FROM municipality_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.municipality_code=p.municipality_code ORDER BY preference.priority LIMIT 1) AS mt ON TRUE
+    JOIN pub_statuses AS status ON status.code=p.status_code
+    JOIN LATERAL (SELECT display_name FROM pub_status_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.status_code=p.status_code ORDER BY preference.priority LIMIT 1) AS st ON TRUE
+    LEFT JOIN pub_tags AS pub_tag ON pub_tag.pub_id=p.id
+    LEFT JOIN tags AS tag ON tag.id=pub_tag.tag_id
+    LEFT JOIN LATERAL (SELECT name FROM tag_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.tag_id=tag.id ORDER BY preference.priority LIMIT 1) AS tag_translation ON TRUE
+    WHERE (${name}::text IS NULL OR EXISTS (SELECT 1 FROM pub_translations AS search_name WHERE search_name.pub_id=p.id AND search_name.locale='ja' AND search_name.name ILIKE '%' || ${name} || '%'))
+      AND (${prefectureCode}::int IS NULL OR p.prefecture_code=${prefectureCode})
+      AND (${municipalityCode}::text IS NULL OR p.municipality_code=${municipalityCode})
+      AND (${statusKey}::text IS NULL OR status.key=${statusKey})
+      AND (${tagId}::uuid IS NULL OR EXISTS (SELECT 1 FROM pub_tags AS search_tag WHERE search_tag.pub_id=p.id AND search_tag.tag_id=${tagId}::uuid))
+      AND (${isPublished}::boolean IS NULL OR p.is_published=${isPublished})
+    GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address, status.key, st.display_name
+    ORDER BY p.updated_at DESC, pt.name, p.id
+    LIMIT ${ADMIN_PUB_PAGE_SIZE} OFFSET ${offset}
+  `) as DbAdminPubListRow[];
+  const total =
+    rows.length > 0
+      ? requiredNonNegativeInteger(rows[0].total_count)
+      : await getAdminPubCount(locale, { name, prefectureCode, municipalityCode, statusKey, tagId, isPublished });
+
+  return {
+    pubs: rows.map(toAdminPubListItem),
+    total,
+    page: condition.page,
+    pageSize: ADMIN_PUB_PAGE_SIZE,
+  };
+}
+
+async function getAdminPubCount(locale: string, condition: AdminPubCountCondition) {
+  const rows = (await getSql()`
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    SELECT COUNT(*)::int AS total_count
+    FROM pubs AS p
+    JOIN LATERAL (SELECT 1 FROM pub_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.pub_id=p.id ORDER BY preference.priority LIMIT 1) AS pt ON TRUE
+    JOIN LATERAL (SELECT 1 FROM prefecture_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.prefecture_code=p.prefecture_code ORDER BY preference.priority LIMIT 1) AS pref ON TRUE
+    JOIN pub_statuses AS status ON status.code=p.status_code
+    JOIN LATERAL (SELECT 1 FROM pub_status_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.status_code=p.status_code ORDER BY preference.priority LIMIT 1) AS st ON TRUE
+    WHERE (${condition.name ?? null}::text IS NULL OR EXISTS (SELECT 1 FROM pub_translations AS search_name WHERE search_name.pub_id=p.id AND search_name.locale='ja' AND search_name.name ILIKE '%' || ${condition.name ?? null} || '%'))
+      AND (${condition.prefectureCode ?? null}::int IS NULL OR p.prefecture_code=${condition.prefectureCode ?? null})
+      AND (${condition.municipalityCode ?? null}::text IS NULL OR p.municipality_code=${condition.municipalityCode ?? null})
+      AND (${condition.statusKey ?? null}::text IS NULL OR status.key=${condition.statusKey ?? null})
+      AND (${condition.tagId ?? null}::uuid IS NULL OR EXISTS (SELECT 1 FROM pub_tags AS search_tag WHERE search_tag.pub_id=p.id AND search_tag.tag_id=${condition.tagId ?? null}::uuid))
+      AND (${condition.isPublished ?? null}::boolean IS NULL OR p.is_published=${condition.isPublished ?? null})
+  `) as DbCountRow[];
+  if (rows.length !== 1) throw new Error("Invalid admin pub count returned from database.");
+  return requiredNonNegativeInteger(rows[0].total_count);
+}
+
+/**
+ * 対象店舗の現在値を確認し、公開時だけ公開必須条件を満たす場合に状態を更新します。
+ * @param {string} id - 対象店舗UUID。
+ * @param {boolean} isPublished - 更新後の公開状態。
+ * @returns {Promise<{ id: string; isPublished: boolean; unchanged: boolean } | null>} 更新結果、または対象なし。
+ */
+export async function setAdminPubPublication(id: string, isPublished: boolean) {
+  const sql = getRequiredSql();
+  const snapshot = await getPublicationSnapshot(sql, id);
+  if (!snapshot) return null;
+  if (snapshot.isPublished === isPublished) return { id, isPublished, unchanged: true };
+  if (isPublished && snapshot.missingFields.length > 0) {
+    throw new PubPublicationValidationError(snapshot.missingFields);
+  }
+
+  const rows = (await sql`
+    UPDATE pubs AS pub
+    SET is_published=${isPublished}, updated_at=NOW()
+    WHERE pub.id=${id}::uuid
+      AND (
+        ${isPublished}=FALSE OR (
+          pub.prefecture_code IS NOT NULL
+          AND pub.municipality_code IS NOT NULL
+          AND pub.latitude IS NOT NULL
+          AND pub.longitude IS NOT NULL
+          AND pub.status_code IS NOT NULL
+          AND EXISTS (SELECT 1 FROM pub_translations AS translation WHERE translation.pub_id=pub.id AND translation.locale='ja' AND btrim(translation.name)<>'' AND translation.address IS NOT NULL AND btrim(translation.address)<>'')
+          AND EXISTS (SELECT 1 FROM municipality_codes AS municipality WHERE municipality.code=pub.municipality_code AND municipality.prefecture_code=pub.prefecture_code)
+          AND EXISTS (SELECT 1 FROM prefecture_translations AS translation WHERE translation.prefecture_code=pub.prefecture_code AND translation.locale='ja' AND btrim(translation.name)<>'')
+          AND EXISTS (SELECT 1 FROM municipality_translations AS translation WHERE translation.municipality_code=pub.municipality_code AND translation.locale='ja' AND btrim(translation.name)<>'')
+          AND EXISTS (SELECT 1 FROM pub_status_translations AS translation WHERE translation.status_code=pub.status_code AND translation.locale='ja' AND btrim(translation.display_name)<>'')
+        )
+      )
+    RETURNING pub.id::text
+  `) as Array<{ id: string }>;
+  if (rows.length === 1) return { id, isPublished, unchanged: false };
+
+  const current = await getPublicationSnapshot(sql, id);
+  if (!current) return null;
+  throw new PubPublicationValidationError(current.missingFields);
+}
+
+async function getPublicationSnapshot(sql: ReturnType<typeof neon>, id: string) {
+  const rows = (await sql`
+    SELECT pub.is_published,
+      EXISTS (SELECT 1 FROM pub_translations AS translation WHERE translation.pub_id=pub.id AND translation.locale='ja' AND btrim(translation.name)<>'') AS has_name,
+      EXISTS (SELECT 1 FROM pub_translations AS translation WHERE translation.pub_id=pub.id AND translation.locale='ja' AND translation.address IS NOT NULL AND btrim(translation.address)<>'') AS has_address,
+      (pub.prefecture_code IS NOT NULL AND EXISTS (SELECT 1 FROM prefecture_translations AS translation WHERE translation.prefecture_code=pub.prefecture_code AND translation.locale='ja' AND btrim(translation.name)<>'')) AS has_prefecture,
+      (pub.municipality_code IS NOT NULL AND EXISTS (SELECT 1 FROM municipality_codes AS municipality WHERE municipality.code=pub.municipality_code AND municipality.prefecture_code=pub.prefecture_code) AND EXISTS (SELECT 1 FROM municipality_translations AS translation WHERE translation.municipality_code=pub.municipality_code AND translation.locale='ja' AND btrim(translation.name)<>'')) AS has_municipality,
+      pub.latitude IS NOT NULL AS has_latitude,
+      pub.longitude IS NOT NULL AS has_longitude,
+      (pub.status_code IS NOT NULL AND EXISTS (SELECT 1 FROM pub_status_translations AS translation WHERE translation.status_code=pub.status_code AND translation.locale='ja' AND btrim(translation.display_name)<>'')) AS has_status
+    FROM pubs AS pub
+    WHERE pub.id=${id}::uuid
+  `) as PublicationSnapshotRow[];
+  if (rows.length === 0) return null;
+  const row = rows[0];
+  if (typeof row.is_published !== "boolean") throw new Error("Invalid publication state returned from database.");
+  const checks = [
+    ["name", row.has_name],
+    ["address", row.has_address],
+    ["prefecture", row.has_prefecture],
+    ["municipality", row.has_municipality],
+    ["latitude", row.has_latitude],
+    ["longitude", row.has_longitude],
+    ["status", row.has_status],
+  ] as const;
+  if (checks.some(([, value]) => typeof value !== "boolean"))
+    throw new Error("Invalid publication checks returned from database.");
+  return { isPublished: row.is_published, missingFields: checks.filter(([, value]) => !value).map(([field]) => field) };
 }
 
 async function getDbPubRows(locale: string, includeUnpublished: boolean) {
@@ -398,4 +600,66 @@ function normalizeDbTags(value: unknown) {
   } catch {
     return value;
   }
+}
+
+function toAdminPubListItem(row: DbAdminPubListRow): AdminPubListItem {
+  const pub = toPub(row);
+  const prefectureCode = requiredPositiveInteger(row.prefecture_code);
+  const statusCode = requiredPositiveInteger(row.status_code);
+  const statusKey = normalizeText(row.status_key);
+  const updatedAt = normalizeDate(row.updated_at);
+  const totalCount = requiredNonNegativeInteger(row.total_count);
+  if (typeof row.is_published !== "boolean" || statusKey !== pub.status || !pub.statusDisplayName || totalCount < 0) {
+    throw new Error("Invalid admin pub list row.");
+  }
+  return {
+    ...pub,
+    prefectureCode,
+    statusCode,
+    statusDisplayName: pub.statusDisplayName!,
+    tagItems: normalizeAdminPubListTags(row.tag_items),
+    isPublished: row.is_published,
+    updatedAt,
+  };
+}
+
+function normalizeAdminPubListTags(value: unknown): AdminPubListTag[] {
+  const parsed = typeof value === "string" ? tryParseJson(value) : value;
+  if (!Array.isArray(parsed)) throw new Error("Invalid admin pub tag list.");
+  return parsed.map((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("Invalid admin pub tag.");
+    const tag = item as Record<string, unknown>;
+    const id = normalizeText(tag.id);
+    const key = normalizeText(tag.key);
+    const name = normalizeText(tag.name);
+    if (
+      typeof id !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ||
+      typeof key !== "string" ||
+      !key ||
+      typeof name !== "string" ||
+      !name
+    ) {
+      throw new Error("Invalid admin pub tag.");
+    }
+    return { id, key, name };
+  });
+}
+
+function requiredPositiveInteger(value: unknown) {
+  const normalized = normalizeNumber(value);
+  if (!Number.isInteger(normalized) || (normalized as number) < 1) throw new Error("Invalid positive integer.");
+  return normalized as number;
+}
+
+function requiredNonNegativeInteger(value: unknown) {
+  const normalized = normalizeNumber(value);
+  if (!Number.isInteger(normalized) || (normalized as number) < 0) throw new Error("Invalid non-negative integer.");
+  return normalized as number;
+}
+
+function normalizeDate(value: unknown) {
+  const date = value instanceof Date ? value : typeof value === "string" ? new Date(value) : null;
+  if (!date || Number.isNaN(date.valueOf())) throw new Error("Invalid admin pub updated date.");
+  return date.toISOString();
 }

@@ -20,6 +20,7 @@ export const ADMIN_API_ERROR_CODES = [
   "invalid_tag_id",
   "invalid_status_code",
   "status_not_found",
+  "publication_requirements_not_met",
 ] as const;
 
 /** 管理APIが返す、表示言語に依存しないエラーコードです。 */
@@ -42,6 +43,7 @@ export type AdminFieldErrorCode = (typeof ADMIN_FIELD_ERROR_CODES)[number];
 export type AdminApiErrorResponse = {
   errorCode: AdminApiErrorCode;
   fieldErrors?: Record<string, AdminFieldErrorCode>;
+  missingFields?: string[];
 };
 
 const adminApiErrorCodeSet = new Set<string>(ADMIN_API_ERROR_CODES);

@@ -1,9 +1,11 @@
+import { AdminPubSearchValidationError, parseAdminPubSearchParams } from "@irishpub-map/shared/admin-pub";
 import {
   adminApiErrorResponse,
   getAdminApiAuthorizationError,
   getAdminJsonContentTypeError,
 } from "../../../lib/admin-api";
-import { createPub, getAdminPubs, isDatabaseConfigured, PubInputValidationError } from "../../../lib/pub-repository";
+import { resolveRequestLocale } from "../../../lib/i18n";
+import { createPub, getAdminPubPage, isDatabaseConfigured, PubInputValidationError } from "../../../lib/pub-repository";
 
 /**
  * 認証済み管理者へ店舗一覧とDB設定状態を返します。
@@ -14,8 +16,13 @@ export async function GET(request: Request) {
   const authorizationError = getAdminApiAuthorizationError(request);
   if (authorizationError) return authorizationError;
   try {
-    return Response.json({ pubs: await getAdminPubs(), databaseConfigured: isDatabaseConfigured() });
-  } catch {
+    const page = await getAdminPubPage(
+      parseAdminPubSearchParams(new URL(request.url).searchParams),
+      resolveRequestLocale(request),
+    );
+    return Response.json({ ...page, databaseConfigured: isDatabaseConfigured() });
+  } catch (error) {
+    if (error instanceof AdminPubSearchValidationError) return adminApiErrorResponse("invalid_request", 400);
     return adminApiErrorResponse("internal_error", 500);
   }
 }

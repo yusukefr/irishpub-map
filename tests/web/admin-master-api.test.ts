@@ -1,6 +1,7 @@
 // 管理マスタAPIの認証、最小DTO、不正入力、内部エラーの一般化を保証します。
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ADMIN_SESSION_COOKIE, createAdminSession } from "../../apps/web/app/lib/admin-auth";
+import { LOCALE_COOKIE } from "../../apps/web/app/lib/i18n";
 
 const repositoryMocks = vi.hoisted(() => ({
   getMunicipalitiesByPrefecture: vi.fn(),
@@ -20,9 +21,9 @@ const originalSessionSecret = process.env.ADMIN_SESSION_SECRET;
 const originalAdminUsername = process.env.ADMIN_USERNAME;
 const originalPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
-function adminRequest(path: string, token = createAdminSession("admin")) {
+function adminRequest(path: string, token = createAdminSession("admin"), locale?: string) {
   return new Request(`http://localhost${path}`, {
-    headers: { cookie: `${ADMIN_SESSION_COOKIE}=${token}` },
+    headers: { cookie: `${ADMIN_SESSION_COOKIE}=${token}${locale ? `; ${LOCALE_COOKIE}=${locale}` : ""}` },
   });
 }
 
@@ -82,7 +83,20 @@ describe("admin master APIs", () => {
     await expect(valid.json()).resolves.toEqual({
       municipalities: [{ code: "231002", prefectureCode: 23, name: "名古屋市" }],
     });
-    expect(repositoryMocks.getMunicipalitiesByPrefecture).toHaveBeenCalledWith(23);
+    expect(repositoryMocks.getMunicipalitiesByPrefecture).toHaveBeenCalledWith(23, "ja");
+  });
+
+  it("uses the request locale for municipality names", async () => {
+    repositoryMocks.getMunicipalitiesByPrefecture.mockResolvedValue([
+      { code: "231002", prefectureCode: 23, name: "Nagoya" },
+    ]);
+
+    const response = await getMunicipalities(
+      adminRequest("/api/admin/master/municipalities?prefectureCode=23", createAdminSession("admin"), "en"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(repositoryMocks.getMunicipalitiesByPrefecture).toHaveBeenCalledWith(23, "en");
   });
 
   it("does not expose repository errors", async () => {
