@@ -193,4 +193,22 @@ describe("AdminPubEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "公開する" }));
     expect(fetchMock).not.toHaveBeenCalled();
   });
+  it("保存中は公開と削除も無効化する", () => {
+    let resolveSave!: (response: Response) => void;
+    fetchMock.mockReturnValueOnce(new Promise<Response>((resolve) => (resolveSave = resolve)));
+    render(<AdminPubEditor {...props} initialPub={existingPub} />);
+    fireEvent.submit(screen.getByRole("button", { name: "更新" }).closest("form")!);
+    expect(screen.getByRole("button", { name: "公開する" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "削除" })).toBeDisabled();
+    resolveSave(new Response(JSON.stringify({ pub: existingPub })));
+  });
+
+  it("英語情報を有効にすると英語住所を必須にする", () => {
+    render(<AdminPubEditor {...props} />);
+    fireEvent.click(screen.getByLabelText("英語情報を登録する"));
+    expect(screen.getByLabelText("Address")).toBeRequired();
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "The Pub" } });
+    expect(screen.getByRole("button", { name: "追加" }).closest("form")).not.toBeNull();
+    expect(screen.getByLabelText("Address")).toBeInvalid();
+  });
 });

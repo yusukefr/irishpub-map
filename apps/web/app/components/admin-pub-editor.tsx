@@ -149,6 +149,7 @@ export function AdminPubEditor({
   const [fieldErrors, setFieldErrors] = useState<AdminPubFieldErrors>({});
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const municipalityRequest = useRef<AbortController | null>(null);
+  const busy = saving || publishing || deleting;
 
   useEffect(() => () => municipalityRequest.current?.abort(), []);
 
@@ -167,9 +168,13 @@ export function AdminPubEditor({
     setValues((current) => ({ ...current, [key]: value }));
     setFieldErrors((current) => {
       const next = { ...current };
-      delete next[key];
-      delete next[`translations.ja.${String(key)}`];
-      delete next[`translations.en.${String(key)}`];
+      const paths: Partial<Record<keyof EditorValues, string[]>> = {
+        name: ["name", "translations.ja.name"],
+        address: ["address", "translations.ja.address"],
+        englishName: ["translations.en.name"],
+        englishAddress: ["translations.en.address"],
+      };
+      for (const path of paths[key] ?? [String(key)]) delete next[path];
       return next;
     });
   }
@@ -202,7 +207,7 @@ export function AdminPubEditor({
   }
 
   async function save() {
-    if (saving || !databaseConfigured) return;
+    if (busy || !databaseConfigured) return;
     setSaving(true);
     setMessage("");
     setFieldErrors({});
@@ -238,7 +243,7 @@ export function AdminPubEditor({
   }
 
   async function changePublication(nextPublished: boolean) {
-    if (!initialPub || publishing || !databaseConfigured) return;
+    if (!initialPub || busy || !databaseConfigured) return;
     const confirmation = nextPublished ? t.admin.confirmPublish : t.admin.confirmUnpublish;
     if (!window.confirm(formatMessage(confirmation, { name: values.name }))) return;
     setPublishing(true);
@@ -273,7 +278,7 @@ export function AdminPubEditor({
   }
 
   async function remove() {
-    if (!initialPub || deleting || !databaseConfigured) return;
+    if (!initialPub || busy || !databaseConfigured) return;
     if (!window.confirm(formatMessage(t.admin.confirmDeleteDetails, { name: values.name }))) return;
     setDeleting(true);
     setMessage("");
@@ -476,6 +481,10 @@ export function AdminPubEditor({
                   value={values.englishName}
                   onChange={(event) => setValue("englishName", event.target.value)}
                   required
+                  aria-invalid={Boolean(errorFor("englishName", "translations.en.name"))}
+                  aria-describedby={
+                    errorFor("englishName", "translations.en.name") ? "admin-pub-english-name-error" : undefined
+                  }
                 />
               </label>
               <label htmlFor="admin-pub-english-address">
@@ -484,8 +493,18 @@ export function AdminPubEditor({
                   id="admin-pub-english-address"
                   value={values.englishAddress}
                   onChange={(event) => setValue("englishAddress", event.target.value)}
+                  required
+                  aria-invalid={Boolean(errorFor("englishAddress", "translations.en.address"))}
+                  aria-describedby={
+                    errorFor("englishAddress", "translations.en.address")
+                      ? "admin-pub-english-address-error"
+                      : undefined
+                  }
                 />
               </label>
+              {errorFor("englishAddress", "translations.en.address") ? (
+                <FieldError id="admin-pub-english-address-error" message={t.admin.errors.validation_error} />
+              ) : null}
             </>
           ) : (
             <p className="admin-editor-note">{t.admin.englishNotRegistered}</p>
@@ -549,7 +568,7 @@ export function AdminPubEditor({
         </fieldset>
 
         <div className="admin-actions">
-          <button type="submit" disabled={saving || !databaseConfigured}>
+          <button type="submit" disabled={busy || !databaseConfigured}>
             {saving ? t.admin.saving : editing ? t.admin.update : t.admin.add}
           </button>
           <a className="admin-pub-filter-actions" href="/admin/pubs">
@@ -560,7 +579,7 @@ export function AdminPubEditor({
               type="button"
               className="admin-danger-action"
               onClick={() => void remove()}
-              disabled={deleting || !databaseConfigured}
+              disabled={busy || !databaseConfigured}
             >
               {deleting ? t.admin.deleting : t.admin.delete}
             </button>
@@ -573,7 +592,7 @@ export function AdminPubEditor({
           <button
             type="button"
             onClick={() => void changePublication(!isPublished)}
-            disabled={publishing || !databaseConfigured}
+            disabled={busy || !databaseConfigured}
           >
             {publishing ? t.admin.publishing : isPublished ? t.admin.unpublish : t.admin.publish}
           </button>
