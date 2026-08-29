@@ -110,6 +110,48 @@ describe("admin pub list search", () => {
     await expect(getAdminPubPage({ page: 4 })).resolves.toEqual({ pubs: [], total: 0, page: 4, pageSize: 50 });
   });
 
+  it("keeps a Japanese-name-only draft in the admin list", async () => {
+    process.env.DATABASE_URL = "postgres://test-only";
+    databaseMock.responses = [
+      [
+        {
+          ...baseRow,
+          prefecture_code: null,
+          prefecture: null,
+          city: null,
+          municipality_code: null,
+          address: null,
+          latitude: null,
+          longitude: null,
+          status_code: null,
+          status_key: null,
+          status_display_name: null,
+          tags: [],
+          tag_display_names: {},
+          tag_items: [],
+          is_published: false,
+          updated_at: "2026-08-29T01:00:00.000Z",
+          total_count: 1,
+        },
+      ],
+    ];
+
+    const page = await getAdminPubPage({ page: 1 });
+    expect(page.pubs[0]).toEqual(
+      expect.objectContaining({
+        name: "Dubliners",
+        prefectureCode: null,
+        municipalityCode: null,
+        address: null,
+        latitude: null,
+        status: null,
+        statusDisplayName: null,
+        isPublished: false,
+      }),
+    );
+    expect(databaseMock.queries[0].text).toContain("LEFT JOIN pub_statuses");
+  });
+
   it("keeps the filtered total when the requested page is out of range", async () => {
     process.env.DATABASE_URL = "postgres://test-only";
     databaseMock.responses = [[], [{ total_count: 30 }]];
@@ -136,6 +178,7 @@ describe("admin pub publication updates", () => {
     has_latitude: true,
     has_longitude: true,
     has_status: true,
+    has_tags: true,
   };
 
   it("publishes a complete pub and keeps the validation gate in the UPDATE", async () => {
@@ -157,6 +200,16 @@ describe("admin pub publication updates", () => {
 
     await expect(setAdminPubPublication(baseRow.id, true)).rejects.toMatchObject<PubPublicationValidationError>({
       missingFields: ["address", "latitude"],
+    });
+    expect(databaseMock.queries).toHaveLength(1);
+  });
+
+  it("rejects publication when an assigned tag has no Japanese display name", async () => {
+    process.env.DATABASE_URL = "postgres://test-only";
+    databaseMock.responses = [[{ ...completeSnapshot, has_tags: false }]];
+
+    await expect(setAdminPubPublication(baseRow.id, true)).rejects.toMatchObject<PubPublicationValidationError>({
+      missingFields: ["tags"],
     });
     expect(databaseMock.queries).toHaveLength(1);
   });

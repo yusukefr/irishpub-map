@@ -2,17 +2,19 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { AdminPubListItem, AdminPubPage, AdminPubSearchCondition } from "@irishpub-map/shared/admin-pub";
+import type {
+  AdminPub,
+  AdminPubListItem,
+  AdminPubPage,
+  AdminPubSearchCondition,
+  AdminPubWriteInput,
+} from "@irishpub-map/shared/admin-pub";
 import type {
   MunicipalityOption,
   PrefectureOption,
   PubStatusOption,
   TagOption,
 } from "@irishpub-map/shared/admin-master";
-import type { Pub } from "@irishpub-map/shared/pub";
-import { PREFECTURES } from "@irishpub-map/shared/prefecture";
-import { PUB_STATUS_DEFINITIONS } from "@irishpub-map/shared/status";
-import { normalizeTags } from "@irishpub-map/shared/tag";
 import { getAdminApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 
@@ -26,43 +28,60 @@ type Props = {
   databaseConfigured: boolean;
   locale: Locale;
 };
-type ApiResponse = { pub?: Pub; errorCode?: unknown };
+type ApiResponse = { pub?: AdminPub; errorCode?: unknown };
 type MunicipalityResponse = { municipalities?: unknown };
 type PublicationResponse = {
   publication?: { id: string; isPublished: boolean; unchanged: boolean };
   errorCode?: unknown;
   missingFields?: unknown;
 };
-const statuses = PUB_STATUS_DEFINITIONS;
 const emptyPub = {
   name: "",
-  prefecture: "",
-  city: "",
+  nameReading: null,
+  prefectureCode: "",
+  municipalityCode: "",
   address: "",
   latitude: "",
   longitude: "",
   websiteUrl: "",
   googleMapsUrl: "",
   instagramUrl: "",
-  tags: "",
-  status: "open",
+  tagIds: [] as string[],
+  status: "",
 };
 
 /** フォーム値をAPI入力形式へ変換し、未入力の任意項目を正規化します。 */
-function toBody(form: FormData) {
+function toBody(form: FormData, editing: AdminPub | null): AdminPubWriteInput {
   return {
-    name: form.get("name"),
-    prefecture: form.get("prefecture"),
-    city: form.get("city") || undefined,
-    address: form.get("address"),
-    latitude: Number(form.get("latitude")),
-    longitude: Number(form.get("longitude")),
-    websiteUrl: form.get("websiteUrl") || null,
-    googleMapsUrl: form.get("googleMapsUrl") || null,
-    instagramUrl: form.get("instagramUrl") || null,
-    tags: normalizeTags(String(form.get("tags") || "").split(",")),
-    status: form.get("status"),
+    prefectureCode: nullableNumber(form.get("prefectureCode")),
+    municipalityCode: nullableString(form.get("municipalityCode")),
+    latitude: nullableNumber(form.get("latitude")),
+    longitude: nullableNumber(form.get("longitude")),
+    websiteUrl: nullableString(form.get("websiteUrl")),
+    googleMapsUrl: nullableString(form.get("googleMapsUrl")),
+    instagramUrl: nullableString(form.get("instagramUrl")),
+    status: nullableString(form.get("status")) as AdminPubWriteInput["status"],
+    translations: {
+      ja: {
+        name: String(form.get("name") ?? "").trim(),
+        nameReading: editing?.translations.ja.nameReading ?? null,
+        address: nullableString(form.get("address")),
+      },
+      // 最小フォームで編集しない既存の英語翻訳は、全体更新時にも失わないよう維持します。
+      en: editing?.translations.en ?? null,
+    },
+    tagIds: form.getAll("tagIds").map(String),
   };
+}
+
+function nullableString(value: FormDataEntryValue | null) {
+  const normalized = String(value ?? "").trim();
+  return normalized || null;
+}
+
+function nullableNumber(value: FormDataEntryValue | null) {
+  const normalized = nullableString(value);
+  return normalized === null ? null : Number(normalized);
 }
 
 /**
@@ -91,15 +110,25 @@ export function AdminPubManager({
   const t = getTranslation(locale);
   const router = useRouter();
   const [pubs, setPubs] = useState(initialPage.pubs);
-  const [editing, setEditing] = useState<AdminPubListItem | null>(null);
+  const [editing, setEditing] = useState<AdminPub | null>(null);
   const [message, setMessage] = useState("");
   const [selectedPrefecture, setSelectedPrefecture] = useState(String(condition.prefectureCode ?? ""));
   const [selectedMunicipality, setSelectedMunicipality] = useState(condition.municipalityCode ?? "");
   const [municipalities, setMunicipalities] = useState(initialMunicipalities);
+  const [formPrefecture, setFormPrefecture] = useState("");
+  const [formMunicipality, setFormMunicipality] = useState("");
+  const [formMunicipalities, setFormMunicipalities] = useState<MunicipalityOption[]>([]);
   const [publicationPending, setPublicationPending] = useState<string | null>(null);
   const municipalityRequest = useRef<AbortController | null>(null);
+  const formMunicipalityRequest = useRef<AbortController | null>(null);
 
-  useEffect(() => () => municipalityRequest.current?.abort(), []);
+  useEffect(
+    () => () => {
+      municipalityRequest.current?.abort();
+      formMunicipalityRequest.current?.abort();
+    },
+    [],
+  );
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -108,15 +137,11 @@ export function AdminPubManager({
       const response = await fetch(editing ? `/api/admin/pubs/${editing.id}` : "/api/admin/pubs", {
         method: editing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(toBody(new FormData(form))),
+        body: JSON.stringify(toBody(new FormData(form), editing)),
       });
       const body = (await response.json().catch(() => ({}))) as ApiResponse;
       if (!response.ok || !body.pub) return setMessage(getAdminApiErrorMessage(locale, body));
-      const savedPub = body.pub;
-      setPubs((current) =>
-        editing ? current.map((pub) => (pub.id === savedPub.id ? { ...pub, ...savedPub } : pub)) : current,
-      );
-      setEditing(null);
+      resetEditor();
       form.reset();
       setMessage(t.admin.saved);
       router.refresh();
@@ -125,7 +150,7 @@ export function AdminPubManager({
     }
   }
 
-  async function remove(pub: Pub) {
+  async function remove(pub: Pick<AdminPubListItem, "id" | "name">) {
     if (!window.confirm(formatMessage(t.admin.confirmDelete, { name: pub.name }))) return;
     try {
       const response = await fetch(`/api/admin/pubs/${pub.id}`, { method: "DELETE" });
@@ -167,11 +192,72 @@ export function AdminPubManager({
     }
   }
 
+  async function loadFormMunicipalities(value: string) {
+    formMunicipalityRequest.current?.abort();
+    formMunicipalityRequest.current = null;
+    if (!value) return [];
+    const controller = new AbortController();
+    formMunicipalityRequest.current = controller;
+    try {
+      const response = await fetch(`/api/admin/master/municipalities?prefectureCode=${encodeURIComponent(value)}`, {
+        signal: controller.signal,
+      });
+      const body = (await response.json().catch(() => ({}))) as MunicipalityResponse;
+      if (controller.signal.aborted) return null;
+      if (!response.ok || !Array.isArray(body.municipalities)) {
+        setMessage(getAdminApiErrorMessage(locale, body));
+        return null;
+      }
+      return body.municipalities as MunicipalityOption[];
+    } catch {
+      if (controller.signal.aborted) return null;
+      setMessage(getAdminApiErrorMessage(locale, null));
+      return null;
+    } finally {
+      if (formMunicipalityRequest.current === controller) formMunicipalityRequest.current = null;
+    }
+  }
+
+  async function changeFormPrefecture(value: string) {
+    setFormPrefecture(value);
+    setFormMunicipality("");
+    setFormMunicipalities([]);
+    const nextMunicipalities = await loadFormMunicipalities(value);
+    if (nextMunicipalities) setFormMunicipalities(nextMunicipalities);
+  }
+
+  async function startEditing(pub: AdminPubListItem) {
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/pubs/${pub.id}`);
+      const body = (await response.json().catch(() => ({}))) as ApiResponse;
+      if (!response.ok || !body.pub) return setMessage(getAdminApiErrorMessage(locale, body));
+      const detail = body.pub;
+      const prefectureCode = detail.prefectureCode === null ? "" : String(detail.prefectureCode);
+      const nextMunicipalities = await loadFormMunicipalities(prefectureCode);
+      if (nextMunicipalities === null) return;
+      setFormPrefecture(prefectureCode);
+      setFormMunicipality(detail.municipalityCode ?? "");
+      setFormMunicipalities(nextMunicipalities);
+      setEditing(detail);
+    } catch {
+      setMessage(getAdminApiErrorMessage(locale, null));
+    }
+  }
+
+  function resetEditor() {
+    formMunicipalityRequest.current?.abort();
+    formMunicipalityRequest.current = null;
+    setEditing(null);
+    setFormPrefecture("");
+    setFormMunicipality("");
+    setFormMunicipalities([]);
+  }
+
   async function setPublication(pub: AdminPubListItem) {
     const isPublished = !pub.isPublished;
     const confirmation = isPublished ? t.admin.confirmPublish : t.admin.confirmUnpublish;
     if (!window.confirm(formatMessage(confirmation, { name: pub.name }))) return;
-
     setPublicationPending(pub.id);
     setMessage("");
     try {
@@ -217,11 +303,15 @@ export function AdminPubManager({
 
   const values = editing
     ? {
-        ...editing,
-        tags: editing.tags.join(", "),
-        latitude: String(editing.latitude),
-        longitude: String(editing.longitude),
-        city: editing.city || "",
+        name: editing.translations.ja.name,
+        nameReading: editing.translations.ja.nameReading,
+        prefectureCode: editing.prefectureCode === null ? "" : String(editing.prefectureCode),
+        municipalityCode: editing.municipalityCode ?? "",
+        address: editing.translations.ja.address ?? "",
+        latitude: editing.latitude === null ? "" : String(editing.latitude),
+        longitude: editing.longitude === null ? "" : String(editing.longitude),
+        tagIds: editing.tagIds,
+        status: editing.status ?? "",
         websiteUrl: editing.websiteUrl || "",
         googleMapsUrl: editing.googleMapsUrl || "",
         instagramUrl: editing.instagramUrl || "",
@@ -248,41 +338,64 @@ export function AdminPubManager({
         </label>
         <label>
           {t.admin.prefecture}
-          <select name="prefecture" required defaultValue={values.prefecture}>
+          <select
+            name="prefectureCode"
+            value={formPrefecture}
+            onChange={(event) => void changeFormPrefecture(event.currentTarget.value)}
+          >
             <option value="">{t.admin.selectPrefecture}</option>
-            {PREFECTURES.map((prefecture) => (
-              <option key={prefecture.code} value={prefecture.name}>
+            {prefectures.map((prefecture) => (
+              <option key={prefecture.code} value={prefecture.code}>
                 {prefecture.name}
               </option>
             ))}
           </select>
         </label>
         <label>
-          {t.admin.city}
-          <input name="city" defaultValue={values.city} />
+          {t.admin.municipality}
+          <select
+            name="municipalityCode"
+            value={formMunicipality}
+            disabled={!formPrefecture}
+            onChange={(event) => setFormMunicipality(event.currentTarget.value)}
+          >
+            <option value="">{t.admin.allMunicipalities}</option>
+            {formMunicipalities.map((municipality) => (
+              <option key={municipality.code} value={municipality.code}>
+                {municipality.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           {t.admin.address}
-          <input name="address" required defaultValue={values.address} />
+          <input name="address" defaultValue={values.address} />
         </label>
         <label>
           {t.admin.latitude}
-          <input name="latitude" type="number" step="any" required defaultValue={values.latitude} />
+          <input name="latitude" type="number" step="any" defaultValue={values.latitude} />
         </label>
         <label>
           {t.admin.longitude}
-          <input name="longitude" type="number" step="any" required defaultValue={values.longitude} />
+          <input name="longitude" type="number" step="any" defaultValue={values.longitude} />
         </label>
         <label>
           {t.admin.tags}
-          <input name="tags" defaultValue={values.tags} />
+          <select name="tagIds" multiple defaultValue={values.tagIds}>
+            {tagOptions.map((tag) => (
+              <option key={tag.id} value={tag.id}>
+                {tag.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           {t.admin.status}
           <select name="status" defaultValue={values.status}>
-            {statuses.map((status) => (
-              <option key={status.code} value={status.value}>
-                {t.list.statuses[status.value]}
+            <option value="">—</option>
+            {statusOptions.map((status) => (
+              <option key={status.code} value={status.key}>
+                {status.name}
               </option>
             ))}
           </select>
@@ -302,7 +415,7 @@ export function AdminPubManager({
         <div className="admin-actions">
           <button disabled={!databaseConfigured}>{editing ? t.admin.update : t.admin.add}</button>
           {editing ? (
-            <button type="button" onClick={() => setEditing(null)}>
+            <button type="button" onClick={resetEditor}>
               {t.admin.cancel}
             </button>
           ) : null}
@@ -413,8 +526,8 @@ export function AdminPubManager({
                       <th scope="row" data-label={t.admin.name}>
                         {pub.name}
                       </th>
-                      <td data-label={t.admin.area}>{[pub.prefecture, pub.city].filter(Boolean).join(" ")}</td>
-                      <td data-label={t.admin.status}>{pub.statusDisplayName}</td>
+                      <td data-label={t.admin.area}>{[pub.prefecture, pub.city].filter(Boolean).join(" ") || "—"}</td>
+                      <td data-label={t.admin.status}>{pub.statusDisplayName || "—"}</td>
                       <td data-label={t.admin.publication}>
                         <span
                           className={`admin-publication-badge ${pub.isPublished ? "is-published" : "is-unpublished"}`}
@@ -428,7 +541,7 @@ export function AdminPubManager({
                       </td>
                       <td data-label={t.admin.operations}>
                         <div className="admin-pub-row-actions">
-                          <button type="button" onClick={() => setEditing(pub)}>
+                          <button type="button" onClick={() => void startEditing(pub)}>
                             {t.admin.edit}
                           </button>
                           <button

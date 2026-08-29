@@ -172,14 +172,29 @@ npm run check:sensitive-data
 
 `pub-repository` と一括インポート処理は、テーブルや参照データを作成しません。店舗データを投入する前に、[データベース定義](../specs/database.md)に記載した現行スキーマと、都道府県・営業状況・市区町村の参照データが構築済みであることを確認してください。空DBから現行スキーマを構築する正式な手順は、このリポジトリでは提供していません。`municipality_codes` が存在しない、または空の場合、`pub-repository` は読み出しを停止します。`DATABASE_URL` が未設定の場合、管理画面は店舗0件を表示できますが書き込みはできません。
 
-Issue #273以降のアプリケーションをデプロイする前に、接続先の各Neonブランチへマイグレーション008を適用し、検証SQLを実行します。up SQLは既存店舗が公開条件を満たさない場合、DDL適用前に停止します。接続文字列はシェルの一時変数で渡し、リポジトリへ保存しません。
+Vercelへのデプロイでは `db/migrations` を自動適用しません。Issue #278以降のアプリケーションをデプロイする前に、接続先の各Neonブランチへ必要なマイグレーションを手動適用し、検証SQLを実行します。接続文字列はシェルの一時変数で渡し、リポジトリへ保存しません。
+
+マイグレーション008が未適用のブランチでは、先に008を適用します。up SQLは既存店舗が公開条件を満たさない場合、DDL適用前に停止します。
 
 ```bash
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/008_add_pub_publication_state_up.sql
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/008_add_pub_publication_state_verify.sql
 ```
 
-マイグレーション適用後の新規店舗と一括インポート店舗は非公開で作成されます。公開切替機能が導入されるまでは、公開APIへ表示されない点に注意してください。アプリケーションだけをロールバックする場合、公開状態を失わないよう追加したカラムは削除せず残します。
+下書き保存APIを含むアプリケーションはNULL許容変更を前提にするため、Productionでは次の順序を守ります。
+
+1. Production Neonブランチを指す `MIGRATION_DATABASE_URL` でマイグレーション009を適用する。
+2. 続けて検証SQLを実行し、制約と公開中店舗の完全性に関する全行が期待値を満たすことを確認する。
+3. 検証成功後に限り、Issue #278以降のアプリケーションをProductionへデプロイする。
+
+```bash
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/009_allow_pub_drafts_up.sql
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/009_allow_pub_drafts_verify.sql
+```
+
+Previewで下書き保存を確認する場合も、固定Preview Neonブランチへ同じ順序で009を適用してからPreview Deploymentを操作します。検証SQLが失敗した場合はアプリケーションをデプロイせず、対象ブランチと適用結果を確認します。
+
+マイグレーション適用後の新規店舗と一括インポート店舗は非公開で作成されます。アプリケーションだけをロールバックする場合、公開状態と下書きを失わないよう変更した制約・追加したカラムは戻さず残します。
 
 パスワードハッシュは、ローカルで生成して Vercel の環境変数にだけ登録します。例:
 

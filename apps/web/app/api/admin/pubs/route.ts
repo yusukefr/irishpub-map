@@ -4,8 +4,9 @@ import {
   getAdminApiAuthorizationError,
   getAdminJsonContentTypeError,
 } from "../../../lib/admin-api";
+import { AdminPubServiceError, createAdminPub } from "../../../lib/admin-pub-service";
 import { resolveRequestLocale } from "../../../lib/i18n";
-import { createPub, getAdminPubPage, isDatabaseConfigured, PubInputValidationError } from "../../../lib/pub-repository";
+import { getAdminPubPage, isDatabaseConfigured } from "../../../lib/pub-repository";
 
 /**
  * 認証済み管理者へ店舗一覧とDB設定状態を返します。
@@ -45,10 +46,14 @@ export async function POST(request: Request) {
     return adminApiErrorResponse("invalid_json", 400);
   }
   try {
-    return Response.json({ pub: await createPub(body) }, { status: 201 });
+    return Response.json({ pub: await createAdminPub(body) }, { status: 201 });
   } catch (error) {
-    return error instanceof PubInputValidationError
-      ? adminApiErrorResponse("invalid_pub_data", 400)
-      : adminApiErrorResponse("internal_error", 500);
+    if (error instanceof AdminPubServiceError) {
+      if (error.code === "validation") return adminApiErrorResponse("validation_error", 422, error.fieldErrors);
+      if (error.code === "reference_conflict") {
+        return adminApiErrorResponse("validation_error", 409, error.fieldErrors);
+      }
+    }
+    return adminApiErrorResponse("internal_error", 500);
   }
 }

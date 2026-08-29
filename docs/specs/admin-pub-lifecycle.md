@@ -4,7 +4,7 @@
 
 この文書は、親Issue #264の管理画面改修に先立ち、Issue #272で確定した後続実装の設計です。2026年8月26日時点のNeon実スキーマとアプリケーション実装を基準にしています。
 
-Issue #273で公開状態カラム、既存店舗の公開移行、公開・管理Repositoryの取得分離を実装しました。Issue #277で現行の必須カラムを前提とする管理一覧、検索・ページング、公開切替とPublish Validationを実装しました。ここで定義するNULL許容の完全な下書き用DTOと通常更新時のPublish Validationはまだ実装されていません。現行挙動は[店舗データ仕様](data.md)と[API方針](api.md)、現行の物理制約は[テーブル・カラム定義](database-columns.md)を参照してください。
+Issue #273で公開状態カラムと取得分離、Issue #277で管理一覧と公開切替を実装しました。Issue #278で、ここで定義したNULL許容の管理DTO、マイグレーション009、詳細取得、作成・通常更新・削除、参照検証、transaction保存と新DTOを送信する最小フォームを実装しました。本格的な下書きUI改善は後続です。現行挙動は[API方針](api.md)、物理制約は[テーブル・カラム定義](database-columns.md)を参照してください。
 
 ## 結論
 
@@ -105,9 +105,9 @@ FKの削除動作は、店舗翻訳、各マスタ翻訳、`pub_tags` に `ON DE
 
 ## マイグレーションの要件
 
-Issue #273のマイグレーション008で公開状態を追加しました。下書き用NULL制約は後続実装で変更します。
+Issue #273のマイグレーション008で公開状態を追加し、Issue #278のマイグレーション009で次の下書き用NULL制約変更を定義しました。実DBへの適用順序は[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従います。
 
-| 対象 | 後続変更 |
+| 対象 | 変更内容 |
 | --- | --- |
 | `pubs.is_published` | 実装済み。`BOOLEAN NOT NULL DEFAULT FALSE` を追加し、同一マイグレーション内で既存店舗を `TRUE` にする |
 | `pubs.prefecture_code` | `DROP NOT NULL` |
@@ -210,7 +210,7 @@ type SetPubPublicationInput = { isPublished: boolean };
 管理詳細: getAdminPub(id): Promise<AdminPub | null>
 ```
 
-Issue #273で `getPublishedPubs` と `getAdminPubs` を分離しました。`getPublishedPubs` は `pubs.is_published = TRUE` をSQLで絞り込み、既存の必須項目を内部JOINして共有 `Pub` として検証します。Issue #277の `getAdminPubPage` は公開・非公開を対象とし、管理一覧DTO、複数条件のAND検索、更新日時順、50件ページングと総件数を返します。NULL許容の完全な `AdminPub` と管理詳細取得は下書き用制約の変更と合わせて後続実装します。
+Issue #273で `getPublishedPubs` と管理取得を分離しました。`getPublishedPubs` は `pubs.is_published = TRUE` をSQLで絞り込み、公開用 `Pub` として検証します。`getAdminPubPage` は公開・非公開とNULLを含む下書きを一覧DTOで返し、`getAdminPub` は日英翻訳とタグIDを含む完全な `AdminPub` を返します。
 
 Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`createAdminPub`、`updateAdminPub`、`setAdminPubPublication`、`deleteAdminPub` というApplication Serviceを境界にします。
 
@@ -265,7 +265,7 @@ Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`creat
 1. `is_published` を安全なマイグレーションで追加し、公開・管理取得を分離する（Issue #273で実装済み）。
 2. 下書き用NULL制約、`PublicPub` / `AdminPub` / 入力DTOとDraft / Publish Validationを実装する。
 3. 共通の管理認証・同一Origin検証を追加する（Issue #274で実装）。
-4. 公開切替APIと管理一覧・検索・ページングを実装する（Issue #277で実装済み）。NULL許容DTO導入後に通常更新のApplication Serviceとトランザクションを追加する。
+4. 公開切替APIと管理一覧・検索・ページングを実装する（Issue #277で実装済み）。通常更新のApplication ServiceとトランザクションはIssue #278で実装済み。
 5. 管理画面の一覧、公開切替、タグ、ステータス管理を実装する（実装済み）。下書き対応フォームは後続実装とする。
 
 各後続Issueでコード、対応テスト、DB・API・プロダクト仕様を同じPR内で同期します。

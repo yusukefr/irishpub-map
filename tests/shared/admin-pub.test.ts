@@ -2,9 +2,27 @@ import { describe, expect, it } from "vitest";
 import {
   AdminPubPublicationValidationError,
   AdminPubSearchValidationError,
+  AdminPubWriteValidationError,
+  parseAdminPubWriteInput,
   parseAdminPubSearchParams,
   parseSetAdminPubPublicationInput,
 } from "../../packages/shared/src/admin-pub";
+
+const draftInput = {
+  prefectureCode: null,
+  municipalityCode: null,
+  latitude: null,
+  longitude: null,
+  websiteUrl: null,
+  googleMapsUrl: null,
+  instagramUrl: null,
+  status: null,
+  translations: {
+    ja: { name: "  アイリッシュパブ  ", nameReading: null, address: null },
+    en: null,
+  },
+  tagIds: [],
+};
 
 describe("admin pub search validation", () => {
   it("normalizes all supported filters", () => {
@@ -64,5 +82,85 @@ describe("admin pub publication validation", () => {
 
   it.each([null, {}, { isPublished: "true" }, { isPublished: true, extra: true }])("rejects %j", (value) => {
     expect(() => parseSetAdminPubPublicationInput(value)).toThrow(AdminPubPublicationValidationError);
+  });
+});
+
+describe("admin pub write validation", () => {
+  it("accepts a Japanese-name-only draft and normalizes text", () => {
+    expect(parseAdminPubWriteInput(draftInput)).toEqual({
+      ...draftInput,
+      translations: {
+        ja: { name: "アイリッシュパブ", nameReading: null, address: null },
+        en: null,
+      },
+    });
+  });
+
+  it("accepts complete optional fields and an English translation", () => {
+    expect(
+      parseAdminPubWriteInput({
+        ...draftInput,
+        prefectureCode: 13,
+        municipalityCode: "131016",
+        latitude: 35.6812,
+        longitude: 139.7671,
+        websiteUrl: " https://example.com/pub ",
+        status: "open",
+        translations: {
+          ja: { name: "店舗名", nameReading: " てんぽめい ", address: " 東京都 " },
+          en: { name: " Pub Name ", nameReading: null, address: " Tokyo " },
+        },
+        tagIds: ["550e8400-e29b-41d4-a716-446655440001"],
+      }),
+    ).toMatchObject({
+      websiteUrl: "https://example.com/pub",
+      translations: {
+        ja: { name: "店舗名", nameReading: "てんぽめい", address: "東京都" },
+        en: { name: "Pub Name", nameReading: null, address: "Tokyo" },
+      },
+    });
+  });
+
+  it.each([
+    [{ ...draftInput, isPublished: true }, "isPublished", "immutable"],
+    [{ ...draftInput, latitude: 91 }, "latitude", "invalid_format"],
+    [{ ...draftInput, websiteUrl: "javascript:alert(1)" }, "websiteUrl", "invalid_format"],
+    [
+      {
+        ...draftInput,
+        translations: { ...draftInput.translations, ja: { ...draftInput.translations.ja, name: " " } },
+      },
+      "translations.ja.name",
+      "required",
+    ],
+    [
+      {
+        ...draftInput,
+        translations: {
+          ...draftInput.translations,
+          en: { name: "Pub", nameReading: null, address: null },
+        },
+      },
+      "translations.en.address",
+      "required",
+    ],
+    [
+      {
+        ...draftInput,
+        tagIds: ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440001"],
+      },
+      "tagIds",
+      "invalid_format",
+    ],
+  ])("rejects invalid write input", (value, field, code) => {
+    try {
+      parseAdminPubWriteInput(value);
+      expect.fail("validation should fail");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AdminPubWriteValidationError);
+      expect((error as AdminPubWriteValidationError).fieldErrors).toMatchObject({
+        [field as string]: code,
+      });
+    }
   });
 });
