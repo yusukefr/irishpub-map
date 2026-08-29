@@ -843,6 +843,25 @@ h1 {
 .admin-wide {
   width: min(100%, 1080px);
 }
+.admin-primary-link,
+.admin-row-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid var(--accent-strong);
+  border-radius: 6px;
+  background: var(--accent-strong);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.admin-row-link {
+  min-height: 40px;
+  padding-inline: 10px;
+  font-size: 0.84rem;
+}
 .admin-heading,
 .admin-actions,
 .admin-pub-list li {
@@ -875,6 +894,108 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 6px;
   font: inherit;
+}
+.admin-editor-form {
+  gap: 20px;
+}
+.admin-editor-form fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.admin-editor-form legend {
+  padding-inline: 8px;
+  color: var(--accent-strong);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+.admin-editor-form fieldset > label:not(.admin-checkbox),
+.admin-editor-form fieldset > input,
+.admin-editor-form fieldset > select,
+.admin-editor-form fieldset > .admin-editor-tags,
+.admin-editor-form fieldset > .admin-editor-note {
+  grid-column: 1 / -1;
+}
+.admin-editor-form fieldset > label:not(.admin-checkbox) {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+.admin-editor-grid {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.admin-editor-grid label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+.admin-editor-grid input {
+  width: 100%;
+}
+.admin-checkbox {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+.admin-checkbox input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+}
+.admin-editor-tags {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 4px 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.admin-editor-note {
+  margin: 0;
+  color: var(--muted);
+}
+.admin-field-errors {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: var(--danger);
+  font-weight: 700;
+}
+.admin-field-error {
+  grid-column: 1 / -1;
+  color: var(--danger);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.admin-editor-form input[aria-invalid="true"],
+.admin-editor-form select[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.admin-danger-action {
+  border-color: var(--danger) !important;
+  background: var(--danger) !important;
+}
+.admin-editor-publication-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.admin-editor-publication-actions h2 {
+  margin: 0;
 }
 .admin-form button,
 .admin-heading button,
@@ -1069,6 +1190,14 @@ h1 {
   }
   .admin-pub-form {
     grid-template-columns: 1fr;
+  }
+  .admin-editor-form fieldset,
+  .admin-editor-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-editor-publication-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
   .admin-heading,
   .admin-pub-list li {

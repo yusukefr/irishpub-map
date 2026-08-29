@@ -327,6 +327,9 @@ export function AdminPubManager({
           <p className="eyebrow">Irish Pub Map</p>
           <h1>{t.admin.heading}</h1>
         </div>
+        <a className="admin-primary-link" href="/admin/pubs/new">
+          {t.admin.addPub}
+        </a>
       </div>
       {!databaseConfigured ? <p className="admin-error">{t.admin.databaseUnavailable}</p> : null}
       {message ? <p role="status">{message}</p> : null}
@@ -541,6 +544,9 @@ export function AdminPubManager({
                       </td>
                       <td data-label={t.admin.operations}>
                         <div className="admin-pub-row-actions">
+                          <a className="admin-row-link" href={"/admin/pubs/" + pub.id + "/edit"}>
+                            {t.admin.edit}
+                          </a>
                           <button type="button" onClick={() => void startEditing(pub)}>
                             {t.admin.edit}
                           </button>
