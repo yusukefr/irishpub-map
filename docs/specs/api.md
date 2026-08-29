@@ -88,12 +88,13 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 | `GET` | `/api/admin/master/statuses` | `200` と `{ statuses }` | 未認証は `401`、取得失敗は `500` |
 | `GET` | `/api/admin/statuses` | `200` と `{ statuses, databaseConfigured }`。固定keyと日英表示名を含む | 未認証は `401`、取得失敗は `500` |
 | `PATCH` | `/api/admin/statuses/:code` | `200` と `{ status }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、code不正は `400`、入力不正は `422`、対象なしは `404`、DB未設定は `503` |
-| `POST` | `/api/admin/pubs` | `201` と `{ pub }`。`pub` に `isPublished` を含む | 未認証は `401`、Origin不正は `403`、不正データは `400`、DB 未設定は `503` |
-| `PUT` | `/api/admin/pubs/:id` | `200` と `{ pub }`。`pub` に `isPublished` を含む | 未認証は `401`、Origin不正は `403`、不正データは `400`、対象なしは `404`、DB 未設定は `503` |
+| `POST` | `/api/admin/pubs` | `201` と非公開の `{ pub }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、参照競合は `409`、DB未設定は `503` |
+| `GET` | `/api/admin/pubs/:id` | `200` とNULL・日英翻訳・タグIDを含む `{ pub }` | 未認証は `401`、ID不正は `400`、対象なしは `404`、DB未設定は `503` |
+| `PUT` | `/api/admin/pubs/:id` | `200` と公開状態を維持した `{ pub }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、参照競合は `409`、対象なしは `404`、DB未設定は `503` |
 | `PATCH` | `/api/admin/pubs/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
 | `DELETE` | `/api/admin/pubs/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、対象なしは `404`、DB 未設定は `503` |
 
-`POST` と `PUT` の JSON 本文は `Pub` と同じフィールドを使います。公開状態は入力に含めず、新規作成時の `id` はサーバーで生成され、DB既定値により非公開になります。更新時は URL の `:id` が使われます。フィールドの詳細は[店舗データ仕様](data.md)を参照してください。
+`POST` と `PUT` は、`prefectureCode`、`municipalityCode`、座標、URL、`status`、`translations: { ja, en }`、`tagIds` を含む管理用全体スナップショットを受け付けます。日本語店舗名だけが下書きの必須項目で、その他の未入力値はNULL、英語翻訳なしは `translations.en = null`、タグ全解除は `tagIds = []` とします。`id`、`isPublished`、`updatedAt` は入力に含めません。新規IDはサーバーで生成し、常に非公開で作成します。
 
 管理店舗一覧は1ページ50件です。`name`、`prefecture`、`municipality`、`status`、`tag`、`published`、`page` をQuery Parameterとして受け付け、指定条件をANDで適用します。店舗名は日本語名の部分一致、都道府県は1〜47、市区町村は選択都道府県に所属する6桁コード、タグはUUID、公開状態は `true` / `false` だけを受け付けます。すべての値はパラメータ化クエリへ渡し、外部入力からSQL文字列を組み立てません。一覧APIは最終ページを超えた場合も絞り込み後の `total` を保持して `pubs` を空配列で返し、管理画面 `/admin/pubs` はその結果から最後の有効ページを求め、絞り込み条件を維持してリダイレクトします。
 
@@ -107,7 +108,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 管理APIは共通認証ヘルパーで、管理者設定が揃い、有効な署名済みセッションを持つリクエストだけを許可します。変更系リクエストは共通の同一Origin検証も通し、`Origin` の欠落・不一致を `403` で拒否します。現行は単一管理者モデルのため、このセッションを管理権限として扱います。Repositoryの例外時はDB・SQL・接続情報を含まない一般化したエラーを返します。
 
-Issue #273では取得Repositoryを公開用と管理用へ分離し、管理一覧の現行 `Pub` に `isPublished` を追加しました。Issue #274では管理ページ・APIの共通認証と同一Origin検証を追加しました。Issue #275ではタグ管理のCRUD、日英翻訳、使用店舗数、使用中削除拒否を追加しました。Issue #277では管理一覧の絞り込み・ページングと公開切替専用API、公開条件不足の構造化エラーを追加しました。Issue #286では管理APIのエラーをコード化し、Client側の日英翻訳へ統一しました。NULL許容の完全な下書きDTOは親Issue #264の後続改修で追加します。確定した契約は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+Issue #273では公開状態と公開取得を、Issue #274では管理認証と同一Origin検証を、Issue #275ではタグ管理を実装しました。Issue #277では管理一覧と公開切替を追加し、Issue #278ではNULL許容の管理DTO、詳細取得、作成・通常更新・削除、参照検証、複数テーブルtransactionを追加しました。Issue #286では管理APIのエラーをコード化し、Client側の日英翻訳へ統一しました。確定した契約は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 ## 今後の拡張候補
 

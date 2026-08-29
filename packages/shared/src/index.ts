@@ -28,13 +28,21 @@ export {
   ADMIN_PUB_PAGE_SIZE,
   AdminPubPublicationValidationError,
   AdminPubSearchValidationError,
+  AdminPubWriteValidationError,
+  parseAdminPubWriteInput,
   parseAdminPubSearchParams,
   parseSetAdminPubPublicationInput,
 } from "./admin-pub";
 export type {
+  AdminPub,
+  AdminPubFieldErrors,
   AdminPubListItem,
   AdminPubListTag,
   AdminPubPage,
   AdminPubSearchCondition,
+  AdminPubTranslation,
+  AdminPubWriteInput,
+  CreateAdminPubInput,
   SetAdminPubPublicationInput,
+  UpdateAdminPubInput,
 } from "./admin-pub";

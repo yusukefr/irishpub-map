@@ -6,7 +6,7 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 現行スキーマは、Issue #262で確認し、Issue #272で再確認したNeon上の実スキーマを基準とします。`apps/web/app/lib/pub-repository.ts` など現在のアプリケーション実装とも照合しています。`db/migrations` は設計経緯を確認するための補助資料であり、現行スキーマの根拠にはしません。カラム・制約・インデックスの詳細は[テーブル・カラム定義](database-columns.md)を参照してください。
 
-Issue #273のマイグレーション008で `pubs.is_published` を追加し、公開用と管理用の取得経路を分離しました。親Issue #264で予定する下書き用NULL制約、公開切替、型とトランザクションの残りの設計は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+Issue #273のマイグレーション008で `pubs.is_published` を追加し、Issue #278のマイグレーション009で下書き用NULL制約を適用しました。管理用DTOとtransaction保存を含む保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 ## テーブル
 
@@ -108,7 +108,7 @@ erDiagram
 
 翻訳テーブルは親IDと `locale` の複合主キーを持ちます。`prefecture_translations` と `tag_translations` は、同じロケール内で表示名が重複しないよう `UNIQUE (locale, name)` も持ちます。
 
-`pubs.municipality_code` はDB上ではNULLを許可します。Repositoryの追加・更新処理は、日本語の市区町村表示名から一意にコードを解決できない入力を拒否します。
+`pubs` の所在地、座標、営業状態と `pub_translations.address` は下書きではNULLを許可します。管理APIは市区町村コードが選択した都道府県に所属することと、各参照マスタに日本語表示名があることを保存前に検証します。
 
 ## 翻訳の選択
 
@@ -119,17 +119,18 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 | 操作 | 実装 | 整合性の扱い |
 | --- | --- | --- |
 | 公開取得 | `getPublishedPubs` | SQLで公開中だけに絞り、選択ロケールの共有 `Pub` 型へ変換して検証 |
-| 管理取得 | `getAdminPubs` | 公開・非公開の両方を取得し、現行 `Pub` に `isPublished` を加えて返す |
-| 追加 | `createPub` | UUIDを発行し、言語非依存属性、日本語店舗翻訳、タグ関係を保存。新規店舗は既定で非公開 |
-| 更新 | `updatePub` | UUIDを維持し、言語非依存属性、日本語店舗翻訳、タグ関係を更新 |
-| 削除 | `deletePub` | 店舗を削除し、店舗翻訳と `pub_tags` は外部キーでカスケード削除 |
+| 管理一覧 | `getAdminPubPage` | 公開・非公開とNULLを含む下書きを検索・ページング済み一覧DTOで返す |
+| 管理詳細 | `getAdminPub` | 日英翻訳、コード、タグID、公開状態を含む `AdminPub` を返す |
+| 追加 | `createAdminPub` | 店舗本体、日英翻訳、既存タグ関係を単一transactionで保存し、常に非公開で作成 |
+| 更新 | `updateAdminPub` | 公開状態を維持して全体更新し、公開済みの場合はPublish Validationを適用 |
+| 削除 | `deleteAdminPub` | 店舗を削除し、店舗翻訳と `pub_tags` は外部キーでカスケード削除 |
 | 一括投入 | `scripts/import-pubs.mjs` | 日本語の市区町村をコードへ解決し、新規UUIDの非公開店舗・翻訳・タグ関係だけを追加 |
 | タグ管理取得 | `getAdminTags` | 日英翻訳と `pub_tags` の重複を除いた使用店舗数を取得 |
 | タグ管理追加 | `createAdminTag` | タグ本体と日英翻訳を単一transactionで追加 |
 | タグ管理更新 | `updateAdminTag` | keyを維持し、日英翻訳を単一transactionでUPSERTまたは削除 |
 | タグ管理削除 | `deleteAdminTag` | タグ行をロックし、`pub_tags` が0件の場合だけ条件付き削除 |
 
-マイグレーション008は適用履歴表がない環境ではトランザクション内に作成し、適用前に既存店舗が公開条件を満たすか検査します。成功した場合だけ既存店舗を公開状態へ移行し、008の履歴を記録します。過去の移行履歴は推測して補完しません。カラムを削除すると公開状態が失われるためdownマイグレーションは用意しません。アプリケーションをロールバックする場合もカラムは残し、旧コードから無視します。
+マイグレーション008は適用前に既存店舗が公開条件を満たすか検査し、成功した場合だけ既存店舗を公開状態へ移行します。マイグレーション009は既存値を変更せず下書き対象カラムのNOT NULLを外し、公開中店舗に欠損が生じていないことを検証SQLで確認します。どちらも適用履歴を `schema_migrations` に記録します。
 
 店舗またはタグの削除時は、対応する翻訳と `pub_tags` が `ON DELETE CASCADE` で削除されます。ただし管理タグ機能は使用中タグのDELETE自体をtransaction内で拒否し、店舗関連や店舗を変更しません。都道府県・市区町村・営業状況を参照する店舗にはカスケード削除を設定していません。
 

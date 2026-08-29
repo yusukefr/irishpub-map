@@ -3,23 +3,37 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ADMIN_SESSION_COOKIE, createAdminSession } from "../../apps/web/app/lib/admin-auth";
 
 const repositoryMocks = vi.hoisted(() => ({
-  PubInputValidationError: class PubInputValidationError extends Error {},
   PubPublicationValidationError: class PubPublicationValidationError extends Error {
     constructor(readonly missingFields: string[]) {
       super();
     }
   },
-  createPub: vi.fn(),
-  deletePub: vi.fn(),
   getAdminPubPage: vi.fn(),
   isDatabaseConfigured: vi.fn(),
   setAdminPubPublication: vi.fn(),
-  updatePub: vi.fn(),
 }));
 
 vi.mock("../../apps/web/app/lib/pub-repository", () => repositoryMocks);
 
-import { DELETE, PUT } from "../../apps/web/app/api/admin/pubs/[id]/route";
+const serviceMocks = vi.hoisted(() => ({
+  AdminPubServiceError: class AdminPubServiceError extends Error {
+    constructor(
+      readonly code: "validation" | "reference_conflict" | "not_found" | "publication_requirements_not_met",
+      readonly fieldErrors: Record<string, string> = {},
+      readonly missingFields: string[] = [],
+    ) {
+      super();
+    }
+  },
+  createAdminPub: vi.fn(),
+  deleteAdminPub: vi.fn(),
+  readAdminPub: vi.fn(),
+  updateAdminPub: vi.fn(),
+}));
+
+vi.mock("../../apps/web/app/lib/admin-pub-service", () => serviceMocks);
+
+import { DELETE, GET as GET_DETAIL, PUT } from "../../apps/web/app/api/admin/pubs/[id]/route";
 import { PATCH } from "../../apps/web/app/api/admin/pubs/[id]/publication/route";
 import { GET, POST } from "../../apps/web/app/api/admin/pubs/route";
 
@@ -43,10 +57,11 @@ beforeEach(() => {
   });
   repositoryMocks.isDatabaseConfigured.mockReset();
   repositoryMocks.isDatabaseConfigured.mockReturnValue(true);
-  repositoryMocks.createPub.mockReset();
-  repositoryMocks.deletePub.mockReset();
   repositoryMocks.setAdminPubPublication.mockReset();
-  repositoryMocks.updatePub.mockReset();
+  serviceMocks.createAdminPub.mockReset();
+  serviceMocks.deleteAdminPub.mockReset();
+  serviceMocks.readAdminPub.mockReset();
+  serviceMocks.updateAdminPub.mockReset();
 });
 
 afterEach(() => {
@@ -221,7 +236,19 @@ describe("PATCH /api/admin/pubs/:id/publication", () => {
 });
 
 describe("admin pub mutations", () => {
-  it("preserves input and database status codes", async () => {
+  const pubId = "550e8400-e29b-41d4-a716-446655440001";
+  const draft = { id: pubId, isPublished: false, translations: { ja: { name: "Draft" }, en: null } };
+
+  it("returns a draft detail to an authenticated administrator", async () => {
+    serviceMocks.readAdminPub.mockResolvedValue(draft);
+    const response = await GET_DETAIL(adminRequest("/api/admin/pubs/" + pubId), context(pubId));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ pub: draft });
+    expect(serviceMocks.readAdminPub).toHaveBeenCalledWith(pubId);
+  });
+
+  it("preserves syntax, validation, reference, and database status codes", async () => {
     const nonJson = await POST(adminRequest("/api/admin/pubs", "POST"));
     expect(nonJson.status).toBe(415);
     await expect(nonJson.json()).resolves.toEqual({ errorCode: "invalid_content_type" });
@@ -230,10 +257,25 @@ describe("admin pub mutations", () => {
     expect(malformed.status).toBe(400);
     await expect(malformed.json()).resolves.toEqual({ errorCode: "invalid_json" });
 
-    repositoryMocks.createPub.mockRejectedValue(new repositoryMocks.PubInputValidationError());
+    serviceMocks.createAdminPub.mockRejectedValue(
+      new serviceMocks.AdminPubServiceError("validation", { "translations.ja.name": "required" }),
+    );
     const invalid = await POST(adminRequest("/api/admin/pubs", "POST", "{}"));
-    expect(invalid.status).toBe(400);
-    await expect(invalid.json()).resolves.toEqual({ errorCode: "invalid_pub_data" });
+    expect(invalid.status).toBe(422);
+    await expect(invalid.json()).resolves.toEqual({
+      errorCode: "validation_error",
+      fieldErrors: { "translations.ja.name": "required" },
+    });
+
+    serviceMocks.createAdminPub.mockRejectedValue(
+      new serviceMocks.AdminPubServiceError("reference_conflict", { tagIds: "invalid_format" }),
+    );
+    const conflict = await POST(adminRequest("/api/admin/pubs", "POST", "{}"));
+    expect(conflict.status).toBe(409);
+    await expect(conflict.json()).resolves.toEqual({
+      errorCode: "validation_error",
+      fieldErrors: { tagIds: "invalid_format" },
+    });
 
     repositoryMocks.isDatabaseConfigured.mockReturnValue(false);
     const unavailable = await POST(adminRequest("/api/admin/pubs", "POST", "{}"));
@@ -241,16 +283,32 @@ describe("admin pub mutations", () => {
     await expect(unavailable.json()).resolves.toEqual({ errorCode: "database_unavailable" });
   });
 
-  it("returns not-found codes and hides mutation errors", async () => {
-    repositoryMocks.updatePub.mockResolvedValue(null);
-    const missing = await PUT(adminRequest("/api/admin/pubs/missing", "PUT", "{}"), context("missing"));
+  it("returns publication requirements, not-found codes, and hides mutation errors", async () => {
+    serviceMocks.updateAdminPub.mockRejectedValue(
+      new serviceMocks.AdminPubServiceError("publication_requirements_not_met", {}, ["address", "latitude"]),
+    );
+    const blocked = await PUT(adminRequest("/api/admin/pubs/" + pubId, "PUT", "{}"), context(pubId));
+    expect(blocked.status).toBe(422);
+    await expect(blocked.json()).resolves.toEqual({
+      errorCode: "publication_requirements_not_met",
+      missingFields: ["address", "latitude"],
+    });
+
+    serviceMocks.updateAdminPub.mockRejectedValue(new serviceMocks.AdminPubServiceError("not_found"));
+    const missing = await PUT(adminRequest("/api/admin/pubs/" + pubId, "PUT", "{}"), context(pubId));
     expect(missing.status).toBe(404);
     await expect(missing.json()).resolves.toEqual({ errorCode: "pub_not_found" });
 
-    repositoryMocks.deletePub.mockRejectedValue(new Error("database connection detail"));
-    const failed = await DELETE(adminRequest("/api/admin/pubs/pub-1", "DELETE"), context("pub-1"));
+    serviceMocks.deleteAdminPub.mockRejectedValue(new Error("database connection detail"));
+    const failed = await DELETE(adminRequest("/api/admin/pubs/" + pubId, "DELETE"), context(pubId));
     expect(failed.status).toBe(500);
     await expect(failed.json()).resolves.toEqual({ errorCode: "internal_error" });
+  });
+
+  it("rejects invalid detail IDs before calling the service", async () => {
+    const response = await GET_DETAIL(adminRequest("/api/admin/pubs/invalid"), context("invalid"));
+    expect(response.status).toBe(400);
+    expect(serviceMocks.readAdminPub).not.toHaveBeenCalled();
   });
 });
 

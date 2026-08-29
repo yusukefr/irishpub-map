@@ -2,14 +2,13 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { AdminPubListItem, AdminPubPage, AdminPubSearchCondition } from "@irishpub-map/shared/admin-pub";
+import type { AdminPub, AdminPubListItem, AdminPubPage, AdminPubSearchCondition } from "@irishpub-map/shared/admin-pub";
 import type {
   MunicipalityOption,
   PrefectureOption,
   PubStatusOption,
   TagOption,
 } from "@irishpub-map/shared/admin-master";
-import type { Pub } from "@irishpub-map/shared/pub";
 import { PREFECTURES } from "@irishpub-map/shared/prefecture";
 import { PUB_STATUS_DEFINITIONS } from "@irishpub-map/shared/status";
 import { normalizeTags } from "@irishpub-map/shared/tag";
@@ -26,7 +25,7 @@ type Props = {
   databaseConfigured: boolean;
   locale: Locale;
 };
-type ApiResponse = { pub?: Pub; errorCode?: unknown };
+type ApiResponse = { pub?: AdminPub; errorCode?: unknown };
 type MunicipalityResponse = { municipalities?: unknown };
 type PublicationResponse = {
   publication?: { id: string; isPublished: boolean; unchanged: boolean };
@@ -125,7 +124,7 @@ export function AdminPubManager({
     }
   }
 
-  async function remove(pub: Pub) {
+  async function remove(pub: Pick<AdminPubListItem, "id" | "name">) {
     if (!window.confirm(formatMessage(t.admin.confirmDelete, { name: pub.name }))) return;
     try {
       const response = await fetch(`/api/admin/pubs/${pub.id}`, { method: "DELETE" });
@@ -219,9 +218,12 @@ export function AdminPubManager({
     ? {
         ...editing,
         tags: editing.tags.join(", "),
-        latitude: String(editing.latitude),
-        longitude: String(editing.longitude),
+        latitude: editing.latitude === null ? "" : String(editing.latitude),
+        longitude: editing.longitude === null ? "" : String(editing.longitude),
+        prefecture: editing.prefecture || "",
         city: editing.city || "",
+        address: editing.address || "",
+        status: editing.status || "open",
         websiteUrl: editing.websiteUrl || "",
         googleMapsUrl: editing.googleMapsUrl || "",
         instagramUrl: editing.instagramUrl || "",
@@ -413,8 +415,8 @@ export function AdminPubManager({
                       <th scope="row" data-label={t.admin.name}>
                         {pub.name}
                       </th>
-                      <td data-label={t.admin.area}>{[pub.prefecture, pub.city].filter(Boolean).join(" ")}</td>
-                      <td data-label={t.admin.status}>{pub.statusDisplayName}</td>
+                      <td data-label={t.admin.area}>{[pub.prefecture, pub.city].filter(Boolean).join(" ") || "—"}</td>
+                      <td data-label={t.admin.status}>{pub.statusDisplayName || "—"}</td>
                       <td data-label={t.admin.publication}>
                         <span
                           className={`admin-publication-badge ${pub.isPublished ? "is-published" : "is-unpublished"}`}

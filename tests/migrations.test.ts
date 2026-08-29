@@ -127,4 +127,20 @@ describe("pubs database migrations", () => {
     expect(verifySql).toContain("unpublished_existing_pubs");
     expect(verifySql).toContain("publication_migration_recorded");
   });
+
+  it("allows incomplete drafts while preserving published-data verification", async () => {
+    const upSql = await readMigration("009_allow_pub_drafts_up.sql");
+    const verifySql = await readMigration("009_allow_pub_drafts_verify.sql");
+
+    expect(upSql).toContain("ALTER COLUMN prefecture_code DROP NOT NULL");
+    expect(upSql).toContain("ALTER COLUMN latitude DROP NOT NULL");
+    expect(upSql).toContain("ALTER COLUMN longitude DROP NOT NULL");
+    expect(upSql).toContain("ALTER COLUMN status_code DROP NOT NULL");
+    expect(upSql).toContain("ALTER COLUMN address DROP NOT NULL");
+    expect(upSql).toContain("CHECK (address IS NULL OR btrim(address) <> '')");
+    expect(upSql).toContain("VALUES ('009_allow_pub_drafts')");
+    expect(verifySql).toContain("draft_nullable_columns");
+    expect(verifySql).toContain("published_drafts");
+    expect(verifySql).toContain("draft_migration_recorded");
+  });
 });
