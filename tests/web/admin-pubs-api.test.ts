@@ -102,15 +102,30 @@ describe("GET /api/admin/pubs", () => {
       ),
     );
     expect(response.status).toBe(200);
-    expect(repositoryMocks.getAdminPubPage).toHaveBeenCalledWith({
-      name: "Irish",
-      prefectureCode: 23,
-      municipalityCode: "231002",
-      statusKey: "open",
-      tagId: "550e8400-e29b-41d4-a716-446655440010",
-      isPublished: false,
-      page: 2,
-    });
+    expect(repositoryMocks.getAdminPubPage).toHaveBeenCalledWith(
+      {
+        name: "Irish",
+        prefectureCode: 23,
+        municipalityCode: "231002",
+        statusKey: "open",
+        tagId: "550e8400-e29b-41d4-a716-446655440010",
+        isPublished: false,
+        page: 2,
+      },
+      "ja",
+    );
+  });
+
+  it("uses the request locale for pub display values", async () => {
+    const session = createAdminSession("admin");
+    const response = await GET(
+      new Request("http://localhost/api/admin/pubs", {
+        headers: { cookie: `${ADMIN_SESSION_COOKIE}=${session}; irishpub-map-locale=en` },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(repositoryMocks.getAdminPubPage).toHaveBeenCalledWith({ page: 1 }, "en");
   });
 
   it("rejects invalid search parameters before reading pubs", async () => {

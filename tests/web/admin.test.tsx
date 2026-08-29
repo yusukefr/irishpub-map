@@ -1,5 +1,5 @@
 // 管理画面の認証と店舗CRUDの利用者操作をAPIモック越しに保証するテストです。
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginForm } from "../../apps/web/app/components/admin-login-form";
 import { AdminPubManager } from "../../apps/web/app/components/admin-pub-manager";
@@ -124,6 +124,59 @@ describe("admin UI", () => {
     fireEvent.change(screen.getAllByLabelText("都道府県")[1], { target: { value: "27" } });
     await waitFor(() => expect(screen.getByRole("option", { name: "大阪市北区" })).toBeInTheDocument());
     expect(screen.getAllByLabelText("市区町村")[1]).toHaveValue("");
+  });
+
+  it("ignores an older municipality response after another prefecture is selected", async () => {
+    let resolveAichi!: (response: Response) => void;
+    let resolveMie!: (response: Response) => void;
+    fetchMock
+      .mockReturnValueOnce(new Promise<Response>((resolve) => (resolveAichi = resolve)))
+      .mockReturnValueOnce(new Promise<Response>((resolve) => (resolveMie = resolve)));
+    render(
+      <AdminPubManager
+        {...managerProps}
+        locale="en"
+        condition={{ page: 1 }}
+        prefectures={[
+          { code: 23, name: "Aichi" },
+          { code: 24, name: "Mie" },
+        ]}
+        municipalities={[]}
+      />,
+    );
+
+    const prefecture = screen.getAllByLabelText("Prefecture")[1];
+    fireEvent.change(prefecture, { target: { value: "23" } });
+    fireEvent.change(prefecture, { target: { value: "24" } });
+    expect((fetchMock.mock.calls[0][1] as RequestInit).signal).toMatchObject({ aborted: true });
+
+    await act(async () => {
+      resolveMie(
+        new Response(JSON.stringify({ municipalities: [{ code: "242012", prefectureCode: 24, name: "Tsu" }] })),
+      );
+    });
+    expect(await screen.findByRole("option", { name: "Tsu" })).toBeInTheDocument();
+
+    await act(async () => {
+      resolveAichi(
+        new Response(JSON.stringify({ municipalities: [{ code: "231002", prefectureCode: 23, name: "Nagoya" }] })),
+      );
+    });
+    expect(screen.queryByRole("option", { name: "Nagoya" })).not.toBeInTheDocument();
+    expect(screen.getAllByLabelText("Municipality")[0]).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Pub list pagination" })).toBeInTheDocument();
+  });
+
+  it("keeps the previous-page link when an out-of-range page has matching pubs", () => {
+    render(
+      <AdminPubManager
+        {...managerProps}
+        initialPage={{ pubs: [], total: 30, page: 2, pageSize: 50 }}
+        condition={{ page: 2 }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "前へ" })).toHaveAttribute("href", "/admin/pubs");
   });
 
   it("publishes a pub after confirmation and shows the result immediately", async () => {

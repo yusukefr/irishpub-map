@@ -3,6 +3,7 @@ import {
   adminMasterErrorResponse,
   getAdminApiAuthorizationError,
 } from "../../../../lib/admin-api";
+import { resolveRequestLocale } from "../../../../lib/i18n";
 import { getMunicipalitiesByPrefecture } from "../../../../lib/master-repository";
 
 /**
@@ -20,7 +21,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    return Response.json({ municipalities: await getMunicipalitiesByPrefecture(Number(value)) });
+    return Response.json({
+      municipalities: await getMunicipalitiesByPrefecture(Number(value), resolveRequestLocale(request)),
+    });
   } catch {
     return adminMasterErrorResponse();
   }

@@ -109,6 +109,21 @@ describe("admin pub list search", () => {
     delete process.env.DATABASE_URL;
     await expect(getAdminPubPage({ page: 4 })).resolves.toEqual({ pubs: [], total: 0, page: 4, pageSize: 50 });
   });
+
+  it("keeps the filtered total when the requested page is out of range", async () => {
+    process.env.DATABASE_URL = "postgres://test-only";
+    databaseMock.responses = [[], [{ total_count: 30 }]];
+
+    await expect(getAdminPubPage({ prefectureCode: 13, page: 2 })).resolves.toEqual({
+      pubs: [],
+      total: 30,
+      page: 2,
+      pageSize: 50,
+    });
+    expect(databaseMock.queries).toHaveLength(2);
+    expect(databaseMock.queries[1].text).toContain("SELECT COUNT(*)::int AS total_count");
+    expect(databaseMock.queries[1].values).toContain(13);
+  });
 });
 
 describe("admin pub publication updates", () => {

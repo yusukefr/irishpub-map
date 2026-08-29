@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminPubListItem, AdminPubPage, AdminPubSearchCondition } from "@irishpub-map/shared/admin-pub";
 import type {
@@ -97,6 +97,9 @@ export function AdminPubManager({
   const [selectedMunicipality, setSelectedMunicipality] = useState(condition.municipalityCode ?? "");
   const [municipalities, setMunicipalities] = useState(initialMunicipalities);
   const [publicationPending, setPublicationPending] = useState<string | null>(null);
+  const municipalityRequest = useRef<AbortController | null>(null);
+
+  useEffect(() => () => municipalityRequest.current?.abort(), []);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -137,20 +140,30 @@ export function AdminPubManager({
   }
 
   async function changePrefecture(value: string) {
+    municipalityRequest.current?.abort();
+    municipalityRequest.current = null;
     setSelectedPrefecture(value);
     setSelectedMunicipality("");
     setMunicipalities([]);
     if (!value) return;
+    const controller = new AbortController();
+    municipalityRequest.current = controller;
     try {
-      const response = await fetch(`/api/admin/master/municipalities?prefectureCode=${encodeURIComponent(value)}`);
+      const response = await fetch(`/api/admin/master/municipalities?prefectureCode=${encodeURIComponent(value)}`, {
+        signal: controller.signal,
+      });
       const body = (await response.json().catch(() => ({}))) as MunicipalityResponse;
+      if (controller.signal.aborted) return;
       if (!response.ok || !Array.isArray(body.municipalities)) {
         setMessage(getAdminApiErrorMessage(locale, body));
         return;
       }
       setMunicipalities(body.municipalities as MunicipalityOption[]);
     } catch {
+      if (controller.signal.aborted) return;
       setMessage(getAdminApiErrorMessage(locale, null));
+    } finally {
+      if (municipalityRequest.current === controller) municipalityRequest.current = null;
     }
   }
 
@@ -441,7 +454,7 @@ export function AdminPubManager({
           </div>
         )}
         {initialPage.total > 0 ? (
-          <nav className="admin-pub-pagination" aria-label={t.admin.adminPubResults.replace("（{count}件）", "")}>
+          <nav className="admin-pub-pagination" aria-label={t.admin.adminPubPagination}>
             {condition.page > 1 ? <a href={pageHref(condition.page - 1)}>{t.admin.previousPage}</a> : <span />}
             <span>
               {formatMessage(t.admin.pageSummary, {

@@ -74,6 +74,21 @@ export function resolveLocale(input: { cookieLocale?: string | null; acceptLangu
 }
 
 /**
+ * Web APIのRequestから、画面と同じ優先順位で表示ロケールを決定します。
+ * @param {Request} request - 言語CookieとAccept-Languageを含むリクエスト。
+ * @returns {Locale} Cookieを優先して決定した表示ロケール。
+ */
+export function resolveRequestLocale(request: Request): Locale {
+  const cookieLocale = request.headers
+    .get("cookie")
+    ?.split(";")
+    .map((cookie) => cookie.trim().split("=", 2))
+    .find(([name]) => name === LOCALE_COOKIE)?.[1];
+
+  return resolveLocale({ cookieLocale, acceptLanguage: request.headers.get("accept-language") });
+}
+
+/**
  * 指定したロケールの翻訳辞書を取得します。
  * @param {Locale} locale - 表示するロケール。
  * @returns {Translation} 翻訳辞書。

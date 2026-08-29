@@ -4,6 +4,7 @@ import {
   getAdminApiAuthorizationError,
   getAdminJsonContentTypeError,
 } from "../../../lib/admin-api";
+import { resolveRequestLocale } from "../../../lib/i18n";
 import { createPub, getAdminPubPage, isDatabaseConfigured, PubInputValidationError } from "../../../lib/pub-repository";
 
 /**
@@ -15,7 +16,10 @@ export async function GET(request: Request) {
   const authorizationError = getAdminApiAuthorizationError(request);
   if (authorizationError) return authorizationError;
   try {
-    const page = await getAdminPubPage(parseAdminPubSearchParams(new URL(request.url).searchParams));
+    const page = await getAdminPubPage(
+      parseAdminPubSearchParams(new URL(request.url).searchParams),
+      resolveRequestLocale(request),
+    );
     return Response.json({ ...page, databaseConfigured: isDatabaseConfigured() });
   } catch (error) {
     if (error instanceof AdminPubSearchValidationError) return adminApiErrorResponse("invalid_request", 400);

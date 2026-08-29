@@ -95,7 +95,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 `POST` と `PUT` の JSON 本文は `Pub` と同じフィールドを使います。公開状態は入力に含めず、新規作成時の `id` はサーバーで生成され、DB既定値により非公開になります。更新時は URL の `:id` が使われます。フィールドの詳細は[店舗データ仕様](data.md)を参照してください。
 
-管理店舗一覧は1ページ50件です。`name`、`prefecture`、`municipality`、`status`、`tag`、`published`、`page` をQuery Parameterとして受け付け、指定条件をANDで適用します。店舗名は日本語名の部分一致、都道府県は1〜47、市区町村は選択都道府県に所属する6桁コード、タグはUUID、公開状態は `true` / `false` だけを受け付けます。すべての値はパラメータ化クエリへ渡し、外部入力からSQL文字列を組み立てません。
+管理店舗一覧は1ページ50件です。`name`、`prefecture`、`municipality`、`status`、`tag`、`published`、`page` をQuery Parameterとして受け付け、指定条件をANDで適用します。店舗名は日本語名の部分一致、都道府県は1〜47、市区町村は選択都道府県に所属する6桁コード、タグはUUID、公開状態は `true` / `false` だけを受け付けます。すべての値はパラメータ化クエリへ渡し、外部入力からSQL文字列を組み立てません。最終ページを超えた場合は `pubs` を空配列で返しますが、前のページへ戻れるよう、絞り込み後の `total` は保持します。
 
 公開状態変更本文は `{ "isPublished": true | false }` だけを受け付けます。現在値と対象存在を確認し、同じ状態への要求は `unchanged: true` として更新しません。非公開化に公開条件は適用しません。公開時は日本語店舗名・住所、都道府県、市区町村と所属関係、緯度、経度、営業ステータス、および各日本語表示名をサーバー側で再検証します。不足時は更新せず、`publication_requirements_not_met` と `missingFields` を `422` で返します。
 
@@ -103,7 +103,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 営業ステータス管理APIの固定key、日英表示名、transaction更新は[管理ステータス仕様](status-management.md)を参照してください。更新本文は必須の `nameJa` と任意の `nameEn` だけを利用し、余分な `key` は更新対象にしません。
 
-参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスは `{ code, key, name }` です。表示名は日本語を既定とし、Repositoryは将来のロケール指定に備えて日本語フォールバックを持ちます。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
+参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスは `{ code, key, name }` です。表示名は日本語を既定とし、日本語へフォールバックします。画面操作で再取得する市区町村APIと管理店舗一覧APIは、言語Cookieを優先し、未指定時は `Accept-Language` から表示ロケールを決定します。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
 
 管理APIは共通認証ヘルパーで、管理者設定が揃い、有効な署名済みセッションを持つリクエストだけを許可します。変更系リクエストは共通の同一Origin検証も通し、`Origin` の欠落・不一致を `403` で拒否します。現行は単一管理者モデルのため、このセッションを管理権限として扱います。Repositoryの例外時はDB・SQL・接続情報を含まない一般化したエラーを返します。
 

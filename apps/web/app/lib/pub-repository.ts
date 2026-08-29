@@ -41,6 +41,19 @@ type DbAdminPubListRow = DbPubRow & {
   total_count: unknown;
 };
 
+type DbCountRow = {
+  total_count: unknown;
+};
+
+type AdminPubCountCondition = {
+  name: string | null;
+  prefectureCode: number | null;
+  municipalityCode: string | null;
+  statusKey: AdminPubSearchCondition["statusKey"] | null;
+  tagId: string | null;
+  isPublished: boolean | null;
+};
+
 type PublicationSnapshotRow = {
   is_published: unknown;
   has_name: unknown;
@@ -150,13 +163,37 @@ export async function getAdminPubPage(condition: AdminPubSearchCondition, locale
     ORDER BY p.updated_at DESC, pt.name, p.id
     LIMIT ${ADMIN_PUB_PAGE_SIZE} OFFSET ${offset}
   `) as DbAdminPubListRow[];
+  const total =
+    rows.length > 0
+      ? requiredNonNegativeInteger(rows[0].total_count)
+      : await getAdminPubCount(locale, { name, prefectureCode, municipalityCode, statusKey, tagId, isPublished });
 
   return {
     pubs: rows.map(toAdminPubListItem),
-    total: rows.length === 0 ? 0 : requiredNonNegativeInteger(rows[0].total_count),
+    total,
     page: condition.page,
     pageSize: ADMIN_PUB_PAGE_SIZE,
   };
+}
+
+async function getAdminPubCount(locale: string, condition: AdminPubCountCondition) {
+  const rows = (await getSql()`
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    SELECT COUNT(*)::int AS total_count
+    FROM pubs AS p
+    JOIN LATERAL (SELECT 1 FROM pub_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.pub_id=p.id ORDER BY preference.priority LIMIT 1) AS pt ON TRUE
+    JOIN LATERAL (SELECT 1 FROM prefecture_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.prefecture_code=p.prefecture_code ORDER BY preference.priority LIMIT 1) AS pref ON TRUE
+    JOIN pub_statuses AS status ON status.code=p.status_code
+    JOIN LATERAL (SELECT 1 FROM pub_status_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.status_code=p.status_code ORDER BY preference.priority LIMIT 1) AS st ON TRUE
+    WHERE (${condition.name ?? null}::text IS NULL OR EXISTS (SELECT 1 FROM pub_translations AS search_name WHERE search_name.pub_id=p.id AND search_name.locale='ja' AND search_name.name ILIKE '%' || ${condition.name ?? null} || '%'))
+      AND (${condition.prefectureCode ?? null}::int IS NULL OR p.prefecture_code=${condition.prefectureCode ?? null})
+      AND (${condition.municipalityCode ?? null}::text IS NULL OR p.municipality_code=${condition.municipalityCode ?? null})
+      AND (${condition.statusKey ?? null}::text IS NULL OR status.key=${condition.statusKey ?? null})
+      AND (${condition.tagId ?? null}::uuid IS NULL OR EXISTS (SELECT 1 FROM pub_tags AS search_tag WHERE search_tag.pub_id=p.id AND search_tag.tag_id=${condition.tagId ?? null}::uuid))
+      AND (${condition.isPublished ?? null}::boolean IS NULL OR p.is_published=${condition.isPublished ?? null})
+  `) as DbCountRow[];
+  if (rows.length !== 1) throw new Error("Invalid admin pub count returned from database.");
+  return requiredNonNegativeInteger(rows[0].total_count);
 }
 
 /**

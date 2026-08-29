@@ -9,6 +9,7 @@ const pageMocks = vi.hoisted(() => ({
   getTags: vi.fn(),
   isDatabaseConfigured: vi.fn(),
   requireAdminSession: vi.fn(),
+  locale: "ja" as "ja" | "en",
 }));
 
 vi.mock("../../apps/web/app/lib/admin-server", () => ({
@@ -24,7 +25,9 @@ vi.mock("../../apps/web/app/lib/master-repository", () => ({
   getPubStatuses: pageMocks.getPubStatuses,
   getTags: pageMocks.getTags,
 }));
-vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: () => Promise.resolve("ja") }));
+vi.mock("../../apps/web/app/lib/i18n/server", () => ({
+  getRequestLocale: () => Promise.resolve(pageMocks.locale),
+}));
 vi.mock("../../apps/web/app/components/admin-pub-manager", () => ({
   AdminPubManager: ({ initialPage }: { initialPage: { pubs: Array<{ name: string }> } }) => (
     <p>{initialPage.pubs.map((pub) => pub.name).join(",")}</p>
@@ -32,6 +35,8 @@ vi.mock("../../apps/web/app/components/admin-pub-manager", () => ({
 }));
 
 import AdminPubsPage from "../../apps/web/app/admin/(protected)/pubs/page";
+import AdminPubsError from "../../apps/web/app/admin/(protected)/pubs/error";
+import AdminPubsLoading from "../../apps/web/app/admin/(protected)/pubs/loading";
 
 beforeEach(() => {
   pageMocks.getAdminPubPage.mockReset();
@@ -41,6 +46,23 @@ beforeEach(() => {
   pageMocks.getTags.mockReset().mockResolvedValue([]);
   pageMocks.isDatabaseConfigured.mockReset();
   pageMocks.requireAdminSession.mockReset();
+  pageMocks.locale = "ja";
+});
+
+describe("AdminPubsPage states", () => {
+  it("translates loading and error states into English", async () => {
+    pageMocks.locale = "en";
+    document.documentElement.lang = "en";
+
+    const { unmount } = render(await AdminPubsLoading());
+    expect(screen.getByRole("status")).toHaveTextContent("Loading pubs…");
+    unmount();
+
+    render(<AdminPubsError reset={vi.fn()} />);
+    expect(screen.getByRole("heading")).toHaveTextContent("Could not load the pub list.");
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    document.documentElement.lang = "";
+  });
 });
 
 describe("AdminPubsPage", () => {
