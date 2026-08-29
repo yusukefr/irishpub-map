@@ -128,7 +128,8 @@
       "tag_in_use": "Tags in use cannot be deleted.",
       "invalid_tag_id": "The tag ID is invalid.",
       "invalid_status_code": "The status code is invalid.",
-      "status_not_found": "The status was not found."
+      "status_not_found": "The status was not found.",
+      "publication_requirements_not_met": "This pub does not meet the publication requirements."
     },
     "tagFieldErrors": {
       "key": {
@@ -218,6 +219,46 @@
     "saved": "Saved.",
     "deleteFailed": "Could not delete the pub.",
     "deleted": "Deleted.",
-    "confirmDelete": "Delete “{name}”?"
+    "confirmDelete": "Delete “{name}”?",
+    "pubSearchHeading": "Filter pubs",
+    "searchName": "Pub name",
+    "allPrefectures": "All prefectures",
+    "municipality": "Municipality",
+    "allMunicipalities": "All municipalities",
+    "allStatuses": "All operating statuses",
+    "filterTag": "Tag",
+    "allTags": "All tags",
+    "publication": "Publication",
+    "allPublicationStates": "All",
+    "published": "Published",
+    "unpublished": "Unpublished",
+    "search": "Search",
+    "clearFilters": "Clear filters",
+    "adminPubResults": "Pubs ({count})",
+    "noAdminPubs": "No pubs match these filters.",
+    "area": "Area",
+    "updatedAt": "Updated",
+    "operations": "Actions",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "publishing": "Publishing…",
+    "unpublishing": "Unpublishing…",
+    "confirmPublish": "Publish “{name}”? Publication requirements will be checked on the server.",
+    "confirmUnpublish": "Unpublish “{name}”? It will no longer appear on the public site.",
+    "publishedSuccess": "Published “{name}”.",
+    "unpublishedSuccess": "Unpublished “{name}”.",
+    "missingPublicationFields": "Missing fields: {fields}",
+    "publicationFields": {
+      "name": "Japanese pub name",
+      "address": "Japanese address",
+      "prefecture": "Prefecture",
+      "municipality": "Municipality",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "status": "Operating status"
+    },
+    "previousPage": "Previous",
+    "nextPage": "Next",
+    "pageSummary": "{from}–{to} of {total}"
   }
 }

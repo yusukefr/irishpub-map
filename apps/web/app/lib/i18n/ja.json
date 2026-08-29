@@ -128,7 +128,8 @@
       "tag_in_use": "使用中のタグは削除できません。",
       "invalid_tag_id": "タグIDが正しくありません。",
       "invalid_status_code": "営業ステータスコードが正しくありません。",
-      "status_not_found": "営業ステータスが見つかりません。"
+      "status_not_found": "営業ステータスが見つかりません。",
+      "publication_requirements_not_met": "この店舗は公開条件を満たしていません。"
     },
     "tagFieldErrors": {
       "key": {
@@ -218,6 +219,46 @@
     "saved": "保存しました。",
     "deleteFailed": "削除に失敗しました。",
     "deleted": "削除しました。",
-    "confirmDelete": "「{name}」を削除しますか？"
+    "confirmDelete": "「{name}」を削除しますか？",
+    "pubSearchHeading": "店舗を絞り込む",
+    "searchName": "店舗名",
+    "allPrefectures": "すべての都道府県",
+    "municipality": "市区町村",
+    "allMunicipalities": "すべての市区町村",
+    "allStatuses": "すべての営業ステータス",
+    "filterTag": "タグ",
+    "allTags": "すべてのタグ",
+    "publication": "公開状態",
+    "allPublicationStates": "すべて",
+    "published": "公開",
+    "unpublished": "非公開",
+    "search": "検索",
+    "clearFilters": "条件をクリア",
+    "adminPubResults": "店舗一覧（{count}件）",
+    "noAdminPubs": "条件に一致する店舗がありません。",
+    "area": "地域",
+    "updatedAt": "更新日時",
+    "operations": "操作",
+    "publish": "公開する",
+    "unpublish": "非公開にする",
+    "publishing": "公開中…",
+    "unpublishing": "非公開化中…",
+    "confirmPublish": "「{name}」を公開しますか？公開条件をサーバーで確認します。",
+    "confirmUnpublish": "「{name}」を非公開にしますか？非公開にすると一般ユーザー向けサイトには表示されなくなります。",
+    "publishedSuccess": "「{name}」を公開しました。",
+    "unpublishedSuccess": "「{name}」を非公開にしました。",
+    "missingPublicationFields": "不足している項目: {fields}",
+    "publicationFields": {
+      "name": "日本語店舗名",
+      "address": "日本語住所",
+      "prefecture": "都道府県",
+      "municipality": "市区町村",
+      "latitude": "緯度",
+      "longitude": "経度",
+      "status": "営業ステータス"
+    },
+    "previousPage": "前へ",
+    "nextPage": "次へ",
+    "pageSummary": "{from}〜{to} / {total}件"
   }
 }

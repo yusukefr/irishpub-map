@@ -1,9 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getAdminPubs, getPublishedPubs, parseDbAdminPubs, parseDbPubs } from "../../apps/web/app/lib/pub-repository";
+import {
+  getAdminPubPage,
+  getAdminPubs,
+  getPublishedPubs,
+  parseDbAdminPubs,
+  parseDbPubs,
+  PubPublicationValidationError,
+  setAdminPubPublication,
+} from "../../apps/web/app/lib/pub-repository";
 
 const databaseMock = vi.hoisted(() => ({
   queries: [] as Array<{ text: string; values: unknown[] }>,
   rows: [] as Array<Record<string, unknown>>,
+  responses: [] as Array<Array<Record<string, unknown>>>,
 }));
 
 vi.mock("@neondatabase/serverless", () => ({
@@ -13,6 +22,7 @@ vi.mock("@neondatabase/serverless", () => ({
       const text = strings.join("?");
       const includeUnpublished = values.find((value) => typeof value === "boolean") === true;
       databaseMock.queries.push({ text, values });
+      if (databaseMock.responses.length > 0) return Promise.resolve(databaseMock.responses.shift()!);
       return Promise.resolve(databaseMock.rows.filter((row) => includeUnpublished || row.is_published === true));
     },
 }));
@@ -42,6 +52,122 @@ const baseRow = {
 beforeEach(() => {
   databaseMock.queries = [];
   databaseMock.rows = [];
+  databaseMock.responses = [];
+});
+
+describe("admin pub list search", () => {
+  it("passes all filters as parameters and returns a bounded page with both publication states", async () => {
+    process.env.DATABASE_URL = "postgres://test-only";
+    databaseMock.responses = [
+      [
+        {
+          ...baseRow,
+          status_key: "open",
+          tag_items: [{ id: "550e8400-e29b-41d4-a716-446655440010", key: "guinness", name: "ギネス" }],
+          updated_at: "2026-08-29T01:00:00.000Z",
+          total_count: 2,
+        },
+        {
+          ...baseRow,
+          id: "550e8400-e29b-41d4-a716-446655440002",
+          is_published: false,
+          status_key: "open",
+          tag_items: [],
+          updated_at: "2026-08-28T01:00:00.000Z",
+          total_count: 2,
+        },
+      ],
+    ];
+
+    const page = await getAdminPubPage({
+      name: "Dublin",
+      prefectureCode: 13,
+      municipalityCode: "131041",
+      statusKey: "open",
+      tagId: "550e8400-e29b-41d4-a716-446655440010",
+      isPublished: false,
+      page: 2,
+    });
+
+    expect(page).toEqual(expect.objectContaining({ total: 2, page: 2, pageSize: 50 }));
+    expect(page.pubs.map((pub) => pub.isPublished)).toEqual([true, false]);
+    expect(page.pubs[0]).toEqual(
+      expect.objectContaining({
+        prefectureCode: 13,
+        statusDisplayName: "営業中",
+        updatedAt: "2026-08-29T01:00:00.000Z",
+      }),
+    );
+    expect(databaseMock.queries[0].text).toContain("ILIKE '%' || ? || '%'");
+    expect(databaseMock.queries[0].text).toContain("LIMIT ? OFFSET ?");
+    expect(databaseMock.queries[0].values).toEqual(
+      expect.arrayContaining(["Dublin", 13, "131041", "open", "550e8400-e29b-41d4-a716-446655440010", false, 50]),
+    );
+  });
+
+  it("returns an empty bounded page without a configured database", async () => {
+    delete process.env.DATABASE_URL;
+    await expect(getAdminPubPage({ page: 4 })).resolves.toEqual({ pubs: [], total: 0, page: 4, pageSize: 50 });
+  });
+});
+
+describe("admin pub publication updates", () => {
+  const completeSnapshot = {
+    is_published: false,
+    has_name: true,
+    has_address: true,
+    has_prefecture: true,
+    has_municipality: true,
+    has_latitude: true,
+    has_longitude: true,
+    has_status: true,
+  };
+
+  it("publishes a complete pub and keeps the validation gate in the UPDATE", async () => {
+    process.env.DATABASE_URL = "postgres://test-only";
+    databaseMock.responses = [[completeSnapshot], [{ id: baseRow.id }]];
+
+    await expect(setAdminPubPublication(baseRow.id, true)).resolves.toEqual({
+      id: baseRow.id,
+      isPublished: true,
+      unchanged: false,
+    });
+    expect(databaseMock.queries[1].text).toContain("municipality.prefecture_code=pub.prefecture_code");
+    expect(databaseMock.queries[1].text).toContain("SET is_published=?");
+  });
+
+  it("rejects publication with all missing fields without issuing an update", async () => {
+    process.env.DATABASE_URL = "postgres://test-only";
+    databaseMock.responses = [[{ ...completeSnapshot, has_address: false, has_latitude: false }]];
+
+    await expect(setAdminPubPublication(baseRow.id, true)).rejects.toMatchObject<PubPublicationValidationError>({
+      missingFields: ["address", "latitude"],
+    });
+    expect(databaseMock.queries).toHaveLength(1);
+  });
+
+  it("unpublishes without publish validation and treats the current state idempotently", async () => {
+    process.env.DATABASE_URL = "postgres://test-only";
+    databaseMock.responses = [[{ ...completeSnapshot, is_published: true, has_address: false }], [{ id: baseRow.id }]];
+    await expect(setAdminPubPublication(baseRow.id, false)).resolves.toEqual({
+      id: baseRow.id,
+      isPublished: false,
+      unchanged: false,
+    });
+
+    databaseMock.responses = [[completeSnapshot]];
+    await expect(setAdminPubPublication(baseRow.id, false)).resolves.toEqual({
+      id: baseRow.id,
+      isPublished: false,
+      unchanged: true,
+    });
+  });
+
+  it("returns null for a missing pub", async () => {
+    process.env.DATABASE_URL = "postgres://test-only";
+    databaseMock.responses = [[]];
+    await expect(setAdminPubPublication(baseRow.id, true)).resolves.toBeNull();
+  });
 });
 
 afterEach(() => {
