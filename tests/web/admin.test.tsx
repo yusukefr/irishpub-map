@@ -167,7 +167,7 @@ describe("admin UI", () => {
     expect(screen.getByRole("navigation", { name: "Pub list pagination" })).toBeInTheDocument();
   });
 
-  it("keeps the previous-page link when an out-of-range page has matching pubs", () => {
+  it("does not invert the item range if an out-of-range page reaches the client", () => {
     render(
       <AdminPubManager
         {...managerProps}
@@ -176,6 +176,7 @@ describe("admin UI", () => {
       />,
     );
 
+    expect(screen.getByText("0〜0 / 30件")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "前へ" })).toHaveAttribute("href", "/admin/pubs");
   });
 

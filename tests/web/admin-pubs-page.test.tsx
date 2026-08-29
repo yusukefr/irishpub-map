@@ -9,8 +9,10 @@ const pageMocks = vi.hoisted(() => ({
   getTags: vi.fn(),
   isDatabaseConfigured: vi.fn(),
   requireAdminSession: vi.fn(),
+  redirect: vi.fn(),
   locale: "ja" as "ja" | "en",
 }));
+vi.mock("next/navigation", () => ({ redirect: pageMocks.redirect }));
 
 vi.mock("../../apps/web/app/lib/admin-server", () => ({
   requireAdminSession: pageMocks.requireAdminSession,
@@ -46,6 +48,7 @@ beforeEach(() => {
   pageMocks.getTags.mockReset().mockResolvedValue([]);
   pageMocks.isDatabaseConfigured.mockReset();
   pageMocks.requireAdminSession.mockReset();
+  pageMocks.redirect.mockReset();
   pageMocks.locale = "ja";
 });
 
@@ -103,5 +106,27 @@ describe("AdminPubsPage", () => {
       "ja",
     );
     expect(pageMocks.getMunicipalitiesByPrefecture).toHaveBeenCalledWith(23, "ja");
+  });
+
+  it("redirects an out-of-range page to the last page while preserving filters", async () => {
+    pageMocks.requireAdminSession.mockResolvedValue(undefined);
+    pageMocks.getAdminPubPage.mockResolvedValue({ pubs: [], total: 60, page: 3, pageSize: 50 });
+    pageMocks.isDatabaseConfigured.mockReturnValue(true);
+
+    await AdminPubsPage({
+      searchParams: Promise.resolve({ name: "Irish", prefecture: "23", published: "false", page: "3" }),
+    });
+
+    expect(pageMocks.redirect).toHaveBeenCalledWith("/admin/pubs?name=Irish&prefecture=23&published=false&page=2");
+  });
+
+  it("omits page=1 when redirecting an out-of-range page to the first page", async () => {
+    pageMocks.requireAdminSession.mockResolvedValue(undefined);
+    pageMocks.getAdminPubPage.mockResolvedValue({ pubs: [], total: 30, page: 2, pageSize: 50 });
+    pageMocks.isDatabaseConfigured.mockReturnValue(true);
+
+    await AdminPubsPage({ searchParams: Promise.resolve({ prefecture: "23", page: "2" }) });
+
+    expect(pageMocks.redirect).toHaveBeenCalledWith("/admin/pubs?prefecture=23");
   });
 });

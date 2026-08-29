@@ -227,6 +227,9 @@ export function AdminPubManager({
         instagramUrl: editing.instagramUrl || "",
       }
     : emptyPub;
+  const pageOffset = (condition.page - 1) * initialPage.pageSize;
+  const pageFrom = pubs.length === 0 ? 0 : pageOffset + 1;
+  const pageTo = pubs.length === 0 ? 0 : Math.min(pageOffset + pubs.length, initialPage.total);
   return (
     <section className="admin-panel admin-wide">
       <div className="admin-heading">
@@ -458,8 +461,8 @@ export function AdminPubManager({
             {condition.page > 1 ? <a href={pageHref(condition.page - 1)}>{t.admin.previousPage}</a> : <span />}
             <span>
               {formatMessage(t.admin.pageSummary, {
-                from: (condition.page - 1) * initialPage.pageSize + 1,
-                to: Math.min(condition.page * initialPage.pageSize, initialPage.total),
+                from: pageFrom,
+                to: pageTo,
                 total: initialPage.total,
               })}
             </span>

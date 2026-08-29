@@ -1,4 +1,5 @@
 import { AdminPubSearchValidationError, parseAdminPubSearchParams } from "@irishpub-map/shared/admin-pub";
+import { redirect } from "next/navigation";
 import { getRequestLocale } from "../../../lib/i18n/server";
 import { AdminPubManager } from "../../../components/admin-pub-manager";
 import { requireAdminSession } from "../../../lib/admin-server";
@@ -31,6 +32,15 @@ export default async function AdminPage({ searchParams = Promise.resolve({}) }: 
     getTags(locale),
     condition.prefectureCode ? getMunicipalitiesByPrefecture(condition.prefectureCode, locale) : Promise.resolve([]),
   ]);
+  if (initialPage.total > 0 && initialPage.pubs.length === 0 && condition.page > 1) {
+    const lastPage = Math.ceil(initialPage.total / initialPage.pageSize);
+    if (lastPage < condition.page) {
+      if (lastPage === 1) query.delete("page");
+      else query.set("page", String(lastPage));
+      const normalizedQuery = query.toString();
+      redirect(normalizedQuery ? `/admin/pubs?${normalizedQuery}` : "/admin/pubs");
+    }
+  }
   return (
     <AdminPubManager
       key={`${query.toString()}:${initialPage.pubs.map((pub) => `${pub.id}:${pub.updatedAt}:${pub.isPublished}`).join(",")}`}
