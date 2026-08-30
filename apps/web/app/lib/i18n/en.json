@@ -33,6 +33,7 @@
     "currentLocationUnsupported": "Location is not available in this browser. Search by prefecture or other filters instead.",
     "showFilters": "Filters",
     "hideFilters": "Hide filters",
+    "closeFilters": "Close filter panel",
     "activeFilterCount": "{count} detailed filter(s) active",
     "prefecture": "Prefecture",
     "allPrefectures": "All prefectures",

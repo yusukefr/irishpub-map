@@ -12,6 +12,8 @@ import {
 } from "../lib/pub-search";
 import { PubList } from "./pub-list";
 import { PubMap } from "./pub-map";
+import { MapSearchControls } from "./map-search-controls";
+import { type GeolocationStatus } from "./current-location-control";
 
 type PubExplorerProps = {
   pubs: Pub[];
@@ -25,8 +27,6 @@ const GEOLOCATION_OPTIONS: PositionOptions = {
 };
 
 const EMPTY_FOCUS_PUBS: Pub[] = [];
-
-type GeolocationStatus = "idle" | "requesting" | "success" | "no-pubs" | "denied" | "error" | "unsupported";
 
 /**
  * 検索条件、地図、店舗一覧で共有する探索状態を一元管理します。
@@ -58,12 +58,11 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
     [pubs, selectedPrefecture, includeClosed],
   );
   const mapFocusPubs = selectedPrefecture === currentPrefecture ? EMPTY_FOCUS_PUBS : prefecturePubs;
-  const hasActiveFilters = Boolean(query || selectedPrefecture || selectedTags.length || includeClosed);
+  const hasActiveFilters = Boolean(selectedPrefecture || selectedTags.length || includeClosed);
   const detailedFilterCount = Number(Boolean(selectedPrefecture)) + selectedTags.length + Number(includeClosed);
 
-  const resetFilters = () => {
+  const resetDetailedFilters = () => {
     hasSelectedPrefecture.current = false;
-    setQuery("");
     setSelectedPrefecture("");
     setSelectedTags([]);
     setIncludeClosed(false);
@@ -140,168 +139,75 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
 
   return (
     <div className="pub-explorer">
-      <section className="search-panel" aria-labelledby="pub-search-heading">
-        <div className="search-panel-heading">
-          <div>
-            <p className="section-kicker">{t.explorer.kicker}</p>
-            <h2 id="pub-search-heading">{t.explorer.heading}</h2>
-          </div>
-        </div>
-        <div className="primary-search-controls">
-          <div className="search-control">
-            <label className="search-label" htmlFor="pub-search">
-              {t.explorer.searchLabel}
-            </label>
-            <div className="search-row">
-              <span className="search-icon" aria-hidden="true">
-                ⌕
-              </span>
-              <input
-                id="pub-search"
-                type="search"
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setSelectedPubId(null);
-                }}
-                placeholder={t.explorer.searchPlaceholder}
-              />
-              {query ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuery("");
-                    setSelectedPubId(null);
-                  }}
-                >
-                  {t.explorer.clear}
-                </button>
-              ) : null}
-            </div>
-          </div>
-          <div className="current-location-control">
-            <p>{t.explorer.currentLocationDescription}</p>
-            {geolocationStatus === "unsupported" ? null : (
-              <button
-                type="button"
-                className="current-location-action"
-                onClick={requestCurrentLocation}
-                disabled={geolocationStatus === "requesting"}
-              >
-                {currentLocationAction}
-              </button>
-            )}
-            {currentLocationStatusMessage ? (
-              <p
-                className={"current-location-status current-location-status-" + geolocationStatus}
-                role={geolocationStatus === "denied" || geolocationStatus === "error" ? "alert" : "status"}
-              >
-                {currentLocationStatusMessage}
-              </p>
-            ) : null}
-          </div>
-        </div>
-        <div className="search-panel-footer">
-          <p className="search-result-count" aria-live="polite">
-            {formatMessage(t.explorer.resultCount, { count: filteredPubs.length })}
-          </p>
-          <button
-            type="button"
-            className={"filter-toggle" + (detailedFilterCount ? " filter-toggle-active" : "")}
-            aria-expanded={isFiltersExpanded}
-            aria-controls="pub-filter-options"
-            onClick={() => setIsFiltersExpanded((current) => !current)}
-          >
-            <span>{isFiltersExpanded ? t.explorer.hideFilters : t.explorer.showFilters}</span>
-            {detailedFilterCount ? (
-              <span
-                className="filter-toggle-count"
-                aria-label={formatMessage(t.explorer.activeFilterCount, { count: detailedFilterCount })}
-              >
-                {detailedFilterCount}
-              </span>
-            ) : null}
-            <span className="filter-toggle-chevron" aria-hidden="true">
-              {isFiltersExpanded ? "⌃" : "⌄"}
-            </span>
-          </button>
-        </div>
-        <div className="filter-details" id="pub-filter-options" hidden={!isFiltersExpanded}>
-          <div className="filter-row">
-            <label htmlFor="pub-prefecture-filter">
-              {t.explorer.prefecture}
-              <select
-                id="pub-prefecture-filter"
-                value={selectedPrefecture}
-                onChange={(event) => {
-                  hasSelectedPrefecture.current = true;
-                  setSelectedPrefecture(event.target.value);
-                  setSelectedPubId(null);
-                }}
-              >
-                <option value="">{t.explorer.allPrefectures}</option>
-                {availablePrefectures.map((prefecture) => (
-                  <option value={prefecture} key={prefecture}>
-                    {prefecture}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <fieldset className="tag-filter">
-              <legend>{t.explorer.tags}</legend>
-              <div className="tag-filter-options">
-                {availableTags.map((tag) => {
-                  const isSelected = selectedTags.includes(tag);
-
-                  return (
-                    <button
-                      type="button"
-                      key={tag}
-                      aria-pressed={isSelected}
-                      onClick={() => {
-                        setSelectedTags((current) =>
-                          isSelected ? current.filter((item) => item !== tag) : [...current, tag],
-                        );
-                        setSelectedPubId(null);
-                      }}
-                    >
-                      {pubs.find((pub) => pub.tags.includes(tag))?.tagDisplayNames?.[tag] ?? getTagLabel(locale, tag)}
-                    </button>
-                  );
-                })}
-              </div>
-            </fieldset>
-            <label className="closed-filter">
-              <input
-                type="checkbox"
-                checked={includeClosed}
-                aria-label={t.explorer.includeClosed}
-                onChange={(event) => {
-                  setIncludeClosed(event.target.checked);
-                  setSelectedPubId(null);
-                }}
-              />
-              <span>{t.explorer.includeClosed}</span>
-            </label>
-            {hasActiveFilters ? (
-              <button type="button" className="filter-reset" onClick={resetFilters}>
-                {t.explorer.resetFilters}
-              </button>
-            ) : null}
-          </div>
-          <p className="search-help">{t.explorer.help}</p>
-        </div>
-      </section>
-
       <section className="map-layout" aria-label={t.explorer.mapAndListLabel}>
-        <PubMap
-          pubs={filteredPubs}
-          focusPubs={mapFocusPubs}
-          currentLocation={currentLocation}
-          selectedPubId={selectedPubId}
-          onSelectPub={setSelectedPubId}
-          locale={locale}
-        />
+        <div className="map-workspace">
+          <PubMap
+            pubs={filteredPubs}
+            focusPubs={mapFocusPubs}
+            currentLocation={currentLocation}
+            selectedPubId={selectedPubId}
+            onSelectPub={setSelectedPubId}
+            locale={locale}
+          />
+          <MapSearchControls
+            query={query}
+            searchLabel={t.explorer.searchLabel}
+            searchPlaceholder={t.explorer.searchPlaceholder}
+            clearLabel={t.explorer.clear}
+            resultCount={formatMessage(t.explorer.resultCount, { count: filteredPubs.length })}
+            showFiltersLabel={t.explorer.showFilters}
+            hideFiltersLabel={t.explorer.hideFilters}
+            activeFilterCountLabel={
+              detailedFilterCount ? formatMessage(t.explorer.activeFilterCount, { count: detailedFilterCount }) : null
+            }
+            filterPanelLabel={t.explorer.heading}
+            closeFiltersLabel={t.explorer.closeFilters}
+            prefectureLabel={t.explorer.prefecture}
+            allPrefecturesLabel={t.explorer.allPrefectures}
+            tagsLabel={t.explorer.tags}
+            includeClosedLabel={t.explorer.includeClosed}
+            resetFiltersLabel={t.explorer.resetFilters}
+            help={t.explorer.help}
+            currentLocationStatus={geolocationStatus}
+            currentLocationActionLabel={currentLocationAction}
+            currentLocationPrivacyDescription={t.explorer.currentLocationDescription}
+            currentLocationStatusMessage={currentLocationStatusMessage}
+            availablePrefectures={availablePrefectures}
+            availableTags={availableTags.map((tag) => ({
+              id: tag,
+              label: pubs.find((pub) => pub.tags.includes(tag))?.tagDisplayNames?.[tag] ?? getTagLabel(locale, tag),
+            }))}
+            selectedPrefecture={selectedPrefecture}
+            selectedTags={selectedTags}
+            includeClosed={includeClosed}
+            hasActiveFilters={hasActiveFilters}
+            isFiltersExpanded={isFiltersExpanded}
+            detailedFilterCount={detailedFilterCount}
+            onQueryChange={(value) => {
+              setQuery(value);
+              setSelectedPubId(null);
+            }}
+            onRequestCurrentLocation={requestCurrentLocation}
+            onToggleFilters={() => setIsFiltersExpanded((current) => !current)}
+            onCloseFilters={() => setIsFiltersExpanded(false)}
+            onPrefectureChange={(prefecture) => {
+              hasSelectedPrefecture.current = true;
+              setSelectedPrefecture(prefecture);
+              setSelectedPubId(null);
+            }}
+            onTagToggle={(tag) => {
+              setSelectedTags((current) =>
+                current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag],
+              );
+              setSelectedPubId(null);
+            }}
+            onIncludeClosedChange={(value) => {
+              setIncludeClosed(value);
+              setSelectedPubId(null);
+            }}
+            onResetFilters={resetDetailedFilters}
+          />
+        </div>
         <PubList pubs={filteredPubs} selectedPubId={selectedPubId} onSelectPub={setSelectedPubId} locale={locale} />
       </section>
     </div>

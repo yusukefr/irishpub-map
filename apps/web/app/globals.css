@@ -2453,3 +2453,206 @@ body {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Issue #305: map workspace controls stay interactive without covering map gestures. */
+.map-workspace {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.map-search-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.map-search-controls-toolbar {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px;
+}
+
+.map-search-field,
+.map-search-controls-toolbar > .filter-toggle,
+.map-search-controls-toolbar > .current-location-control {
+  pointer-events: auto;
+}
+
+.map-search-field {
+  width: min(100%, 360px);
+}
+
+.map-search-field .search-row input {
+  min-height: 44px;
+  border-color: #96ad9f;
+  box-shadow: 0 6px 18px rgb(22 35 28 / 16%);
+}
+
+.map-search-field .search-row button {
+  min-height: 44px;
+  padding-inline: 12px;
+}
+
+.map-search-controls-toolbar > .filter-toggle {
+  min-height: 44px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 6px 18px rgb(22 35 28 / 14%);
+}
+
+.map-search-controls-toolbar > .current-location-control {
+  display: block;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.map-search-controls-toolbar > .current-location-control .current-location-action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgb(22 35 28 / 16%);
+  white-space: nowrap;
+}
+
+.current-location-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.map-search-controls .current-location-status {
+  max-width: min(360px, calc(100vw - 32px));
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e0b6a9;
+  border-radius: 10px;
+  background: rgb(255 248 244 / 96%);
+  box-shadow: 0 6px 18px rgb(22 35 28 / 14%);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.map-search-controls .current-location-status-success,
+.map-search-controls .current-location-status-no-pubs {
+  border-color: #cce4d5;
+  background: rgb(245 251 247 / 96%);
+  color: var(--accent-strong);
+}
+
+.filter-panel {
+  position: absolute;
+  top: 76px;
+  left: 16px;
+  width: min(620px, calc(100% - 32px));
+  max-height: calc(100% - 152px);
+  overflow-y: auto;
+  padding: 14px;
+  border: 1px solid #bed1c3;
+  border-radius: 14px;
+  background: rgb(255 253 248 / 98%);
+  box-shadow: 0 14px 34px rgb(22 35 28 / 22%);
+  pointer-events: auto;
+}
+
+.filter-panel-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.filter-panel-close {
+  min-height: 40px;
+  padding: 6px 11px;
+  border: 1px solid #9db4a6;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.filter-panel-close:hover {
+  background: #edf8f1;
+}
+
+.map-result-count {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  margin: 0;
+  padding: 8px 11px;
+  border: 1px solid #cce4d5;
+  border-radius: 999px;
+  background: rgb(237 248 241 / 96%);
+  color: var(--accent-strong);
+  font-size: 0.88rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  pointer-events: auto;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 680px) {
+  .map-search-controls-toolbar {
+    padding: 12px;
+  }
+
+  .map-search-field {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .map-search-controls-toolbar > .filter-toggle,
+  .map-search-controls-toolbar > .current-location-control {
+    flex: 1 1 0;
+  }
+
+  .map-search-controls-toolbar > .current-location-control .current-location-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filter-panel {
+    top: 132px;
+    left: 12px;
+    width: calc(100% - 24px);
+    max-height: calc(100% - 172px);
+  }
+
+  .map-result-count {
+    bottom: 12px;
+    left: 12px;
+    font-size: 0.82rem;
+  }
+}
+
+/* Search controls are inside the map row, so the workspace owns the remaining viewport height. */
+.map-app-main > .pub-explorer {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+@media (max-width: 980px) {
+  .map-app-main > .pub-explorer {
+    grid-template-rows: minmax(0, 1fr);
+  }
+}

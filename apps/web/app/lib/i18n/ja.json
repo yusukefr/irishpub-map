@@ -33,6 +33,7 @@
     "currentLocationUnsupported": "このブラウザでは位置情報を利用できません。都道府県や検索条件から探せます。",
     "showFilters": "条件を指定",
     "hideFilters": "条件を閉じる",
+    "closeFilters": "条件パネルを閉じる",
     "activeFilterCount": "詳細条件{count}件を適用中",
     "prefecture": "都道府県",
     "allPrefectures": "すべての都道府県",
