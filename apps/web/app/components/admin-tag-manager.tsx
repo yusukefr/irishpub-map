@@ -264,15 +264,18 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
                 >
                   {t.edit}
                 </button>
-                <button
-                  type="button"
-                  className="admin-danger-action"
-                  onClick={() => void remove(tag)}
-                  disabled={Boolean(busyAction) || !databaseConfigured || tag.pubCount > 0}
-                  title={tag.pubCount > 0 ? t.tagInUse : undefined}
-                >
-                  {busyAction === `delete:${tag.id}` ? t.deleting : t.delete}
-                </button>
+                {tag.pubCount === 0 ? (
+                  <button
+                    type="button"
+                    className="admin-danger-action"
+                    onClick={() => void remove(tag)}
+                    disabled={Boolean(busyAction) || !databaseConfigured}
+                  >
+                    {busyAction === `delete:${tag.id}` ? t.deleting : t.delete}
+                  </button>
+                ) : (
+                  <span className="admin-action-note">{t.tagInUse}</span>
+                )}
               </div>
             </li>
           ))}

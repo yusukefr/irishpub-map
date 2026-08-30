@@ -28,16 +28,15 @@ beforeEach(() => {
 });
 
 describe("AdminTagManager", () => {
-  it("shows translations and pub counts while disabling deletion for an in-use tag", () => {
+  it("shows translations and pub counts without rendering deletion for an in-use tag", () => {
     render(<AdminTagManager initialTags={tags} databaseConfigured locale="ja" />);
 
     expect(screen.getByRole("heading", { name: "登録タグ（2件）" })).toBeInTheDocument();
     expect(screen.getByText("Food")).toBeInTheDocument();
     expect(screen.getByText("未登録")).toBeInTheDocument();
-    const deleteButtons = screen.getAllByRole("button", { name: "削除" });
-    expect(deleteButtons[0]).toBeDisabled();
-    expect(deleteButtons[0]).toHaveAttribute("title", "店舗で使用中のタグは削除できません。");
-    expect(deleteButtons[1]).toBeEnabled();
+    expect(screen.getAllByRole("button", { name: "削除" })).toHaveLength(1);
+    expect(screen.getByText("店舗で使用中のタグは削除できません。")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "削除" })).toBeEnabled();
   });
 
   it("creates a tag once and shows the saved result", async () => {
@@ -92,7 +91,7 @@ describe("AdminTagManager", () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true })));
     render(<AdminTagManager initialTags={tags} databaseConfigured locale="ja" />);
 
-    fireEvent.click(screen.getAllByRole("button", { name: "削除" })[1]);
+    fireEvent.click(screen.getByRole("button", { name: "削除" }));
 
     expect(confirm).toHaveBeenCalledWith("「ウイスキー」を削除しますか？ この操作は元に戻せません。");
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(`/api/admin/tags/${tags[1].id}`, { method: "DELETE" }));
@@ -169,7 +168,7 @@ describe("AdminTagManager", () => {
 
     fireEvent.click(screen.getAllByRole("button", { name: "編集" })[0]);
     fireEvent.change(screen.getByLabelText("日本語"), { target: { value: "編集中のタグ" } });
-    fireEvent.click(screen.getAllByRole("button", { name: "削除" })[1]);
+    fireEvent.click(screen.getByRole("button", { name: "削除" }));
 
     await waitFor(() => expect(screen.queryByText("ウイスキー")).not.toBeInTheDocument());
     expect(screen.getByDisplayValue("編集中のタグ")).toBeInTheDocument();
