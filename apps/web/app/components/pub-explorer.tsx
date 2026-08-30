@@ -11,6 +11,7 @@ import {
   type Coordinates,
 } from "../lib/pub-search";
 import { PubMap } from "./pub-map";
+import { PubResultsPanel } from "./pub-results-panel";
 import { MapSearchControls } from "./map-search-controls";
 import { type GeolocationStatus } from "./current-location-control";
 
@@ -46,6 +47,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
   const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
   const [isResultsOpen, setIsResultsOpen] = useState(false);
   const [resultsView, setResultsView] = useState<"list" | "detail">("list");
+  const resultsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const hasSelectedPrefecture = useRef(false);
   const isMounted = useRef(true);
   const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
@@ -66,6 +68,20 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
     setSelectedPubId(null);
     setResultsView("list");
   };
+
+  useEffect(() => {
+    if (!selectedPubId || filteredPubs.some((pub) => pub.id === selectedPubId)) {
+      return;
+    }
+
+    // 描画コミット後に選択状態を解消し、Reactの同期effect更新を避けます。
+    const resetId = window.setTimeout(() => {
+      setSelectedPubId(null);
+      setResultsView("list");
+    }, 0);
+
+    return () => window.clearTimeout(resetId);
+  }, [filteredPubs, selectedPubId]);
 
   const resetDetailedFilters = () => {
     hasSelectedPrefecture.current = false;
@@ -169,6 +185,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
   const closeResults = () => {
     setIsResultsOpen(false);
     setResultsView("list");
+    resultsTriggerRef.current?.focus();
   };
 
   const showResultDetails = (pubId: string) => {
@@ -178,7 +195,10 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
 
   return (
     <div className="pub-explorer">
-      <section className="map-layout" aria-label={t.explorer.mapAndListLabel}>
+      <section
+        className={["map-layout", isResultsOpen ? "map-layout-results-open" : ""].filter(Boolean).join(" ")}
+        aria-label={t.explorer.mapAndListLabel}
+      >
         <div className="map-workspace">
           <MapSearchControls
             query={query}
@@ -214,16 +234,8 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
             hasActiveFilters={hasActiveFilters}
             isFiltersExpanded={isFiltersExpanded}
             detailedFilterCount={detailedFilterCount}
-            selectedPubId={selectedPubId}
             isResultsOpen={isResultsOpen}
-            resultsView={resultsView}
-            resultsPubs={filteredPubs}
-            resultsPanelLabel={t.list.heading}
-            closeResultsLabel={t.list.closeResults}
-            backToResultsLabel={t.list.backToResults}
-            emptyResultsLabel={t.list.noResults}
-            emptyResultsDescription={t.list.noResultsDescription}
-            resultsLocale={locale}
+            resultsTriggerRef={resultsTriggerRef}
             onQueryChange={(value) => {
               setQuery(value);
               clearSelectedPub();
@@ -248,10 +260,6 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
             }}
             onResetFilters={resetDetailedFilters}
             onToggleResults={toggleResults}
-            onCloseResults={closeResults}
-            onSelectResult={selectPub}
-            onShowResultDetails={showResultDetails}
-            onBackToResults={() => setResultsView("list")}
           />
           <PubMap
             pubs={filteredPubs}
@@ -262,6 +270,23 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
             locale={locale}
           />
         </div>
+        {isResultsOpen ? (
+          <PubResultsPanel
+            pubs={filteredPubs}
+            selectedPubId={selectedPubId}
+            view={resultsView}
+            locale={locale}
+            closeLabel={t.list.closeResults}
+            backLabel={t.list.backToResults}
+            panelLabel={t.list.heading}
+            emptyLabel={t.list.noResults}
+            emptyDescription={t.list.noResultsDescription}
+            onClose={closeResults}
+            onSelectPub={selectPub}
+            onShowDetails={showResultDetails}
+            onBackToList={() => setResultsView("list")}
+          />
+        ) : null}
       </section>
     </div>
   );

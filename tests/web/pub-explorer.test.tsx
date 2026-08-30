@@ -169,6 +169,35 @@ describe("PubExplorer", () => {
     expect(screen.getByRole("button", { name: /件のPubが見つかりました/ })).toHaveFocus();
   });
 
+  it("clears detail selection when current location hides the selected pub", async () => {
+    const getCurrentPosition = vi.fn<Geolocation["getCurrentPosition"]>((success) => {
+      success({
+        coords: {
+          latitude: 35.011,
+          longitude: 135.768,
+          accuracy: 20,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      });
+    });
+    mockGeolocation({ getCurrentPosition });
+
+    render(<PubExplorer pubs={pubs} />);
+    openResults();
+    fireEvent.click(screen.getByRole("button", { name: "詳細" }));
+
+    expect(screen.getByRole("button", { name: /結果一覧に戻る/ })).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "現在地から探す" }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "現在地を更新" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("button", { name: /結果一覧に戻る/ })).not.toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "該当するPubがありません" })).toBeInTheDocument();
+    expect(getCurrentPosition).toHaveBeenCalledOnce();
+  });
   it("filters the displayed pubs by pub name", () => {
     render(<PubExplorer pubs={pubs} />);
 

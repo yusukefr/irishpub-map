@@ -85,7 +85,7 @@ describe("PubResultsPanel", () => {
     renderPanel({ selectedPubId: "osaka-sample" });
 
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
-    expect(document.body).toHaveFocus();
+    expect(screen.getByRole("button", { name: "結果一覧を閉じる" })).toHaveFocus();
   });
 
   it("opens detail view, filters unsafe links, and returns to the result list", () => {
@@ -93,6 +93,7 @@ describe("PubResultsPanel", () => {
     renderPanel({ selectedPubId: "tokyo-sample", view: "detail", onBackToList });
 
     expect(screen.getByRole("heading", { level: 3, name: "Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /結果一覧に戻る/ })).toHaveFocus();
     expect(screen.getByText("東京都千代田区1-1-1")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" })).toHaveAttribute(
       "rel",

@@ -44,7 +44,17 @@ export function PubResultsPanel({
 }: PubResultsPanelProps) {
   const t = getTranslation(locale);
   const resultRefs = useRef(new Map<string, HTMLElement>());
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const backButtonRef = useRef<HTMLButtonElement | null>(null);
   const selectedPub = pubs.find((pub) => pub.id === selectedPubId) ?? null;
+
+  useEffect(() => {
+    if (view === "detail") {
+      backButtonRef.current?.focus();
+    } else {
+      closeButtonRef.current?.focus();
+    }
+  }, [view]);
 
   useEffect(() => {
     if (view !== "list" || !selectedPubId) {
@@ -71,13 +81,13 @@ export function PubResultsPanel({
       <header className="pub-results-panel-header">
         <div>
           {view === "detail" ? (
-            <button type="button" className="pub-results-back" onClick={onBackToList}>
+            <button ref={backButtonRef} type="button" className="pub-results-back" onClick={onBackToList}>
               ← {backLabel}
             </button>
           ) : null}
           <h2 id="pub-results-panel-heading">{view === "detail" && selectedPub ? selectedPub.name : panelLabel}</h2>
         </div>
-        <button type="button" className="pub-results-close" onClick={onClose}>
+        <button ref={closeButtonRef} type="button" className="pub-results-close" onClick={onClose}>
           {closeLabel}
         </button>
       </header>
