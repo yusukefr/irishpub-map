@@ -8,6 +8,7 @@ export const maplibreMock = {
   mapOff: vi.fn(),
   mapFitBounds: vi.fn(),
   mapJumpTo: vi.fn(),
+  mapResize: vi.fn(),
   setWorkerUrl: vi.fn(),
   mapGetLayer: vi.fn().mockReturnValue({}),
   mapSetLayoutProperty: vi.fn(),
@@ -44,6 +45,7 @@ export function resetMaplibreMock() {
   maplibreMock.mapOff.mockClear();
   maplibreMock.mapFitBounds.mockClear();
   maplibreMock.mapJumpTo.mockClear();
+  maplibreMock.mapResize.mockClear();
   maplibreMock.setWorkerUrl.mockClear();
   maplibreMock.mapGetLayer.mockClear();
   maplibreMock.mapSetLayoutProperty.mockClear();
@@ -97,6 +99,7 @@ export class Map {
   };
   fitBounds = maplibreMock.mapFitBounds;
   jumpTo = maplibreMock.mapJumpTo;
+  resize = maplibreMock.mapResize;
   getLayer = maplibreMock.mapGetLayer;
   setLayoutProperty = maplibreMock.mapSetLayoutProperty;
   isStyleLoaded = maplibreMock.mapIsStyleLoaded;

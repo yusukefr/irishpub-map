@@ -26,6 +26,9 @@
 - 店舗の住所、営業状況、タグ、公式サイト、Google Maps、Instagram を詳細表示する
 - WebGL を利用できない場合、地図の代わりに案内を表示して店舗一覧を利用できるようにする
 
+- トップページはHeader / Map / compact Footerで構成するMap専用のViewport Shellとし、`100dvh`を基準に地図領域を確保します。Search / Filter / 店舗一覧は既存の探索UIとしてShell内で利用できます。
+- `/privacy` と管理画面は通常のDocument Flowを維持し、Map専用のViewport制約を適用しません。
+
 ### 管理画面
 
 - `/admin/login` で管理者がログインする

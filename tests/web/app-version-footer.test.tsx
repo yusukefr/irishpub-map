@@ -21,4 +21,12 @@ describe("AppVersionFooter", () => {
     );
     expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute("href", "/privacy");
   });
+  it("renders a compact footer without the release date", () => {
+    render(<AppVersionFooter locale="ja" variant="compact" />);
+
+    const footer = screen.getByRole("contentinfo", { name: "アプリのバージョン情報" });
+    expect(footer).toHaveTextContent("v" + appVersion.version);
+    expect(footer).not.toHaveTextContent("Release Date " + appVersion.releaseDate + "（JST）");
+    expect(screen.getByRole("link", { name: "プライバシーポリシー" })).toHaveAttribute("href", "/privacy");
+  });
 });

@@ -1,9 +1,8 @@
 import { headers } from "next/headers";
+import { AppHeader } from "./components/app-header";
 import { AppVersionFooter } from "./components/app-version-footer";
 import { PubExplorer } from "./components/pub-explorer";
 import { asPubs } from "@irishpub-map/shared/pub";
-import { LanguageSwitcher } from "./components/language-switcher";
-import { getTranslation } from "./lib/i18n";
 import { getRequestLocale } from "./lib/i18n/server";
 
 const API_KEY_HEADER = "x-api-key";
@@ -63,34 +62,14 @@ async function getPubs(locale: string) {
 export default async function Home() {
   const locale = await getRequestLocale();
   const pubList = await getPubs(locale);
-  const t = getTranslation(locale);
 
   return (
-    <main className="page-shell">
-      <section className="masthead">
-        <LanguageSwitcher locale={locale} />
-        <div className="masthead-copy">
-          <p className="eyebrow">{t.home.eyebrow}</p>
-          <h1>
-            Irish Pub Map
-            <span>in Japan</span>
-          </h1>
-          <p className="lead">{t.home.lead}</p>
-        </div>
-        <dl className="masthead-stats" aria-label={t.home.listedInformation}>
-          <div>
-            <dt>{t.home.listedPubs}</dt>
-            <dd>
-              {pubList.length}
-              <span> pubs</span>
-            </dd>
-          </div>
-        </dl>
-      </section>
-
-      <PubExplorer pubs={pubList} locale={locale} />
-
-      <AppVersionFooter locale={locale} />
-    </main>
+    <div className="map-app-shell">
+      <AppHeader locale={locale} />
+      <main className="map-app-main">
+        <PubExplorer pubs={pubList} locale={locale} />
+      </main>
+      <AppVersionFooter locale={locale} variant="compact" />
+    </div>
   );
 }
