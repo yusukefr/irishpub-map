@@ -1,5 +1,6 @@
 "use client";
 
+import { DEFAULT_LOCALE } from "@irishpub-map/shared/locale";
 import { getTranslation, parseLocale } from "../../../lib/i18n";
 
 /**
