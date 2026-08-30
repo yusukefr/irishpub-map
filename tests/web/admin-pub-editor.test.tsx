@@ -41,6 +41,7 @@ beforeEach(() => {
   push.mockReset();
   refresh.mockReset();
   fetchMock.mockReset();
+  vi.restoreAllMocks();
 });
 
 describe("AdminPubEditor", () => {
@@ -108,6 +109,7 @@ describe("AdminPubEditor", () => {
         {...props}
         initialPub={existingPub}
         municipalities={[{ code: "131130", prefectureCode: 13, name: "渋谷区" }]}
+        returnTo="/admin/pubs?published=false&page=2"
       />,
     );
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "The Updated Pub" } });
@@ -128,7 +130,7 @@ describe("AdminPubEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "公開する" }));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("「The Updated Pub」を公開しました。"));
     fireEvent.click(screen.getByRole("button", { name: "削除" }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/admin/pubs"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/admin/pubs?published=false&page=2"));
   });
 
   it("Validationエラーと公開不足項目を表示し、保存中は再送信を抑止する", async () => {
@@ -146,7 +148,7 @@ describe("AdminPubEditor", () => {
         status: 422,
       }),
     );
-    expect(await screen.findByRole("status")).toHaveTextContent("入力内容を確認してください。");
+    expect(await screen.findByRole("alert")).toHaveTextContent("入力内容を確認してください。");
     expect(screen.getByLabelText("店舗名")).toHaveAttribute("aria-invalid", "true");
   });
 
@@ -167,16 +169,17 @@ describe("AdminPubEditor", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ errorCode: "internal_error" }), { status: 500 }));
     render(<AdminPubEditor {...props} initialPub={existingPub} />);
     fireEvent.click(screen.getByRole("button", { name: "公開する" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("日本語住所");
+    expect(await screen.findByRole("alert")).toHaveTextContent("この店舗は公開条件を満たしていません。");
+    expect(screen.getByText("不足している項目: 日本語住所")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "削除" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("処理中にエラーが発生しました。");
+    expect(await screen.findByRole("alert")).toHaveTextContent("処理中にエラーが発生しました。");
   });
 
   it("市区町村マスタ取得の通信エラーを表示する", async () => {
     fetchMock.mockRejectedValueOnce(new Error("network"));
     render(<AdminPubEditor {...props} />);
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "13" } });
-    expect(await screen.findByRole("status")).toHaveTextContent("処理中にエラーが発生しました。");
+    expect(await screen.findByRole("alert")).toHaveTextContent("処理中にエラーが発生しました。");
   });
 
   it("公開済み店舗を非公開へ切り替えられる", async () => {
@@ -230,5 +233,31 @@ describe("AdminPubEditor", () => {
     await waitFor(() => expect(englishName).toHaveAttribute("aria-invalid", "true"));
     expect(englishName).toHaveAttribute("aria-describedby", "admin-pub-english-name-error");
     expect(screen.getByText("入力内容を確認してください。", { selector: ".admin-field-error" })).toBeInTheDocument();
+  });
+  it("未保存変更がある状態で一覧へ移動すると確認する", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<AdminPubEditor {...props} initialPub={existingPub} />);
+    fireEvent.change(screen.getByLabelText("店舗名"), { target: { value: "変更中" } });
+    fireEvent.click(screen.getByRole("link", { name: "キャンセル" }));
+    expect(confirm).toHaveBeenCalledWith("保存されていない変更があります。このページから移動しますか？");
+  });
+  it("内部リンク遷移を許可した直後はbeforeunloadを二重表示しない", () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<AdminPubEditor {...props} initialPub={existingPub} />);
+    fireEvent.change(screen.getByLabelText("店舗名"), { target: { value: "変更中" } });
+    const cancelLink = screen.getByRole("link", { name: "キャンセル" });
+    cancelLink.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(cancelLink);
+
+    const navigationEvent = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(navigationEvent);
+    expect(navigationEvent.defaultPrevented).toBe(false);
+
+    vi.runAllTimers();
+    const laterEvent = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(laterEvent);
+    expect(laterEvent.defaultPrevented).toBe(true);
+    vi.useRealTimers();
   });
 });

@@ -10,6 +10,7 @@ import {
 } from "@irishpub-map/shared/admin-tag";
 import { getAdminTagApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
+import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
 
 type Props = { initialTags: AdminTag[]; databaseConfigured: boolean; locale: Locale };
 type ApiResponse = { tag?: AdminTag; errorCode?: unknown; fieldErrors?: AdminTagFieldErrors };
@@ -26,10 +27,20 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<AdminTagFieldErrors>({});
+  const [formDirty, setFormDirty] = useState(false);
+
+  useUnsavedChangesWarning({ isDirty: formDirty, message: t.unsavedChanges });
 
   function resetFeedback() {
     setMessage("");
     setError("");
+    setFieldErrors({});
+  }
+
+  function fieldErrorMessage(field: keyof AdminTagFieldErrors) {
+    const code = fieldErrors[field];
+    return code ? getAdminTagApiErrorMessage(locale, { fieldErrors: { [field]: code } }) : "";
   }
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -52,6 +63,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
       });
       const result = (await response.json().catch(() => ({}))) as ApiResponse;
       if (!response.ok || !result.tag) {
+        setFieldErrors(asTagFieldErrors(result.fieldErrors));
         setError(getAdminTagApiErrorMessage(locale, result));
         return;
       }
@@ -62,6 +74,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
         ),
       );
       setEditing(null);
+      setFormDirty(false);
       form.reset();
       setMessage(t.tagSaved);
     } catch {
@@ -75,7 +88,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
     if (busyAction || tag.pubCount > 0) return;
     if (!window.confirm(formatMessage(t.confirmTagDelete, { name: tag.nameJa }))) return;
     resetFeedback();
-    setBusyAction(`delete:${tag.id}`);
+    setBusyAction("delete:" + tag.id);
     try {
       const response = await fetch(`/api/admin/tags/${tag.id}`, { method: "DELETE" });
       const result = (await response.json().catch(() => ({}))) as ApiResponse;
@@ -84,7 +97,10 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
         return;
       }
       setTags((current) => current.filter((currentTag) => currentTag.id !== tag.id));
-      if (editing?.id === tag.id) setEditing(null);
+      if (editing?.id === tag.id) {
+        setEditing(null);
+        setFormDirty(false);
+      }
       setMessage(t.tagDeleted);
     } catch {
       setError(getAdminTagApiErrorMessage(locale, null));
@@ -104,10 +120,12 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
         <button
           type="button"
           onClick={() => {
+            if (formDirty && !window.confirm(t.unsavedChanges)) return;
             setEditing(null);
+            setFormDirty(false);
             resetFeedback();
           }}
-          disabled={Boolean(busyAction)}
+          disabled={Boolean(busyAction) || !editing}
         >
           {t.addTag}
         </button>
@@ -127,6 +145,10 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
       <form
         className="admin-form admin-tag-form"
         onSubmit={save}
+        onChange={() => {
+          setFormDirty(true);
+          setFieldErrors({});
+        }}
         key={editing?.id ?? "new"}
         aria-busy={Boolean(busyAction)}
       >
@@ -135,26 +157,67 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
           <label>
             {t.tagKey}
             <input
+              id="admin-tag-key"
               name="key"
               required
               readOnly={Boolean(editing)}
               maxLength={ADMIN_TAG_KEY_MAX_LENGTH}
               pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
               defaultValue={values.key}
+              aria-invalid={Boolean(fieldErrors.key)}
+              aria-describedby={fieldErrors.key ? "admin-tag-key-error" : undefined}
             />
+            {fieldErrors.key ? (
+              <span id="admin-tag-key-error" className="admin-field-error">
+                {fieldErrorMessage("key")}
+              </span>
+            ) : null}
           </label>
           <label>
             {t.tagNameJa}
-            <input name="nameJa" required maxLength={ADMIN_TAG_NAME_MAX_LENGTH} defaultValue={values.nameJa} />
+            <input
+              id="admin-tag-name-ja"
+              name="nameJa"
+              required
+              maxLength={ADMIN_TAG_NAME_MAX_LENGTH}
+              defaultValue={values.nameJa}
+              aria-invalid={Boolean(fieldErrors.nameJa)}
+              aria-describedby={fieldErrors.nameJa ? "admin-tag-name-ja-error" : undefined}
+            />
+            {fieldErrors.nameJa ? (
+              <span id="admin-tag-name-ja-error" className="admin-field-error">
+                {fieldErrorMessage("nameJa")}
+              </span>
+            ) : null}
           </label>
           <label>
             {t.tagNameEn}
-            <input name="nameEn" maxLength={ADMIN_TAG_NAME_MAX_LENGTH} defaultValue={values.nameEn ?? ""} />
+            <input
+              id="admin-tag-name-en"
+              name="nameEn"
+              maxLength={ADMIN_TAG_NAME_MAX_LENGTH}
+              defaultValue={values.nameEn ?? ""}
+              aria-invalid={Boolean(fieldErrors.nameEn)}
+              aria-describedby={fieldErrors.nameEn ? "admin-tag-name-en-error" : undefined}
+            />
+            {fieldErrors.nameEn ? (
+              <span id="admin-tag-name-en-error" className="admin-field-error">
+                {fieldErrorMessage("nameEn")}
+              </span>
+            ) : null}
           </label>
           <div className="admin-actions">
             <button type="submit">{busyAction === "save" ? t.saving : editing ? t.update : t.add}</button>
             {editing ? (
-              <button type="button" className="admin-secondary-action" onClick={() => setEditing(null)}>
+              <button
+                type="button"
+                className="admin-secondary-action"
+                onClick={() => {
+                  if (formDirty && !window.confirm(t.unsavedChanges)) return;
+                  setEditing(null);
+                  setFormDirty(false);
+                }}
+              >
                 {t.cancel}
               </button>
             ) : null}
@@ -192,7 +255,9 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
                 <button
                   type="button"
                   onClick={() => {
+                    if (formDirty && !window.confirm(t.unsavedChanges)) return;
                     setEditing(tag);
+                    setFormDirty(false);
                     resetFeedback();
                   }}
                   disabled={Boolean(busyAction) || !databaseConfigured}
@@ -215,4 +280,11 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
       </section>
     </section>
   );
+}
+
+function asTagFieldErrors(value: unknown): AdminTagFieldErrors {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(([, code]) => typeof code === "string"),
+  ) as AdminTagFieldErrors;
 }

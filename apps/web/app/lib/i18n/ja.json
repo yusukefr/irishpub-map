@@ -183,6 +183,7 @@
     "tagDeleteFailed": "タグの削除に失敗しました。",
     "confirmTagDelete": "「{name}」を削除しますか？ この操作は元に戻せません。",
     "saving": "保存中…",
+    "unsavedChanges": "保存されていない変更があります。このページから移動しますか？",
     "deleting": "削除中…",
     "statusesHeading": "ステータス管理",
     "statusesDescription": "営業ステータスのシステム識別子を維持したまま、日英表示名を編集できます。",
