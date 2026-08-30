@@ -421,7 +421,7 @@ describe("PubMap", () => {
     expect(maplibreMock.mapConstructor).not.toHaveBeenCalled();
     expect(await screen.findByRole("status")).toHaveTextContent("地図を表示できませんでした");
     expect(screen.queryByText("地図を読み込んでいます…")).not.toBeInTheDocument();
-    expect(screen.getByText(/店舗一覧からIrish Pubを確認してください/)).toBeInTheDocument();
+    expect(screen.getByText(/結果件数ボタンから掲載店舗の一覧を確認できます/)).toBeInTheDocument();
   });
 
   it("shows a fallback message when MapLibre initialization throws", async () => {

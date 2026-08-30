@@ -10,8 +10,8 @@ import {
   getNearestAvailablePrefecture,
   type Coordinates,
 } from "../lib/pub-search";
-import { PubList } from "./pub-list";
 import { PubMap } from "./pub-map";
+import { PubResultsPanel } from "./pub-results-panel";
 import { MapSearchControls } from "./map-search-controls";
 import { type GeolocationStatus } from "./current-location-control";
 
@@ -45,6 +45,9 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
   const [includeClosed, setIncludeClosed] = useState(false);
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
+  const [isResultsOpen, setIsResultsOpen] = useState(false);
+  const [resultsView, setResultsView] = useState<"list" | "detail">("list");
+  const resultsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const hasSelectedPrefecture = useRef(false);
   const isMounted = useRef(true);
   const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
@@ -61,12 +64,31 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
   const hasActiveFilters = Boolean(selectedPrefecture || selectedTags.length || includeClosed);
   const detailedFilterCount = Number(Boolean(selectedPrefecture)) + selectedTags.length + Number(includeClosed);
 
+  const clearSelectedPub = () => {
+    setSelectedPubId(null);
+    setResultsView("list");
+  };
+
+  useEffect(() => {
+    if (!selectedPubId || filteredPubs.some((pub) => pub.id === selectedPubId)) {
+      return;
+    }
+
+    // 描画コミット後に選択状態を解消し、Reactの同期effect更新を避けます。
+    const resetId = window.setTimeout(() => {
+      setSelectedPubId(null);
+      setResultsView("list");
+    }, 0);
+
+    return () => window.clearTimeout(resetId);
+  }, [filteredPubs, selectedPubId]);
+
   const resetDetailedFilters = () => {
     hasSelectedPrefecture.current = false;
     setSelectedPrefecture("");
     setSelectedTags([]);
     setIncludeClosed(false);
-    setSelectedPubId(null);
+    clearSelectedPub();
   };
 
   useEffect(() => {
@@ -137,9 +159,46 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
               ? t.explorer.currentLocationUnsupported
               : null;
 
+  const selectPub = (pubId: string) => {
+    setSelectedPubId(pubId);
+  };
+
+  const toggleFilters = () => {
+    setIsFiltersExpanded((current) => {
+      if (!current) {
+        setIsResultsOpen(false);
+      }
+      return !current;
+    });
+  };
+
+  const toggleResults = () => {
+    setIsResultsOpen((current) => {
+      if (!current) {
+        setIsFiltersExpanded(false);
+        setResultsView("list");
+      }
+      return !current;
+    });
+  };
+
+  const closeResults = () => {
+    setIsResultsOpen(false);
+    setResultsView("list");
+    resultsTriggerRef.current?.focus();
+  };
+
+  const showResultDetails = (pubId: string) => {
+    setSelectedPubId(pubId);
+    setResultsView("detail");
+  };
+
   return (
     <div className="pub-explorer">
-      <section className="map-layout" aria-label={t.explorer.mapAndListLabel}>
+      <section
+        className={["map-layout", isResultsOpen ? "map-layout-results-open" : ""].filter(Boolean).join(" ")}
+        aria-label={t.explorer.mapAndListLabel}
+      >
         <div className="map-workspace">
           <MapSearchControls
             query={query}
@@ -175,40 +234,59 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
             hasActiveFilters={hasActiveFilters}
             isFiltersExpanded={isFiltersExpanded}
             detailedFilterCount={detailedFilterCount}
+            isResultsOpen={isResultsOpen}
+            resultsTriggerRef={resultsTriggerRef}
             onQueryChange={(value) => {
               setQuery(value);
-              setSelectedPubId(null);
+              clearSelectedPub();
             }}
             onRequestCurrentLocation={requestCurrentLocation}
-            onToggleFilters={() => setIsFiltersExpanded((current) => !current)}
+            onToggleFilters={toggleFilters}
             onCloseFilters={() => setIsFiltersExpanded(false)}
             onPrefectureChange={(prefecture) => {
               hasSelectedPrefecture.current = true;
               setSelectedPrefecture(prefecture);
-              setSelectedPubId(null);
+              clearSelectedPub();
             }}
             onTagToggle={(tag) => {
               setSelectedTags((current) =>
                 current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag],
               );
-              setSelectedPubId(null);
+              clearSelectedPub();
             }}
             onIncludeClosedChange={(value) => {
               setIncludeClosed(value);
-              setSelectedPubId(null);
+              clearSelectedPub();
             }}
             onResetFilters={resetDetailedFilters}
+            onToggleResults={toggleResults}
           />
           <PubMap
             pubs={filteredPubs}
             focusPubs={mapFocusPubs}
             currentLocation={currentLocation}
             selectedPubId={selectedPubId}
-            onSelectPub={setSelectedPubId}
+            onSelectPub={selectPub}
             locale={locale}
           />
         </div>
-        <PubList pubs={filteredPubs} selectedPubId={selectedPubId} onSelectPub={setSelectedPubId} locale={locale} />
+        {isResultsOpen ? (
+          <PubResultsPanel
+            pubs={filteredPubs}
+            selectedPubId={selectedPubId}
+            view={resultsView}
+            locale={locale}
+            closeLabel={t.list.closeResults}
+            backLabel={t.list.backToResults}
+            panelLabel={t.list.heading}
+            emptyLabel={t.list.noResults}
+            emptyDescription={t.list.noResultsDescription}
+            onClose={closeResults}
+            onSelectPub={selectPub}
+            onShowDetails={showResultDetails}
+            onBackToList={() => setResultsView("list")}
+          />
+        ) : null}
       </section>
     </div>
   );

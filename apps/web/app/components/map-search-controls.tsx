@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type RefObject } from "react";
 import { PubFilterPanel } from "./pub-filter-panel";
 import { CurrentLocationControl, type GeolocationStatus } from "./current-location-control";
 
@@ -33,6 +33,8 @@ type MapSearchControlsProps = {
   hasActiveFilters: boolean;
   isFiltersExpanded: boolean;
   detailedFilterCount: number;
+  isResultsOpen: boolean;
+  resultsTriggerRef: RefObject<HTMLButtonElement | null>;
   onQueryChange: (query: string) => void;
   onRequestCurrentLocation: () => void;
   onToggleFilters: () => void;
@@ -41,6 +43,7 @@ type MapSearchControlsProps = {
   onTagToggle: (tag: string) => void;
   onIncludeClosedChange: (includeClosed: boolean) => void;
   onResetFilters: () => void;
+  onToggleResults: () => void;
 };
 
 /**
@@ -77,6 +80,8 @@ export function MapSearchControls({
   hasActiveFilters,
   isFiltersExpanded,
   detailedFilterCount,
+  isResultsOpen,
+  resultsTriggerRef,
   onQueryChange,
   onRequestCurrentLocation,
   onToggleFilters,
@@ -85,6 +90,7 @@ export function MapSearchControls({
   onTagToggle,
   onIncludeClosedChange,
   onResetFilters,
+  onToggleResults,
 }: MapSearchControlsProps) {
   const filterTriggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -167,9 +173,17 @@ export function MapSearchControls({
           onReset={onResetFilters}
         />
       ) : null}
-      <p className="map-result-count" aria-live="polite">
+      <button
+        ref={resultsTriggerRef}
+        type="button"
+        className="map-result-count"
+        aria-live="polite"
+        aria-expanded={isResultsOpen}
+        aria-controls="pub-results-panel"
+        onClick={onToggleResults}
+      >
         {resultCount}
-      </p>
+      </button>
     </div>
   );
 }
