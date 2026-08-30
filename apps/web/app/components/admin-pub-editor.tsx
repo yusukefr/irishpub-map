@@ -11,6 +11,7 @@ import type {
 } from "@irishpub-map/shared/admin-master";
 import { getAdminApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
+import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
 
 type Props = {
   initialPub: AdminPub | null;
@@ -20,6 +21,7 @@ type Props = {
   tags: TagOption[];
   databaseConfigured: boolean;
   locale: Locale;
+  returnTo?: string;
 };
 
 type EditorValues = {
@@ -132,6 +134,7 @@ export function AdminPubEditor({
   tags,
   databaseConfigured,
   locale,
+  returnTo = "/admin/pubs",
 }: Props) {
   const t = getTranslation(locale);
   const router = useRouter();
@@ -146,10 +149,15 @@ export function AdminPubEditor({
   const [deleting, setDeleting] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<AdminPubFieldErrors>({});
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const municipalityRequest = useRef<AbortController | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState(() => serializeEditorState(values, englishEnabled));
   const busy = saving || publishing || deleting;
+  const isDirty = savedSnapshot !== serializeEditorState(values, englishEnabled);
+
+  useUnsavedChangesWarning({ isDirty, message: t.admin.unsavedChanges });
 
   useEffect(() => () => municipalityRequest.current?.abort(), []);
 
@@ -195,12 +203,12 @@ export function AdminPubEditor({
       const body = (await response.json().catch(() => ({}))) as { municipalities?: unknown };
       if (controller.signal.aborted) return;
       if (!response.ok || !Array.isArray(body.municipalities)) {
-        setMessage(getAdminApiErrorMessage(locale, body));
+        setError(getAdminApiErrorMessage(locale, body));
         return;
       }
       setMunicipalities(body.municipalities as MunicipalityOption[]);
     } catch {
-      if (!controller.signal.aborted) setMessage(getAdminApiErrorMessage(locale, null));
+      if (!controller.signal.aborted) setError(getAdminApiErrorMessage(locale, null));
     } finally {
       if (municipalityRequest.current === controller) municipalityRequest.current = null;
     }
@@ -209,6 +217,7 @@ export function AdminPubEditor({
   async function save() {
     if (busy || !databaseConfigured) return;
     setSaving(true);
+    setError("");
     setMessage("");
     setFieldErrors({});
     setMissingFields([]);
@@ -226,17 +235,19 @@ export function AdminPubEditor({
             ? body.missingFields.filter((field): field is string => typeof field === "string")
             : [],
         );
-        setMessage(getAdminApiErrorMessage(locale, body));
+        setError(getAdminApiErrorMessage(locale, body));
         return;
       }
       setValues(toEditorValues(body.pub));
       setIsPublished(body.pub.isPublished);
       setEnglishEnabled(body.pub.translations.en !== null);
+      setSavedSnapshot(serializeEditorState(toEditorValues(body.pub), body.pub.translations.en !== null));
+      setError("");
       setMessage(editing ? t.admin.updatedSuccess : t.admin.createdSuccess);
       if (!editing) router.push(`/admin/pubs/${body.pub.id}/edit`);
       router.refresh();
     } catch {
-      setMessage(getAdminApiErrorMessage(locale, null));
+      setError(getAdminApiErrorMessage(locale, null));
     } finally {
       setSaving(false);
     }
@@ -248,6 +259,7 @@ export function AdminPubEditor({
     if (!window.confirm(formatMessage(confirmation, { name: values.name }))) return;
     setPublishing(true);
     setMessage("");
+    setError("");
     setMissingFields([]);
     try {
       const response = await fetch(`/api/admin/pubs/${initialPub.id}/publication`, {
@@ -262,16 +274,17 @@ export function AdminPubEditor({
             ? body.missingFields.filter((field): field is string => typeof field === "string")
             : [],
         );
-        setMessage(getAdminApiErrorMessage(locale, body));
+        setError(getAdminApiErrorMessage(locale, body));
         return;
       }
       setIsPublished(nextPublished);
+      setError("");
       setMessage(
         formatMessage(nextPublished ? t.admin.publishedSuccess : t.admin.unpublishedSuccess, { name: values.name }),
       );
       router.refresh();
     } catch {
-      setMessage(getAdminApiErrorMessage(locale, null));
+      setError(getAdminApiErrorMessage(locale, null));
     } finally {
       setPublishing(false);
     }
@@ -282,16 +295,18 @@ export function AdminPubEditor({
     if (!window.confirm(formatMessage(t.admin.confirmDeleteDetails, { name: values.name }))) return;
     setDeleting(true);
     setMessage("");
+    setError("");
     try {
       const response = await fetch(`/api/admin/pubs/${initialPub.id}`, { method: "DELETE" });
       const body = (await response.json().catch(() => ({}))) as ErrorResponse;
       if (!response.ok) {
-        setMessage(getAdminApiErrorMessage(locale, body));
+        setError(getAdminApiErrorMessage(locale, body));
         return;
       }
-      router.push("/admin/pubs");
+      setSavedSnapshot(serializeEditorState(values, englishEnabled));
+      router.push(returnTo);
     } catch {
-      setMessage(getAdminApiErrorMessage(locale, null));
+      setError(getAdminApiErrorMessage(locale, null));
     } finally {
       setDeleting(false);
     }
@@ -324,9 +339,18 @@ export function AdminPubEditor({
         ) : null}
       </div>
       {!databaseConfigured ? <p className="admin-error">{t.admin.databaseUnavailable}</p> : null}
-      {message ? <p role="status">{message}</p> : null}
+      {message ? (
+        <p role="status" aria-live="polite">
+          {message}
+        </p>
+      ) : null}
+      {error ? (
+        <p role="alert" className="admin-error">
+          {error}
+        </p>
+      ) : null}
       {Object.keys(fieldErrors).length > 0 ? (
-        <ul className="admin-field-errors" role="alert">
+        <ul className="admin-field-errors">
           {Object.keys(fieldErrors).map((field) => (
             <li key={field}>
               {labels[field] ?? field}: {t.admin.errors.validation_error}
@@ -335,13 +359,12 @@ export function AdminPubEditor({
         </ul>
       ) : null}
       {missingLabel ? (
-        <p className="admin-error" role="alert">
-          {formatMessage(t.admin.missingPublicationFields, { fields: missingLabel })}
-        </p>
+        <p className="admin-error">{formatMessage(t.admin.missingPublicationFields, { fields: missingLabel })}</p>
       ) : null}
       {!databaseConfigured ? <p className="admin-error">{t.admin.editorUnavailable}</p> : null}
       <form
         className="admin-form admin-editor-form"
+        aria-busy={busy}
         onSubmit={(event) => {
           event.preventDefault();
           void save();
@@ -574,7 +597,7 @@ export function AdminPubEditor({
           <button type="submit" disabled={busy || !databaseConfigured}>
             {saving ? t.admin.saving : editing ? t.admin.update : t.admin.add}
           </button>
-          <a className="admin-pub-filter-actions" href="/admin/pubs">
+          <a className="admin-pub-filter-actions" href={returnTo}>
             {t.admin.cancel}
           </a>
           {editing ? (
@@ -594,10 +617,17 @@ export function AdminPubEditor({
           <h2>{t.admin.publication}</h2>
           <button
             type="button"
+            className={isPublished ? "admin-danger-action" : undefined}
             onClick={() => void changePublication(!isPublished)}
             disabled={busy || !databaseConfigured}
           >
-            {publishing ? t.admin.publishing : isPublished ? t.admin.unpublish : t.admin.publish}
+            {publishing
+              ? isPublished
+                ? t.admin.unpublishing
+                : t.admin.publishing
+              : isPublished
+                ? t.admin.unpublish
+                : t.admin.publish}
           </button>
         </div>
       ) : null}
@@ -605,9 +635,13 @@ export function AdminPubEditor({
   );
 }
 
+function serializeEditorState(values: EditorValues, englishEnabled: boolean) {
+  return JSON.stringify({ values, englishEnabled });
+}
+
 function FieldError({ id, message }: { id: string; message: string }) {
   return (
-    <span id={id} className="admin-field-error" role="alert">
+    <span id={id} className="admin-field-error">
       {message}
     </span>
   );

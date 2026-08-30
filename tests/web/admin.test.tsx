@@ -95,6 +95,29 @@ describe("admin UI", () => {
     expect(screen.getByRole("link", { name: "前へ" })).toHaveAttribute("href", "/admin/pubs");
   });
 
+  it("編集リンクへ一覧の検索条件を引き継ぐ", () => {
+    const condition = {
+      name: "Irish",
+      prefectureCode: 23,
+      municipalityCode: "231002",
+      statusKey: "open" as const,
+      tagId: "550e8400-e29b-41d4-a716-446655440010",
+      isPublished: false,
+      page: 2,
+    };
+    render(
+      <AdminPubManager
+        {...managerProps}
+        condition={condition}
+        initialPage={{ ...managerProps.initialPage, page: 2 }}
+      />,
+    );
+    const href = screen.getByRole("link", { name: "編集" }).getAttribute("href");
+    expect(href).toBeTruthy();
+    expect(new URLSearchParams(href!.split("?")[1]).get("returnTo")).toBe(
+      "/admin/pubs?name=Irish&prefecture=23&municipality=231002&status=open&tag=550e8400-e29b-41d4-a716-446655440010&published=false&page=2",
+    );
+  });
   it("publishes a pub after confirmation and shows the result immediately", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fetchMock.mockResolvedValueOnce(
@@ -122,7 +145,7 @@ describe("admin UI", () => {
     render(<AdminPubManager {...managerProps} />);
 
     fireEvent.click(screen.getByRole("button", { name: "公開する" }));
-    expect(await screen.findByRole("status")).toHaveTextContent(
+    expect(await screen.findByRole("alert")).toHaveTextContent(
       "この店舗は公開条件を満たしていません。 不足している項目: 日本語住所, 緯度",
     );
     expect(screen.getByText("非公開", { selector: ".admin-publication-badge" })).toBeInTheDocument();
@@ -162,7 +185,7 @@ describe("admin UI", () => {
     render(<AdminPubManager {...managerProps} />);
     const prefecture = screen.getByLabelText("都道府県");
     fireEvent.change(prefecture, { target: { value: "27" } });
-    expect(await screen.findByRole("status")).toHaveTextContent("データベースを利用できません。");
+    expect(await screen.findByRole("alert")).toHaveTextContent("データベースを利用できません。");
 
     let resolveFirst!: (response: Response) => void;
     let resolveSecond!: (response: Response) => void;

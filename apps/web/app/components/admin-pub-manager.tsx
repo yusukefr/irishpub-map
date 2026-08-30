@@ -55,6 +55,7 @@ export function AdminPubManager({
   const router = useRouter();
   const [pubs, setPubs] = useState(initialPage.pubs);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const [selectedPrefecture, setSelectedPrefecture] = useState(String(condition.prefectureCode ?? ""));
   const [selectedMunicipality, setSelectedMunicipality] = useState(condition.municipalityCode ?? "");
   const [municipalities, setMunicipalities] = useState(initialMunicipalities);
@@ -84,13 +85,13 @@ export function AdminPubManager({
       const body = (await response.json().catch(() => ({}))) as MunicipalityResponse;
       if (controller.signal.aborted) return;
       if (!response.ok || !Array.isArray(body.municipalities)) {
-        setMessage(getAdminApiErrorMessage(locale, body));
+        setError(getAdminApiErrorMessage(locale, body));
         return;
       }
       setMunicipalities(body.municipalities as MunicipalityOption[]);
     } catch {
       if (controller.signal.aborted) return;
-      setMessage(getAdminApiErrorMessage(locale, null));
+      setError(getAdminApiErrorMessage(locale, null));
     } finally {
       if (municipalityRequest.current === controller) municipalityRequest.current = null;
     }
@@ -102,6 +103,7 @@ export function AdminPubManager({
     if (!window.confirm(formatMessage(confirmation, { name: pub.name }))) return;
     setPublicationPending(pub.id);
     setMessage("");
+    setError("");
     try {
       const response = await fetch(`/api/admin/pubs/${pub.id}/publication`, {
         method: "PATCH",
@@ -111,7 +113,7 @@ export function AdminPubManager({
       const body = (await response.json().catch(() => ({}))) as PublicationResponse;
       if (!response.ok || !body.publication) {
         const missingFields = getMissingPublicationFields(body.missingFields, t.admin.publicationFields);
-        setMessage(
+        setError(
           missingFields
             ? `${getAdminApiErrorMessage(locale, body)} ${formatMessage(t.admin.missingPublicationFields, { fields: missingFields })}`
             : getAdminApiErrorMessage(locale, body),
@@ -119,12 +121,13 @@ export function AdminPubManager({
         return;
       }
       setPubs((current) => current.map((item) => (item.id === pub.id ? { ...item, isPublished } : item)));
+      setError("");
       setMessage(
         formatMessage(isPublished ? t.admin.publishedSuccess : t.admin.unpublishedSuccess, { name: pub.name }),
       );
       router.refresh();
     } catch {
-      setMessage(getAdminApiErrorMessage(locale, null));
+      setError(getAdminApiErrorMessage(locale, null));
     } finally {
       setPublicationPending(null);
     }
@@ -143,6 +146,7 @@ export function AdminPubManager({
     return query ? `/admin/pubs?${query}` : "/admin/pubs";
   }
 
+  const returnTo = pageHref(condition.page);
   const pageOffset = (condition.page - 1) * initialPage.pageSize;
   const pageFrom = pubs.length === 0 ? 0 : pageOffset + 1;
   const pageTo = pubs.length === 0 ? 0 : Math.min(pageOffset + pubs.length, initialPage.total);
@@ -158,7 +162,16 @@ export function AdminPubManager({
         </a>
       </div>
       {!databaseConfigured ? <p className="admin-error">{t.admin.databaseUnavailable}</p> : null}
-      {message ? <p role="status">{message}</p> : null}
+      {message ? (
+        <p role="status" aria-live="polite">
+          {message}
+        </p>
+      ) : null}
+      {error ? (
+        <p role="alert" className="admin-error">
+          {error}
+        </p>
+      ) : null}
       <section className="admin-pub-search-section" aria-labelledby="admin-pub-search-heading">
         <h2 id="admin-pub-search-heading">{t.admin.pubSearchHeading}</h2>
         <form className="admin-pub-filters" action="/admin/pubs" method="get">
@@ -279,11 +292,16 @@ export function AdminPubManager({
                       </td>
                       <td data-label={t.admin.operations}>
                         <div className="admin-pub-row-actions">
-                          <a className="admin-row-link" href={"/admin/pubs/" + pub.id + "/edit"}>
+                          <a
+                            className="admin-row-link"
+                            href={"/admin/pubs/" + pub.id + "/edit?returnTo=" + encodeURIComponent(returnTo)}
+                          >
                             {t.admin.edit}
                           </a>
                           <button
                             type="button"
+                            className={pub.isPublished ? "admin-danger-action" : undefined}
+                            aria-busy={pending}
                             onClick={() => void setPublication(pub)}
                             disabled={!databaseConfigured || pending}
                           >

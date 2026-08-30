@@ -183,6 +183,7 @@
     "tagDeleteFailed": "Could not delete the tag.",
     "confirmTagDelete": "Delete “{name}”? This action cannot be undone.",
     "saving": "Saving…",
+    "unsavedChanges": "You have unsaved changes. Leave this page?",
     "deleting": "Deleting…",
     "statusesHeading": "Status management",
     "statusesDescription": "Edit Japanese and English display names while keeping system status keys unchanged.",

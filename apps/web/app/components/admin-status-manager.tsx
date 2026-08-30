@@ -9,6 +9,7 @@ import {
 } from "@irishpub-map/shared/admin-status";
 import { getAdminStatusApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
+import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
 
 type Props = { initialStatuses: AdminPubStatus[]; databaseConfigured: boolean; locale: Locale };
 type ApiResponse = { status?: AdminPubStatus; errorCode?: unknown; fieldErrors?: AdminStatusFieldErrors };
@@ -25,10 +26,20 @@ export function AdminStatusManager({ initialStatuses, databaseConfigured, locale
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<AdminStatusFieldErrors>({});
+  const [formDirty, setFormDirty] = useState(false);
+
+  useUnsavedChangesWarning({ isDirty: formDirty, message: t.unsavedChanges });
 
   function resetFeedback() {
     setMessage("");
     setError("");
+    setFieldErrors({});
+  }
+
+  function fieldErrorMessage(field: keyof AdminStatusFieldErrors) {
+    const code = fieldErrors[field];
+    return code ? getAdminStatusApiErrorMessage(locale, { fieldErrors: { [field]: code } }) : "";
   }
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -46,12 +57,14 @@ export function AdminStatusManager({ initialStatuses, databaseConfigured, locale
       });
       const result = (await response.json().catch(() => ({}))) as ApiResponse;
       if (!response.ok || !result.status) {
+        setFieldErrors(asStatusFieldErrors(result.fieldErrors));
         setError(getAdminStatusApiErrorMessage(locale, result));
         return;
       }
       const savedStatus = result.status;
       setStatuses((current) => current.map((status) => (status.code === savedStatus.code ? savedStatus : status)));
       setEditing(savedStatus);
+      setFormDirty(false);
       setMessage(t.statusSaved);
     } catch {
       setError(getAdminStatusApiErrorMessage(locale, null));
@@ -81,6 +94,10 @@ export function AdminStatusManager({ initialStatuses, databaseConfigured, locale
         <form
           className="admin-form admin-status-form"
           onSubmit={save}
+          onChange={() => {
+            setFormDirty(true);
+            setFieldErrors({});
+          }}
           key={`${editing.code}:${editing.nameJa}:${editing.nameEn ?? ""}`}
           aria-busy={saving}
         >
@@ -93,11 +110,36 @@ export function AdminStatusManager({ initialStatuses, databaseConfigured, locale
             </label>
             <label>
               {t.statusNameJa}
-              <input name="nameJa" required maxLength={ADMIN_STATUS_NAME_MAX_LENGTH} defaultValue={editing.nameJa} />
+              <input
+                id="admin-status-name-ja"
+                name="nameJa"
+                required
+                maxLength={ADMIN_STATUS_NAME_MAX_LENGTH}
+                defaultValue={editing.nameJa}
+                aria-invalid={Boolean(fieldErrors.nameJa)}
+                aria-describedby={fieldErrors.nameJa ? "admin-status-name-ja-error" : undefined}
+              />
+              {fieldErrors.nameJa ? (
+                <span id="admin-status-name-ja-error" className="admin-field-error">
+                  {fieldErrorMessage("nameJa")}
+                </span>
+              ) : null}
             </label>
             <label>
               {t.statusNameEn}
-              <input name="nameEn" maxLength={ADMIN_STATUS_NAME_MAX_LENGTH} defaultValue={editing.nameEn ?? ""} />
+              <input
+                id="admin-status-name-en"
+                name="nameEn"
+                maxLength={ADMIN_STATUS_NAME_MAX_LENGTH}
+                defaultValue={editing.nameEn ?? ""}
+                aria-invalid={Boolean(fieldErrors.nameEn)}
+                aria-describedby={fieldErrors.nameEn ? "admin-status-name-en-error" : undefined}
+              />
+              {fieldErrors.nameEn ? (
+                <span id="admin-status-name-en-error" className="admin-field-error">
+                  {fieldErrorMessage("nameEn")}
+                </span>
+              ) : null}
             </label>
             <div className="admin-actions">
               <button type="submit">{saving ? t.saving : t.update}</button>
@@ -105,7 +147,9 @@ export function AdminStatusManager({ initialStatuses, databaseConfigured, locale
                 type="button"
                 className="admin-secondary-action"
                 onClick={() => {
+                  if (formDirty && !window.confirm(t.unsavedChanges)) return;
                   setEditing(null);
+                  setFormDirty(false);
                   resetFeedback();
                 }}
               >
@@ -142,7 +186,9 @@ export function AdminStatusManager({ initialStatuses, databaseConfigured, locale
                 <button
                   type="button"
                   onClick={() => {
+                    if (formDirty && !window.confirm(t.unsavedChanges)) return;
                     setEditing(status);
+                    setFormDirty(false);
                     resetFeedback();
                   }}
                   disabled={saving || !databaseConfigured}
@@ -156,4 +202,11 @@ export function AdminStatusManager({ initialStatuses, databaseConfigured, locale
       </section>
     </section>
   );
+}
+
+function asStatusFieldErrors(value: unknown): AdminStatusFieldErrors {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(([, code]) => typeof code === "string"),
+  ) as AdminStatusFieldErrors;
 }
