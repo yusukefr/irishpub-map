@@ -149,4 +149,31 @@ describe("AdminTagManager", () => {
     expect(screen.getByRole("button", { name: "追加" })).toBeDisabled();
     for (const button of screen.getAllByRole("button", { name: "編集" })) expect(button).toBeDisabled();
   });
+  it("keeps dirty edits when starting a new tag and cancellation is chosen", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<AdminTagManager initialTags={[tags[0]]} databaseConfigured locale="ja" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "編集" }));
+    fireEvent.change(screen.getByLabelText("日本語"), { target: { value: "編集中のタグ" } });
+    fireEvent.click(screen.getByRole("button", { name: "新規登録" }));
+
+    expect(confirm).toHaveBeenCalledWith("保存されていない変更があります。このページから移動しますか？");
+    expect(screen.getByDisplayValue("編集中のタグ")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "タグを編集" })).toBeInTheDocument();
+  });
+
+  it("keeps dirty edits when deleting a different tag", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true })));
+    render(<AdminTagManager initialTags={tags} databaseConfigured locale="ja" />);
+
+    fireEvent.click(screen.getAllByRole("button", { name: "編集" })[0]);
+    fireEvent.change(screen.getByLabelText("日本語"), { target: { value: "編集中のタグ" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "削除" })[1]);
+
+    await waitFor(() => expect(screen.queryByText("ウイスキー")).not.toBeInTheDocument());
+    expect(screen.getByDisplayValue("編集中のタグ")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+    expect(window.confirm).toHaveBeenLastCalledWith("保存されていない変更があります。このページから移動しますか？");
+  });
 });

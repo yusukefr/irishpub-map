@@ -97,8 +97,10 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
         return;
       }
       setTags((current) => current.filter((currentTag) => currentTag.id !== tag.id));
-      setFormDirty(false);
-      if (editing?.id === tag.id) setEditing(null);
+      if (editing?.id === tag.id) {
+        setEditing(null);
+        setFormDirty(false);
+      }
       setMessage(t.tagDeleted);
     } catch {
       setError(getAdminTagApiErrorMessage(locale, null));
@@ -118,6 +120,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
         <button
           type="button"
           onClick={() => {
+            if (formDirty && !window.confirm(t.unsavedChanges)) return;
             setEditing(null);
             setFormDirty(false);
             resetFeedback();

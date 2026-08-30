@@ -241,4 +241,23 @@ describe("AdminPubEditor", () => {
     fireEvent.click(screen.getByRole("link", { name: "キャンセル" }));
     expect(confirm).toHaveBeenCalledWith("保存されていない変更があります。このページから移動しますか？");
   });
+  it("内部リンク遷移を許可した直後はbeforeunloadを二重表示しない", () => {
+    vi.useFakeTimers();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<AdminPubEditor {...props} initialPub={existingPub} />);
+    fireEvent.change(screen.getByLabelText("店舗名"), { target: { value: "変更中" } });
+    const cancelLink = screen.getByRole("link", { name: "キャンセル" });
+    cancelLink.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(cancelLink);
+
+    const navigationEvent = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(navigationEvent);
+    expect(navigationEvent.defaultPrevented).toBe(false);
+
+    vi.runAllTimers();
+    const laterEvent = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(laterEvent);
+    expect(laterEvent.defaultPrevented).toBe(true);
+    vi.useRealTimers();
+  });
 });
