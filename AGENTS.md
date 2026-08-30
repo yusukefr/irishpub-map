@@ -51,6 +51,14 @@ npm run build
 npm audit --omit=dev
 ```
 
+PRの最新HEADに対するCI確認:
+
+```bash
+scripts/verify-pr-ci.sh --pr <pull-request-number>
+# 最新HEADにCIがない場合に、手動CIを起動して待機する
+scripts/verify-pr-ci.sh --pr <pull-request-number> --dispatch
+```
+
 コードの整形にはPrettierを使用します。書式を変更する場合は `npm run format`、確認だけの場合は `npm run format:check` を実行してください。
 
 開発サーバー:
@@ -102,6 +110,8 @@ npm run dev
 - PR 本文は日本語で記載してください。
 - 関連 Issue がある場合は `Closes #<issue-number>` を含めてください。
 - 実行した検証コマンドと結果を PR 本文に記載してください。
+- PR作成後または修正push後は `scripts/verify-pr-ci.sh --pr <pull-request-number>` で、最新HEAD SHAに `Lint, Test, Build` が紐づいていることを確認してください。
+- 最新HEADに成功したCIがない場合は `scripts/verify-pr-ci.sh --pr <pull-request-number> --dispatch` で手動CIを実行し、結果をPR本文または作業報告へ記載してください。`workflow_dispatch` の結果はPRの通常チェックへ紐づかない場合があるため、手動実行であることも明記してください。
 - 検証を省略した場合は、理由を明記してください。
 - PR 作成時は `scripts/create-pr.sh` を使ってください。
 - PR 本文は `.github/pull_request_template.md` をベースにした本文ファイルを必ず `--body-file` で渡してください。`--body` は使用しないでください。
