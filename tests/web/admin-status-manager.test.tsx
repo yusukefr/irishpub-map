@@ -54,6 +54,16 @@ describe("AdminStatusManager", () => {
     expect(screen.getByText("Temporarily Closed")).toBeInTheDocument();
   });
 
+  it("associates the immutable key help text with the key field", () => {
+    render(<AdminStatusManager initialStatuses={statuses} databaseConfigured locale="en" />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]);
+
+    const keyInput = screen.getByDisplayValue("open");
+    expect(keyInput).toHaveAttribute("readonly");
+    expect(keyInput).toHaveAttribute("aria-describedby", "status-key-description");
+    expect(screen.getByText("This system identifier cannot be changed.")).toBeInTheDocument();
+  });
+
   it("shows localized field and general API errors", async () => {
     fetchMock
       .mockResolvedValueOnce(

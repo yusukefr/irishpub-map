@@ -11,7 +11,7 @@
   --line: #d7ddd7;
   --accent: #0f7b54;
   --accent-strong: #0b553e;
-  --danger: var(--danger);
+  --danger: #b42318;
 }
 
 * {
@@ -2170,7 +2170,7 @@ body {
 .admin-tag-form fieldset,
 .admin-status-form fieldset {
   display: grid;
-  grid-template-columns: minmax(180px, 0.8fr) repeat(2, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   min-width: 0;
   padding: 0;
@@ -2181,6 +2181,12 @@ body {
   display: grid;
   gap: 6px;
   font-weight: 700;
+  min-width: 0;
+}
+.admin-tag-form fieldset > label > input,
+.admin-status-form fieldset > label > input {
+  width: 100%;
+  min-width: 0;
 }
 .admin-tag-form fieldset > .admin-actions,
 .admin-status-form fieldset > .admin-actions {
@@ -2242,6 +2248,12 @@ body {
 .admin-status-actions {
   display: flex;
   gap: 8px;
+}
+.admin-tag-actions .admin-action-note {
+  align-self: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 .admin-tag-actions button,
 .admin-status-actions button {

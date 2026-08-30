@@ -178,6 +178,17 @@ describe("admin UI", () => {
     expect(screen.getByLabelText("市区町村")).toHaveValue("");
   });
 
+  it("keeps a visible danger style hook for unpublishing a published pub", () => {
+    render(
+      <AdminPubManager
+        {...managerProps}
+        initialPage={{ ...managerProps.initialPage, pubs: [{ ...pub, isPublished: true }] }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "非公開にする" })).toHaveClass("admin-danger-action");
+  });
+
   it("reports search municipality lookup failures and ignores a cancelled response", async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify({ errorCode: "database_unavailable" }), { status: 503 }),
