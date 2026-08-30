@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type TagOption = {
   id: string;
@@ -55,6 +55,12 @@ export function PubFilterPanel({
   onIncludeClosedChange,
   onReset,
 }: PubFilterPanelProps) {
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -76,7 +82,7 @@ export function PubFilterPanel({
         <h2 id="pub-filter-options-heading" className="visually-hidden">
           {panelLabel}
         </h2>
-        <button type="button" className="filter-panel-close" onClick={onClose}>
+        <button ref={closeButtonRef} type="button" className="filter-panel-close" onClick={onClose}>
           {closeLabel}
         </button>
       </div>

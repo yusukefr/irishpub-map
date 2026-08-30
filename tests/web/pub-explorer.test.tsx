@@ -115,6 +115,7 @@ describe("PubExplorer", () => {
     openDetailedFilters();
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(document.getElementById("pub-filter-options")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "条件パネルを閉じる" })).toHaveFocus();
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
     expect(screen.getByLabelText("詳細条件1件を適用中")).toHaveTextContent("1");
 
@@ -144,6 +145,20 @@ describe("PubExplorer", () => {
 
     expect(workspace?.firstElementChild).toHaveClass("map-search-controls");
     expect(workspace?.lastElementChild).toHaveClass("map-canvas");
+  });
+
+  it("keeps responsive sheets inside the Map App layout", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    openDetailedFilters();
+    const filterPanel = document.getElementById("pub-filter-options");
+    expect(filterPanel?.closest(".map-workspace")).toBe(document.querySelector(".map-workspace"));
+
+    fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
+    openResults();
+    const resultsPanel = screen.getByRole("complementary", { name: "掲載店舗" });
+    expect(resultsPanel.closest(".map-layout")).toBe(document.querySelector(".map-layout"));
+    expect(resultsPanel.closest(".map-workspace")).not.toBeInTheDocument();
   });
 
   it("opens and closes results from its trigger and keeps filters mutually exclusive", () => {
