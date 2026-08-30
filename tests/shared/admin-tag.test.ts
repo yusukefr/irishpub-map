@@ -10,19 +10,20 @@ import {
 describe("admin tag validation", () => {
   it("normalizes display names while preserving a valid internal key", () => {
     expect(
-      parseCreateAdminTagInput({ key: "craft-beer", nameJa: "  クラフトビール  ", nameEn: " Craft Beer " }),
+      parseCreateAdminTagInput({ key: "craft-beer", translations: { ja: "  クラフトビール  ", en: " Craft Beer " } }),
     ).toEqual({
       key: "craft-beer",
-      nameJa: "クラフトビール",
-      nameEn: "Craft Beer",
+      translations: { ja: "クラフトビール", en: "Craft Beer" },
     });
-    expect(parseCreateAdminTagInput({ key: "food", nameJa: "食事あり", nameEn: "   " }).nameEn).toBeNull();
+    expect(
+      parseCreateAdminTagInput({ key: "food", translations: { ja: "食事あり", en: "   " } }).translations.en,
+    ).toBeUndefined();
   });
 
   it.each([" whiskey", "whiskey ", "Whiskey", "live--music", "ライブ音楽", "-food", "food-"])(
     "rejects an incompatible internal key: %s",
     (key) => {
-      expect(() => parseCreateAdminTagInput({ key, nameJa: "表示名" })).toThrow(AdminTagValidationError);
+      expect(() => parseCreateAdminTagInput({ key, translations: { ja: "表示名" } })).toThrow(AdminTagValidationError);
     },
   );
 
@@ -30,24 +31,37 @@ describe("admin tag validation", () => {
     try {
       parseCreateAdminTagInput({
         key: "a".repeat(ADMIN_TAG_KEY_MAX_LENGTH + 1),
-        nameJa: "あ".repeat(ADMIN_TAG_NAME_MAX_LENGTH + 1),
+        translations: { ja: "あ".repeat(ADMIN_TAG_NAME_MAX_LENGTH + 1) },
       });
       expect.fail("Validation should reject overlong values.");
     } catch (error) {
       expect(error).toBeInstanceOf(AdminTagValidationError);
       expect((error as AdminTagValidationError).fieldErrors).toMatchObject({
         key: "too_long",
-        nameJa: "too_long",
+        "translations.ja": "too_long",
       });
     }
   });
 
+  it("validates optional translations by locale", () => {
+    expect(() => parseCreateAdminTagInput({ key: "food", translations: { ja: "食事あり", en: 1 } })).toThrow(
+      expect.objectContaining({ fieldErrors: { "translations.en": "invalid_type" } }),
+    );
+    expect(() =>
+      parseCreateAdminTagInput({
+        key: "food",
+        translations: { ja: "食事あり", en: "a".repeat(ADMIN_TAG_NAME_MAX_LENGTH + 1) },
+      }),
+    ).toThrow(expect.objectContaining({ fieldErrors: { "translations.en": "too_long" } }));
+  });
+
   it("allows adding or removing English later without accepting a key change", () => {
-    expect(parseUpdateAdminTagInput({ nameJa: "ウイスキー", nameEn: "Whiskey" })).toEqual({
-      nameJa: "ウイスキー",
-      nameEn: "Whiskey",
+    expect(parseUpdateAdminTagInput({ translations: { ja: "ウイスキー", en: "Whiskey" } })).toEqual({
+      translations: { ja: "ウイスキー", en: "Whiskey" },
     });
-    expect(parseUpdateAdminTagInput({ nameJa: "ウイスキー", nameEn: "" }).nameEn).toBeNull();
-    expect(() => parseUpdateAdminTagInput({ key: "new-key", nameJa: "表示名" })).toThrow(AdminTagValidationError);
+    expect(parseUpdateAdminTagInput({ translations: { ja: "ウイスキー", en: "" } }).translations.en).toBeUndefined();
+    expect(() => parseUpdateAdminTagInput({ key: "new-key", translations: { ja: "表示名" } })).toThrow(
+      AdminTagValidationError,
+    );
   });
 });

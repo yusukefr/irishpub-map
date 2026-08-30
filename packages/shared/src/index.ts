@@ -1,5 +1,7 @@
 export type { Pub, PubStatus } from "./pub";
 export { asPubs } from "./pub";
+export { DEFAULT_LOCALE, REQUIRED_TRANSLATION_LOCALE, SUPPORTED_LOCALES, isSupportedLocale } from "./locale";
+export type { Locale } from "./locale";
 export { PREFECTURES, getPrefectureCode, getPrefectureName } from "./prefecture";
 export { PUB_STATUS_DEFINITIONS, getPubStatusCode, getPubStatusValue } from "./status";
 export type { MunicipalityOption, PrefectureOption, PubStatusOption, TagOption } from "./admin-master";
@@ -23,7 +25,14 @@ export {
   parseCreateAdminTagInput,
   parseUpdateAdminTagInput,
 } from "./admin-tag";
-export type { AdminTag, AdminTagFieldErrors, CreateAdminTagInput, UpdateAdminTagInput } from "./admin-tag";
+export type {
+  AdminTag,
+  AdminTagField,
+  AdminTagFieldErrors,
+  AdminTagTranslations,
+  CreateAdminTagInput,
+  UpdateAdminTagInput,
+} from "./admin-tag";
 export {
   ADMIN_PUB_PAGE_SIZE,
   AdminPubPublicationValidationError,

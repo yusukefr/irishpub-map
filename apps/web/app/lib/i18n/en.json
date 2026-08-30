@@ -139,13 +139,10 @@
         "leading_or_trailing_space": "Key cannot start or end with whitespace.",
         "immutable": "Key cannot be changed after creation."
       },
-      "nameJa": {
-        "required": "The Japanese display name is required.",
-        "too_long": "The Japanese display name must be {max} characters or fewer."
-      },
-      "nameEn": {
-        "invalid_type": "Enter the English display name as text.",
-        "too_long": "The English display name must be {max} characters or fewer."
+      "translations": {
+        "required": "The {language} display name is required.",
+        "invalid_type": "Enter the {language} display name as text.",
+        "too_long": "The {language} display name must be {max} characters or fewer."
       }
     },
     "statusFieldErrors": {
@@ -170,8 +167,7 @@
     "addTag": "Add tag",
     "editTag": "Edit tag",
     "tagKey": "Key",
-    "tagNameJa": "Japanese",
-    "tagNameEn": "English (optional)",
+    "translationOptional": " (optional)",
     "tagPubCount": "Pubs using tag",
     "listedTags": "Tags ({count})",
     "noTags": "No tags have been registered.",

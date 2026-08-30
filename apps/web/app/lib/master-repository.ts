@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { DEFAULT_LOCALE, type Locale } from "@irishpub-map/shared/locale";
 import type {
   MunicipalityOption,
   PrefectureOption,
@@ -6,7 +7,7 @@ import type {
   TagOption,
 } from "@irishpub-map/shared/admin-master";
 
-type MasterLocale = "ja" | "en";
+type MasterLocale = Locale;
 type DbRow = Record<string, unknown>;
 let sqlClient: ReturnType<typeof neon> | null = null;
 
@@ -15,10 +16,10 @@ let sqlClient: ReturnType<typeof neon> | null = null;
  * @param {MasterLocale} locale - 優先表示ロケール。
  * @returns {Promise<PrefectureOption[]>} 管理画面用の都道府県一覧。DB未設定時は空配列。
  */
-export async function getPrefectures(locale: MasterLocale = "ja"): Promise<PrefectureOption[]> {
+export async function getPrefectures(locale: MasterLocale = DEFAULT_LOCALE): Promise<PrefectureOption[]> {
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
-    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
     SELECT prefecture.code, translation.name
     FROM prefectures AS prefecture
     JOIN LATERAL (
@@ -42,11 +43,11 @@ export async function getPrefectures(locale: MasterLocale = "ja"): Promise<Prefe
  */
 export async function getMunicipalitiesByPrefecture(
   prefectureCode: number,
-  locale: MasterLocale = "ja",
+  locale: MasterLocale = DEFAULT_LOCALE,
 ): Promise<MunicipalityOption[]> {
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
-    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
     SELECT municipality.code, municipality.prefecture_code, translation.name
     FROM municipality_codes AS municipality
     JOIN LATERAL (
@@ -72,10 +73,10 @@ export async function getMunicipalitiesByPrefecture(
  * @param {MasterLocale} locale - 優先表示ロケール。
  * @returns {Promise<TagOption[]>} 管理画面用のタグ一覧。翻訳がない場合は内部キーを表示名に使います。
  */
-export async function getTags(locale: MasterLocale = "ja"): Promise<TagOption[]> {
+export async function getTags(locale: MasterLocale = DEFAULT_LOCALE): Promise<TagOption[]> {
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
-    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
     SELECT tag.id::text, tag.key, COALESCE(translation.name, tag.key) AS name
     FROM tags AS tag
     LEFT JOIN LATERAL (
@@ -96,10 +97,10 @@ export async function getTags(locale: MasterLocale = "ja"): Promise<TagOption[]>
  * @param {MasterLocale} locale - 優先表示ロケール。
  * @returns {Promise<PubStatusOption[]>} 管理画面用の営業ステータス一覧。DB未設定時は空配列。
  */
-export async function getPubStatuses(locale: MasterLocale = "ja"): Promise<PubStatusOption[]> {
+export async function getPubStatuses(locale: MasterLocale = DEFAULT_LOCALE): Promise<PubStatusOption[]> {
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
-    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
     SELECT status.code, status.key, translation.display_name AS name
     FROM pub_statuses AS status
     JOIN LATERAL (

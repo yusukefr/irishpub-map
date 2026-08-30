@@ -8,9 +8,11 @@ import { ADMIN_STATUS_NAME_MAX_LENGTH, type AdminStatusFieldErrors } from "@iris
 import {
   ADMIN_TAG_KEY_MAX_LENGTH,
   ADMIN_TAG_NAME_MAX_LENGTH,
+  type AdminTagField,
   type AdminTagFieldErrors,
 } from "@irishpub-map/shared/admin-tag";
-import { formatMessage, getTranslation, type Locale, type Translation } from "./i18n";
+import { isSupportedLocale, SUPPORTED_LOCALES, type Locale } from "@irishpub-map/shared/locale";
+import { formatMessage, getTranslation, type Translation } from "./i18n";
 
 /** Clientが成功レスポンスと同時に受け取る可能性がある管理APIエラー部分です。 */
 export type AdminApiClientError = {
@@ -38,7 +40,7 @@ export function getAdminApiErrorMessage(locale: Locale, value: unknown) {
 export function getAdminTagApiErrorMessage(locale: Locale, value: unknown) {
   const fieldError = getFirstTagFieldError(value);
   if (!fieldError) return getAdminApiErrorMessage(locale, value);
-  return translateTagFieldError(getTranslation(locale), fieldError[0], fieldError[1]);
+  return translateTagFieldError(locale, getTranslation(locale), fieldError[0], fieldError[1]);
 }
 
 /**
@@ -73,7 +75,8 @@ function getErrorCode(value: unknown): AdminApiErrorCode {
 }
 
 function getFirstTagFieldError(value: unknown): [keyof AdminTagFieldErrors, AdminFieldErrorCode] | null {
-  return getFirstFieldError(value, ["key", "nameJa", "nameEn"]);
+  const fields: AdminTagField[] = ["key", ...SUPPORTED_LOCALES.map((locale) => `translations.${locale}` as const)];
+  return getFirstFieldError(value, fields);
 }
 
 function getFirstFieldError<Field extends string>(
@@ -90,7 +93,12 @@ function getFirstFieldError<Field extends string>(
   return null;
 }
 
-function translateTagFieldError(translation: Translation, field: keyof AdminTagFieldErrors, code: AdminFieldErrorCode) {
+function translateTagFieldError(
+  locale: Locale,
+  translation: Translation,
+  field: keyof AdminTagFieldErrors,
+  code: AdminFieldErrorCode,
+) {
   const messages = translation.admin.tagFieldErrors;
   if (field === "key") {
     if (code === "required") return messages.key.required;
@@ -99,13 +107,15 @@ function translateTagFieldError(translation: Translation, field: keyof AdminTagF
     if (code === "leading_or_trailing_space") return messages.key.leading_or_trailing_space;
     if (code === "immutable") return messages.key.immutable;
   }
-  if (field === "nameJa") {
-    if (code === "required") return messages.nameJa.required;
-    if (code === "too_long") return formatMessage(messages.nameJa.too_long, { max: ADMIN_TAG_NAME_MAX_LENGTH });
-  }
-  if (field === "nameEn") {
-    if (code === "invalid_type") return messages.nameEn.invalid_type;
-    if (code === "too_long") return formatMessage(messages.nameEn.too_long, { max: ADMIN_TAG_NAME_MAX_LENGTH });
+  if (field.startsWith("translations.")) {
+    const translationLocale = field.slice("translations.".length);
+    if (!isSupportedLocale(translationLocale)) return translation.admin.errors.validation_error;
+    const language = new Intl.DisplayNames([locale], { type: "language" }).of(translationLocale) ?? translationLocale;
+    if (code === "required") return formatMessage(messages.translations.required, { language });
+    if (code === "invalid_type") return formatMessage(messages.translations.invalid_type, { language });
+    if (code === "too_long") {
+      return formatMessage(messages.translations.too_long, { language, max: ADMIN_TAG_NAME_MAX_LENGTH });
+    }
   }
   return translation.admin.errors.validation_error;
 }

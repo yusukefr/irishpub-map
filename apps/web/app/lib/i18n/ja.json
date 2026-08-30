@@ -139,13 +139,10 @@
         "leading_or_trailing_space": "keyの前後に空白は使用できません。",
         "immutable": "keyは作成後に変更できません。"
       },
-      "nameJa": {
-        "required": "日本語表示名は必須です。",
-        "too_long": "日本語表示名は{max}文字以内で入力してください。"
-      },
-      "nameEn": {
-        "invalid_type": "英語表示名を文字列で入力してください。",
-        "too_long": "英語表示名は{max}文字以内で入力してください。"
+      "translations": {
+        "required": "{language}表示名は必須です。",
+        "invalid_type": "{language}表示名を文字列で入力してください。",
+        "too_long": "{language}表示名は{max}文字以内で入力してください。"
       }
     },
     "statusFieldErrors": {
@@ -170,8 +167,7 @@
     "addTag": "新規登録",
     "editTag": "タグを編集",
     "tagKey": "key",
-    "tagNameJa": "日本語",
-    "tagNameEn": "English（任意）",
+    "translationOptional": "（任意）",
     "tagPubCount": "使用店舗数",
     "listedTags": "登録タグ（{count}件）",
     "noTags": "登録済みのタグはありません。",

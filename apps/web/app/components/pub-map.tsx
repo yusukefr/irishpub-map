@@ -5,7 +5,7 @@ import { type ErrorEvent, Map, Marker, NavigationControl, Popup, setWorkerUrl } 
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { Coordinates } from "../lib/pub-search";
-import { formatMessage, getTranslation, type Locale, type Translation } from "../lib/i18n";
+import { DEFAULT_LOCALE, formatMessage, getTranslation, type Locale, type Translation } from "../lib/i18n";
 
 const NON_OPEN_PUB_MARKER_COLOR = "#6b7280";
 
@@ -59,7 +59,7 @@ export function PubMap({
   currentLocation = null,
   selectedPubId = null,
   onSelectPub = () => undefined,
-  locale = "ja",
+  locale = DEFAULT_LOCALE,
 }: PubMapProps) {
   const t = getTranslation(locale);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -273,8 +273,8 @@ export function PubMap({
  * @returns {void}
  */
 function applyMapLanguage(map: Map, locale: Locale): void {
-  const localizedName: "name:ja" | "name:en" = locale === "ja" ? "name:ja" : "name:en";
-  const textField: ["coalesce", ["get", "name:ja" | "name:en"], ["get", "name"]] = [
+  const localizedName = `name:${locale}`;
+  const textField: ["coalesce", ["get", string], ["get", string]] = [
     "coalesce",
     ["get", localizedName],
     ["get", "name"],

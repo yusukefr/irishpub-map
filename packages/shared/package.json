@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./pub": "./src/pub.ts",
+    "./locale": "./src/locale.ts",
     "./tag": "./src/tag.ts",
     "./prefecture": "./src/prefecture.ts",
     "./status": "./src/status.ts",

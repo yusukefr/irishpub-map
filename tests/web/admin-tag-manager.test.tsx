@@ -8,15 +8,13 @@ const tags = [
   {
     id: "550e8400-e29b-41d4-a716-446655440001",
     key: "food",
-    nameJa: "食事あり",
-    nameEn: "Food",
+    translations: { ja: "食事あり", en: "Food" },
     pubCount: 3,
   },
   {
     id: "550e8400-e29b-41d4-a716-446655440002",
     key: "whiskey",
-    nameJa: "ウイスキー",
-    nameEn: null,
+    translations: { ja: "ウイスキー" },
     pubCount: 0,
   },
 ];
@@ -44,8 +42,7 @@ describe("AdminTagManager", () => {
       ...tags[1],
       id: "550e8400-e29b-41d4-a716-446655440003",
       key: "craft-beer",
-      nameJa: "クラフトビール",
-      nameEn: "Craft Beer",
+      translations: { ja: "クラフトビール", en: "Craft Beer" },
     };
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ tag: created }), { status: 201 }));
     render(<AdminTagManager initialTags={[]} databaseConfigured locale="ja" />);
@@ -59,14 +56,14 @@ describe("AdminTagManager", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/admin/tags", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "craft-beer", nameJa: "クラフトビール", nameEn: "Craft Beer" }),
+      body: JSON.stringify({ key: "craft-beer", translations: { ja: "クラフトビール", en: "Craft Beer" } }),
     });
     expect(await screen.findByRole("status")).toHaveTextContent("タグを保存しました。");
     expect(screen.getByText("Craft Beer")).toBeInTheDocument();
   });
 
   it("keeps key read-only while editing and allows adding the English translation", async () => {
-    const updated = { ...tags[1], nameJa: "ウィスキー", nameEn: "Whiskey" };
+    const updated = { ...tags[1], translations: { ja: "ウィスキー", en: "Whiskey" } };
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ tag: updated })));
     render(<AdminTagManager initialTags={[tags[1]]} databaseConfigured locale="ja" />);
 
@@ -80,7 +77,7 @@ describe("AdminTagManager", () => {
     expect(fetchMock).toHaveBeenCalledWith(`/api/admin/tags/${tags[1].id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nameJa: "ウィスキー", nameEn: "Whiskey" }),
+      body: JSON.stringify({ translations: { ja: "ウィスキー", en: "Whiskey" } }),
     });
     expect(await screen.findByText("ウィスキー")).toBeInTheDocument();
     expect(screen.getByText("Whiskey")).toBeInTheDocument();
@@ -126,9 +123,12 @@ describe("AdminTagManager", () => {
   it("translates field validation and conflicts into English", async () => {
     fetchMock
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ errorCode: "validation_error", fieldErrors: { nameJa: "required" } }), {
-          status: 422,
-        }),
+        new Response(
+          JSON.stringify({ errorCode: "validation_error", fieldErrors: { "translations.ja": "required" } }),
+          {
+            status: 422,
+          },
+        ),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify({ errorCode: "tag_conflict" }), { status: 409 }));
     render(<AdminTagManager initialTags={[]} databaseConfigured locale="en" />);
