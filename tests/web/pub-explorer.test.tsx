@@ -106,19 +106,41 @@ describe("PubExplorer", () => {
 
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(toggle).toHaveAttribute("aria-controls", "pub-filter-options");
-    expect(filterDetails).toHaveAttribute("hidden");
+    expect(screen.queryByRole("region", { name: "地図と条件から探す" })).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "都道府県" })).not.toBeInTheDocument();
 
     openDetailedFilters();
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(filterDetails).not.toHaveAttribute("hidden");
+    expect(document.getElementById("pub-filter-options")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
     expect(screen.getByLabelText("詳細条件1件を適用中")).toHaveTextContent("1");
 
-    fireEvent.click(screen.getByRole("button", { name: /条件を閉じる/ }));
-    expect(filterDetails).toHaveAttribute("hidden");
+    fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
+    expect(screen.queryByRole("region", { name: "地図と条件から探す" })).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "都道府県" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("詳細条件1件を適用中")).toBeInTheDocument();
+  });
+
+  it("closes the filter panel with Escape and returns focus to its trigger", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    const toggle = screen.getByRole("button", { name: "条件を指定" });
+    fireEvent.click(toggle);
+    expect(screen.getByRole("region", { name: "地図と条件から探す" })).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(screen.queryByRole("region", { name: "地図と条件から探す" })).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+  });
+
+  it("places map search controls before the map in keyboard navigation order", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    const workspace = document.querySelector(".map-workspace");
+
+    expect(workspace?.firstElementChild).toHaveClass("map-search-controls");
+    expect(workspace?.lastElementChild).toHaveClass("map-canvas");
   });
 
   it("filters the displayed pubs by pub name", () => {
@@ -152,7 +174,7 @@ describe("PubExplorer", () => {
 
     expect(
       screen.getByText("現在地に近い掲載エリアへ地図を移動します。位置情報は保存しません。", { exact: false }),
-    ).toBeInTheDocument();
+    ).toHaveClass("visually-hidden");
     expect(screen.getByRole("button", { name: "現在地から探す" })).toBeInTheDocument();
     expect(getCurrentPosition).not.toHaveBeenCalled();
   });
@@ -430,18 +452,18 @@ describe("PubExplorer", () => {
     expect(screen.queryByRole("heading", { name: "Kyoto Sample Pub" })).not.toBeInTheDocument();
   });
 
-  it("resets all active search conditions", () => {
+  it("resets detailed filters without clearing the search query", () => {
     render(<PubExplorer pubs={pubs} />);
     openDetailedFilters();
 
-    fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "京都府" } });
+    fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "Tokyo" } });
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "京都府" } });
     fireEvent.click(screen.getByRole("button", { name: "食事あり" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "閉業した店舗を含める" }));
 
     fireEvent.click(screen.getByRole("button", { name: "条件をリセット" }));
 
-    expect(screen.getByLabelText("店舗を検索")).toHaveValue("");
+    expect(screen.getByLabelText("店舗を検索")).toHaveValue("Tokyo");
     expect(screen.getByLabelText("都道府県")).toHaveValue("");
     expect(screen.getByRole("button", { name: "食事あり" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("checkbox", { name: "閉業した店舗を含める" })).not.toBeChecked();
