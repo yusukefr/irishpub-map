@@ -134,6 +134,8 @@ CI の Slack 通知は Vercel の環境変数ではなく GitHub の Actions 設
 | Variable | `SLACK_CICD_CHANNEL`     | 任意。通知先チャンネル     |
 | Secret   | `SLACK_CICD_WEBHOOK_URL` | Slack Incoming Webhook URL |
 
+CIはブランチpush・Pull Request更新・`workflow_dispatch`で実行します。PR用のバージョン自動更新Workflowがバージョンcommitをpushした場合は、`GITHUB_TOKEN`でCIを明示起動し、更新後のPRブランチHEADを検証します。バージョンcommitがない場合は追加起動しません。`main`のRulesetではCIの`Lint, Test, Build` JobをRequired Status Checkとして扱います。
+
 ## デプロイの流れ
 
 1. GitHub と Vercel を連携し、このリポジトリを Vercel Project として Import します。
