@@ -7,8 +7,8 @@ vi.mock("../../apps/web/app/lib/admin-server", () => ({ requireAdminSession: pag
 vi.mock("../../apps/web/app/lib/tag-repository", () => ({ getAdminTags: pageMocks.getAdminTags }));
 vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: () => Promise.resolve("ja") }));
 vi.mock("../../apps/web/app/components/admin-tag-manager", () => ({
-  AdminTagManager: ({ initialTags }: { initialTags: Array<{ nameJa: string }> }) => (
-    <p>{initialTags.map((tag) => tag.nameJa).join(",")}</p>
+  AdminTagManager: ({ initialTags }: { initialTags: Array<{ translations: { ja: string } }> }) => (
+    <p>{initialTags.map((tag) => tag.translations.ja).join(",")}</p>
   ),
 }));
 
@@ -29,7 +29,7 @@ describe("AdminTagsPage", () => {
 
   it("loads tag data after validating the session", async () => {
     pageMocks.requireAdminSession.mockResolvedValue(undefined);
-    pageMocks.getAdminTags.mockResolvedValue([{ nameJa: "ウイスキー" }]);
+    pageMocks.getAdminTags.mockResolvedValue([{ translations: { ja: "ウイスキー" } }]);
 
     render(await AdminTagsPage());
 

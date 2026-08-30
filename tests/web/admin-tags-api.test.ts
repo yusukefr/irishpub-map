@@ -28,7 +28,7 @@ const originalAdminUsername = process.env.ADMIN_USERNAME;
 const originalPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 const origin = "https://example.com";
 const tagId = "550e8400-e29b-41d4-a716-446655440001";
-const tag = { id: tagId, key: "whiskey", nameJa: "ウイスキー", nameEn: "Whiskey", pubCount: 2 };
+const tag = { id: tagId, key: "whiskey", translations: { ja: "ウイスキー", en: "Whiskey" }, pubCount: 2 };
 
 beforeEach(() => {
   process.env.DATABASE_URL = "postgres://test-only";
@@ -83,20 +83,27 @@ describe("admin tags API", () => {
   });
 
   it("creates a normalized Japanese-only tag with authentication and exact Origin", async () => {
-    repositoryMocks.createAdminTag.mockResolvedValue({ ...tag, key: "food", nameJa: "食事あり", nameEn: null });
+    repositoryMocks.createAdminTag.mockResolvedValue({ ...tag, key: "food", translations: { ja: "食事あり" } });
 
     const response = await POST(
-      adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "food", nameJa: "  食事あり  ", nameEn: "" })),
+      adminRequest(
+        "/api/admin/tags",
+        "POST",
+        JSON.stringify({ key: "food", translations: { ja: "  食事あり  ", en: "" } }),
+      ),
     );
 
     expect(response.status).toBe(201);
-    expect(repositoryMocks.createAdminTag).toHaveBeenCalledWith({ key: "food", nameJa: "食事あり", nameEn: null });
+    expect(repositoryMocks.createAdminTag).toHaveBeenCalledWith({ key: "food", translations: { ja: "食事あり" } });
   });
 
   it("rejects missing Origin, non-JSON content, malformed JSON, and invalid fields before persistence", async () => {
     expect(
-      (await POST(adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "food", nameJa: "食事" }), null)))
-        .status,
+      (
+        await POST(
+          adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "food", translations: { ja: "食事" } }), null),
+        )
+      ).status,
     ).toBe(403);
 
     const nonJson = adminRequest("/api/admin/tags", "POST");
@@ -104,12 +111,12 @@ describe("admin tags API", () => {
 
     expect((await POST(adminRequest("/api/admin/tags", "POST", "{"))).status).toBe(400);
     const invalid = await POST(
-      adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "Invalid Key", nameJa: "" })),
+      adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "Invalid Key", translations: { ja: "" } })),
     );
     expect(invalid.status).toBe(422);
     await expect(invalid.json()).resolves.toMatchObject({
       errorCode: "validation_error",
-      fieldErrors: { key: "invalid_format", nameJa: "required" },
+      fieldErrors: { key: "invalid_format", "translations.ja": "required" },
     });
     expect(repositoryMocks.createAdminTag).not.toHaveBeenCalled();
   });
@@ -118,7 +125,7 @@ describe("admin tags API", () => {
     repositoryMocks.createAdminTag.mockRejectedValue(new repositoryMocks.TagRepositoryError("conflict"));
 
     const response = await POST(
-      adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "whiskey", nameJa: "ウイスキー" })),
+      adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "whiskey", translations: { ja: "ウイスキー" } })),
     );
 
     expect(response.status).toBe(409);
@@ -126,17 +133,21 @@ describe("admin tags API", () => {
   });
 
   it("updates display names without accepting a key change", async () => {
-    repositoryMocks.updateAdminTag.mockResolvedValue({ ...tag, nameEn: null });
+    repositoryMocks.updateAdminTag.mockResolvedValue({ ...tag, translations: { ja: "ウイスキー" } });
     const response = await PATCH(
-      adminRequest(`/api/admin/tags/${tagId}`, "PATCH", JSON.stringify({ nameJa: "ウイスキー", nameEn: "" })),
+      adminRequest(`/api/admin/tags/${tagId}`, "PATCH", JSON.stringify({ translations: { ja: "ウイスキー", en: "" } })),
       context(),
     );
 
     expect(response.status).toBe(200);
-    expect(repositoryMocks.updateAdminTag).toHaveBeenCalledWith(tagId, { nameJa: "ウイスキー", nameEn: null });
+    expect(repositoryMocks.updateAdminTag).toHaveBeenCalledWith(tagId, { translations: { ja: "ウイスキー" } });
 
     const keyChange = await PATCH(
-      adminRequest(`/api/admin/tags/${tagId}`, "PATCH", JSON.stringify({ key: "changed", nameJa: "ウイスキー" })),
+      adminRequest(
+        `/api/admin/tags/${tagId}`,
+        "PATCH",
+        JSON.stringify({ key: "changed", translations: { ja: "ウイスキー" } }),
+      ),
       context(),
     );
     expect(keyChange.status).toBe(422);
@@ -148,7 +159,7 @@ describe("admin tags API", () => {
 
   it("returns 400 for an invalid id and 404 for a missing tag", async () => {
     const invalidId = await PATCH(
-      adminRequest("/api/admin/tags/invalid", "PATCH", JSON.stringify({ nameJa: "表示名" })),
+      adminRequest("/api/admin/tags/invalid", "PATCH", JSON.stringify({ translations: { ja: "表示名" } })),
       context("invalid"),
     );
     expect(invalidId.status).toBe(400);
@@ -156,7 +167,7 @@ describe("admin tags API", () => {
 
     repositoryMocks.updateAdminTag.mockRejectedValue(new repositoryMocks.TagRepositoryError("not_found"));
     const missing = await PATCH(
-      adminRequest(`/api/admin/tags/${tagId}`, "PATCH", JSON.stringify({ nameJa: "表示名" })),
+      adminRequest(`/api/admin/tags/${tagId}`, "PATCH", JSON.stringify({ translations: { ja: "表示名" } })),
       context(),
     );
     expect(missing.status).toBe(404);
@@ -177,7 +188,7 @@ describe("admin tags API", () => {
   it("returns 503 without a database and hides unexpected repository errors", async () => {
     delete process.env.DATABASE_URL;
     const unavailable = await POST(
-      adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "food", nameJa: "食事" })),
+      adminRequest("/api/admin/tags", "POST", JSON.stringify({ key: "food", translations: { ja: "食事" } })),
     );
     expect(unavailable.status).toBe(503);
     await expect(unavailable.json()).resolves.toEqual({ errorCode: "database_unavailable" });

@@ -112,7 +112,7 @@ erDiagram
 
 ## 翻訳の選択
 
-Repositoryは要求ロケールの翻訳を優先し、存在しない場合は日本語（`ja`）へフォールバックします。対象は店舗、都道府県、市区町村、営業状況、タグです。店舗の緯度経度、URL、コード、タグ関係など言語に依存しない値は親テーブルに保持します。
+Repositoryは要求ロケールの翻訳を優先し、存在しない場合は共通locale定義の既定localeへフォールバックします。対象は店舗、都道府県、市区町村、営業状況、タグです。店舗の緯度経度、URL、コード、タグ関係など言語に依存しない値は親テーブルに保持します。
 
 ## 読み書き
 
@@ -125,9 +125,9 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 | 更新 | `updateAdminPub` | 公開状態を維持して全体更新し、公開済みの場合はPublish Validationを適用 |
 | 削除 | `deleteAdminPub` | 店舗を削除し、店舗翻訳と `pub_tags` は外部キーでカスケード削除 |
 | 一括投入 | `scripts/import-pubs.mjs` | 日本語の市区町村をコードへ解決し、新規UUIDの非公開店舗・翻訳・タグ関係だけを追加 |
-| タグ管理取得 | `getAdminTags` | 日英翻訳と `pub_tags` の重複を除いた使用店舗数を取得 |
-| タグ管理追加 | `createAdminTag` | タグ本体と日英翻訳を単一transactionで追加 |
-| タグ管理更新 | `updateAdminTag` | keyを維持し、日英翻訳を単一transactionでUPSERTまたは削除 |
+| タグ管理取得 | `getAdminTags` | サポートlocaleの翻訳と `pub_tags` の重複を除いた使用店舗数を取得 |
+| タグ管理追加 | `createAdminTag` | タグ本体と入力された各localeの翻訳を単一transactionで追加 |
+| タグ管理更新 | `updateAdminTag` | keyを維持し、localeごとの翻訳を単一transactionでUPSERTまたは削除 |
 | タグ管理削除 | `deleteAdminTag` | タグ行をロックし、`pub_tags` が0件の場合だけ条件付き削除 |
 
 マイグレーション008は適用前に既存店舗が公開条件を満たすか検査し、成功した場合だけ既存店舗を公開状態へ移行します。マイグレーション009は既存値を変更せず下書き対象カラムのNOT NULLを外し、公開中店舗に欠損が生じていないことを検証SQLで確認します。どちらも適用履歴を `schema_migrations` に記録します。

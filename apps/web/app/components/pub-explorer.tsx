@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Pub } from "@irishpub-map/shared/pub";
-import { formatMessage, getTagLabel, getTranslation, type Locale } from "../lib/i18n";
+import { DEFAULT_LOCALE, formatMessage, getTagLabel, getTranslation, type Locale } from "../lib/i18n";
 import {
   filterPubs,
   getAvailablePrefectures,
@@ -34,7 +34,7 @@ type GeolocationStatus = "idle" | "requesting" | "success" | "no-pubs" | "denied
  * @param {Pub[]} root0.pubs - 検索対象の店舗一覧。
  * @returns {JSX.Element} 検索・地図・一覧を組み合わせた探索画面。
  */
-export function PubExplorer({ pubs, locale = "ja" }: PubExplorerProps) {
+export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps) {
   const t = getTranslation(locale);
   const [query, setQuery] = useState("");
   const [selectedPrefecture, setSelectedPrefecture] = useState("");

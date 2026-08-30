@@ -1,4 +1,5 @@
 import { normalizeTag } from "@irishpub-map/shared/tag";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from "@irishpub-map/shared/locale";
 import ja from "./ja.json";
 import en from "./en.json";
 
@@ -6,30 +7,21 @@ import en from "./en.json";
 export const LOCALE_COOKIE = "irishpub-map-locale";
 /** 言語設定Cookieを保持する30日間の秒数です。 */
 export const LOCALE_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+/** サポートlocaleごとの言語メニュー表示用国旗です。 */
+const LANGUAGE_FLAGS = {
+  ja: "🇯🇵",
+  en: "🇬🇧",
+} satisfies Record<Locale, string>;
 /** 言語メニューを構成するロケールと国旗絵文字です。 */
-export const LANGUAGE_OPTIONS = [
-  { locale: "ja", flag: "🇯🇵" },
-  { locale: "en", flag: "🇬🇧" },
-] as const;
-/** サポート済みの表示言語コードです。 */
-export type Locale = (typeof LANGUAGE_OPTIONS)[number]["locale"];
+export const LANGUAGE_OPTIONS = SUPPORTED_LOCALES.map((locale) => ({ locale, flag: LANGUAGE_FLAGS[locale] }));
 /** 現在アプリケーションが提供する表示言語です。 */
-export const LOCALES: readonly Locale[] = LANGUAGE_OPTIONS.map(({ locale }) => locale);
-/** API・Repositoryで受け付ける表示ロケールです。 */
-export const SUPPORTED_LOCALES = LOCALES;
-
-/**
- * 指定値が現在サポートする表示ロケールかを判定します。
- * @param {string | null | undefined} value - 判定するロケール値。
- * @returns {value is Locale} サポート対象の場合はtrue。
- */
-export function isSupportedLocale(value: string | null | undefined): value is Locale {
-  return typeof value === "string" && SUPPORTED_LOCALES.includes(value as Locale);
-}
+export const LOCALES = SUPPORTED_LOCALES;
+export { DEFAULT_LOCALE, isSupportedLocale, SUPPORTED_LOCALES } from "@irishpub-map/shared/locale";
+export type { Locale } from "@irishpub-map/shared/locale";
 
 /** 各言語JSONが持つ翻訳辞書の構造です。 */
 export type Translation = typeof ja;
-const translations: Record<Locale, Translation> = { ja, en };
+const translations = { ja, en } satisfies Record<Locale, Translation>;
 
 /**
  * JSON内のプレースホルダーへ値を補間します。
@@ -59,7 +51,8 @@ export function getTagLabel(locale: Locale, tag: string) {
  */
 export function parseLocale(value: string | null | undefined): Locale | undefined {
   const language = value?.toLowerCase().split(",")[0]?.trim();
-  return language?.startsWith("en") ? "en" : language?.startsWith("ja") ? "ja" : undefined;
+  if (!language) return undefined;
+  return LOCALES.find((locale) => language === locale || language.startsWith(`${locale}-`));
 }
 
 /**
@@ -70,7 +63,7 @@ export function parseLocale(value: string | null | undefined): Locale | undefine
  * @returns {Locale} 表示するロケール。
  */
 export function resolveLocale(input: { cookieLocale?: string | null; acceptLanguage?: string | null }): Locale {
-  return parseLocale(input.cookieLocale) ?? parseLocale(input.acceptLanguage) ?? "ja";
+  return parseLocale(input.cookieLocale) ?? parseLocale(input.acceptLanguage) ?? DEFAULT_LOCALE;
 }
 
 /**

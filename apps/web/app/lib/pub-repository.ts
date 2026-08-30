@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { DEFAULT_LOCALE, type Locale } from "@irishpub-map/shared/locale";
 import {
   ADMIN_PUB_PAGE_SIZE,
   type AdminPubListItem,
@@ -91,29 +92,32 @@ export function isDatabaseConfigured() {
 
 /**
  * 公開中の店舗だけを、選択ロケールから日本語へフォールバックして取得します。
- * @param {string} locale - 優先して取得する表示ロケール。
+ * @param {Locale} locale - 優先して取得する表示ロケール。
  * @returns {Promise<Pub[]>} 公開条件をSQLで適用した検証済み店舗一覧。
  */
-export async function getPublishedPubs(locale = "ja") {
+export async function getPublishedPubs(locale: Locale = DEFAULT_LOCALE) {
   return parseDbPubs(await getDbPubRows(locale, false));
 }
 
 /**
  * 管理者向けに公開・非公開の両方を公開状態付きで取得します。
- * @param {string} locale - 優先して取得する表示ロケール。
+ * @param {Locale} locale - 優先して取得する表示ロケール。
  * @returns {Promise<AdminPub[]>} 公開状態を含む検証済み店舗一覧。
  */
-export async function getAdminPubs(locale = "ja") {
+export async function getAdminPubs(locale: Locale = DEFAULT_LOCALE) {
   return parseDbAdminPubs(await getDbPubRows(locale, true));
 }
 
 /**
  * 管理者向け店舗を複数条件のAND検索と固定件数ページングで取得します。
  * @param {AdminPubSearchCondition} condition - 検証済み検索条件。
- * @param {string} locale - 優先して取得する表示ロケール。
+ * @param {Locale} locale - 優先して取得する表示ロケール。
  * @returns {Promise<AdminPubPage>} 公開・非公開を含む管理店舗ページ。
  */
-export async function getAdminPubPage(condition: AdminPubSearchCondition, locale = "ja"): Promise<AdminPubPage> {
+export async function getAdminPubPage(
+  condition: AdminPubSearchCondition,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<AdminPubPage> {
   if (!isDatabaseConfigured()) return { pubs: [], total: 0, page: condition.page, pageSize: ADMIN_PUB_PAGE_SIZE };
 
   const name = condition.name ?? null;
@@ -124,7 +128,7 @@ export async function getAdminPubPage(condition: AdminPubSearchCondition, locale
   const isPublished = condition.isPublished ?? null;
   const offset = (condition.page - 1) * ADMIN_PUB_PAGE_SIZE;
   const rows = (await getSql()`
-    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
     SELECT p.id::text, pt.name, pt.name_reading AS kana, p.prefecture_code, pref.name AS prefecture,
       mt.name AS city, p.municipality_code, pt.address, p.latitude, p.longitude, p.website_url,
       p.google_maps_url, p.instagram_url, p.status_code, status.key AS status_key,
@@ -168,7 +172,7 @@ export async function getAdminPubPage(condition: AdminPubSearchCondition, locale
 
 async function getAdminPubCount(locale: string, condition: AdminPubCountCondition) {
   const rows = (await getSql()`
-    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
     SELECT COUNT(*)::int AS total_count
     FROM pubs AS p
     JOIN LATERAL (SELECT 1 FROM pub_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.pub_id=p.id ORDER BY preference.priority LIMIT 1) AS pt ON TRUE
@@ -278,7 +282,7 @@ async function getDbPubRows(locale: string, includeUnpublished: boolean) {
 
   const sql = getSql();
   const rows = (await sql`
-    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT 'ja', 1)
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
     SELECT p.id::text, pt.name, pt.name_reading AS kana, p.prefecture_code, pref.name AS prefecture, mt.name AS city, p.municipality_code, pt.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code, st.display_name AS status_display_name, p.is_published,
       COALESCE(array_agg(t.key ORDER BY t.key) FILTER (WHERE t.key IS NOT NULL), '{}') AS tags,

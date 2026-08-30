@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
-import type { AdminTag, CreateAdminTagInput, UpdateAdminTagInput } from "@irishpub-map/shared/admin-tag";
+import { REQUIRED_TRANSLATION_LOCALE, SUPPORTED_LOCALES, type Locale } from "@irishpub-map/shared/locale";
+import type {
+  AdminTag,
+  AdminTagTranslations,
+  CreateAdminTagInput,
+  UpdateAdminTagInput,
+} from "@irishpub-map/shared/admin-tag";
 
 type DbRow = Record<string, unknown>;
 type TagRepositoryErrorCode = "conflict" | "in_use" | "not_found";
@@ -19,18 +25,21 @@ export class TagRepositoryError extends Error {
 }
 
 /**
- * 日英表示名と使用店舗数を含む管理タグ一覧を内部キー順で取得します。
+ * サポートlocaleの翻訳と使用店舗数を含む管理タグ一覧を内部キー順で取得します。
  * @returns {Promise<AdminTag[]>} DB未設定時は空配列、それ以外は検証済み管理タグ一覧。
  */
 export async function getAdminTags(): Promise<AdminTag[]> {
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
     SELECT tag.id::text, tag.key,
-      MAX(translation.name) FILTER (WHERE translation.locale = 'ja') AS name_ja,
-      MAX(translation.name) FILTER (WHERE translation.locale = 'en') AS name_en,
+      COALESCE(
+        jsonb_object_agg(translation.locale, translation.name)
+          FILTER (WHERE translation.locale IS NOT NULL),
+        '{}'::jsonb
+      ) AS translations,
       COUNT(DISTINCT pub_tag.pub_id)::int AS pub_count
     FROM tags AS tag
-    LEFT JOIN tag_translations AS translation ON translation.tag_id = tag.id AND translation.locale IN ('ja', 'en')
+    LEFT JOIN tag_translations AS translation ON translation.tag_id = tag.id
     LEFT JOIN pub_tags AS pub_tag ON pub_tag.tag_id = tag.id
     GROUP BY tag.id, tag.key
     ORDER BY tag.key
@@ -39,7 +48,7 @@ export async function getAdminTags(): Promise<AdminTag[]> {
 }
 
 /**
- * タグ本体と必須の日本語翻訳、任意の英語翻訳を単一transactionで登録します。
+ * タグ本体と必須の日本語翻訳、任意のサポートlocale翻訳を単一transactionで登録します。
  * @param {CreateAdminTagInput} input - 共有Validationを通過したタグ入力。
  * @returns {Promise<AdminTag>} 登録した未使用タグ。
  */
@@ -49,14 +58,14 @@ export async function createAdminTag(input: CreateAdminTagInput): Promise<AdminT
   const id = randomUUID();
   try {
     await sql.transaction((transaction) => {
-      const queries = [
-        transaction`INSERT INTO tags (id, key) VALUES (${id}::uuid, ${input.key})`,
-        transaction`INSERT INTO tag_translations (tag_id, locale, name) VALUES (${id}::uuid, 'ja', ${input.nameJa})`,
-      ];
-      if (input.nameEn) {
-        queries.push(
-          transaction`INSERT INTO tag_translations (tag_id, locale, name) VALUES (${id}::uuid, 'en', ${input.nameEn})`,
-        );
+      const queries = [transaction`INSERT INTO tags (id, key) VALUES (${id}::uuid, ${input.key})`];
+      for (const locale of SUPPORTED_LOCALES) {
+        const name = input.translations[locale];
+        if (name) {
+          queries.push(
+            transaction`INSERT INTO tag_translations (tag_id, locale, name) VALUES (${id}::uuid, ${locale}, ${name})`,
+          );
+        }
       }
       return queries;
     });
@@ -64,11 +73,11 @@ export async function createAdminTag(input: CreateAdminTagInput): Promise<AdminT
     if (isUniqueViolation(error)) throw new TagRepositoryError("conflict");
     throw error;
   }
-  return { id, key: input.key, nameJa: input.nameJa, nameEn: input.nameEn, pubCount: 0 };
+  return { id, key: input.key, translations: input.translations, pubCount: 0 };
 }
 
 /**
- * 内部キーを維持したまま日英表示名をtransactionで更新し、空の英語翻訳は削除します。
+ * 内部キーを維持したままlocale別表示名をtransactionで更新し、空の任意翻訳は削除します。
  * @param {string} id - 更新対象タグのUUID。
  * @param {UpdateAdminTagInput} input - 共有Validationを通過した表示名入力。
  * @returns {Promise<AdminTag>} 更新後の管理タグ。
@@ -80,27 +89,22 @@ export async function updateAdminTag(id: string, input: UpdateAdminTagInput): Pr
   if (await hasTagConflict(sql, input, id)) throw new TagRepositoryError("conflict");
   try {
     await sql.transaction((transaction) => {
-      const queries = [
-        transaction`
-          INSERT INTO tag_translations (tag_id, locale, name) VALUES (${id}::uuid, 'ja', ${input.nameJa})
-          ON CONFLICT (tag_id, locale) DO UPDATE SET name = EXCLUDED.name
-        `,
-      ];
-      queries.push(
-        input.nameEn
+      const queries = SUPPORTED_LOCALES.map((locale) => {
+        const name = input.translations[locale];
+        return name
           ? transaction`
-              INSERT INTO tag_translations (tag_id, locale, name) VALUES (${id}::uuid, 'en', ${input.nameEn})
+              INSERT INTO tag_translations (tag_id, locale, name) VALUES (${id}::uuid, ${locale}, ${name})
               ON CONFLICT (tag_id, locale) DO UPDATE SET name = EXCLUDED.name
             `
-          : transaction`DELETE FROM tag_translations WHERE tag_id = ${id}::uuid AND locale = 'en'`,
-      );
+          : transaction`DELETE FROM tag_translations WHERE tag_id = ${id}::uuid AND locale = ${locale}`;
+      });
       return queries;
     });
   } catch (error) {
     if (isUniqueViolation(error)) throw new TagRepositoryError("conflict");
     throw error;
   }
-  return { ...current, nameJa: input.nameJa, nameEn: input.nameEn };
+  return { ...current, translations: input.translations };
 }
 
 /**
@@ -128,11 +132,14 @@ export async function deleteAdminTag(id: string): Promise<void> {
 async function getAdminTagById(sql: ReturnType<typeof neon>, id: string) {
   const rows = (await sql`
     SELECT tag.id::text, tag.key,
-      MAX(translation.name) FILTER (WHERE translation.locale = 'ja') AS name_ja,
-      MAX(translation.name) FILTER (WHERE translation.locale = 'en') AS name_en,
+      COALESCE(
+        jsonb_object_agg(translation.locale, translation.name)
+          FILTER (WHERE translation.locale IS NOT NULL),
+        '{}'::jsonb
+      ) AS translations,
       COUNT(DISTINCT pub_tag.pub_id)::int AS pub_count
     FROM tags AS tag
-    LEFT JOIN tag_translations AS translation ON translation.tag_id = tag.id AND translation.locale IN ('ja', 'en')
+    LEFT JOIN tag_translations AS translation ON translation.tag_id = tag.id
     LEFT JOIN pub_tags AS pub_tag ON pub_tag.tag_id = tag.id
     WHERE tag.id = ${id}::uuid
     GROUP BY tag.id, tag.key
@@ -151,8 +158,14 @@ async function hasTagConflict(
     FROM tags AS tag
     LEFT JOIN tag_translations AS translation ON translation.tag_id = tag.id
     WHERE (${key}::text IS NOT NULL AND tag.key = ${key})
-      OR (translation.locale = 'ja' AND translation.name = ${input.nameJa})
-      OR (${input.nameEn}::text IS NOT NULL AND translation.locale = 'en' AND translation.name = ${input.nameEn})
+      OR EXISTS (
+        SELECT 1
+        FROM jsonb_each_text(${JSON.stringify(input.translations)}::jsonb) AS requested(locale, name)
+        JOIN tag_translations AS requested_translation
+          ON requested_translation.tag_id = tag.id
+         AND requested_translation.locale = requested.locale
+         AND requested_translation.name = requested.name
+      )
     GROUP BY tag.id
     HAVING ${excludedId}::uuid IS NULL OR tag.id <> ${excludedId}::uuid
     LIMIT 1
@@ -175,8 +188,7 @@ function toAdminTag(row: DbRow): AdminTag {
   return {
     id: requiredUuid(row.id),
     key: requiredText(row.key),
-    nameJa: requiredText(row.name_ja),
-    nameEn: nullableText(row.name_en),
+    translations: parseTranslations(row.translations),
     pubCount: requiredNonNegativeInteger(row.pub_count),
   };
 }
@@ -186,8 +198,19 @@ function requiredText(value: unknown) {
   return value.trim();
 }
 
-function nullableText(value: unknown) {
-  return value === null || value === undefined ? null : requiredText(value);
+function parseTranslations(value: unknown): AdminTagTranslations {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Invalid admin tag translations returned from database.");
+  }
+  const source = value as Record<string, unknown>;
+  const translations: Partial<Record<Locale, string>> = {};
+  for (const locale of SUPPORTED_LOCALES) {
+    if (source[locale] !== undefined) translations[locale] = requiredText(source[locale]);
+  }
+  if (!translations[REQUIRED_TRANSLATION_LOCALE]) {
+    throw new Error("Required admin tag translation is missing from database.");
+  }
+  return translations as AdminTagTranslations;
 }
 
 function requiredUuid(value: unknown) {

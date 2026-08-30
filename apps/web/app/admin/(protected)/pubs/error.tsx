@@ -10,7 +10,8 @@ import { getTranslation, parseLocale } from "../../../lib/i18n";
  */
 export default function AdminPubsError({ reset }: { reset: () => void }) {
   // Error BoundaryはClient Componentのため、ルート要素へ反映済みの言語を参照します。
-  const locale = typeof document === "undefined" ? "ja" : (parseLocale(document.documentElement.lang) ?? "ja");
+  const locale =
+    typeof document === "undefined" ? DEFAULT_LOCALE : (parseLocale(document.documentElement.lang) ?? DEFAULT_LOCALE);
   const t = getTranslation(locale);
   return (
     <section className="admin-panel" role="alert">

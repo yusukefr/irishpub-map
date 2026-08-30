@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
-import { formatMessage, getTagLabel, getTranslation } from "../lib/i18n";
+import { DEFAULT_LOCALE, formatMessage, getTagLabel, getTranslation } from "../lib/i18n";
 import type { Locale } from "../lib/i18n";
 
 type PubListProps = {
@@ -27,7 +27,12 @@ const STATUS_BADGE_CLASSES: Record<PubStatus, string> = {
  * @param {(pubId: string) => void} root0.onSelectPub - 店舗選択時のコールバック。
  * @returns {JSX.Element} 店舗カード一覧。
  */
-export function PubList({ pubs, selectedPubId = null, onSelectPub = () => undefined, locale = "ja" }: PubListProps) {
+export function PubList({
+  pubs,
+  selectedPubId = null,
+  onSelectPub = () => undefined,
+  locale = DEFAULT_LOCALE,
+}: PubListProps) {
   const t = getTranslation(locale);
   const [expandedPubId, setExpandedPubId] = useState<string | null>(null);
 

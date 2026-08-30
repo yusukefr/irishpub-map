@@ -5,11 +5,13 @@ import type { FormEvent } from "react";
 import {
   ADMIN_TAG_KEY_MAX_LENGTH,
   ADMIN_TAG_NAME_MAX_LENGTH,
+  type AdminTagTranslations,
   type AdminTag,
   type AdminTagFieldErrors,
 } from "@irishpub-map/shared/admin-tag";
+import { REQUIRED_TRANSLATION_LOCALE } from "@irishpub-map/shared/locale";
 import { getAdminTagApiErrorMessage } from "../lib/admin-api-client";
-import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
+import { formatMessage, getTranslation, LANGUAGE_OPTIONS, type Locale } from "../lib/i18n";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
 
 type Props = { initialTags: AdminTag[]; databaseConfigured: boolean; locale: Locale };
@@ -21,7 +23,9 @@ type ApiResponse = { tag?: AdminTag; errorCode?: unknown; fieldErrors?: AdminTag
  * @returns {JSX.Element} タグ管理フォームと使用店舗数付き一覧。
  */
 export function AdminTagManager({ initialTags, databaseConfigured, locale }: Props) {
-  const t = getTranslation(locale).admin;
+  const translation = getTranslation(locale);
+  const t = translation.admin;
+  const languageLabels = translation.language;
   const [tags, setTags] = useState(initialTags);
   const [editing, setEditing] = useState<AdminTag | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
@@ -50,8 +54,9 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
     const data = new FormData(form);
     const body = {
       ...(editing ? {} : { key: data.get("key") }),
-      nameJa: data.get("nameJa"),
-      nameEn: data.get("nameEn"),
+      translations: Object.fromEntries(
+        LANGUAGE_OPTIONS.map(({ locale }) => [locale, data.get(`translations.${locale}`)]),
+      ),
     };
     resetFeedback();
     setBusyAction("save");
@@ -86,7 +91,8 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
 
   async function remove(tag: AdminTag) {
     if (busyAction || tag.pubCount > 0) return;
-    if (!window.confirm(formatMessage(t.confirmTagDelete, { name: tag.nameJa }))) return;
+    if (!window.confirm(formatMessage(t.confirmTagDelete, { name: tag.translations[REQUIRED_TRANSLATION_LOCALE] })))
+      return;
     resetFeedback();
     setBusyAction("delete:" + tag.id);
     try {
@@ -109,7 +115,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
     }
   }
 
-  const values = editing ?? { key: "", nameJa: "", nameEn: "" };
+  const values = editing ?? { key: "", translations: {} };
   return (
     <section className="admin-panel admin-wide">
       <div className="admin-heading">
@@ -173,39 +179,18 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
               </span>
             ) : null}
           </label>
-          <label>
-            {t.tagNameJa}
-            <input
-              id="admin-tag-name-ja"
-              name="nameJa"
-              required
-              maxLength={ADMIN_TAG_NAME_MAX_LENGTH}
-              defaultValue={values.nameJa}
-              aria-invalid={Boolean(fieldErrors.nameJa)}
-              aria-describedby={fieldErrors.nameJa ? "admin-tag-name-ja-error" : undefined}
+          {LANGUAGE_OPTIONS.map(({ locale: translationLocale }) => (
+            <TranslationField
+              key={translationLocale}
+              locale={translationLocale}
+              values={values.translations}
+              fieldErrors={fieldErrors}
+              required={translationLocale === REQUIRED_TRANSLATION_LOCALE}
+              label={languageLabels[translationLocale]}
+              optionalLabel={t.translationOptional}
+              errorMessage={fieldErrorMessage}
             />
-            {fieldErrors.nameJa ? (
-              <span id="admin-tag-name-ja-error" className="admin-field-error">
-                {fieldErrorMessage("nameJa")}
-              </span>
-            ) : null}
-          </label>
-          <label>
-            {t.tagNameEn}
-            <input
-              id="admin-tag-name-en"
-              name="nameEn"
-              maxLength={ADMIN_TAG_NAME_MAX_LENGTH}
-              defaultValue={values.nameEn ?? ""}
-              aria-invalid={Boolean(fieldErrors.nameEn)}
-              aria-describedby={fieldErrors.nameEn ? "admin-tag-name-en-error" : undefined}
-            />
-            {fieldErrors.nameEn ? (
-              <span id="admin-tag-name-en-error" className="admin-field-error">
-                {fieldErrorMessage("nameEn")}
-              </span>
-            ) : null}
-          </label>
+          ))}
           <div className="admin-actions">
             <button type="submit">{busyAction === "save" ? t.saving : editing ? t.update : t.add}</button>
             {editing ? (
@@ -238,14 +223,12 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
                     <code>{tag.key}</code>
                   </dd>
                 </div>
-                <div>
-                  <dt>{t.tagNameJa}</dt>
-                  <dd>{tag.nameJa}</dd>
-                </div>
-                <div>
-                  <dt>{t.tagNameEn}</dt>
-                  <dd>{tag.nameEn || t.notRegistered}</dd>
-                </div>
+                {LANGUAGE_OPTIONS.map(({ locale: translationLocale }) => (
+                  <div key={translationLocale}>
+                    <dt>{languageLabels[translationLocale]}</dt>
+                    <dd>{tag.translations[translationLocale] ?? t.notRegistered}</dd>
+                  </div>
+                ))}
                 <div>
                   <dt>{t.tagPubCount}</dt>
                   <dd>{tag.pubCount}</dd>
@@ -282,6 +265,51 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
         </ul>
       </section>
     </section>
+  );
+}
+
+type TranslationFieldProps = {
+  locale: Locale;
+  values: Partial<AdminTagTranslations>;
+  fieldErrors: AdminTagFieldErrors;
+  required: boolean;
+  label: string;
+  optionalLabel: string;
+  errorMessage: (field: keyof AdminTagFieldErrors) => string;
+};
+
+function TranslationField({
+  locale,
+  values,
+  fieldErrors,
+  required,
+  label,
+  optionalLabel,
+  errorMessage,
+}: TranslationFieldProps) {
+  const field = ("translations." + locale) as keyof AdminTagFieldErrors;
+  const inputId = "admin-tag-translation-" + locale;
+  const errorId = inputId + "-error";
+  const hasError = Boolean(fieldErrors[field]);
+  return (
+    <label>
+      {label}
+      {required ? "" : optionalLabel}
+      <input
+        id={inputId}
+        name={field}
+        required={required}
+        maxLength={ADMIN_TAG_NAME_MAX_LENGTH}
+        defaultValue={values[locale] ?? ""}
+        aria-invalid={hasError}
+        aria-describedby={hasError ? errorId : undefined}
+      />
+      {hasError ? (
+        <span id={errorId} className="admin-field-error">
+          {errorMessage(field)}
+        </span>
+      ) : null}
+    </label>
   );
 }
 

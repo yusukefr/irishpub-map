@@ -8,7 +8,7 @@ Next.js Route Handler で公開 API と管理 API を提供します。公開画
 
 ### `GET /api/pubs`
 
-公開状態の店舗一覧だけを返します。Repositoryが `pubs.is_published = TRUE` をSQLで絞り込み、`isPublished` 自体は公開レスポンスへ含めません。`locale` には `ja` または `en` を指定できます。指定ロケールの翻訳を優先し、未登録の表示文字列は日本語（`ja`）へフォールバックします。レスポンスは `packages/shared` の `Pub` 型に合わせ、API 側で `asPubs` による検証を行います。
+公開状態の店舗一覧だけを返します。Repositoryが `pubs.is_published = TRUE` をSQLで絞り込み、`isPublished` 自体は公開レスポンスへ含めません。`locale` には共通locale定義でサポートしている値を指定できます。指定ロケールの翻訳を優先し、未登録の表示文字列は共通locale定義の既定localeへフォールバックします。レスポンスは `packages/shared` の `Pub` 型に合わせ、API 側で `asPubs` による検証を行います。
 
 レスポンス例:
 
@@ -81,7 +81,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 | `GET` | `/api/admin/master/prefectures` | `200` と `{ prefectures }` | 未認証は `401`、取得失敗は `500` |
 | `GET` | `/api/admin/master/municipalities?prefectureCode=:code` | `200` と `{ municipalities }` | 未認証は `401`、都道府県コード不正は `400`、取得失敗は `500` |
 | `GET` | `/api/admin/master/tags` | `200` と `{ tags }` | 未認証は `401`、取得失敗は `500` |
-| `GET` | `/api/admin/tags` | `200` と `{ tags, databaseConfigured }`。日英表示名と使用店舗数を含む | 未認証は `401`、取得失敗は `500` |
+| `GET` | `/api/admin/tags` | `200` と `{ tags, databaseConfigured }`。サポートlocaleの翻訳と使用店舗数を含む | 未認証は `401`、取得失敗は `500` |
 | `POST` | `/api/admin/tags` | `201` と `{ tag }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、重複は `409`、DB未設定は `503` |
 | `PATCH` | `/api/admin/tags/:id` | `200` と `{ tag }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、ID不正は `400`、対象なしは `404`、重複は `409`、Content-Type不正は `415`、入力不正は `422`、DB未設定は `503` |
 | `DELETE` | `/api/admin/tags/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、ID不正は `400`、対象なしは `404`、使用中は `409`、DB未設定は `503` |
@@ -100,7 +100,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 公開状態変更本文は `{ "isPublished": true | false }` だけを受け付けます。現在値と対象存在を確認し、同じ状態への要求は `unchanged: true` として更新しません。非公開化に公開条件は適用しません。公開時は日本語店舗名・住所、都道府県、市区町村と所属関係、緯度、経度、営業ステータス、および各日本語表示名をサーバー側で再検証します。不足時は更新せず、`publication_requirements_not_met` と `missingFields` を `422` で返します。
 
-タグ管理APIの入力、transaction、使用中削除拒否は[管理タグ仕様](tag-management.md)を参照してください。作成時は `key` と必須の `nameJa`、任意の `nameEn` を受け付け、更新時は `nameJa` と `nameEn` だけを受け付けます。
+タグ管理APIの入力、transaction、使用中削除拒否は[管理タグ仕様](tag-management.md)を参照してください。作成時は `key` と `translations.ja`、任意の `translations.<locale>` を受け付け、更新時は `translations` だけを受け付けます。
 
 営業ステータス管理APIの固定key、日英表示名、transaction更新は[管理ステータス仕様](status-management.md)を参照してください。更新本文は必須の `nameJa` と任意の `nameEn` だけを利用し、余分な `key` は更新対象にしません。
 
