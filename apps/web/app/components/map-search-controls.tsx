@@ -1,8 +1,11 @@
 "use client";
 
 import { useRef } from "react";
+import type { Pub } from "@irishpub-map/shared/pub";
 import { PubFilterPanel } from "./pub-filter-panel";
+import { PubResultsPanel } from "./pub-results-panel";
 import { CurrentLocationControl, type GeolocationStatus } from "./current-location-control";
+import type { Locale } from "../lib/i18n";
 
 type MapSearchControlsProps = {
   query: string;
@@ -33,6 +36,16 @@ type MapSearchControlsProps = {
   hasActiveFilters: boolean;
   isFiltersExpanded: boolean;
   detailedFilterCount: number;
+  isResultsOpen: boolean;
+  resultsView: "list" | "detail";
+  resultsPubs: Pub[];
+  selectedPubId: string | null;
+  resultsPanelLabel: string;
+  closeResultsLabel: string;
+  backToResultsLabel: string;
+  emptyResultsLabel: string;
+  emptyResultsDescription: string;
+  resultsLocale: Locale;
   onQueryChange: (query: string) => void;
   onRequestCurrentLocation: () => void;
   onToggleFilters: () => void;
@@ -41,6 +54,11 @@ type MapSearchControlsProps = {
   onTagToggle: (tag: string) => void;
   onIncludeClosedChange: (includeClosed: boolean) => void;
   onResetFilters: () => void;
+  onToggleResults: () => void;
+  onCloseResults: () => void;
+  onSelectResult: (pubId: string) => void;
+  onShowResultDetails: (pubId: string) => void;
+  onBackToResults: () => void;
 };
 
 /**
@@ -77,6 +95,16 @@ export function MapSearchControls({
   hasActiveFilters,
   isFiltersExpanded,
   detailedFilterCount,
+  isResultsOpen,
+  resultsView,
+  resultsPubs,
+  selectedPubId,
+  resultsPanelLabel,
+  closeResultsLabel,
+  backToResultsLabel,
+  emptyResultsLabel,
+  emptyResultsDescription,
+  resultsLocale,
   onQueryChange,
   onRequestCurrentLocation,
   onToggleFilters,
@@ -85,12 +113,23 @@ export function MapSearchControls({
   onTagToggle,
   onIncludeClosedChange,
   onResetFilters,
+  onToggleResults,
+  onCloseResults,
+  onSelectResult,
+  onShowResultDetails,
+  onBackToResults,
 }: MapSearchControlsProps) {
   const filterTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const resultsTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const closeFilters = () => {
     onCloseFilters();
     filterTriggerRef.current?.focus();
+  };
+
+  const closeResults = () => {
+    onCloseResults();
+    resultsTriggerRef.current?.focus();
   };
 
   return (
@@ -167,9 +206,34 @@ export function MapSearchControls({
           onReset={onResetFilters}
         />
       ) : null}
-      <p className="map-result-count" aria-live="polite">
+      {isResultsOpen ? (
+        <PubResultsPanel
+          pubs={resultsPubs}
+          selectedPubId={selectedPubId}
+          view={resultsView}
+          locale={resultsLocale}
+          closeLabel={closeResultsLabel}
+          backLabel={backToResultsLabel}
+          panelLabel={resultsPanelLabel}
+          emptyLabel={emptyResultsLabel}
+          emptyDescription={emptyResultsDescription}
+          onClose={closeResults}
+          onSelectPub={onSelectResult}
+          onShowDetails={onShowResultDetails}
+          onBackToList={onBackToResults}
+        />
+      ) : null}
+      <button
+        ref={resultsTriggerRef}
+        type="button"
+        className="map-result-count"
+        aria-live="polite"
+        aria-expanded={isResultsOpen}
+        aria-controls="pub-results-panel"
+        onClick={onToggleResults}
+      >
         {resultCount}
-      </p>
+      </button>
     </div>
   );
 }

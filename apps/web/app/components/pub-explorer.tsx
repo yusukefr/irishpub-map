@@ -10,7 +10,6 @@ import {
   getNearestAvailablePrefecture,
   type Coordinates,
 } from "../lib/pub-search";
-import { PubList } from "./pub-list";
 import { PubMap } from "./pub-map";
 import { MapSearchControls } from "./map-search-controls";
 import { type GeolocationStatus } from "./current-location-control";
@@ -45,6 +44,8 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
   const [includeClosed, setIncludeClosed] = useState(false);
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
+  const [isResultsOpen, setIsResultsOpen] = useState(false);
+  const [resultsView, setResultsView] = useState<"list" | "detail">("list");
   const hasSelectedPrefecture = useRef(false);
   const isMounted = useRef(true);
   const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
@@ -61,12 +62,17 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
   const hasActiveFilters = Boolean(selectedPrefecture || selectedTags.length || includeClosed);
   const detailedFilterCount = Number(Boolean(selectedPrefecture)) + selectedTags.length + Number(includeClosed);
 
+  const clearSelectedPub = () => {
+    setSelectedPubId(null);
+    setResultsView("list");
+  };
+
   const resetDetailedFilters = () => {
     hasSelectedPrefecture.current = false;
     setSelectedPrefecture("");
     setSelectedTags([]);
     setIncludeClosed(false);
-    setSelectedPubId(null);
+    clearSelectedPub();
   };
 
   useEffect(() => {
@@ -137,6 +143,39 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
               ? t.explorer.currentLocationUnsupported
               : null;
 
+  const selectPub = (pubId: string) => {
+    setSelectedPubId(pubId);
+  };
+
+  const toggleFilters = () => {
+    setIsFiltersExpanded((current) => {
+      if (!current) {
+        setIsResultsOpen(false);
+      }
+      return !current;
+    });
+  };
+
+  const toggleResults = () => {
+    setIsResultsOpen((current) => {
+      if (!current) {
+        setIsFiltersExpanded(false);
+        setResultsView("list");
+      }
+      return !current;
+    });
+  };
+
+  const closeResults = () => {
+    setIsResultsOpen(false);
+    setResultsView("list");
+  };
+
+  const showResultDetails = (pubId: string) => {
+    setSelectedPubId(pubId);
+    setResultsView("detail");
+  };
+
   return (
     <div className="pub-explorer">
       <section className="map-layout" aria-label={t.explorer.mapAndListLabel}>
@@ -175,40 +214,54 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
             hasActiveFilters={hasActiveFilters}
             isFiltersExpanded={isFiltersExpanded}
             detailedFilterCount={detailedFilterCount}
+            selectedPubId={selectedPubId}
+            isResultsOpen={isResultsOpen}
+            resultsView={resultsView}
+            resultsPubs={filteredPubs}
+            resultsPanelLabel={t.list.heading}
+            closeResultsLabel={t.list.closeResults}
+            backToResultsLabel={t.list.backToResults}
+            emptyResultsLabel={t.list.noResults}
+            emptyResultsDescription={t.list.noResultsDescription}
+            resultsLocale={locale}
             onQueryChange={(value) => {
               setQuery(value);
-              setSelectedPubId(null);
+              clearSelectedPub();
             }}
             onRequestCurrentLocation={requestCurrentLocation}
-            onToggleFilters={() => setIsFiltersExpanded((current) => !current)}
+            onToggleFilters={toggleFilters}
             onCloseFilters={() => setIsFiltersExpanded(false)}
             onPrefectureChange={(prefecture) => {
               hasSelectedPrefecture.current = true;
               setSelectedPrefecture(prefecture);
-              setSelectedPubId(null);
+              clearSelectedPub();
             }}
             onTagToggle={(tag) => {
               setSelectedTags((current) =>
                 current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag],
               );
-              setSelectedPubId(null);
+              clearSelectedPub();
             }}
             onIncludeClosedChange={(value) => {
               setIncludeClosed(value);
-              setSelectedPubId(null);
+              clearSelectedPub();
             }}
             onResetFilters={resetDetailedFilters}
+            onToggleResults={toggleResults}
+            onCloseResults={closeResults}
+            onSelectResult={selectPub}
+            onShowResultDetails={showResultDetails}
+            onBackToResults={() => setResultsView("list")}
           />
           <PubMap
             pubs={filteredPubs}
             focusPubs={mapFocusPubs}
             currentLocation={currentLocation}
             selectedPubId={selectedPubId}
-            onSelectPub={setSelectedPubId}
+            onSelectPub={selectPub}
             locale={locale}
           />
         </div>
-        <PubList pubs={filteredPubs} selectedPubId={selectedPubId} onSelectPub={setSelectedPubId} locale={locale} />
       </section>
     </div>
   );

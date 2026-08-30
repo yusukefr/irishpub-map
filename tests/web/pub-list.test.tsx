@@ -1,6 +1,6 @@
-// 店舗カードの状態表示、詳細開閉、外部リンクを保証するテストです。
+// 結果Panel内で使うコンパクトな店舗カードの表示と操作を保証するテストです。
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PubList } from "../../apps/web/app/components/pub-list";
 import type { Pub } from "../../packages/shared/src/pub";
 
@@ -35,20 +35,6 @@ const pubs: Pub[] = [
     status: "unknown",
   },
   {
-    id: "kyoto-temporary",
-    name: "Kyoto Temporary Pub",
-    prefecture: "京都府",
-    city: "京都市",
-    address: "京都府京都市1-1-1",
-    latitude: 35.011,
-    longitude: 135.768,
-    websiteUrl: null,
-    googleMapsUrl: null,
-    instagramUrl: null,
-    tags: ["food"],
-    status: "temporarily_closed",
-  },
-  {
     id: "nagoya-closed",
     name: "Nagoya Closed Pub",
     prefecture: "愛知県",
@@ -65,112 +51,64 @@ const pubs: Pub[] = [
 ];
 
 describe("PubList", () => {
-  it("renders pub count and pub locations", () => {
+  it("renders the result count and compact pub cards", () => {
     render(<PubList pubs={pubs} />);
 
     expect(screen.getByRole("heading", { name: "掲載店舗" })).toBeInTheDocument();
-    expect(screen.getByText("4件")).toBeInTheDocument();
+    expect(screen.getByText("3件")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
     expect(screen.getByText("東京都 / 千代田区")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Osaka Sample Pub" })).toBeInTheDocument();
     expect(screen.getByText("大阪府")).toBeInTheDocument();
   });
 
-  it("renders pub status labels and tags", () => {
+  it("shows status, at most two tags, and an additional tag count", () => {
     render(<PubList pubs={pubs} />);
 
     const cards = screen.getAllByRole("article");
     expect(within(cards[0]).getByText("Open")).toHaveClass("pub-status-open");
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("Guinness");
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("Live music");
-    expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("seasonal-event");
+    expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("+1");
+    expect(within(cards[0]).queryByText("seasonal-event")).not.toBeInTheDocument();
     expect(within(cards[1]).getByText("不明")).toHaveClass("pub-status-unknown");
-    expect(within(cards[1]).queryByRole("list", { name: "Osaka Sample Pub のタグ" })).not.toBeInTheDocument();
-    expect(within(cards[2]).getByText("一時休業")).toHaveClass("pub-status-temporarily-closed");
-    expect(within(cards[2]).getByText("食事あり")).toBeInTheDocument();
-    expect(within(cards[3]).getByText("閉業")).toHaveClass("pub-status-closed");
-    expect(within(cards[3]).getByText("クラフトビール")).toBeInTheDocument();
-    expect(cards[0]).not.toHaveClass("pub-card-closed");
-    expect(cards[1]).not.toHaveClass("pub-card-closed");
-    expect(cards[2]).not.toHaveClass("pub-card-closed");
-    expect(cards[3]).toHaveClass("pub-card", "pub-card-closed");
+    expect(within(cards[1]).queryByRole("list")).not.toBeInTheDocument();
+    expect(within(cards[2]).getByText("閉業")).toHaveClass("pub-status-closed");
+    expect(cards[2]).toHaveClass("pub-card", "pub-card-closed");
   });
 
-  it("opens and closes pub details from a detail button", () => {
-    render(<PubList pubs={pubs} />);
+  it("selects a card with a real button and reflects the selected state", () => {
+    const onSelectPub = vi.fn();
+    const { rerender } = render(<PubList pubs={pubs} onSelectPub={onSelectPub} />);
 
-    expect(screen.queryByRole("region", { name: "Tokyo Sample Pub の詳細" })).not.toBeInTheDocument();
+    const selectButton = screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" });
+    expect(selectButton).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(selectButton);
+    expect(onSelectPub).toHaveBeenCalledWith("tokyo-sample");
+
+    rerender(<PubList pubs={pubs} selectedPubId="tokyo-sample" onSelectPub={onSelectPub} />);
+    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getAllByRole("article")[0]).toHaveClass("pub-card-selected");
+  });
+
+  it("delegates detail navigation separately from card selection", () => {
+    const onSelectPub = vi.fn();
+    const onShowDetails = vi.fn();
+    render(<PubList pubs={pubs} onSelectPub={onSelectPub} onShowDetails={onShowDetails} />);
 
     fireEvent.click(screen.getAllByRole("button", { name: "詳細" })[0]);
 
-    const details = screen.getByRole("region", { name: "Tokyo Sample Pub の詳細" });
-    expect(screen.getAllByRole("button", { name: "閉じる" })[0]).toHaveAttribute("aria-expanded", "true");
-    expect(details).toHaveTextContent("店舗名");
-    expect(details).toHaveTextContent("Tokyo Sample Pub");
-    expect(details).toHaveTextContent("住所");
-    expect(details).toHaveTextContent("東京都千代田区1-1-1");
-    expect(details).toHaveTextContent("東京都 / 千代田区");
-    expect(details).toHaveTextContent("Open");
-    expect(details).toHaveTextContent("Guinness / Live music / seasonal-event");
-    expect(
-      within(details).getByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" }),
-    ).toHaveAttribute("href", "https://example.com");
-    expect(
-      within(details).getByRole("link", { name: "Tokyo Sample Pub のGoogle Mapsを新しいタブで開く" }),
-    ).toHaveAttribute("href", "https://maps.example.com");
-    expect(
-      within(details).getByRole("link", { name: "Tokyo Sample Pub のInstagramを新しいタブで開く" }),
-    ).toHaveAttribute("href", "https://instagram.example.com/tokyo");
-
-    fireEvent.click(screen.getAllByRole("button", { name: "閉じる" })[0]);
-
-    expect(screen.queryByRole("region", { name: "Tokyo Sample Pub の詳細" })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "詳細" })[0]).toHaveAttribute("aria-expanded", "false");
+    expect(onShowDetails).toHaveBeenCalledWith("tokyo-sample");
+    expect(onSelectPub).not.toHaveBeenCalled();
   });
 
-  it("opens pub details with keyboard operation", () => {
-    render(<PubList pubs={pubs} />);
+  it("does not render external links in compact result cards", () => {
+    render(<PubList pubs={pubs} onShowDetails={() => undefined} />);
 
-    fireEvent.keyDown(screen.getAllByRole("button", { name: "詳細" })[1], { key: "Enter" });
-
-    expect(screen.getByRole("region", { name: "Osaka Sample Pub の詳細" })).toHaveTextContent("未設定");
-  });
-
-  it("does not open details when an external link is clicked", () => {
-    render(<PubList pubs={pubs} />);
-
-    fireEvent.click(screen.getAllByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" })[0]);
-
-    expect(screen.queryByRole("region", { name: "Tokyo Sample Pub の詳細" })).not.toBeInTheDocument();
-  });
-
-  it("renders external links only when URLs exist", () => {
-    render(<PubList pubs={pubs} />);
-
-    const cards = screen.getAllByRole("article");
-    expect(
-      within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub の公式サイトを新しいタブで開く" }),
-    ).toHaveAttribute("href", "https://example.com");
-    const serviceLinks = within(cards[0]).getByRole("group", { name: "Tokyo Sample Pub のサービスリンク" });
-
-    expect(
-      within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub のGoogle Mapsを新しいタブで開く" }),
-    ).toHaveAttribute("href", "https://maps.example.com");
-    expect(
-      within(cards[0]).getByRole("link", { name: "Tokyo Sample Pub のInstagramを新しいタブで開く" }),
-    ).toHaveAttribute("href", "https://instagram.example.com/tokyo");
-    expect(within(serviceLinks).getAllByRole("link")).toHaveLength(2);
-    expect(
-      within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub の公式サイトを新しいタブで開く" }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub のGoogle Mapsを新しいタブで開く" }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(cards[1]).queryByRole("link", { name: "Osaka Sample Pub のInstagramを新しいタブで開く" }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(cards[1]).queryByRole("group", { name: "Osaka Sample Pub のサービスリンク" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "詳細" })).toHaveLength(3);
   });
 });

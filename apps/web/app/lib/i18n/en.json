@@ -46,6 +46,11 @@
   "list": {
     "kicker": "Search results",
     "heading": "Listed pubs",
+    "closeResults": "Close results",
+    "backToResults": "Back to results",
+    "noResults": "No pubs found",
+    "noResultsDescription": "Try changing your search or filters.",
+    "selectPub": "Select pub: {name}",
     "count": "{count} pub(s)",
     "details": "Details",
     "close": "Close",
@@ -81,9 +86,9 @@
     "locationsLabel": "Irish Pub locations",
     "currentLocation": "Current location",
     "unavailableHeading": "The map is unavailable",
-    "unavailableDescription": "WebGL is disabled or unavailable in this browser, so the map could not be initialized. Please use the pub list beside or below the map.",
+    "unavailableDescription": "WebGL is disabled or unavailable in this browser, so the map could not be initialized. Use the result count button to browse listed pubs.",
     "errorHeading": "The map could not be loaded",
-    "errorDescription": "Map tiles could not be loaded. Check your connection and reload the page. You can still use the pub list beside or below the map.",
+    "errorDescription": "Map tiles could not be loaded. Check your connection and reload the page. Use the result count button to browse listed pubs.",
     "loading": "Loading the map…",
     "selectPub": "Select pub: {name}"
   },

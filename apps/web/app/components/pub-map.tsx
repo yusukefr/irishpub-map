@@ -6,6 +6,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { Coordinates } from "../lib/pub-search";
 import { DEFAULT_LOCALE, formatMessage, getTranslation, type Locale, type Translation } from "../lib/i18n";
+import { getSafeExternalUrl } from "../lib/external-url";
 
 const NON_OPEN_PUB_MARKER_COLOR = "#6b7280";
 
@@ -383,19 +384,6 @@ function createPopupLink(href: string | null | undefined, options: PopupLinkOpti
 
   link.append(options.icon);
   return link;
-}
-
-function getSafeExternalUrl(value: string | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
-  } catch {
-    return null;
-  }
 }
 
 function createSvgIcon() {
