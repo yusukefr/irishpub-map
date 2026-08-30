@@ -176,4 +176,9 @@ describe("AdminTagManager", () => {
     fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
     expect(window.confirm).toHaveBeenLastCalledWith("保存されていない変更があります。このページから移動しますか？");
   });
+  it("disables the redundant new tag switch while the new form is already shown", () => {
+    render(<AdminTagManager initialTags={[]} databaseConfigured locale="ja" />);
+
+    expect(screen.getByRole("button", { name: "新規登録" })).toBeDisabled();
+  });
 });

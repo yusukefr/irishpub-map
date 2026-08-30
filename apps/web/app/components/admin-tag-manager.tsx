@@ -125,7 +125,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
             setFormDirty(false);
             resetFeedback();
           }}
-          disabled={Boolean(busyAction)}
+          disabled={Boolean(busyAction) || !editing}
         >
           {t.addTag}
         </button>
