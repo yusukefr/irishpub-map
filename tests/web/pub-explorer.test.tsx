@@ -134,6 +134,15 @@ describe("PubExplorer", () => {
     expect(toggle).toHaveFocus();
   });
 
+  it("places map search controls before the map in keyboard navigation order", () => {
+    render(<PubExplorer pubs={pubs} />);
+
+    const workspace = document.querySelector(".map-workspace");
+
+    expect(workspace?.firstElementChild).toHaveClass("map-search-controls");
+    expect(workspace?.lastElementChild).toHaveClass("map-canvas");
+  });
+
   it("filters the displayed pubs by pub name", () => {
     render(<PubExplorer pubs={pubs} />);
 

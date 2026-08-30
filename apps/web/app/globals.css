@@ -2656,3 +2656,40 @@ body {
     grid-template-rows: minmax(0, 1fr);
   }
 }
+
+/* Keep the map search row horizontal even when the page-level search row stacks on narrow screens. */
+.map-search-field .search-row {
+  flex-direction: row;
+}
+
+/* Let the panel follow the real toolbar height, including status and error messages. */
+.map-search-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.map-search-controls-toolbar {
+  width: 100%;
+}
+
+.filter-panel {
+  position: relative;
+  top: auto;
+  left: auto;
+  margin: 0 16px;
+}
+
+.map-result-count {
+  pointer-events: none;
+}
+
+@media (max-width: 680px) {
+  .filter-panel {
+    top: auto;
+    left: auto;
+    width: calc(100% - 24px);
+    max-height: calc(100% - 172px);
+    margin: 0 12px;
+  }
+}

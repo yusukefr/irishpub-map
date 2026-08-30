@@ -141,14 +141,6 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
     <div className="pub-explorer">
       <section className="map-layout" aria-label={t.explorer.mapAndListLabel}>
         <div className="map-workspace">
-          <PubMap
-            pubs={filteredPubs}
-            focusPubs={mapFocusPubs}
-            currentLocation={currentLocation}
-            selectedPubId={selectedPubId}
-            onSelectPub={setSelectedPubId}
-            locale={locale}
-          />
           <MapSearchControls
             query={query}
             searchLabel={t.explorer.searchLabel}
@@ -206,6 +198,14 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
               setSelectedPubId(null);
             }}
             onResetFilters={resetDetailedFilters}
+          />
+          <PubMap
+            pubs={filteredPubs}
+            focusPubs={mapFocusPubs}
+            currentLocation={currentLocation}
+            selectedPubId={selectedPubId}
+            onSelectPub={setSelectedPubId}
+            locale={locale}
           />
         </div>
         <PubList pubs={filteredPubs} selectedPubId={selectedPubId} onSelectPub={setSelectedPubId} locale={locale} />
