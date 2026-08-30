@@ -64,12 +64,12 @@ export default async function Home() {
   const pubList = await getPubs(locale);
 
   return (
-    <main className="map-app-shell">
+    <div className="map-app-shell">
       <AppHeader locale={locale} />
-      <div className="map-app-main">
+      <main className="map-app-main">
         <PubExplorer pubs={pubList} locale={locale} />
-      </div>
+      </main>
       <AppVersionFooter locale={locale} variant="compact" />
-    </main>
+    </div>
   );
 }

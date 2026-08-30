@@ -31,7 +31,9 @@ describe("Home", () => {
   it("renders the map app shell with compact header, workspace, and footer", async () => {
     render(await Home());
 
-    expect(screen.getByRole("main")).toHaveClass("map-app-shell");
+    expect(document.querySelector(".map-app-shell")).toBeInTheDocument();
+    expect(screen.getByRole("banner")).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveClass("map-app-main");
     expect(screen.getByRole("heading", { level: 1, name: "Irish Pub Map" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "探索UI" })).toBeInTheDocument();
     expect(screen.getByRole("contentinfo", { name: "アプリのバージョン情報" })).toHaveClass("app-version-compact");

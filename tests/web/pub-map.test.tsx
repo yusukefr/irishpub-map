@@ -185,6 +185,31 @@ describe("PubMap", () => {
     expect(maplibreMock.mapRemove).toHaveBeenCalledTimes(1);
   });
 
+  it("resizes MapLibre when the map container changes and disconnects on unmount", () => {
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    let resizeCallback: ResizeObserverCallback | undefined;
+    const resizeObserver = { observe, disconnect };
+    const resizeObserverConstructor = vi.fn(function (callback: ResizeObserverCallback) {
+      resizeCallback = callback;
+      return resizeObserver as unknown as ResizeObserver;
+    });
+    vi.stubGlobal("ResizeObserver", resizeObserverConstructor);
+
+    const { container, unmount } = render(<PubMap pubs={pubs} />);
+    const mapContainer = container.querySelector(".map-canvas");
+    expect(mapContainer).not.toBeNull();
+
+    expect(resizeObserverConstructor).toHaveBeenCalledOnce();
+    expect(observe).toHaveBeenCalledWith(mapContainer);
+
+    resizeCallback?.([], resizeObserver as unknown as ResizeObserver);
+    expect(maplibreMock.mapResize).toHaveBeenCalledOnce();
+
+    unmount();
+    expect(disconnect).toHaveBeenCalledOnce();
+  });
+
   it("updates only place-name layers when the locale changes without rebuilding the map", () => {
     const { rerender } = render(<PubMap pubs={pubs} locale="ja" />);
 

@@ -102,6 +102,7 @@ export function PubMap({
     let handleMapLoad: () => void;
     let handleMapError: (event: ErrorEvent) => void;
     let loadTimeoutId: number | undefined;
+    let resizeObserver: ResizeObserver | undefined;
     let didLoad = false;
     markerElements.clear();
     markers.clear();
@@ -136,6 +137,10 @@ export function PubMap({
       map.on("load", handleMapLoad);
       map.on("error", handleMapError);
       mapRef.current = map;
+      if (typeof ResizeObserver !== "undefined") {
+        resizeObserver = new ResizeObserver(() => map.resize());
+        resizeObserver.observe(container);
+      }
     } catch (error) {
       console.error("Failed to initialize the map.", error);
       showFallback();
@@ -149,6 +154,7 @@ export function PubMap({
       currentLocationMarkerRef.current?.remove();
       currentLocationMarkerRef.current = null;
       window.clearTimeout(loadTimeoutId);
+      resizeObserver?.disconnect();
       map.off("load", handleMapLoad);
       map.off("error", handleMapError);
       mapRef.current = null;
