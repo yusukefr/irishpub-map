@@ -2142,6 +2142,7 @@ body {
 }
 
 .map-app-main .map-layout {
+  position: relative;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   height: 100%;
@@ -2798,6 +2799,10 @@ body {
   .map-app-main .map-layout-results-open {
     grid-template-columns: minmax(0, 1fr);
   }
+  .map-app-main .maplibregl-ctrl-group button {
+    width: 44px;
+    height: 44px;
+  }
   .map-app-main .map-layout-results-open > .pub-results-panel {
     position: absolute;
     top: auto;
@@ -2850,7 +2855,7 @@ body {
 @media (max-width: 980px) and (orientation: landscape) and (max-height: 600px) {
   .map-app-main .map-layout-results-open > .pub-results-panel,
   .map-search-controls .filter-panel {
-    top: max(116px, env(safe-area-inset-top));
+    top: max(164px, env(safe-area-inset-top));
     right: max(12px, env(safe-area-inset-right));
     bottom: max(12px, env(safe-area-inset-bottom));
     left: auto;
