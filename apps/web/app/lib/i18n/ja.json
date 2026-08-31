@@ -3,6 +3,9 @@
     "title": "Irish Pub Map in Japan",
     "description": "日本国内の Irish Pub を地図から探せるサービス"
   },
+  "navigation": {
+    "label": "グローバルナビゲーション"
+  },
   "language": {
     "label": "表示言語",
     "ja": "日本語",

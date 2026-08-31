@@ -1,9 +1,7 @@
 import { headers } from "next/headers";
-import { AppHeader } from "./components/app-header";
-import { AppVersionFooter } from "./components/app-version-footer";
-import { PubExplorer } from "./components/pub-explorer";
+import { PubExplorer } from "../components/pub-explorer";
 import { asPubs } from "@irishpub-map/shared/pub";
-import { getRequestLocale } from "./lib/i18n/server";
+import { getRequestLocale } from "../lib/i18n/server";
 
 const API_KEY_HEADER = "x-api-key";
 const VERCEL_PROTECTION_BYPASS_HEADER = "x-vercel-protection-bypass";
@@ -64,12 +62,9 @@ export default async function Home() {
   const pubList = await getPubs(locale);
 
   return (
-    <div className="map-app-shell">
-      <AppHeader locale={locale} />
-      <main className="map-app-main">
-        <PubExplorer pubs={pubList} locale={locale} />
-      </main>
-      <AppVersionFooter locale={locale} variant="compact" />
-    </div>
+    <>
+      <h1 className="visually-hidden">Irish Pub Map</h1>
+      <PubExplorer pubs={pubList} locale={locale} />
+    </>
   );
 }

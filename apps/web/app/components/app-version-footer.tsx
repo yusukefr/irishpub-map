@@ -1,4 +1,5 @@
 import appVersion from "../../../../app-version.json";
+import Link from "next/link";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 
 type AppVersionFooterProps = {
@@ -23,7 +24,7 @@ export function AppVersionFooter({ locale, variant = "default" }: AppVersionFoot
       {variant === "default" ? (
         <span>{formatMessage(t.footer.releaseDate, { date: appVersion.releaseDate })}</span>
       ) : null}
-      <a href="/privacy">{t.footer.privacyPolicy}</a>
+      <Link href="/privacy">{t.footer.privacyPolicy}</Link>
     </footer>
   );
 }

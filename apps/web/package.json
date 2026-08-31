@@ -12,7 +12,10 @@
   },
   "dependencies": {
     "@irishpub-map/shared": "*",
+    "@mdx-js/loader": "^3.1.1",
+    "@mdx-js/react": "^3.1.1",
     "@neondatabase/serverless": "^1.0.2",
+    "@next/mdx": "^16.3.1",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "maplibre-gl": "6.2.0",
@@ -21,6 +24,7 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@types/mdx": "^2.0.14",
     "@types/node": "26.2.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "^19.2.4",

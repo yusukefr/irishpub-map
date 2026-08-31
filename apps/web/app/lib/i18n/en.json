@@ -3,6 +3,9 @@
     "title": "Irish Pub Map in Japan",
     "description": "Find Irish pubs across Japan using the map and filters."
   },
+  "navigation": {
+    "label": "Global navigation"
+  },
   "language": {
     "label": "Language",
     "ja": "日本語",
