@@ -2183,7 +2183,6 @@ body {
     grid-column: 1 / -1;
     grid-row: 2;
     justify-self: start;
-    margin: 0;
   }
 
   .app-header .language-switcher {

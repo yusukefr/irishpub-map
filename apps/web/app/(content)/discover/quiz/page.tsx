@@ -25,7 +25,7 @@ export default async function QuizPage() {
 
   return (
     <section className="content-container content-article" aria-labelledby="quiz-heading">
-      <p className="content-kicker">Explore Ireland</p>
+      <p className="content-kicker">{t.heading}</p>
       <h1 id="quiz-heading">{t.quiz}</h1>
       <p className="content-lead">{t.quizPlaceholder}</p>
       <Link className="content-back-link" href="/discover">
