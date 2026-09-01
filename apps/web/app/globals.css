@@ -2889,3 +2889,36 @@ body {
     min-width: 0;
   }
 }
+
+.app-navigation {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-inline: auto;
+}
+
+.app-navigation a {
+  color: #fffdf8;
+  font-size: 0.9rem;
+}
+
+.app-navigation a[aria-current="page"] {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.content-app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.content-main {
+  min-width: 0;
+}
+
+.content-container {
+  width: min(calc(100% - 2rem), 760px);
+  margin-inline: auto;
+}
