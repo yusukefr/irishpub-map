@@ -19,26 +19,53 @@ const guideMetadata = {
   publishedAt: "2026-09-01",
 } satisfies ContentArticleMetadata;
 
-function createRegistry(metadata: ContentArticleMetadata, registrySlug = metadata.slug): ContentRegistry {
+function createRegistry(
+  metadata: ContentArticleMetadata,
+  registrySlug = metadata.slug,
+  entrySlug = registrySlug,
+  entryKind: "guide" | "story" = "guide",
+): ContentRegistry {
   const createModule = (): Promise<ContentModule> => Promise.resolve({ default: ContentComponent, metadata });
   return {
     story: {},
     guide: {
       [registrySlug]: {
-        ja: createModule,
-        en: createModule,
+        slug: entrySlug,
+        kind: entryKind,
+        loaders: {
+          ja: createModule,
+          en: createModule,
+        },
+      },
+    },
+  };
+}
+
+function createRegistryWithModule(contentModule: unknown): ContentRegistry {
+  const loadModule = async () => contentModule as ContentModule;
+  return {
+    story: {},
+    guide: {
+      "sample-guide": {
+        slug: "sample-guide",
+        kind: "guide",
+        loaders: { ja: loadModule, en: loadModule },
       },
     },
   };
 }
 
 describe("content repository", () => {
-  it("exposes only explicitly registered slugs", () => {
+  it("exposes only explicitly registered own-property slugs", async () => {
     const registry = createRegistry(guideMetadata);
 
     expect(getContentSlugs("guide", registry)).toEqual(["sample-guide"]);
     expect(getContentLoaders("guide", "sample-guide", registry)).toBeDefined();
-    expect(getContentLoaders("guide", "unknown", registry)).toBeUndefined();
+
+    for (const slug of ["toString", "constructor", "__proto__"]) {
+      expect(getContentLoaders("guide", slug, registry)).toBeUndefined();
+      await expect(loadContent("guide", slug, "en", registry)).resolves.toBeNull();
+    }
   });
 
   it("loads locale-specific content and lists its metadata", async () => {
@@ -52,11 +79,26 @@ describe("content repository", () => {
     await expect(loadContent("guide", "unknown", "en", registry)).resolves.toBeNull();
   });
 
-  it("rejects metadata that does not match the registry slug or kind", async () => {
-    const registry = createRegistry({ ...guideMetadata, slug: "other-guide" }, "sample-guide");
+  it.each([
+    ["metadata missing", { default: ContentComponent }],
+    ["invalid category", { default: ContentComponent, metadata: { ...guideMetadata, category: "other" } }],
+    ["tags not array", { default: ContentComponent, metadata: { ...guideMetadata, tags: "guinness" } }],
+    ["title not string", { default: ContentComponent, metadata: { ...guideMetadata, title: 123 } }],
+    ["slug mismatch", { default: ContentComponent, metadata: { ...guideMetadata, slug: "other-guide" } }],
+    ["kind mismatch", { default: ContentComponent, metadata: { ...guideMetadata, kind: "story" } }],
+  ])("rejects invalid runtime metadata: %s", async (_caseName, contentModule) => {
+    const registry = createRegistryWithModule(contentModule);
 
     await expect(loadContent("guide", "sample-guide", "ja", registry)).rejects.toThrow(
-      "Content metadata does not match the registry entry",
+      "Invalid content module metadata",
+    );
+  });
+
+  it("rejects a registry entry whose canonical fields do not match the route", async () => {
+    const registry = createRegistry(guideMetadata, "sample-guide", "other-guide");
+
+    await expect(loadContent("guide", "sample-guide", "ja", registry)).rejects.toThrow(
+      "Content registry entry does not match the requested route",
     );
   });
 });

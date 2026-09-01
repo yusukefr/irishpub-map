@@ -33,5 +33,12 @@ export type ContentLoader = () => Promise<ContentModule>;
 /** 1記事の日本語・英語Loaderです。両方を必須にします。 */
 export type ContentLocaleLoaders = Readonly<Record<Locale, ContentLoader>>;
 
+/** Registry上のslugとkind、および日英Loaderを束ねるEntryです。 */
+export type ContentRegistryEntry = {
+  slug: string;
+  kind: ContentKind;
+  loaders: ContentLocaleLoaders;
+};
+
 /** Routeのkind、slug、localeを明示的に対応付けるAllow Listです。 */
-export type ContentRegistry = Readonly<Record<ContentKind, Readonly<Record<string, ContentLocaleLoaders>>>>;
+export type ContentRegistry = Readonly<Record<ContentKind, Readonly<Record<string, ContentRegistryEntry>>>>;

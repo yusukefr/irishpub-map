@@ -1,10 +1,10 @@
 import type { MDXComponents } from "mdx/types";
 
 /**
- * Trusted MDXで使用できるコンポーネントのAllow Listを返します。
- * 現時点では任意HTMLや追加Componentを許可せず、標準Markdown要素だけを使用します。
- * @param {MDXComponents} components - MDXが解決した標準Component。
- * @returns {MDXComponents} 明示的に許可されたComponent。
+ * MDXで共通利用するComponent Overrideを提供します。
+ * MDX自体のJSX / ESMをSandboxするものではなく、Repository内のTrusted Contentだけが対象です。
+ * @param {MDXComponents} components - MDXが解決したComponent定義。
+ * @returns {MDXComponents} 共通利用するComponent定義。
  */
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return { ...components };

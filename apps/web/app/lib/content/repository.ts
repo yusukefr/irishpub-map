@@ -1,12 +1,16 @@
 import { contentRegistry } from "./registry";
 import type {
   ContentArticleMetadata,
+  ContentCategory,
   ContentKind,
   ContentLocaleLoaders,
   ContentModule,
   ContentRegistry,
+  ContentRegistryEntry,
 } from "./types";
 import type { Locale } from "../i18n";
+
+const CONTENT_CATEGORIES = new Set<ContentCategory>(["history", "culture", "pub-culture", "food-drink"]);
 
 /** 読み込み済み記事の表示に必要なMDX Componentとメタデータです。 */
 export type LoadedContent = {
@@ -14,13 +18,47 @@ export type LoadedContent = {
   metadata: ContentArticleMetadata;
 };
 
-function resolveContentLoaders(kind: ContentKind, slug: string, registry: ContentRegistry) {
-  return registry[kind][slug];
+function resolveContentEntry(
+  kind: ContentKind,
+  slug: string,
+  registry: ContentRegistry,
+): ContentRegistryEntry | undefined {
+  const entries = registry[kind];
+
+  return Object.hasOwn(entries, slug) ? entries[slug] : undefined;
 }
 
-function validateContentModule(module: ContentModule, kind: ContentKind, slug: string) {
-  if (module.metadata.slug !== slug || module.metadata.kind !== kind) {
-    throw new Error(`Content metadata does not match the registry entry: ${kind}/${slug}.`);
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isContentMetadata(value: unknown, kind: ContentKind, slug: string): value is ContentArticleMetadata {
+  if (!isRecord(value)) return false;
+
+  return (
+    value.slug === slug &&
+    value.kind === kind &&
+    typeof value.title === "string" &&
+    typeof value.summary === "string" &&
+    typeof value.category === "string" &&
+    CONTENT_CATEGORIES.has(value.category as ContentCategory) &&
+    Array.isArray(value.tags) &&
+    value.tags.every((tag) => typeof tag === "string") &&
+    typeof value.publishedAt === "string"
+  );
+}
+
+function validateContentModule(
+  contentModule: unknown,
+  kind: ContentKind,
+  slug: string,
+): asserts contentModule is ContentModule {
+  if (
+    !isRecord(contentModule) ||
+    typeof contentModule.default !== "function" ||
+    !isContentMetadata(contentModule.metadata, kind, slug)
+  ) {
+    throw new Error("Invalid content module metadata for " + kind + "/" + slug + ".");
   }
 }
 
@@ -36,7 +74,7 @@ export function getContentLoaders(
   slug: string,
   registry: ContentRegistry = contentRegistry,
 ): ContentLocaleLoaders | undefined {
-  return resolveContentLoaders(kind, slug, registry);
+  return resolveContentEntry(kind, slug, registry)?.loaders;
 }
 
 /**
@@ -63,10 +101,13 @@ export async function loadContent(
   locale: Locale,
   registry: ContentRegistry = contentRegistry,
 ): Promise<LoadedContent | null> {
-  const loaders = getContentLoaders(kind, slug, registry);
-  if (!loaders) return null;
+  const entry = resolveContentEntry(kind, slug, registry);
+  if (!entry) return null;
+  if (entry.slug !== slug || entry.kind !== kind) {
+    throw new Error("Content registry entry does not match the requested route: " + kind + "/" + slug + ".");
+  }
 
-  const contentModule = await loaders[locale]();
+  const contentModule = await entry.loaders[locale]();
 
   validateContentModule(contentModule, kind, slug);
 
