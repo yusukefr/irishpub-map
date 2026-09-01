@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AppVersionFooter } from "../components/app-version-footer";
 import { getTranslation } from "../lib/i18n";
 import { getPrivacyPolicy } from "../lib/i18n/privacy";
@@ -58,10 +59,10 @@ export default async function PrivacyPage() {
           <p>{t.privacy.effectiveDate}</p>
           <p>{t.privacy.history}</p>
         </div>
-        <a className="privacy-home-link" href="/">
+        <Link className="privacy-home-link" href="/">
           {t.privacy.homeLink}
           <span aria-hidden="true"> →</span>
-        </a>
+        </Link>
       </article>
 
       <AppVersionFooter locale={locale} />

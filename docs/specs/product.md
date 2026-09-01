@@ -26,7 +26,7 @@
 - 店舗の住所、営業状況、タグ、公式サイト、Google Maps、Instagram を詳細表示する
 - WebGL を利用できない場合、地図の代わりに案内を表示して店舗一覧を利用できるようにする
 
-- トップページはHeader / Map / compact Footerで構成するMap専用のViewport Shellとし、`100dvh`を基準に地図領域を確保します。Search / Filter / 現在地操作 / 結果件数はMap上のオーバーレイ、店舗一覧はMapの横または下に配置します。
+- トップページはHeader / Map / compact Footerで構成するMap専用のViewport Shellとし、`100dvh`を基準に地図領域を確保します。Search / Filter / 現在地操作 / 結果件数はMap上のオーバーレイ、店舗一覧はDesktopではMap横のPanel、狭いViewportではMap内のBottom Sheetで表示します。
 - `/privacy` と管理画面は通常のDocument Flowを維持し、Map専用のViewport制約を適用しません。
 
 ### 管理画面
@@ -72,3 +72,11 @@ Issue #273で公開状態のDB保持、公開APIの絞り込み、管理取得�
 ## モバイル展開
 
 将来的にモバイルアプリを追加する場合は、`apps/mobile` を追加し、`packages/shared` の型とデータ取得方針を共有します。候補技術は Expo / React Native と MapLibre 系または地図用途に適したライブラリです。
+
+## Content拡張基盤
+
+公開画面はRoot Layoutを共通のApplication責務として維持し、Mapは`app/(map)/layout.tsx`のViewport Shell、Story / Guideは将来`app/(content)/layout.tsx`へ配置するNested Layout構成を採用します。Route GroupはURLへ含まれず、既存の`/`、`/privacy`、`/admin`、`/api`のURLと責務は維持します。
+
+Content記事はRepository内のTrusted MDXを対象とし、`apps/web/app/lib/content/`の明示的RegistryとRepository APIからのみ取得します。記事は`story` / `guide`のkind、独立したcategory、Locale非依存のStable Tag ID、日英両方のLoaderを持つ共通Metadataモデルで扱います。未登録slugはRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。
+
+MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。実際の`/discover`、Story / Guide本文、Quiz、関連記事、CMS、Content管理画面は後続Issueで追加します。
