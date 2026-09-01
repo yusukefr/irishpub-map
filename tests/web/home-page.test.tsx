@@ -44,6 +44,7 @@ describe("Home", () => {
 
     expect(document.querySelector(".map-app-shell")).toBeInTheDocument();
     expect(screen.getByRole("banner")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Explore Ireland" })).toHaveAttribute("href", "/discover");
     expect(screen.getByRole("main")).toHaveClass("map-app-main");
     expect(screen.getByTestId("map-content")).toBeInTheDocument();
     expect(screen.getByRole("contentinfo", { name: "アプリのバージョン情報" })).toHaveClass("app-version-compact");

@@ -1,8 +1,5 @@
-import type { ContentArticleMetadata } from "./app/lib/content/types";
-import type { MDXContent } from "mdx/types";
-
 declare module "*.mdx" {
-  const MDXComponent: MDXContent;
+  const MDXComponent: import("mdx/types").MDXContent;
   export default MDXComponent;
-  export const metadata: ContentArticleMetadata;
+  export const metadata: import("./app/lib/content/types").ContentArticleMetadata;
 }
