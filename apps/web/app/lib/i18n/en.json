@@ -6,6 +6,18 @@
   "navigation": {
     "label": "Global navigation"
   },
+  "discover": {
+    "navigation": "Explore Ireland",
+    "heading": "Explore Ireland",
+    "lead": "Learn more about Ireland, its culture, and pub traditions.",
+    "stories": "Stories",
+    "guides": "Guides",
+    "quiz": "Today's Ireland Quiz",
+    "comingSoon": "Coming soon",
+    "viewQuiz": "View sample quiz",
+    "back": "Back to Explore Ireland",
+    "quizPlaceholder": "Quiz content is coming soon."
+  },
   "language": {
     "label": "Language",
     "ja": "日本語",

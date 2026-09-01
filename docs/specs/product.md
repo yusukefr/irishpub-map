@@ -75,8 +75,10 @@ Issue #273で公開状態のDB保持、公開APIの絞り込み、管理取得�
 
 ## Content拡張基盤
 
-公開画面はRoot Layoutを共通のApplication責務として維持し、Mapは`app/(map)/layout.tsx`のViewport Shell、Story / Guideは将来`app/(content)/layout.tsx`へ配置するNested Layout構成を採用します。Route GroupはURLへ含まれず、既存の`/`、`/privacy`、`/admin`、`/api`のURLと責務は維持します。
+公開画面はRoot Layoutを共通のApplication責務として維持し、Mapは`app/(map)/layout.tsx`のViewport Shell、Story / Guide / Quizは`app/(content)/layout.tsx`の通常Document Flowへ配置するNested Layout構成を採用します。Route GroupはURLへ含まれず、既存の`/`、`/privacy`、`/admin`、`/api`のURLと責務は維持します。MapとContentの両Headerから`/discover`へ移動でき、ブランドLinkからMapへ戻れます。
 
 Content記事はRepository内のTrusted MDXを対象とし、`apps/web/app/lib/content/`の明示的RegistryとRepository APIからのみ取得します。記事は`story` / `guide`のkind、独立したcategory、Locale非依存のStable Tag ID、日英両方のLoaderを持つ共通Metadataモデルで扱います。未登録slugはRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。
 
-MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。実際の`/discover`、Story / Guide本文、Quiz、関連記事、CMS、Content管理画面は後続Issueで追加します。
+Explore Ireland Hubは`/discover`でStories placeholder、Registry由来のGuide一覧、Quiz導線を表示します。Guideは`/discover/guides/[slug]`でLocale別MDXを読み込み、未登録slugは404とします。`/discover/quiz`は後続のQuiz機能向けplaceholderであり、Question、Choice、Answer、Scoreは持ちません。
+
+MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Story / Guide、Quiz機能、関連記事、CMS、Content管理画面は後続Issueで追加します。

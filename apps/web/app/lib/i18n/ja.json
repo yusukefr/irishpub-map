@@ -6,6 +6,18 @@
   "navigation": {
     "label": "グローバルナビゲーション"
   },
+  "discover": {
+    "navigation": "Explore Ireland",
+    "heading": "Explore Ireland",
+    "lead": "アイルランドの歴史や文化、パブ文化について紹介します。",
+    "stories": "Stories",
+    "guides": "Guides",
+    "quiz": "Today's Ireland Quiz",
+    "comingSoon": "準備中",
+    "viewQuiz": "サンプルを見る",
+    "back": "Explore Irelandへ戻る",
+    "quizPlaceholder": "クイズは現在準備中です。"
+  },
   "language": {
     "label": "表示言語",
     "ja": "日本語",

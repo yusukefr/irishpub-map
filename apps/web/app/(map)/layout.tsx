@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AppHeader } from "../components/app-header";
 import { AppVersionFooter } from "../components/app-version-footer";
+import { getTranslation } from "../lib/i18n";
 import { getRequestLocale } from "../lib/i18n/server";
 
 /**
@@ -10,10 +11,11 @@ import { getRequestLocale } from "../lib/i18n/server";
  */
 export default async function MapLayout({ children }: Readonly<{ children: ReactNode }>) {
   const locale = await getRequestLocale();
+  const t = getTranslation(locale);
 
   return (
     <div className="map-app-shell">
-      <AppHeader locale={locale} />
+      <AppHeader locale={locale} navigationItems={[{ href: "/discover", label: t.discover.navigation }]} />
       <main className="map-app-main">{children}</main>
       <AppVersionFooter locale={locale} variant="compact" />
     </div>
