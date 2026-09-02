@@ -1,6 +1,8 @@
 import { neon } from "@neondatabase/serverless";
 import type { AdminPub, AdminPubFieldErrors, AdminPubWriteInput } from "@irishpub-map/shared/admin-pub";
 import type { PubStatus } from "@irishpub-map/shared/pub";
+import { getE2EAdminPub } from "./e2e-test-fixtures";
+import { isE2ETestMode, rejectE2ETestMutation } from "./e2e-test-mode";
 
 type DbRow = Record<string, unknown>;
 
@@ -21,6 +23,7 @@ let sqlClient: ReturnType<typeof neon> | null = null;
  * @returns {Promise<AdminPub | null>} 管理店舗詳細。対象が存在しない場合はnull。
  */
 export async function getAdminPub(id: string): Promise<AdminPub | null> {
+  if (isE2ETestMode()) return getE2EAdminPub(id);
   const rows = (await getRequiredSql()`
     SELECT pub.id::text, pub.is_published, pub.prefecture_code, pub.municipality_code,
       pub.latitude, pub.longitude, pub.website_url, pub.google_maps_url, pub.instagram_url,
@@ -52,6 +55,7 @@ export async function getAdminPub(id: string): Promise<AdminPub | null> {
  * @returns {Promise<AdminPubReferenceResult>} フィールド別参照エラーと解決済み営業状態コード。
  */
 export async function validateAdminPubReferences(input: AdminPubWriteInput): Promise<AdminPubReferenceResult> {
+  rejectE2ETestMutation();
   const tagIdsJson = JSON.stringify(input.tagIds);
   const rows = (await getRequiredSql()`
     SELECT
@@ -117,6 +121,7 @@ export async function validateAdminPubReferences(input: AdminPubWriteInput): Pro
  * @returns {Promise<void>} transactionが完了した場合に解決します。
  */
 export async function insertAdminPub(id: string, input: AdminPubWriteInput, statusCode: number | null): Promise<void> {
+  rejectE2ETestMutation();
   const sql = getRequiredSql();
   await sql.transaction(
     (transaction) => {
@@ -174,6 +179,7 @@ export async function replaceAdminPub(
   statusCode: number | null,
   publishReady: boolean,
 ): Promise<AdminPubUpdateResult> {
+  rejectE2ETestMutation();
   const sql = getRequiredSql();
   const [lockedRows, updatedRows] = (await sql.transaction(
     (transaction) => {
@@ -258,6 +264,7 @@ export async function replaceAdminPub(
  * @returns {Promise<boolean>} 店舗を削除できた場合はtrue。
  */
 export async function removeAdminPub(id: string): Promise<boolean> {
+  rejectE2ETestMutation();
   const rows = (await getRequiredSql()`DELETE FROM pubs WHERE id = ${id}::uuid RETURNING id`) as DbRow[];
   return rows.length === 1;
 }

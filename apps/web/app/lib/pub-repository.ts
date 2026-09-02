@@ -10,6 +10,8 @@ import {
 import { getPrefectureName } from "@irishpub-map/shared/prefecture";
 import { getPubStatusValue } from "@irishpub-map/shared/status";
 import { asPubs, isPubId, type Pub } from "@irishpub-map/shared/pub";
+import { getE2EAdminPubPage, getE2EPublishedPubs } from "./e2e-test-fixtures";
+import { isDataSourceConfigured, isE2ETestMode, rejectE2ETestMutation } from "./e2e-test-mode";
 
 type DbPubRow = {
   id: unknown;
@@ -83,11 +85,11 @@ export class PubPublicationValidationError extends Error {
 let sqlClient: ReturnType<typeof neon> | null = null;
 
 /**
- * Neonへの接続設定があり、永続化を利用できるかを返します。
- * @returns {boolean} DB接続設定が存在する場合はtrue。
+ * NeonまたはE2E fixtureのデータソースを利用できるかを返します。
+ * @returns {boolean} 読み取り用データソースが存在する場合はtrue。
  */
 export function isDatabaseConfigured() {
-  return Boolean(process.env.DATABASE_URL);
+  return isDataSourceConfigured();
 }
 
 /**
@@ -96,6 +98,7 @@ export function isDatabaseConfigured() {
  * @returns {Promise<Pub[]>} 公開条件をSQLで適用した検証済み店舗一覧。
  */
 export async function getPublishedPubs(locale: Locale = DEFAULT_LOCALE) {
+  if (isE2ETestMode()) return getE2EPublishedPubs(locale);
   return parseDbPubs(await getDbPubRows(locale, false));
 }
 
@@ -118,6 +121,7 @@ export async function getAdminPubPage(
   condition: AdminPubSearchCondition,
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<AdminPubPage> {
+  if (isE2ETestMode()) return getE2EAdminPubPage(condition, locale);
   if (!isDatabaseConfigured()) return { pubs: [], total: 0, page: condition.page, pageSize: ADMIN_PUB_PAGE_SIZE };
 
   const name = condition.name ?? null;
@@ -195,6 +199,7 @@ async function getAdminPubCount(locale: string, condition: AdminPubCountConditio
  * @returns {Promise<{ id: string; isPublished: boolean; unchanged: boolean } | null>} 更新結果、または対象なし。
  */
 export async function setAdminPubPublication(id: string, isPublished: boolean) {
+  rejectE2ETestMutation();
   const sql = getRequiredSql();
   const snapshot = await getPublicationSnapshot(sql, id);
   if (!snapshot) return null;

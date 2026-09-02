@@ -13,10 +13,13 @@
     "export-municipality-csv": "node scripts/export-municipality-codes.mjs",
     "validate:production-env": "node scripts/validate-production-env.mjs",
     "update-app-version": "node scripts/update-app-version.mjs",
-    "lint": "eslint --config eslint.config.mjs apps/web/app packages/shared/src --max-warnings=0",
-    "typecheck": "npm run typecheck -w apps/web",
+    "lint": "eslint --config eslint.config.mjs apps/web/app packages/shared/src e2e playwright.config.ts --max-warnings=0",
+    "typecheck": "npm run typecheck -w apps/web && npm run typecheck:e2e",
+    "typecheck:e2e": "tsc --noEmit --project tsconfig.e2e.json",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "prepare": "node scripts/install-git-hooks.mjs",
     "check:sensitive-data": "node scripts/check-sensitive-data.mjs --tracked",
     "format": "prettier --write .",
@@ -26,6 +29,7 @@
     "postcss": "8.5.26"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@vitest/coverage-v8": "^4.1.11",
