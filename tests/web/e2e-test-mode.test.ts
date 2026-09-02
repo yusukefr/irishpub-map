@@ -25,7 +25,7 @@ describe("E2E test mode", () => {
     expect(isE2ETestMode()).toBe(true);
     expect(isDataSourceConfigured()).toBe(true);
     expect(getE2EPublishedPubs("ja").map((pub) => pub.name)).toEqual(["E2E Irish Pub Nagoya", "E2E Irish Pub Tokyo"]);
-    expect(getE2EAdminPubPage({ statusKey: "open", page: 1 }, "en")).toMatchObject({ total: 1, page: 1 });
+    expect(getE2EAdminPubPage({ statusKey: "open", page: 1 }, "en")).toMatchObject({ total: 2, page: 1 });
     expect(getE2EAdminPub("30000000-0000-4000-8000-000000000001")?.translations.en?.address).toContain("Nagoya");
     expect(getE2EAdminTags()).toHaveLength(2);
   });

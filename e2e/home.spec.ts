@@ -10,6 +10,6 @@ test("Homeの主要な探索UIを表示する", async ({ page }) => {
   await expect(page.getByRole("searchbox", { name: "店舗を検索" })).toBeVisible();
   await expect(page.getByRole("button", { name: "条件を指定" })).toBeVisible();
   await expect(page.getByRole("button", { name: "現在地から探す" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "1件のPubが見つかりました" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "2件のPubが見つかりました" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Map" })).toBeVisible();
 });
