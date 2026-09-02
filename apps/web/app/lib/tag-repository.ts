@@ -7,6 +7,8 @@ import type {
   CreateAdminTagInput,
   UpdateAdminTagInput,
 } from "@irishpub-map/shared/admin-tag";
+import { getE2EAdminTags } from "./e2e-test-fixtures";
+import { isE2ETestMode, rejectE2ETestMutation } from "./e2e-test-mode";
 
 type DbRow = Record<string, unknown>;
 type TagRepositoryErrorCode = "conflict" | "in_use" | "not_found";
@@ -29,6 +31,7 @@ export class TagRepositoryError extends Error {
  * @returns {Promise<AdminTag[]>} DB未設定時は空配列、それ以外は検証済み管理タグ一覧。
  */
 export async function getAdminTags(): Promise<AdminTag[]> {
+  if (isE2ETestMode()) return getE2EAdminTags();
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
     SELECT tag.id::text, tag.key,
@@ -53,6 +56,7 @@ export async function getAdminTags(): Promise<AdminTag[]> {
  * @returns {Promise<AdminTag>} 登録した未使用タグ。
  */
 export async function createAdminTag(input: CreateAdminTagInput): Promise<AdminTag> {
+  rejectE2ETestMutation();
   const sql = getRequiredSql();
   if (await hasTagConflict(sql, input, null)) throw new TagRepositoryError("conflict");
   const id = randomUUID();
@@ -83,6 +87,7 @@ export async function createAdminTag(input: CreateAdminTagInput): Promise<AdminT
  * @returns {Promise<AdminTag>} 更新後の管理タグ。
  */
 export async function updateAdminTag(id: string, input: UpdateAdminTagInput): Promise<AdminTag> {
+  rejectE2ETestMutation();
   const sql = getRequiredSql();
   const current = await getAdminTagById(sql, id);
   if (!current) throw new TagRepositoryError("not_found");
@@ -113,6 +118,7 @@ export async function updateAdminTag(id: string, input: UpdateAdminTagInput): Pr
  * @returns {Promise<void>} 未使用タグを削除した場合に完了します。
  */
 export async function deleteAdminTag(id: string): Promise<void> {
+  rejectE2ETestMutation();
   const sql = getRequiredSql();
   const [lockedRows, usageRows, deletedRows] = (await sql.transaction((transaction) => [
     transaction`SELECT id FROM tags WHERE id = ${id}::uuid FOR UPDATE`,

@@ -52,6 +52,7 @@ npm run typecheck
 npm run lint
 npm run build
 npm run check:sensitive-data
+npm run test:e2e
 ```
 
 依存関係を変更した場合は、追加で `npm audit --omit=dev` を実行します。

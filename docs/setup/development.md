@@ -147,6 +147,21 @@ watch モード:
 npm run test:watch
 ```
 
+### E2Eテスト
+
+Playwright TestによるE2Eスモークテストは、Chromiumのproduction buildで実行します。初回のみブラウザをインストールしてください。
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+`test:e2e` はPlaywrightの `webServer` でbuildと `next start` を自動実行します。手動で開発サーバーを起動する必要はありません。対話UIで実行する場合は `npm run test:e2e:ui` を使用します。
+
+E2Eでは `DATABASE_URL` を使用せず、Playwright設定からサーバー専用の `E2E_TEST_MODE=1` と固定fixtureを設定します。このモードはVercel Productionでの有効化を拒否し、fixtureに対する作成・更新・削除も拒否します。管理画面は認証を迂回せず、テスト専用の固定資格情報でログインします。
+
+失敗時のHTML reportは `playwright-report/`、traceとscreenshotは `test-results/` に出力されます。CIでは通常のLint・Test・Build完了後に独立したE2E jobを実行し、失敗時のみ両ディレクトリをartifactとして10日間保存します。
+
 ## 型チェック
 
 ```bash

@@ -1,5 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import type { AdminPubStatus, UpdateAdminPubStatusInput } from "@irishpub-map/shared/admin-status";
+import { getE2EAdminPubStatuses } from "./e2e-test-fixtures";
+import { isE2ETestMode, rejectE2ETestMutation } from "./e2e-test-mode";
 
 type DbRow = Record<string, unknown>;
 let sqlClient: ReturnType<typeof neon> | null = null;
@@ -21,6 +23,7 @@ export class StatusRepositoryError extends Error {
  * @returns {Promise<AdminPubStatus[]>} DB未設定時は空配列、それ以外は検証済みDTO一覧。
  */
 export async function getAdminPubStatuses(): Promise<AdminPubStatus[]> {
+  if (isE2ETestMode()) return getE2EAdminPubStatuses();
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
     SELECT status.code, status.key,
@@ -42,6 +45,7 @@ export async function getAdminPubStatuses(): Promise<AdminPubStatus[]> {
  * @returns {Promise<AdminPubStatus>} 更新後の管理用営業ステータス。
  */
 export async function updateAdminPubStatus(code: number, input: UpdateAdminPubStatusInput): Promise<AdminPubStatus> {
+  rejectE2ETestMutation();
   const sql = getRequiredSql();
   const current = await getAdminPubStatusByCode(sql, code);
   if (!current) throw new StatusRepositoryError("not_found");

@@ -6,6 +6,8 @@ import type {
   PubStatusOption,
   TagOption,
 } from "@irishpub-map/shared/admin-master";
+import { getE2EMunicipalities, getE2EPrefectures, getE2EPubStatuses, getE2ETags } from "./e2e-test-fixtures";
+import { isE2ETestMode } from "./e2e-test-mode";
 
 type MasterLocale = Locale;
 type DbRow = Record<string, unknown>;
@@ -17,6 +19,7 @@ let sqlClient: ReturnType<typeof neon> | null = null;
  * @returns {Promise<PrefectureOption[]>} 管理画面用の都道府県一覧。DB未設定時は空配列。
  */
 export async function getPrefectures(locale: MasterLocale = DEFAULT_LOCALE): Promise<PrefectureOption[]> {
+  if (isE2ETestMode()) return getE2EPrefectures(locale);
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
     WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
@@ -45,6 +48,7 @@ export async function getMunicipalitiesByPrefecture(
   prefectureCode: number,
   locale: MasterLocale = DEFAULT_LOCALE,
 ): Promise<MunicipalityOption[]> {
+  if (isE2ETestMode()) return getE2EMunicipalities(prefectureCode, locale);
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
     WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
@@ -74,6 +78,7 @@ export async function getMunicipalitiesByPrefecture(
  * @returns {Promise<TagOption[]>} 管理画面用のタグ一覧。翻訳がない場合は内部キーを表示名に使います。
  */
 export async function getTags(locale: MasterLocale = DEFAULT_LOCALE): Promise<TagOption[]> {
+  if (isE2ETestMode()) return getE2ETags(locale);
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
     WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
@@ -98,6 +103,7 @@ export async function getTags(locale: MasterLocale = DEFAULT_LOCALE): Promise<Ta
  * @returns {Promise<PubStatusOption[]>} 管理画面用の営業ステータス一覧。DB未設定時は空配列。
  */
 export async function getPubStatuses(locale: MasterLocale = DEFAULT_LOCALE): Promise<PubStatusOption[]> {
+  if (isE2ETestMode()) return getE2EPubStatuses(locale);
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getSql()`
     WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
