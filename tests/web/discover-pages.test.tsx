@@ -72,6 +72,7 @@ describe("Discover pages", () => {
     expect(screen.getByText("準備中")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "サンプルガイド →" })).toHaveAttribute("href", "/discover/guides/sample");
     expect(screen.getByRole("link", { name: "サンプルを見る →" })).toHaveAttribute("href", "/discover/quiz");
+    expect(screen.getByRole("link", { name: "カレンダーを見る →" })).toHaveAttribute("href", "/discover/calendar");
     expect(screen.queryByRole("main")).not.toBeInTheDocument();
   });
 

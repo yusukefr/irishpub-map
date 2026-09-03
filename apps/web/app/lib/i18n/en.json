@@ -13,10 +13,24 @@
     "stories": "Stories",
     "guides": "Guides",
     "quiz": "Today's Ireland Quiz",
+    "calendarTitle": "Irish Calendar",
+    "calendarSummary": "Explore Irish public holidays, culture, and traditions throughout the year.",
+    "viewCalendar": "View calendar",
     "comingSoon": "Coming soon",
     "viewQuiz": "View sample quiz",
     "back": "Back to Explore Ireland",
-    "quizPlaceholder": "Quiz content is coming soon."
+    "quizPlaceholder": "Quiz content is coming soon.",
+    "calendar": {
+      "kicker": "Irish Calendar",
+      "heading": "Irish Calendar",
+      "lead": "Explore public holidays and dates connected with Ireland's culture and history.",
+      "todayHeading": "Today in Ireland",
+      "monthHeading": "Events in {month}",
+      "noEventsToday": "There are no events for today.",
+      "noEventsThisMonth": "There are no events for this month.",
+      "dateToBeConfirmed": "Date determined annually",
+      "back": "Back to Explore Ireland"
+    }
   },
   "language": {
     "label": "Language",

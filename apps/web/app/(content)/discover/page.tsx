@@ -56,6 +56,14 @@ export default async function DiscoverPage() {
             {t.viewQuiz} →
           </Link>
         </section>
+
+        <section className="discover-section" aria-labelledby="discover-calendar-heading">
+          <h2 id="discover-calendar-heading">{t.calendarTitle}</h2>
+          <p>{t.calendarSummary}</p>
+          <Link className="content-action-link discover-section-action" href="/discover/calendar">
+            {t.viewCalendar} →
+          </Link>
+        </section>
       </div>
     </section>
   );

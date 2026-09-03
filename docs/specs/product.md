@@ -79,6 +79,8 @@ Issue #273で公開状態のDB保持、公開APIの絞り込み、管理取得�
 
 Content記事はRepository内のTrusted MDXを対象とし、`apps/web/app/lib/content/`の明示的RegistryとRepository APIからのみ取得します。記事は`story` / `guide`のkind、独立したcategory、Locale非依存のStable Tag ID、日英両方のLoaderを持つ共通Metadataモデルで扱います。未登録slugはRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。
 
-Explore Ireland Hubは`/discover`でStories placeholder、Registry由来のGuide一覧、Quiz導線を表示します。Guideは`/discover/guides/[slug]`でLocale別MDXを読み込み、未登録slugは404とします。`/discover/quiz`は後続のQuiz機能向けplaceholderであり、Question、Choice、Answer、Scoreは持ちません。
+Explore Ireland Hubは`/discover`でStories placeholder、Registry由来のGuide一覧、Quiz導線、Irish Calendar導線を表示します。Guideは`/discover/guides/[slug]`でLocale別MDXを読み込み、未登録slugは404とします。`/discover/quiz`は後続のQuiz機能向けplaceholderであり、Question、Choice、Answer、Scoreは持ちません。
+
+Irish Calendarは`/discover/calendar`で、Asia/Tokyo基準の当日と当月に該当するアイルランド共和国の祝日・文化イベントを日英表示します。イベント内容は`apps/web/data/ireland/calendar.json`を唯一のデータソースとし、Calendar domain layerが起動時検証、暦日計算、当日・月別検索を担当します。開催日が年ごとに公式発表されるイベントは通常月の月別一覧に未確定と明示し、具体日を推測しません。Content Registry、API、DBには接続しません。
 
 MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Story / Guide、Quiz機能、関連記事、CMS、Content管理画面は後続Issueで追加します。

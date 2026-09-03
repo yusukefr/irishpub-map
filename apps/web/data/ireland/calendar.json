@@ -1,0 +1,585 @@
+{
+  "schemaVersion": 1,
+  "country": "IE",
+  "scope": "Republic of Ireland",
+  "categories": {
+    "public_holiday": {
+      "ja": "祝日",
+      "en": "Public holiday"
+    },
+    "culture": {
+      "ja": "文化",
+      "en": "Culture"
+    },
+    "tradition": {
+      "ja": "伝統・民俗",
+      "en": "Tradition & folklore"
+    },
+    "language": {
+      "ja": "言語",
+      "en": "Language"
+    },
+    "literature": {
+      "ja": "文学",
+      "en": "Literature"
+    },
+    "history": {
+      "ja": "歴史・追悼",
+      "en": "History & commemoration"
+    },
+    "religion": {
+      "ja": "宗教行事",
+      "en": "Religious observance"
+    }
+  },
+  "dateRuleTypes": [
+    "fixed",
+    "date_range",
+    "nth_weekday",
+    "last_weekday",
+    "relative_to_easter",
+    "weekday_on_or_after",
+    "closest_weekday_to_date",
+    "rule_set",
+    "annual_variable"
+  ],
+  "events": [
+    {
+      "id": "new-years-day",
+      "name": {
+        "ja": "元日",
+        "en": "New Year's Day"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 1,
+        "day": 1
+      },
+      "category": "public_holiday",
+      "isPublicHoliday": true,
+      "featured": false,
+      "description": {
+        "ja": "アイルランド共和国の法定祝日。新年の始まりを祝う。",
+        "en": "A public holiday marking the beginning of the new year."
+      },
+      "source": "citizens_information"
+    },
+    {
+      "id": "nollaig-na-mban",
+      "name": {
+        "ja": "女性のクリスマス",
+        "en": "Nollaig na mBan"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 1,
+        "day": 6
+      },
+      "category": "tradition",
+      "isPublicHoliday": false,
+      "featured": true,
+      "description": {
+        "ja": "「女性のクリスマス」と呼ばれる、アイルランドのクリスマス期間を締めくくる伝統行事。",
+        "en": "Women's Christmas, a traditional Irish observance marking the end of the Christmas season."
+      },
+      "source": "ireland_ie"
+    },
+    {
+      "id": "st-brigids-day",
+      "name": {
+        "ja": "聖ブリジッドの日",
+        "en": "St Brigid's Day"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 2,
+        "day": 1
+      },
+      "category": "tradition",
+      "isPublicHoliday": false,
+      "featured": true,
+      "aliases": ["Lá Fhéile Bríde", "Imbolc"],
+      "description": {
+        "ja": "アイルランドの守護聖人の一人、聖ブリジッドを記念する日。伝統暦では春の始まりを示し、古代のImbolcとも関連する。",
+        "en": "A feast day for St Brigid, one of Ireland's patron saints, traditionally marking the beginning of spring and associated with Imbolc."
+      },
+      "source": "national_museum_of_ireland"
+    },
+    {
+      "id": "st-brigids-public-holiday",
+      "name": {
+        "ja": "聖ブリジッドの日にちなむ2月の祝日",
+        "en": "St Brigid's Day Public Holiday"
+      },
+      "date": {
+        "type": "rule_set",
+        "rules": [
+          {
+            "when": {
+              "type": "fixed_date_weekday",
+              "month": 2,
+              "day": 1,
+              "weekday": "friday"
+            },
+            "use": {
+              "type": "fixed",
+              "month": 2,
+              "day": 1
+            }
+          },
+          {
+            "when": {
+              "type": "otherwise"
+            },
+            "use": {
+              "type": "nth_weekday",
+              "month": 2,
+              "weekday": "monday",
+              "nth": 1
+            }
+          }
+        ]
+      },
+      "category": "public_holiday",
+      "isPublicHoliday": true,
+      "featured": false,
+      "description": {
+        "ja": "2023年に導入された法定祝日。原則2月第1月曜。ただし2月1日が金曜日の場合は2月1日が祝日となる。",
+        "en": "A public holiday introduced in 2023. It falls on the first Monday in February, except when 1 February is a Friday, in which case 1 February is the holiday."
+      },
+      "source": "citizens_information"
+    },
+    {
+      "id": "seachtain-na-gaeilge",
+      "name": {
+        "ja": "アイルランド語週間",
+        "en": "Seachtain na Gaeilge"
+      },
+      "date": {
+        "type": "date_range",
+        "start": {
+          "month": 3,
+          "day": 1
+        },
+        "end": {
+          "month": 3,
+          "day": 17
+        }
+      },
+      "category": "language",
+      "isPublicHoliday": false,
+      "featured": true,
+      "description": {
+        "ja": "アイルランド語と文化を祝う世界的なフェスティバル。現在は3月1日から17日までの17日間開催される。",
+        "en": "A worldwide festival celebrating the Irish language and culture, running annually from 1 to 17 March."
+      },
+      "source": "ireland_ie"
+    },
+    {
+      "id": "st-patricks-day",
+      "name": {
+        "ja": "聖パトリックの日",
+        "en": "St Patrick's Day"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 3,
+        "day": 17
+      },
+      "category": "public_holiday",
+      "isPublicHoliday": true,
+      "featured": true,
+      "aliases": ["Lá Fhéile Pádraig"],
+      "description": {
+        "ja": "アイルランドの守護聖人、聖パトリックを記念する国民的祝祭日。",
+        "en": "Ireland's national celebration honouring St Patrick, one of the country's patron saints."
+      },
+      "source": "citizens_information"
+    },
+    {
+      "id": "good-friday",
+      "name": {
+        "ja": "聖金曜日",
+        "en": "Good Friday"
+      },
+      "date": {
+        "type": "relative_to_easter",
+        "offsetDays": -2
+      },
+      "category": "religion",
+      "isPublicHoliday": false,
+      "featured": false,
+      "description": {
+        "ja": "復活祭直前の金曜日。アイルランド共和国では法定祝日ではない。",
+        "en": "The Friday before Easter Sunday. It is not a public holiday in the Republic of Ireland."
+      },
+      "source": "citizens_information"
+    },
+    {
+      "id": "easter-rising-commemoration",
+      "name": {
+        "ja": "1916年イースター蜂起記念式典",
+        "en": "1916 Easter Rising Commemoration"
+      },
+      "date": {
+        "type": "relative_to_easter",
+        "offsetDays": 0
+      },
+      "category": "history",
+      "isPublicHoliday": false,
+      "featured": true,
+      "description": {
+        "ja": "1916年のイースター蜂起を記念する国家式典。例年イースター・サンデーにダブリンで行われる。",
+        "en": "The annual State commemoration of the 1916 Easter Rising, held on Easter Sunday."
+      },
+      "source": "gov_ie"
+    },
+    {
+      "id": "easter-monday",
+      "name": {
+        "ja": "イースター・マンデー",
+        "en": "Easter Monday"
+      },
+      "date": {
+        "type": "relative_to_easter",
+        "offsetDays": 1
+      },
+      "category": "public_holiday",
+      "isPublicHoliday": true,
+      "featured": false,
+      "description": {
+        "ja": "復活祭翌日の月曜日で、アイルランド共和国の法定祝日。",
+        "en": "The Monday after Easter Sunday and a public holiday in Ireland."
+      },
+      "source": "citizens_information"
+    },
+    {
+      "id": "bealtaine",
+      "name": {
+        "ja": "ベアルタネ",
+        "en": "Bealtaine"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 5,
+        "day": 1
+      },
+      "category": "tradition",
+      "isPublicHoliday": false,
+      "featured": true,
+      "description": {
+        "ja": "伝統的なアイルランド暦で夏の始まりを示す季節の節目。May Dayの民俗行事と結びついている。",
+        "en": "A traditional Irish quarter day marking the beginning of summer and associated with May Day customs."
+      },
+      "source": "national_museum_of_ireland"
+    },
+    {
+      "id": "may-public-holiday",
+      "name": {
+        "ja": "5月の祝日",
+        "en": "May Public Holiday"
+      },
+      "date": {
+        "type": "nth_weekday",
+        "month": 5,
+        "weekday": "monday",
+        "nth": 1
+      },
+      "category": "public_holiday",
+      "isPublicHoliday": true,
+      "featured": false,
+      "description": {
+        "ja": "5月第1月曜日の法定祝日。",
+        "en": "The public holiday observed on the first Monday in May."
+      },
+      "source": "citizens_information"
+    },
+    {
+      "id": "arbour-hill-1916-commemoration",
+      "name": {
+        "ja": "アーバー・ヒル1916年記念式典",
+        "en": "Arbour Hill 1916 Commemoration"
+      },
+      "date": {
+        "type": "weekday_on_or_after",
+        "month": 5,
+        "day": 3,
+        "weekday": "wednesday"
+      },
+      "category": "history",
+      "isPublicHoliday": false,
+      "featured": false,
+      "description": {
+        "ja": "1916年イースター蜂起の処刑された指導者たちを追悼する国家式典。5月3日以降最初の水曜日に行われる。",
+        "en": "An annual State ceremony commemorating the executed leaders of the 1916 Rising, held on the first Wednesday on or after 3 May."
+      },
+      "source": "gov_ie"
+    },
+    {
+      "id": "daniel-oconnell-commemoration",
+      "name": {
+        "ja": "ダニエル・オコンネル記念式典",
+        "en": "Daniel O'Connell Commemoration"
+      },
+      "date": {
+        "type": "closest_weekday_to_date",
+        "month": 5,
+        "day": 14,
+        "weekday": "sunday"
+      },
+      "category": "history",
+      "isPublicHoliday": false,
+      "featured": false,
+      "description": {
+        "ja": "ダニエル・オコンネルの命日にちなみ、5月14日に最も近い日曜日に行われる記念式典。",
+        "en": "An annual commemoration of Daniel O'Connell held on the Sunday closest to 14 May, the anniversary of his death."
+      },
+      "source": "gov_ie"
+    },
+    {
+      "id": "national-famine-commemoration",
+      "name": {
+        "ja": "国民大飢饉追悼式典",
+        "en": "National Famine Commemoration"
+      },
+      "date": {
+        "type": "annual_variable",
+        "usualMonth": 5,
+        "requiresOfficialConfirmation": true
+      },
+      "category": "history",
+      "isPublicHoliday": false,
+      "featured": true,
+      "description": {
+        "ja": "アイルランド大飢饉（An Gorta Mór）の犠牲者や移民を追悼する年次国家式典。開催日と開催地は年ごとに決定される。",
+        "en": "An annual State commemoration remembering those who suffered, died or emigrated during An Gorta Mór. The date and venue are announced for each year."
+      },
+      "source": "gov_ie"
+    },
+    {
+      "id": "june-public-holiday",
+      "name": {
+        "ja": "6月の祝日",
+        "en": "June Public Holiday"
+      },
+      "date": {
+        "type": "nth_weekday",
+        "month": 6,
+        "weekday": "monday",
+        "nth": 1
+      },
+      "category": "public_holiday",
+      "isPublicHoliday": true,
+      "featured": false,
+      "description": {
+        "ja": "6月第1月曜日の法定祝日。",
+        "en": "The public holiday observed on the first Monday in June."
+      },
+      "source": "citizens_information"
+    },
+    {
+      "id": "bloomsday",
+      "name": {
+        "ja": "ブルームズデー",
+        "en": "Bloomsday"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 6,
+        "day": 16
+      },
+      "category": "literature",
+      "isPublicHoliday": false,
+      "featured": true,
+      "description": {
+        "ja": "ジェイムズ・ジョイスの『ユリシーズ』を祝う文学の日。作品の物語は1904年6月16日のダブリンを舞台としている。",
+        "en": "An annual celebration of James Joyce and Ulysses, whose events take place in Dublin on 16 June 1904."
+      },
+      "source": "ireland_ie"
+    },
+    {
+      "id": "st-johns-eve",
+      "name": {
+        "ja": "聖ヨハネ前夜祭",
+        "en": "St John's Eve"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 6,
+        "day": 23
+      },
+      "category": "tradition",
+      "isPublicHoliday": false,
+      "featured": false,
+      "description": {
+        "ja": "夏至の時期に近い伝統的な祝祭の前夜。地域によって焚き火などの風習が見られる。",
+        "en": "A traditional midsummer eve observance associated in some areas with bonfires and seasonal customs."
+      },
+      "source": "irish_folklore_tradition"
+    },
+    {
+      "id": "national-day-of-commemoration",
+      "name": {
+        "ja": "国家追悼の日",
+        "en": "National Day of Commemoration"
+      },
+      "date": {
+        "type": "closest_weekday_to_date",
+        "month": 7,
+        "day": 11,
+        "weekday": "sunday"
+      },
+      "category": "history",
+      "isPublicHoliday": false,
+      "featured": false,
+      "description": {
+        "ja": "過去の戦争や国連任務などで亡くなったアイルランド人を追悼する国家式典。7月11日に最も近い日曜日に行われる。",
+        "en": "A State commemoration honouring Irish people who died in past wars or on service, held on the Sunday closest to 11 July."
+      },
+      "source": "gov_ie"
+    },
+    {
+      "id": "lunasa",
+      "name": {
+        "ja": "ルーナサ",
+        "en": "Lúnasa"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 8,
+        "day": 1
+      },
+      "category": "tradition",
+      "isPublicHoliday": false,
+      "featured": true,
+      "description": {
+        "ja": "伝統的なアイルランド暦で収穫期の始まりを示す季節の節目。",
+        "en": "A traditional Irish quarter day associated with the beginning of the harvest season."
+      },
+      "source": "national_museum_of_ireland"
+    },
+    {
+      "id": "august-public-holiday",
+      "name": {
+        "ja": "8月の祝日",
+        "en": "August Public Holiday"
+      },
+      "date": {
+        "type": "nth_weekday",
+        "month": 8,
+        "weekday": "monday",
+        "nth": 1
+      },
+      "category": "public_holiday",
+      "isPublicHoliday": true,
+      "featured": false,
+      "description": {
+        "ja": "8月第1月曜日の法定祝日。",
+        "en": "The public holiday observed on the first Monday in August."
+      },
+      "source": "citizens_information"
+    },
+    {
+      "id": "october-public-holiday",
+      "name": {
+        "ja": "10月の祝日",
+        "en": "October Public Holiday"
+      },
+      "date": {
+        "type": "last_weekday",
+        "month": 10,
+        "weekday": "monday"
+      },
+      "category": "public_holiday",
+      "isPublicHoliday": true,
+      "featured": false,
+      "description": {
+        "ja": "10月最終月曜日の法定祝日。",
+        "en": "The public holiday observed on the last Monday in October."
+      },
+      "source": "citizens_information"
+    },
+    {
+      "id": "halloween",
+      "name": {
+        "ja": "ハロウィーン",
+        "en": "Halloween"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 10,
+        "day": 31
+      },
+      "category": "tradition",
+      "isPublicHoliday": false,
+      "featured": true,
+      "aliases": ["Oíche Shamhna"],
+      "description": {
+        "ja": "Samhainの前夜。アイルランドでは古くから祝われ、仮装、ゲーム、霊にまつわる風習などが伝わる。",
+        "en": "The eve of Samhain, long celebrated in Ireland with traditions involving disguises, games and beliefs about spirits."
+      },
+      "source": "national_museum_of_ireland"
+    },
+    {
+      "id": "samhain",
+      "name": {
+        "ja": "サウィン",
+        "en": "Samhain"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 11,
+        "day": 1
+      },
+      "category": "tradition",
+      "isPublicHoliday": false,
+      "featured": true,
+      "description": {
+        "ja": "伝統的なアイルランド暦で冬、すなわち暗い季節の始まりを示す季節の節目。",
+        "en": "A traditional Irish quarter day marking the beginning of winter and the dark season."
+      },
+      "source": "national_museum_of_ireland"
+    },
+    {
+      "id": "christmas-day",
+      "name": {
+        "ja": "クリスマス",
+        "en": "Christmas Day"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 12,
+        "day": 25
+      },
+      "category": "public_holiday",
+      "isPublicHoliday": true,
+      "featured": false,
+      "description": {
+        "ja": "12月25日の法定祝日。",
+        "en": "The public holiday observed on 25 December."
+      },
+      "source": "citizens_information"
+    },
+    {
+      "id": "st-stephens-day",
+      "name": {
+        "ja": "聖ステファノの日",
+        "en": "St Stephen's Day"
+      },
+      "date": {
+        "type": "fixed",
+        "month": 12,
+        "day": 26
+      },
+      "category": "public_holiday",
+      "isPublicHoliday": true,
+      "featured": true,
+      "aliases": ["Wren Day"],
+      "description": {
+        "ja": "12月26日の法定祝日。地域によってはWren Dayの伝統行事とも結びついている。",
+        "en": "A public holiday on 26 December, traditionally associated in some areas with Wren Day customs."
+      },
+      "source": "citizens_information"
+    }
+  ]
+}
