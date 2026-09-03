@@ -172,6 +172,34 @@ describe("calendar queries", () => {
     expect(getEventsForDate({ year: 2027, month: 1, day: 1 }, spans).map(({ event }) => event.id)).toEqual(["year"]);
   });
 
+  it("年末年始を跨いで解決される単日ルールを日・月検索で取得する", () => {
+    const crossingEvents = [
+      event("after-year-end", {
+        type: "weekday_on_or_after",
+        month: 12,
+        day: 31,
+        weekday: 1,
+      }),
+      event("closest-before-year-start", {
+        type: "closest_weekday_to_date",
+        month: 1,
+        day: 1,
+        weekday: 3,
+      }),
+    ];
+
+    expect(getEventsForDate({ year: 2027, month: 1, day: 4 }, crossingEvents).map(({ event }) => event.id)).toEqual([
+      "after-year-end",
+    ]);
+    expect(getEventsForMonth(2027, 1, crossingEvents).map(({ event }) => event.id)).toEqual(["after-year-end"]);
+    expect(getEventsForDate({ year: 2025, month: 12, day: 31 }, crossingEvents).map(({ event }) => event.id)).toEqual([
+      "closest-before-year-start",
+    ]);
+    expect(getEventsForMonth(2025, 12, crossingEvents).map(({ event }) => event.id)).toEqual([
+      "closest-before-year-start",
+    ]);
+  });
+
   it("月一覧を開始日順・同日JSON順・未確定日末尾に並べ、空月も返す", () => {
     expect(getEventsForMonth(2026, 3, events).map(({ event }) => event.id)).toEqual([
       "range",

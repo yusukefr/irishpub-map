@@ -28,14 +28,10 @@ function overlaps(date: CalendarEventOccurrence["date"], start: CalendarDate, en
 }
 
 function resolvedCandidates(event: CalendarEvent, year: number): readonly CalendarEventOccurrence[] {
-  const current = resolveCalendarEvent(event, year);
-  if (
-    event.date.type !== "date_range" ||
-    event.date.end.month * 100 + event.date.end.day >= event.date.start.month * 100 + event.date.start.day
-  ) {
-    return [current];
-  }
-  return [resolveCalendarEvent(event, year - 1), current];
+  // 基準年の前後へはみ出す単日ルールもあるため、rule typeを再解釈せず隣接する基準年を解決します。
+  return [year - 1, year, year + 1]
+    .filter((candidateYear) => candidateYear >= 1583)
+    .map((candidateYear) => resolveCalendarEvent(event, candidateYear));
 }
 
 /** `Date`をAsia/Tokyoの暦日に変換します。
