@@ -2967,7 +2967,7 @@ body {
 
 .discover-sections {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -2988,6 +2988,69 @@ body {
   margin: 0;
   color: var(--muted);
   line-height: 1.7;
+}
+
+.discover-section-action {
+  margin-top: 12px;
+}
+
+.calendar-section + .calendar-section {
+  margin-top: clamp(36px, 6vw, 52px);
+}
+
+.calendar-section > h2 {
+  margin: 0 0 18px;
+  font-size: clamp(1.35rem, 3vw, 1.7rem);
+}
+
+.calendar-event-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendar-event-card {
+  padding: clamp(20px, 4vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: var(--content-card-radius);
+  background: var(--surface);
+}
+
+.calendar-event-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.calendar-event-meta span {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--background);
+}
+
+.calendar-event-card h3 {
+  margin: 12px 0 8px;
+  font-size: 1.15rem;
+}
+
+.calendar-event-card p,
+.calendar-empty {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.calendar-empty {
+  padding: 20px;
+  border: 1px dashed var(--line);
+  border-radius: var(--content-card-radius);
+  background: var(--surface);
 }
 
 .discover-links {

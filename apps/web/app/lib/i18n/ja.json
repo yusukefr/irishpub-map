@@ -13,10 +13,24 @@
     "stories": "Stories",
     "guides": "Guides",
     "quiz": "Today's Ireland Quiz",
+    "calendarTitle": "アイルランドのカレンダー",
+    "calendarSummary": "祝日や文化、伝統にまつわる日を紹介します。",
+    "viewCalendar": "カレンダーを見る",
     "comingSoon": "準備中",
     "viewQuiz": "サンプルを見る",
     "back": "Explore Irelandへ戻る",
-    "quizPlaceholder": "クイズは現在準備中です。"
+    "quizPlaceholder": "クイズは現在準備中です。",
+    "calendar": {
+      "kicker": "Irish Calendar",
+      "heading": "アイルランドのカレンダー",
+      "lead": "アイルランド共和国の祝日と、文化や歴史にまつわる日を紹介します。",
+      "todayHeading": "今日のアイルランド",
+      "monthHeading": "{month}のイベント",
+      "noEventsToday": "今日に該当するイベントはありません。",
+      "noEventsThisMonth": "今月に該当するイベントはありません。",
+      "dateToBeConfirmed": "開催日は年ごとに決定",
+      "back": "Explore Irelandへ戻る"
+    }
   },
   "language": {
     "label": "表示言語",
