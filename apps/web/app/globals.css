@@ -3003,6 +3003,37 @@ body {
   font-size: clamp(1.35rem, 3vw, 1.7rem);
 }
 
+.calendar-month-navigation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.calendar-month-navigation a,
+.calendar-month-navigation span {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--content-card-radius);
+  background: var(--surface);
+  font-weight: 700;
+}
+
+.calendar-month-navigation a:nth-child(2),
+.calendar-month-navigation span:nth-child(2) {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.calendar-month-navigation [aria-disabled="true"] {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .calendar-event-list {
   display: grid;
   gap: 14px;
