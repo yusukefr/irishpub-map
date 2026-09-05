@@ -7,6 +7,14 @@ import type { ContentRegistry } from "./types";
 export const contentRegistry = {
   story: {},
   guide: {
+    "split-the-g": {
+      slug: "split-the-g",
+      kind: "guide",
+      loaders: {
+        ja: () => import("../../../content/discover/guides/split-the-g/ja.mdx"),
+        en: () => import("../../../content/discover/guides/split-the-g/en.mdx"),
+      },
+    },
     sample: {
       slug: "sample",
       kind: "guide",
