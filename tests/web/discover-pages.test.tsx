@@ -44,18 +44,52 @@ const metadataByLocale = {
   },
 } satisfies Record<"ja" | "en", ContentArticleMetadata>;
 
+const splitTheGMetadataByLocale = {
+  ja: {
+    slug: "split-the-g",
+    kind: "guide",
+    title: "Split the Gを楽しむ",
+    summary: "Guinnessのグラスを使ったPubの遊び「Split the G」を、安全に楽しむためのガイドです。",
+    category: "pub-culture",
+    tags: ["split-the-g", "guinness"],
+    publishedAt: "2026-09-05",
+  },
+  en: {
+    slug: "split-the-g",
+    kind: "guide",
+    title: "How to Enjoy Split the G",
+    summary: "A guide to enjoying the pub game Split the G with a Guinness glass, safely and at your own pace.",
+    category: "pub-culture",
+    tags: ["split-the-g", "guinness"],
+    publishedAt: "2026-09-05",
+  },
+} satisfies Record<"ja" | "en", ContentArticleMetadata>;
+
 let locale: "ja" | "en" = "ja";
 
 beforeEach(() => {
   locale = "ja";
   pageMocks.getRequestLocale.mockReset().mockImplementation(() => Promise.resolve(locale));
-  pageMocks.listContent.mockReset().mockImplementation(() => Promise.resolve([metadataByLocale[locale]]));
+  pageMocks.listContent
+    .mockReset()
+    .mockImplementation(() => Promise.resolve([splitTheGMetadataByLocale[locale], metadataByLocale[locale]]));
   pageMocks.loadContent.mockReset().mockImplementation((_kind, slug, contentLocale: "ja" | "en") => {
-    if (slug !== "sample") return Promise.resolve(null);
-    const GuideContent = () => (
-      <p>{contentLocale === "ja" ? "コンテンツは後日追加予定です。" : "Content will be added later."}</p>
-    );
-    return Promise.resolve({ Component: GuideContent, metadata: metadataByLocale[contentLocale] });
+    if (slug === "sample") {
+      const GuideContent = () => (
+        <p>{contentLocale === "ja" ? "コンテンツは後日追加予定です。" : "Content will be added later."}</p>
+      );
+      return Promise.resolve({ Component: GuideContent, metadata: metadataByLocale[contentLocale] });
+    }
+    if (slug === "split-the-g") {
+      const GuideContent = () => (
+        <>
+          <p>{contentLocale === "ja" ? "地域によって判定方法は異なります。" : "How the result is judged varies."}</p>
+          <a href="/">{contentLocale === "ja" ? "Irish Pubを探す →" : "Find an Irish pub →"}</a>
+        </>
+      );
+      return Promise.resolve({ Component: GuideContent, metadata: splitTheGMetadataByLocale[contentLocale] });
+    }
+    return Promise.resolve(null);
   });
   pageMocks.notFound.mockReset().mockImplementation(() => {
     throw new Error("not-found");
@@ -70,6 +104,10 @@ describe("Discover pages", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Explore Ireland" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Stories" })).toBeInTheDocument();
     expect(screen.getByText("準備中")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Split the Gを楽しむ →" })).toHaveAttribute(
+      "href",
+      "/discover/guides/split-the-g",
+    );
     expect(screen.getByRole("link", { name: "サンプルガイド →" })).toHaveAttribute("href", "/discover/guides/sample");
     expect(screen.getByRole("link", { name: "サンプルを見る →" })).toHaveAttribute("href", "/discover/quiz");
     expect(screen.getByRole("link", { name: "カレンダーを見る →" })).toHaveAttribute("href", "/discover/calendar");
@@ -100,6 +138,21 @@ describe("Discover pages", () => {
     render(await GuidePage({ params: Promise.resolve({ slug: "sample" }) }));
     expect(screen.getByRole("heading", { level: 1, name: "Sample Guide" })).toBeInTheDocument();
     expect(screen.getByText("Content will be added later.")).toBeInTheDocument();
+  });
+
+  it("Split the GをLocale別に表示し、Mapへの導線を持つ", async () => {
+    const { unmount } = render(await GuidePage({ params: Promise.resolve({ slug: "split-the-g" }) }));
+
+    expect(screen.getByRole("heading", { level: 1, name: "Split the Gを楽しむ" })).toBeInTheDocument();
+    expect(screen.getByText("地域によって判定方法は異なります。")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Irish Pubを探す →" })).toHaveAttribute("href", "/");
+
+    unmount();
+    locale = "en";
+    render(await GuidePage({ params: Promise.resolve({ slug: "split-the-g" }) }));
+    expect(screen.getByRole("heading", { level: 1, name: "How to Enjoy Split the G" })).toBeInTheDocument();
+    expect(screen.getByText("How the result is judged varies.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Find an Irish pub →" })).toHaveAttribute("href", "/");
   });
 
   it("未登録Guideを404として扱う", async () => {
