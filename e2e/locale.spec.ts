@@ -29,6 +29,7 @@ test("Split the Gの実MDXを日英表示し、Mapへの導線を維持する", 
     page.getByText("Split the Gは、成功や飲む速さ・量を競うものではありません。", { exact: false }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Irish Pubを探す →" })).toHaveAttribute("href", "/");
+  await expect(page.locator('a[href^="https://www.guinness.com/"]')).toHaveCount(0);
 
   await page.getByRole("button", { name: "表示言語: 日本語" }).click();
   await page.getByRole("menuitemradio", { name: "English" }).click();
