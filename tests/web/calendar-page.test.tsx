@@ -93,6 +93,16 @@ describe("Irish Calendar page", () => {
     );
   });
 
+  it("1月から前年12月へ移動できるリンクを表示する", async () => {
+    vi.setSystemTime(new Date("2026-09-10T03:00:00Z"));
+    await renderCalendar({ year: "2026", month: "1" });
+
+    expect(screen.getByRole("link", { name: "← 前月" })).toHaveAttribute(
+      "href",
+      "/discover/calendar?year=2025&month=12",
+    );
+  });
+
   it("閲覧範囲の下限では前月を無効にしてリンクを生成しない", async () => {
     vi.setSystemTime(new Date("2026-09-10T03:00:00Z"));
     await renderCalendar({ year: "2025", month: "9" });
