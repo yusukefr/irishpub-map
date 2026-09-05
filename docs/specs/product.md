@@ -83,4 +83,4 @@ Explore Ireland Hubは`/discover`でStories placeholder、Registry由来のGuide
 
 Irish Calendarは`/discover/calendar`で、Asia/Tokyo基準の当日と当月に該当するアイルランド共和国の祝日・文化イベントを日英表示します。イベント内容は`apps/web/data/ireland/calendar.json`を唯一のデータソースとし、Calendar domain layerが起動時検証、暦日計算、当日・月別検索を担当します。開催日が年ごとに公式発表されるイベントは通常月の月別一覧に未確定と明示し、具体日を推測しません。Content Registry、API、DBには接続しません。
 
-MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Story / Guide、Quiz機能、関連記事、CMS、Content管理画面は後続Issueで追加します。
+MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Guideも同じContent Registry / Trusted MDXの仕組みで追加し、`split-the-g`を最初の本番Guideとして提供します。本番Story、Quiz機能、関連記事、CMS、Content管理画面は後続Issueで追加します。
