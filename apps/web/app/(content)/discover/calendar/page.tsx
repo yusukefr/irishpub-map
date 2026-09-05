@@ -6,6 +6,62 @@ import type { CalendarDate, CalendarEventOccurrence } from "../../../lib/calenda
 import { formatMessage, getTranslation, type Locale } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
 
+const CALENDAR_MONTH_RANGE = 12;
+
+type CalendarPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+type YearMonth = Pick<CalendarDate, "year" | "month">;
+
+function toMonthIndex({ year, month }: YearMonth): number {
+  return year * 12 + month - 1;
+}
+
+function fromMonthIndex(monthIndex: number): YearMonth {
+  return {
+    year: Math.floor(monthIndex / 12),
+    month: (monthIndex % 12) + 1,
+  };
+}
+
+function parseQueryInteger(value: string | string[] | undefined): number | null {
+  if (typeof value !== "string" || !/^\d+$/u.test(value)) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+/** 不正値や閲覧可能範囲外を当月へ戻し、安全に表示対象月を決定します。 */
+function resolveSelectedMonth(
+  searchParams: Record<string, string | string[] | undefined>,
+  currentMonth: YearMonth,
+): YearMonth {
+  const year = parseQueryInteger(searchParams.year);
+  const month = parseQueryInteger(searchParams.month);
+  if (year === null || month === null || month < 1 || month > 12) {
+    return currentMonth;
+  }
+
+  const selectedMonth = { year, month };
+  const selectedMonthIndex = toMonthIndex(selectedMonth);
+  const currentMonthIndex = toMonthIndex(currentMonth);
+  if (
+    !Number.isSafeInteger(selectedMonthIndex) ||
+    Math.abs(selectedMonthIndex - currentMonthIndex) > CALENDAR_MONTH_RANGE
+  ) {
+    return currentMonth;
+  }
+
+  return selectedMonth;
+}
+
+function getCalendarHref({ year, month }: YearMonth): string {
+  return `/discover/calendar?year=${year}&month=${month}`;
+}
+
 function toUtcDate(date: CalendarDate): Date {
   const result = new Date(0);
   result.setUTCHours(0, 0, 0, 0);
@@ -62,15 +118,24 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: `${t.heading} | Irish Pub Map`, description: t.lead };
 }
 
-/** Asia/Tokyo基準の当日と当月に該当するアイルランドのイベントを表示します。
+/** Asia/Tokyo基準の当日と、選択月に該当するアイルランドのイベントを表示します。
+ * @param {CalendarPageProps} props Next.jsから渡されるクエリパラメータ。
  * @returns {Promise<JSX.Element>} 日英ローカライズ済みのカレンダーページ。
  */
-export default async function CalendarPage() {
-  const locale = await getRequestLocale();
+export default async function CalendarPage({ searchParams }: CalendarPageProps) {
+  const [locale, resolvedSearchParams] = await Promise.all([getRequestLocale(), searchParams]);
   const t = getTranslation(locale).discover.calendar;
   const today = getTodayInTokyo();
+  const currentMonth = { year: today.year, month: today.month };
+  const selectedMonth = resolveSelectedMonth(resolvedSearchParams, currentMonth);
+  const currentMonthIndex = toMonthIndex(currentMonth);
+  const selectedMonthIndex = toMonthIndex(selectedMonth);
+  const previousMonth =
+    selectedMonthIndex > currentMonthIndex - CALENDAR_MONTH_RANGE ? fromMonthIndex(selectedMonthIndex - 1) : null;
+  const nextMonth =
+    selectedMonthIndex < currentMonthIndex + CALENDAR_MONTH_RANGE ? fromMonthIndex(selectedMonthIndex + 1) : null;
   const todaysEvents = getEventsForDate(today);
-  const monthlyEvents = getEventsForMonth(today.year, today.month);
+  const monthlyEvents = getEventsForMonth(selectedMonth.year, selectedMonth.month);
 
   return (
     <article className="content-container calendar-page" aria-labelledby="calendar-heading">
@@ -91,8 +156,22 @@ export default async function CalendarPage() {
 
       <section className="calendar-section" aria-labelledby="calendar-month-heading">
         <h2 id="calendar-month-heading">
-          {formatMessage(t.monthHeading, { month: formatMonth(today.year, today.month, locale) })}
+          {formatMessage(t.monthHeading, {
+            month: formatMonth(selectedMonth.year, selectedMonth.month, locale),
+          })}
         </h2>
+        <nav className="calendar-month-navigation" aria-label={t.monthNavigationLabel}>
+          {previousMonth ? (
+            <Link href={getCalendarHref(previousMonth)}>{t.previousMonth}</Link>
+          ) : (
+            <span aria-disabled="true">{t.previousMonth}</span>
+          )}
+          {nextMonth ? (
+            <Link href={getCalendarHref(nextMonth)}>{t.nextMonth}</Link>
+          ) : (
+            <span aria-disabled="true">{t.nextMonth}</span>
+          )}
+        </nav>
         {monthlyEvents.length > 0 ? (
           <EventList events={monthlyEvents} locale={locale} />
         ) : (

@@ -26,8 +26,11 @@
       "lead": "アイルランド共和国の祝日と、文化や歴史にまつわる日を紹介します。",
       "todayHeading": "今日のアイルランド",
       "monthHeading": "{month}のイベント",
+      "monthNavigationLabel": "月別イベントの移動",
+      "previousMonth": "← 前月",
+      "nextMonth": "次月 →",
       "noEventsToday": "今日に該当するイベントはありません。",
-      "noEventsThisMonth": "今月に該当するイベントはありません。",
+      "noEventsThisMonth": "この月に該当するイベントはありません。",
       "dateToBeConfirmed": "開催日は年ごとに決定",
       "back": "Explore Irelandへ戻る"
     }
