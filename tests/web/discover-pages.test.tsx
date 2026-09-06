@@ -109,7 +109,7 @@ describe("Discover pages", () => {
       "/discover/guides/split-the-g",
     );
     expect(screen.getByRole("link", { name: "サンプルガイド →" })).toHaveAttribute("href", "/discover/guides/sample");
-    expect(screen.getByRole("link", { name: "サンプルを見る →" })).toHaveAttribute("href", "/discover/quiz");
+    expect(screen.getByRole("link", { name: "今日のクイズに挑戦 →" })).toHaveAttribute("href", "/discover/quiz");
     expect(screen.getByRole("link", { name: "カレンダーを見る →" })).toHaveAttribute("href", "/discover/calendar");
     expect(screen.queryByRole("main")).not.toBeInTheDocument();
   });
@@ -160,14 +160,15 @@ describe("Discover pages", () => {
     await expect(generateGuideMetadata({ params: Promise.resolve({ slug: "unknown" }) })).rejects.toThrow("not-found");
   });
 
-  it("Quizは日英placeholderだけを表示してHubへ戻れる", async () => {
+  it("QuizはLocale別の今日の1問と4択を表示してHubへ戻れる", async () => {
     locale = "en";
     render(await QuizPage());
 
     expect(screen.getByRole("heading", { level: 1, name: "Today's Ireland Quiz" })).toBeInTheDocument();
-    expect(screen.getByText("Quiz content is coming soon.")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Choose one answer" })).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(4);
+    expect(screen.getByRole("button", { name: "Submit answer" })).toBeDisabled();
     expect(screen.getByRole("link", { name: "← Back to Explore Ireland" })).toHaveAttribute("href", "/discover");
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("各ページのMetadataをLocaleとGuide metadataから生成する", async () => {
@@ -182,7 +183,7 @@ describe("Discover pages", () => {
     locale = "en";
     await expect(generateQuizMetadata()).resolves.toMatchObject({
       title: "Today's Ireland Quiz | Irish Pub Map",
-      description: "Quiz content is coming soon.",
+      description: "Learn something new about Irish culture, history, and pub traditions with today's question.",
     });
   });
 });

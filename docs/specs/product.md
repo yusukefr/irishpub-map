@@ -79,8 +79,10 @@ Issue #273で公開状態のDB保持、公開APIの絞り込み、管理取得�
 
 Content記事はRepository内のTrusted MDXを対象とし、`apps/web/app/lib/content/`の明示的RegistryとRepository APIからのみ取得します。記事は`story` / `guide`のkind、独立したcategory、Locale非依存のStable Tag ID、日英両方のLoaderを持つ共通Metadataモデルで扱います。未登録slugはRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。
 
-Explore Ireland Hubは`/discover`でStories placeholder、Registry由来のGuide一覧、Quiz導線、Irish Calendar導線を表示します。Guideは`/discover/guides/[slug]`でLocale別MDXを読み込み、未登録slugは404とします。`/discover/quiz`は後続のQuiz機能向けplaceholderであり、Question、Choice、Answer、Scoreは持ちません。
+Explore Ireland Hubは`/discover`でStories placeholder、Registry由来のGuide一覧、Today's Ireland Quiz導線、Irish Calendar導線を表示します。Guideは`/discover/guides/[slug]`でLocale別MDXを読み込み、未登録slugは404とします。
+
+Today's Ireland Quizは`/discover/quiz`で、Asia/Tokyo基準の日付から決定した4択問題を日英表示します。同じ日と問題データではLocaleや端末によらず同じ問題を選び、記念日指定がある問題を通常ローテーションより優先します。回答はServer Actionで採点し、回答後に正解・解説・公式情報源と任意の関連Guideを表示します。問題データと追加方法は[Today's Ireland Quiz データ仕様](quiz.md)に従います。回答履歴や長期スコアは保持しません。
 
 Irish Calendarは`/discover/calendar`で、Asia/Tokyo基準の当日と選択月に該当するアイルランド共和国の祝日・文化イベントを日英表示します。月別一覧は`?year=<年>&month=<月>`で当月の前後12か月を移動でき、範囲端ではそれ以上の移動を無効にします。不正または範囲外の年月は当月へ戻し、「今日のアイルランド」は選択月にかかわらず実際の当日を表示します。イベント内容は`apps/web/data/ireland/calendar.json`を唯一のデータソースとし、Calendar domain layerが起動時検証、暦日計算、当日・月別検索を担当します。開催日が年ごとに公式発表されるイベントは通常月の月別一覧に未確定と明示し、具体日を推測しません。Content Registry、API、DBには接続しません。
 
-MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Guideも同じContent Registry / Trusted MDXの仕組みで追加し、`split-the-g`を最初の本番Guideとして提供します。本番Story、Quiz機能、関連記事、CMS、Content管理画面は後続Issueで追加します。
+MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Guideも同じContent Registry / Trusted MDXの仕組みで追加し、`split-the-g`を最初の本番Guideとして提供します。本番Story、関連記事、CMS、Content管理画面は後続Issueで追加します。
