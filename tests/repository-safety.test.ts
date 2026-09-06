@@ -29,6 +29,8 @@ describe("repository safety check", () => {
     expect(findSensitiveData("https://github.com/neondatabase/agent-skills")).toEqual([]);
     expect(findSensitiveData("https://api.github.com/repos/neondatabase/agent-skills")).toEqual([]);
     expect(findSensitiveData("https://github.com/marketplace/actions/neon-schema-diff-github-action")).toEqual([]);
+    expect(findSensitiveData("https://github.com/isaacs/node-lru-cache")).toEqual([]);
+    expect(findSensitiveData("https://github.com/shuding/better-all")).toEqual([]);
   });
 
   it("ignores package lock funding URLs in staged additions", () => {
