@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { listPublishedContent } from "../../lib/content/repository";
+import { listLegacyGuides } from "../../lib/content/legacy-repository";
 import { getTranslation } from "../../lib/i18n";
 import { getRequestLocale } from "../../lib/i18n/server";
 
@@ -19,12 +19,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /**
  * Stories、Guide、Quizへの入口となるExplore Ireland Hubを表示します。
- * @returns {Promise<JSX.Element>} Registry由来のGuide一覧を含むHub。
+ * @returns {Promise<JSX.Element>} 既存MDX Guide一覧を含むHub。
  */
 export default async function DiscoverPage() {
   const locale = await getRequestLocale();
   const t = getTranslation(locale).discover;
-  const guides = await listPublishedContent("guide", locale);
+  const guides = await listLegacyGuides(locale);
 
   return (
     <section className="content-container discover-page" aria-labelledby="discover-heading">

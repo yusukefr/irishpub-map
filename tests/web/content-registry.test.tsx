@@ -16,7 +16,7 @@ describe("content renderer registry", () => {
         }
       />,
     );
-    expect(screen.getByRole("heading", { name: "見出し" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "見出し" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "危険" })).not.toBeInTheDocument();
     expect(screen.queryByText("window.__xss = true")).not.toBeInTheDocument();
     expect(screen.getByRole("table")).toBeInTheDocument();

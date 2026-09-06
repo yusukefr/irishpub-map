@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ locale: vi.fn(), list: vi.fn(), get: vi.fn(), notFound: vi.fn() }));
 vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: mocks.locale }));
-vi.mock("../../apps/web/app/lib/content/repository", () => ({
-  listPublishedContent: mocks.list,
-  getPublishedContentBySlug: mocks.get,
+vi.mock("../../apps/web/app/lib/content/legacy-repository", () => ({
+  listLegacyGuides: mocks.list,
+  loadLegacyGuide: mocks.get,
 }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 import DiscoverPage from "../../apps/web/app/(content)/discover/page";
@@ -16,12 +16,15 @@ const article = {
   summary: "要約",
   category: "culture" as const,
   publishedAt: "2026-09-02",
-  bodyMarkdown: "# Markdown本文\n\n[安全なリンク](https://example.com)",
 };
 beforeEach(() => {
   mocks.locale.mockReset().mockResolvedValue("ja");
   mocks.list.mockReset().mockResolvedValue([article]);
-  mocks.get.mockReset().mockImplementation((_kind, slug) => Promise.resolve(slug === "sample" ? article : null));
+  mocks.get
+    .mockReset()
+    .mockImplementation((slug) =>
+      Promise.resolve(slug === "sample" ? { Component: () => <p>MDX本文</p>, metadata: article } : null),
+    );
   mocks.notFound.mockReset().mockImplementation(() => {
     throw new Error("not-found");
   });
@@ -29,14 +32,13 @@ beforeEach(() => {
 describe("Discover pages", () => {
   it("公開RepositoryのGuide一覧を表示する", async () => {
     render(await DiscoverPage());
-    expect(mocks.list).toHaveBeenCalledWith("guide", "ja");
+    expect(mocks.list).toHaveBeenCalledWith("ja");
     expect(screen.getByRole("link", { name: "サンプルガイド →" })).toHaveAttribute("href", "/discover/guides/sample");
   });
   it("DB Markdownを固定Rendererで表示しmetadataを生成する", async () => {
     render(await GuidePage({ params: Promise.resolve({ slug: "sample" }) }));
     expect(screen.getByRole("heading", { level: 1, name: "サンプルガイド" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: "Markdown本文" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "安全なリンク" })).toHaveAttribute("href", "https://example.com");
+    expect(screen.getByText("MDX本文")).toBeInTheDocument();
     await expect(generateMetadata({ params: Promise.resolve({ slug: "sample" }) })).resolves.toEqual({
       title: "サンプルガイド | Irish Pub Map",
       description: "要約",

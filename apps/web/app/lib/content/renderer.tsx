@@ -1,6 +1,32 @@
-import Markdown, { defaultUrlTransform } from "react-markdown";
+import Markdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ContentRendererProps } from "./types";
+const headingComponents = {
+  h1: ({ node, ...props }) => {
+    void node;
+    return <h2 {...props} />;
+  },
+  h2: ({ node, ...props }) => {
+    void node;
+    return <h3 {...props} />;
+  },
+  h3: ({ node, ...props }) => {
+    void node;
+    return <h4 {...props} />;
+  },
+  h4: ({ node, ...props }) => {
+    void node;
+    return <h5 {...props} />;
+  },
+  h5: ({ node, ...props }) => {
+    void node;
+    return <h6 {...props} />;
+  },
+  h6: ({ node, ...props }) => {
+    void node;
+    return <p {...props} />;
+  },
+} satisfies Components;
 const allowedElements = [
   "a",
   "blockquote",
@@ -44,7 +70,13 @@ export function sanitizeMarkdownUrl(value: string): string | undefined {
  */
 export function SafeMarkdownRenderer({ markdown }: ContentRendererProps) {
   return (
-    <Markdown allowedElements={allowedElements} remarkPlugins={[remarkGfm]} skipHtml urlTransform={sanitizeMarkdownUrl}>
+    <Markdown
+      components={headingComponents}
+      allowedElements={allowedElements}
+      remarkPlugins={[remarkGfm]}
+      skipHtml
+      urlTransform={sanitizeMarkdownUrl}
+    >
       {markdown}
     </Markdown>
   );

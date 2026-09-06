@@ -53,10 +53,11 @@ describe("editorial content repository", () => {
     expect(databaseMock.queries[0].text).toContain("entry.status = 'published'");
     expect(databaseMock.queries[0].values).toEqual(expect.arrayContaining(["en", "ja", "guide", "sample"]));
   });
-  it("一覧を公開済みだけに限定しkind単位のcache tagを付与する", async () => {
+  it("一覧を公開済みだけに限定し本文を取得しない", async () => {
     databaseMock.rows = [row];
     await expect(listPublishedContent("guide", "ja")).resolves.toHaveLength(1);
     expect(databaseMock.queries[0].text).toContain("ORDER BY entry.published_at DESC");
+    expect(databaseMock.queries[0].text).not.toContain("translation.body_markdown");
   });
   it("DB未設定時は接続せず公開Contentを返さない", async () => {
     delete process.env.DATABASE_URL;

@@ -1,14 +1,16 @@
 import { neon } from "@neondatabase/serverless";
 import { DEFAULT_LOCALE, type Locale } from "@irishpub-map/shared/locale";
-import { isContentCategory, type ContentKind, type PublishedContent } from "./types";
+import { isContentCategory, type ContentKind, type PublishedContent, type PublishedContentSummary } from "./types";
 
-type DbContentRow = {
+type DbContentSummaryRow = {
   kind: unknown;
   slug: unknown;
   category: unknown;
   published_at: unknown;
   title: unknown;
   summary: unknown;
+};
+type DbContentRow = DbContentSummaryRow & {
   body_markdown: unknown;
 };
 let sqlClient: ReturnType<typeof neon> | null = null;
@@ -58,12 +60,12 @@ export async function getPublishedContentBySlug(
  * kindに属する公開済みContentだけを要求locale優先・日本語フォールバックで取得します。
  * @param {ContentKind} kind - 記事種別。
  * @param {Locale} locale - 優先locale。
- * @returns {Promise<readonly PublishedContent[]>} 公開Content一覧。
+ * @returns {Promise<readonly PublishedContentSummary[]>} 公開Content一覧メタデータ。
  */
 export async function listPublishedContent(
   kind: ContentKind,
   locale: Locale = DEFAULT_LOCALE,
-): Promise<readonly PublishedContent[]> {
+): Promise<readonly PublishedContentSummary[]> {
   if (!process.env.DATABASE_URL) return [];
   return listPublishedContentFromDatabase(kind, locale);
 }
@@ -72,10 +74,29 @@ async function getPublishedContentBySlugFromDatabase(kind: ContentKind, slug: st
     (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary, translation.body_markdown FROM content_entries AS entry JOIN LATERAL (SELECT value.title, value.summary, value.body_markdown FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.kind = ${kind} AND entry.slug = ${slug}`) as DbContentRow[];
   return rows[0] ? parsePublishedContent(rows[0]) : null;
 }
+function parsePublishedContentSummary(row: DbContentSummaryRow): PublishedContentSummary {
+  if (
+    (row.kind !== "guide" && row.kind !== "story") ||
+    typeof row.slug !== "string" ||
+    !isContentCategory(typeof row.category === "string" ? row.category : "") ||
+    typeof row.title !== "string" ||
+    typeof row.summary !== "string" ||
+    typeof row.published_at !== "string"
+  )
+    throw new Error("Invalid published content returned from database.");
+  return {
+    kind: row.kind,
+    slug: row.slug,
+    category: row.category as PublishedContentSummary["category"],
+    publishedAt: row.published_at,
+    title: row.title,
+    summary: row.summary,
+  };
+}
 async function listPublishedContentFromDatabase(kind: ContentKind, locale: Locale) {
   const rows =
-    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary, translation.body_markdown FROM content_entries AS entry JOIN LATERAL (SELECT value.title, value.summary, value.body_markdown FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.kind = ${kind} ORDER BY entry.published_at DESC, entry.slug`) as DbContentRow[];
-  return rows.map(parsePublishedContent);
+    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary FROM content_entries AS entry JOIN LATERAL (SELECT value.title, value.summary FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.kind = ${kind} ORDER BY entry.published_at DESC, entry.slug`) as DbContentSummaryRow[];
+  return rows.map(parsePublishedContentSummary);
 }
 function getSql() {
   sqlClient ??= neon(process.env.DATABASE_URL!);
