@@ -145,4 +145,25 @@ describe("pubs database migrations", () => {
     expect(verifySql).toContain("pg_get_constraintdef(con.oid)");
     expect(verifySql).not.toMatch(/\bAS constraint\b/i);
   });
+
+  it("defines editorial content entries, localized translations, and verification", async () => {
+    const upSql = await readMigration("010_add_editorial_content_up.sql");
+    const verifySql = await readMigration("010_add_editorial_content_verify.sql");
+
+    expect(upSql).toContain("CREATE TABLE content_entries");
+    expect(upSql).toContain("id UUID PRIMARY KEY DEFAULT gen_random_uuid()");
+    expect(upSql).toContain("CONSTRAINT content_entries_kind_slug_key UNIQUE (kind, slug)");
+    expect(upSql).toContain("CHECK (status IN ('draft', 'published'))");
+    expect(upSql).toContain("content_entries_publication_state_check");
+    expect(upSql).toContain("CREATE TABLE content_translations");
+    expect(upSql).toContain("PRIMARY KEY (content_id, locale)");
+    expect(upSql).toContain("REFERENCES content_entries(id) ON DELETE CASCADE");
+    expect(upSql).toContain("CHECK (locale IN ('ja', 'en'))");
+    expect(upSql).toContain("VALUES ('010_add_editorial_content')");
+    expect(verifySql).toContain("content_entry_constraints");
+    expect(verifySql).toContain("content_translation_constraints");
+    expect(verifySql).toContain("unsupported_translation_locales");
+    expect(verifySql).toContain("orphan_content_translations");
+    expect(verifySql).toContain("editorial_content_migration_recorded");
+  });
 });

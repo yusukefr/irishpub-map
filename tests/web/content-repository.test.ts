@@ -6,7 +6,13 @@ import {
   listContent,
   loadContent,
 } from "../../apps/web/app/lib/content/repository";
-import type { ContentArticleMetadata, ContentModule, ContentRegistry } from "../../apps/web/app/lib/content/types";
+import {
+  isContentCategory,
+  isContentKind,
+  type ContentArticleMetadata,
+  type ContentModule,
+  type ContentRegistry,
+} from "../../apps/web/app/lib/content/types";
 
 const ContentComponent = (() => null) as MDXContent;
 const guideMetadata = {
@@ -56,6 +62,13 @@ function createRegistryWithModule(contentModule: unknown): ContentRegistry {
 }
 
 describe("content repository", () => {
+  it("uses the content kind and category allow lists for application-side validation", () => {
+    expect(isContentKind("guide")).toBe(true);
+    expect(isContentKind("quiz")).toBe(false);
+    expect(isContentCategory("pub-culture")).toBe(true);
+    expect(isContentCategory("other")).toBe(false);
+  });
+
   it("exposes only explicitly registered own-property slugs", async () => {
     const registry = createRegistry(guideMetadata);
 
