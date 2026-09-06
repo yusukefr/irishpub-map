@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { loadContent } from "../../../../lib/content/repository";
+import { getContentRenderer } from "../../../../lib/content/registry";
+import { getPublishedContentBySlug } from "../../../../lib/content/repository";
 import { getTranslation } from "../../../../lib/i18n";
 import { getRequestLocale } from "../../../../lib/i18n/server";
 
@@ -16,35 +17,35 @@ type GuidePageProps = {
  */
 export async function generateMetadata({ params }: GuidePageProps): Promise<Metadata> {
   const [{ slug }, locale] = await Promise.all([params, getRequestLocale()]);
-  const content = await loadContent("guide", slug, locale);
+  const content = await getPublishedContentBySlug("guide", slug, locale);
   if (!content) notFound();
 
   return {
-    title: `${content.metadata.title} | Irish Pub Map`,
-    description: content.metadata.summary,
+    title: `${content.title} | Irish Pub Map`,
+    description: content.summary,
   };
 }
 
 /**
- * RegistryとLocale Loaderを通してTrusted MDX Guideを表示します。
+ * 公開済みDB Contentを固定Renderer経由で表示します。
  * @param {GuidePageProps} props - Promiseとして渡される動的Route params。
- * @returns {Promise<JSX.Element>} Metadata見出し、MDX本文、Hubへの導線。
+ * @returns {Promise<JSX.Element>} Metadata見出し、Markdown本文、Hubへの導線。
  */
 export default async function GuidePage({ params }: GuidePageProps) {
   const [{ slug }, locale] = await Promise.all([params, getRequestLocale()]);
-  const content = await loadContent("guide", slug, locale);
+  const content = await getPublishedContentBySlug("guide", slug, locale);
   if (!content) notFound();
 
   const t = getTranslation(locale).discover;
-  const GuideContent = content.Component;
+  const GuideContent = getContentRenderer(content.kind);
 
   return (
     <article className="content-container content-article">
       <p className="content-kicker">{t.guides}</p>
-      <h1>{content.metadata.title}</h1>
-      <p className="content-lead">{content.metadata.summary}</p>
+      <h1>{content.title}</h1>
+      <p className="content-lead">{content.summary}</p>
       <div className="content-prose">
-        <GuideContent />
+        <GuideContent markdown={content.bodyMarkdown} />
       </div>
       <Link className="content-back-link" href="/discover">
         ← {t.back}

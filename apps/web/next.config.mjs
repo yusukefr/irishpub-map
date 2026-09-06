@@ -6,6 +6,7 @@ const withMDX = createMDX({
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
+  cacheComponents: true,
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   transpilePackages: ["@irishpub-map/shared"],
 };

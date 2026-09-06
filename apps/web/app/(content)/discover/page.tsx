@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { listContent } from "../../lib/content/repository";
+import { listPublishedContent } from "../../lib/content/repository";
 import { getTranslation } from "../../lib/i18n";
 import { getRequestLocale } from "../../lib/i18n/server";
 
@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function DiscoverPage() {
   const locale = await getRequestLocale();
   const t = getTranslation(locale).discover;
-  const guides = await listContent("guide", locale);
+  const guides = await listPublishedContent("guide", locale);
 
   return (
     <section className="content-container discover-page" aria-labelledby="discover-heading">

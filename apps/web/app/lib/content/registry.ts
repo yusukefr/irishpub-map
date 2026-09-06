@@ -1,27 +1,8 @@
-import type { ContentRegistry } from "./types";
+import type { ContentKind, ContentRenderer } from "./types";
+import { GuideRenderer, StoryRenderer } from "./renderer";
+/** DBのkindを許可済みRendererへ固定対応させるAllow Listです。 */
+export const contentRegistry = { story: {}, guide: { "split-the-g": {}, sample: {} } } as const;
 
-/**
- * 公開対象として明示的に登録したContentのAllow Listです。
- * Request値をImport Pathへ直接渡さず、日英両方のTrusted MDXだけを公開します。
- */
-export const contentRegistry = {
-  story: {},
-  guide: {
-    "split-the-g": {
-      slug: "split-the-g",
-      kind: "guide",
-      loaders: {
-        ja: () => import("../../../content/discover/guides/split-the-g/ja.mdx"),
-        en: () => import("../../../content/discover/guides/split-the-g/en.mdx"),
-      },
-    },
-    sample: {
-      slug: "sample",
-      kind: "guide",
-      loaders: {
-        ja: () => import("../../../content/discover/guides/sample/ja.mdx"),
-        en: () => import("../../../content/discover/guides/sample/en.mdx"),
-      },
-    },
-  },
-} satisfies ContentRegistry;
+export const contentRendererRegistry = { guide: GuideRenderer, story: StoryRenderer } satisfies Record<ContentKind, ContentRenderer>;
+/** DB値をComponent名やimport pathとして解決せず、固定登録されたRendererを返します。 */
+export function getContentRenderer(kind: ContentKind): ContentRenderer { return contentRendererRegistry[kind]; }
