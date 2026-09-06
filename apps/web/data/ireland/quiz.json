@@ -1,0 +1,541 @@
+{
+  "schemaVersion": 1,
+  "country": "IE",
+  "categories": {
+    "ireland-basics": {
+      "icon": "☘️",
+      "label": {
+        "ja": "アイルランド基礎",
+        "en": "Ireland Basics"
+      }
+    },
+    "pub-guinness": {
+      "icon": "🍺",
+      "label": {
+        "ja": "Pub & Guinness",
+        "en": "Pub & Guinness"
+      }
+    },
+    "irish-whiskey": {
+      "icon": "🥃",
+      "label": {
+        "ja": "アイリッシュウイスキー",
+        "en": "Irish Whiskey"
+      }
+    },
+    "irish-music": {
+      "icon": "🎻",
+      "label": {
+        "ja": "アイリッシュ音楽",
+        "en": "Irish Music"
+      }
+    },
+    "irish-sports": {
+      "icon": "🏑",
+      "label": {
+        "ja": "アイルランドのスポーツ",
+        "en": "Irish Sports"
+      }
+    },
+    "literature": {
+      "icon": "📚",
+      "label": {
+        "ja": "文学",
+        "en": "Literature"
+      }
+    },
+    "myth-folklore": {
+      "icon": "👻",
+      "label": {
+        "ja": "神話と民間伝承",
+        "en": "Myth & Folklore"
+      }
+    },
+    "history": {
+      "icon": "🏰",
+      "label": {
+        "ja": "歴史",
+        "en": "History"
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "ireland-basics-st-brigid-001",
+      "category": "ireland-basics",
+      "specialDate": {
+        "month": 2,
+        "day": 1
+      },
+      "question": {
+        "ja": "アイルランドの伝統で、春の始まりを示すSt. Brigid's Dayはいつですか？",
+        "en": "When is St. Brigid's Day, traditionally marking the start of spring in Ireland?"
+      },
+      "choices": [
+        {
+          "id": "february-1",
+          "label": {
+            "ja": "2月1日",
+            "en": "February 1"
+          }
+        },
+        {
+          "id": "march-1",
+          "label": {
+            "ja": "3月1日",
+            "en": "March 1"
+          }
+        },
+        {
+          "id": "may-1",
+          "label": {
+            "ja": "5月1日",
+            "en": "May 1"
+          }
+        },
+        {
+          "id": "august-1",
+          "label": {
+            "ja": "8月1日",
+            "en": "August 1"
+          }
+        }
+      ],
+      "answer": "february-1",
+      "explanation": {
+        "ja": "St. Brigid's Dayは2月1日で、アイルランドの伝統的な暦では春の始まりを示す日です。",
+        "en": "St. Brigid's Day falls on February 1 and traditionally marks the beginning of spring in Ireland."
+      },
+      "source": {
+        "label": {
+          "ja": "National Museum of Ireland",
+          "en": "National Museum of Ireland"
+        },
+        "url": "https://cms.museum.ie/en-IE/Museums/Country-Life/Exhibitions/Life-in-the-Community"
+      }
+    },
+    {
+      "id": "ireland-basics-st-patrick-001",
+      "category": "ireland-basics",
+      "specialDate": {
+        "month": 3,
+        "day": 17
+      },
+      "question": {
+        "ja": "St. Patrick's Dayは毎年いつ祝われますか？",
+        "en": "On which date is St. Patrick's Day celebrated each year?"
+      },
+      "choices": [
+        {
+          "id": "february-1",
+          "label": {
+            "ja": "2月1日",
+            "en": "February 1"
+          }
+        },
+        {
+          "id": "march-17",
+          "label": {
+            "ja": "3月17日",
+            "en": "March 17"
+          }
+        },
+        {
+          "id": "june-16",
+          "label": {
+            "ja": "6月16日",
+            "en": "June 16"
+          }
+        },
+        {
+          "id": "october-31",
+          "label": {
+            "ja": "10月31日",
+            "en": "October 31"
+          }
+        }
+      ],
+      "answer": "march-17",
+      "explanation": {
+        "ja": "St. Patrick's Dayは、アイルランドの守護聖人St. Patrickを記念して毎年3月17日に祝われます。",
+        "en": "St. Patrick's Day is celebrated on March 17 to commemorate St. Patrick, the patron saint of Ireland."
+      },
+      "source": {
+        "label": {
+          "ja": "Ireland.ie",
+          "en": "Ireland.ie"
+        },
+        "url": "https://www.ireland.ie/en/st-patricks-day-2026/everything-you-need-to-know-about-st-patricks-day/"
+      }
+    },
+    {
+      "id": "pub-guinness-st-james-gate-001",
+      "category": "pub-guinness",
+      "question": {
+        "ja": "Arthur Guinnessが1759年に9,000年の賃貸契約を結んだDublinの醸造所はどこですか？",
+        "en": "At which Dublin brewery did Arthur Guinness sign a 9,000-year lease in 1759?"
+      },
+      "choices": [
+        {
+          "id": "st-james-gate",
+          "label": {
+            "ja": "St. James's Gate Brewery",
+            "en": "St. James's Gate Brewery"
+          }
+        },
+        {
+          "id": "temple-bar",
+          "label": {
+            "ja": "Temple Bar",
+            "en": "Temple Bar"
+          }
+        },
+        {
+          "id": "croke-park",
+          "label": {
+            "ja": "Croke Park",
+            "en": "Croke Park"
+          }
+        },
+        {
+          "id": "trinity-college",
+          "label": {
+            "ja": "Trinity College",
+            "en": "Trinity College"
+          }
+        }
+      ],
+      "answer": "st-james-gate",
+      "explanation": {
+        "ja": "Arthur Guinnessは1759年12月31日にSt. James's Gate Breweryの9,000年契約へ署名しました。",
+        "en": "Arthur Guinness signed the 9,000-year lease for St. James's Gate Brewery on December 31, 1759."
+      },
+      "source": {
+        "label": {
+          "ja": "Guinness公式サイト",
+          "en": "Official Guinness website"
+        },
+        "url": "https://www.guinness.com/en-gb/our-craft/guinness-story"
+      },
+      "relatedGuide": {
+        "slug": "split-the-g",
+        "label": {
+          "ja": "Split the Gをもっと知る",
+          "en": "Learn more about Split the G"
+        }
+      }
+    },
+    {
+      "id": "irish-whiskey-maturation-001",
+      "category": "irish-whiskey",
+      "question": {
+        "ja": "Irish Whiskeyを名乗るために、木樽で熟成する必要がある最低期間はどれですか？",
+        "en": "What is the minimum time Irish Whiskey must mature in wooden casks?"
+      },
+      "choices": [
+        {
+          "id": "one-year",
+          "label": {
+            "ja": "1年",
+            "en": "One year"
+          }
+        },
+        {
+          "id": "two-years",
+          "label": {
+            "ja": "2年",
+            "en": "Two years"
+          }
+        },
+        {
+          "id": "three-years",
+          "label": {
+            "ja": "3年以上",
+            "en": "At least three years"
+          }
+        },
+        {
+          "id": "five-years",
+          "label": {
+            "ja": "5年以上",
+            "en": "At least five years"
+          }
+        }
+      ],
+      "answer": "three-years",
+      "explanation": {
+        "ja": "Irish Whiskeyの技術仕様では、木樽で3年以上熟成することが定められています。",
+        "en": "The Irish Whiskey technical specification requires maturation in wooden casks for at least three years."
+      },
+      "source": {
+        "label": {
+          "ja": "アイルランド農業・食料・海洋省",
+          "en": "Department of Agriculture, Food and the Marine"
+        },
+        "url": "https://www.gov.ie/en/department-of-agriculture-food-and-the-marine/publications/geographical-indications-spirit-drinks/"
+      }
+    },
+    {
+      "id": "irish-music-bodhran-001",
+      "category": "irish-music",
+      "question": {
+        "ja": "伝統的に木の枠と山羊皮で作られるアイルランドのフレームドラムはどれですか？",
+        "en": "Which Irish frame drum is traditionally made with a wooden body and goatskin head?"
+      },
+      "choices": [
+        {
+          "id": "fiddle",
+          "label": {
+            "ja": "Fiddle",
+            "en": "Fiddle"
+          }
+        },
+        {
+          "id": "bodhran",
+          "label": {
+            "ja": "Bodhrán",
+            "en": "Bodhrán"
+          }
+        },
+        {
+          "id": "harp",
+          "label": {
+            "ja": "Harp",
+            "en": "Harp"
+          }
+        },
+        {
+          "id": "uilleann-pipes",
+          "label": {
+            "ja": "Uilleann pipes",
+            "en": "Uilleann pipes"
+          }
+        }
+      ],
+      "answer": "bodhran",
+      "explanation": {
+        "ja": "Bodhránは、伝統的に木の胴と山羊皮のヘッドで作られ、cipínなどと呼ばれるスティックで演奏するフレームドラムです。",
+        "en": "The bodhrán is a frame drum traditionally made with a wooden body and goatskin head and played with a stick called a cipín, tipper, or beater."
+      },
+      "source": {
+        "label": {
+          "ja": "Comhaltas Ceoltóirí Éireann",
+          "en": "Comhaltas Ceoltóirí Éireann"
+        },
+        "url": "https://comhaltas.ie/wp-content/uploads/2024/09/trad-is-fabClass-Workbook-English-211011.pdf"
+      }
+    },
+    {
+      "id": "irish-sports-gaelic-games-001",
+      "category": "irish-sports",
+      "question": {
+        "ja": "次のうち、Gaelic Gamesに含まれる競技はどれですか？",
+        "en": "Which of these sports belongs to the family of Gaelic Games?"
+      },
+      "choices": [
+        {
+          "id": "cricket",
+          "label": {
+            "ja": "Cricket",
+            "en": "Cricket"
+          }
+        },
+        {
+          "id": "hurling",
+          "label": {
+            "ja": "Hurling",
+            "en": "Hurling"
+          }
+        },
+        {
+          "id": "rugby",
+          "label": {
+            "ja": "Rugby",
+            "en": "Rugby"
+          }
+        },
+        {
+          "id": "polo",
+          "label": {
+            "ja": "Polo",
+            "en": "Polo"
+          }
+        }
+      ],
+      "answer": "hurling",
+      "explanation": {
+        "ja": "HurlingはGaelic Gamesを構成する競技のひとつで、GAAが統括しています。",
+        "en": "Hurling is one of the Gaelic Games and is governed by the GAA."
+      },
+      "source": {
+        "label": {
+          "ja": "Gaelic Athletic Association",
+          "en": "Gaelic Athletic Association"
+        },
+        "url": "https://www.gaa.ie/the-gaa/games/our-games"
+      }
+    },
+    {
+      "id": "literature-bloomsday-001",
+      "category": "literature",
+      "specialDate": {
+        "month": 6,
+        "day": 16
+      },
+      "question": {
+        "ja": "James Joyceの『Ulysses』でLeopold Bloomの一日が描かれ、Bloomsdayとして祝われる日はいつですか？",
+        "en": "Which date, depicted in James Joyce's Ulysses, is celebrated as Bloomsday?"
+      },
+      "choices": [
+        {
+          "id": "march-17",
+          "label": {
+            "ja": "3月17日",
+            "en": "March 17"
+          }
+        },
+        {
+          "id": "april-24",
+          "label": {
+            "ja": "4月24日",
+            "en": "April 24"
+          }
+        },
+        {
+          "id": "june-16",
+          "label": {
+            "ja": "6月16日",
+            "en": "June 16"
+          }
+        },
+        {
+          "id": "october-31",
+          "label": {
+            "ja": "10月31日",
+            "en": "October 31"
+          }
+        }
+      ],
+      "answer": "june-16",
+      "explanation": {
+        "ja": "Bloomsdayは、『Ulysses』の物語の日付である1904年6月16日を記念します。",
+        "en": "Bloomsday celebrates June 16, 1904, the day depicted in Ulysses."
+      },
+      "source": {
+        "label": {
+          "ja": "National Library of Ireland",
+          "en": "National Library of Ireland"
+        },
+        "url": "https://www.nli.ie/exhibitions-events/bloomsday-0"
+      }
+    },
+    {
+      "id": "myth-folklore-samhain-001",
+      "category": "myth-folklore",
+      "specialDate": {
+        "month": 10,
+        "day": 31
+      },
+      "question": {
+        "ja": "アイルランドの伝統で、Samhainはどの季節の最初の日を示しましたか？",
+        "en": "In Irish tradition, Samhain marked the first day of which season?"
+      },
+      "choices": [
+        {
+          "id": "spring",
+          "label": {
+            "ja": "春",
+            "en": "Spring"
+          }
+        },
+        {
+          "id": "summer",
+          "label": {
+            "ja": "夏",
+            "en": "Summer"
+          }
+        },
+        {
+          "id": "autumn",
+          "label": {
+            "ja": "秋",
+            "en": "Autumn"
+          }
+        },
+        {
+          "id": "winter",
+          "label": {
+            "ja": "冬",
+            "en": "Winter"
+          }
+        }
+      ],
+      "answer": "winter",
+      "explanation": {
+        "ja": "Samhainは11月1日の冬の始まりを示し、その前夜Oíche ShamhnaがHalloweenとして祝われます。",
+        "en": "Samhain marked November 1, the first day of winter, while its eve, Oíche Shamhna, is celebrated as Halloween."
+      },
+      "source": {
+        "label": {
+          "ja": "National Museum of Ireland",
+          "en": "National Museum of Ireland"
+        },
+        "url": "https://cms.museum.ie/en-IE/Collections-Research/Folklife-Collections/Folklife-Collections-List-%281%29/Religion-and-Calendar-Customs/Hallowe-en-Samhain"
+      }
+    },
+    {
+      "id": "history-easter-rising-gpo-001",
+      "category": "history",
+      "specialDate": {
+        "month": 4,
+        "day": 24
+      },
+      "question": {
+        "ja": "1916年のEaster Risingで、本部となったDublinの建物はどれですか？",
+        "en": "Which Dublin building became the headquarters of the 1916 Easter Rising?"
+      },
+      "choices": [
+        {
+          "id": "general-post-office",
+          "label": {
+            "ja": "General Post Office",
+            "en": "General Post Office"
+          }
+        },
+        {
+          "id": "dublin-castle",
+          "label": {
+            "ja": "Dublin Castle",
+            "en": "Dublin Castle"
+          }
+        },
+        {
+          "id": "custom-house",
+          "label": {
+            "ja": "The Custom House",
+            "en": "The Custom House"
+          }
+        },
+        {
+          "id": "leinster-house",
+          "label": {
+            "ja": "Leinster House",
+            "en": "Leinster House"
+          }
+        }
+      ],
+      "answer": "general-post-office",
+      "explanation": {
+        "ja": "1916年4月24日のEaster Mondayに蜂起側がGeneral Post Officeを占拠し、本部としました。",
+        "en": "On Easter Monday, April 24, 1916, the insurgents occupied the General Post Office and made it their headquarters."
+      },
+      "source": {
+        "label": {
+          "ja": "アイルランド首相府",
+          "en": "Department of the Taoiseach"
+        },
+        "url": "https://www.gov.ie/en/department-of-the-taoiseach/publications/the-1916-rising/"
+      }
+    }
+  ]
+}
