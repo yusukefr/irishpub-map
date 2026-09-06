@@ -76,6 +76,9 @@ Codex はリポジトリ配下の `.agents/skills` を自動検出します。�
 - `gh-address-comments`: 現在のブランチの Pull Request にあるレビューコメントを確認し、対応対象を選んでから修正します。
 - `vercel-deploy`: Vercel へのデプロイを行います。明示的な依頼がない限りプレビューとしてデプロイし、本番デプロイはユーザーの明示指示が必要です。
 - `web-test-workflow`: このリポジトリの Vitest、Testing Library、MapLibre モックを使ったテスト実装と検証を案内します。
+- `neon`: NeonのProject、Branch、Connectionなど、Neonを利用する開発フローを案内します。
+- `neon-postgres`: Neon上のPostgreSQLのSchema、Migration、Connection、性能設計を案内します。
+- `neon-postgres-branches`: MigrationやテストのためのNeon Branchの選択・作成・運用を案内します。
 
 Skills は繰り返し実行する手順を補助するものであり、リポジトリ固有の作業ルール・変更範囲・承認要件は常に [AGENTS.md](AGENTS.md) を優先します。
 

@@ -63,6 +63,23 @@ npm run build
 
 依存関係を変更した場合は、追加で `npm audit --omit=dev` を実行します。
 
+### Neon Migration の検証
+
+Neon の Schema 変更は、Production Branchへ直接適用せず、Branch-firstで検証します。Migrationを作成したら、次の順序で確認してからProductionへの適用を判断します。
+
+1. MigrationをNeon Branchへ適用する。
+2. Branch上で変更後のSchema、Constraint、Indexを確認する。
+3. Branchを接続先としてApplicationと関連テストを確認する。
+4. 検証結果に問題がないことを確認してから、Production Branchへ適用する。
+
+### Neon Branchの利用方針
+
+Neon Branchを新規作成するのは、原則としてSchema変更やMigrationなど、DB変更の検証が必要な作業に限定します。通常のApplication変更、UI変更、ドキュメント変更だけを理由にNeon Branchを作成しません。Vercel Preview環境では、既存の固定Preview Branch運用を維持し、Preview DeploymentごとにNeon Branchを自動作成しません。Migration検証用に作成したBranchは、検証完了後に削除するか、必要に応じて有効期限を設定します。
+
+Branchの用途に応じて、Production相当のデータで挙動を確認する場合は通常のBranchを、機密データを複製せずSchemaだけを確認する場合はSchema-only Branchを選択します。接続文字列やCredentialはRepositoryへ保存せず、実行環境から安全に提供してください。
+
+Migrationの実行にはPooled ConnectionではなくDirect / Unpooled Connectionを使用します。`MIGRATION_DATABASE_URL`にはNeonのDirect Connection Stringを設定し、Application Runtimeで利用するPooled `DATABASE_URL`はMigration用途に使用しません。
+
 ### ドキュメント
 
 - 実装を変更したときは、仕様、API、セットアップ手順、構成図・シーケンス図に差分がないか確認します。

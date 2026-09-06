@@ -1,13 +1,17 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
+const PUBLIC_GITHUB_URL_PATTERNS = [
+  /^https?:\/\/github\.com\/marketplace(?:\/|$)/i,
+  /^https?:\/\/github\.com\/neondatabase(?:\/|$)/i,
+  /^https?:\/\/api\.github\.com\/repos\/neondatabase(?:\/|$)/i,
+];
+
+const GITHUB_ACCOUNT_URL_PATTERN =
+  /https?:\/\/(?:api\.)?github\.com\/(?!(?:owner|organization|org|example|sponsors)(?:\/|$))(?:users\/|repos\/)?[A-Za-z0-9-]+(?:\/[A-Za-z0-9_.-]+)?/gi;
+
 const DEFAULT_PATTERNS = [
   { name: "メールアドレス", pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i },
-  {
-    name: "GitHub アカウント URL",
-    pattern:
-      /https?:\/\/(?:api\.)?github\.com\/(?!(?:owner|organization|org|example|sponsors)(?:\/|$))(?:users\/|repos\/)?[A-Za-z0-9-]+(?:\/[A-Za-z0-9_.-]+)?/i,
-  },
   { name: "GitHub トークン", pattern: /\b(?:ghp|github_pat)_[A-Za-z0-9_]{20,}\b/i },
   { name: "API キー形式の値", pattern: /\bsk-[A-Za-z0-9]{20,}\b/ },
   { name: "秘密鍵", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },
@@ -15,6 +19,10 @@ const DEFAULT_PATTERNS = [
 
 export function findSensitiveData(text, identifiers = []) {
   const findings = DEFAULT_PATTERNS.filter(({ pattern }) => pattern.test(text)).map(({ name }) => name);
+  const hasNonPublicGitHubUrl = [...text.matchAll(GITHUB_ACCOUNT_URL_PATTERN)].some(
+    ([url]) => !PUBLIC_GITHUB_URL_PATTERNS.some((pattern) => pattern.test(url)),
+  );
+  if (hasNonPublicGitHubUrl) findings.push("GitHub アカウント URL");
   for (const identifier of identifiers) {
     if (identifier.length >= 3 && text.toLowerCase().includes(identifier.toLowerCase())) {
       findings.push("ローカル環境で指定された識別子");
