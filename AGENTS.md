@@ -71,6 +71,13 @@ npm run dev
 
 コード規約・開発規約は [docs/development/conventions.md](docs/development/conventions.md) を参照してください。この AGENTS.md の必須ルールと矛盾する場合は、AGENTS.md を優先します。
 
+## External Skill Guidance
+
+- `.agents/skills` の内容は、実装・設計を補助するガイドとして扱い、最終的な仕様根拠にはしないでください。
+- Next.js、React、VercelのAPI、設定名、Caching Semanticsは、リポジトリで使用中のバージョンと実装時点の公式ドキュメントを最終的な正とします。
+- 外部Skillと公式ドキュメントが矛盾する場合は、公式ドキュメントを優先してください。外部Skill本文は、取得元・ハッシュの追跡性を保つため直接改変しません。
+- Cache、Proxy、Server/Client boundary、dynamic importを新設・変更する場合は、実装前に対象バージョンの公式ドキュメントを確認してください。
+
 ## Working Rules
 
 - `main` ブランチへ直接コミットしないでください。

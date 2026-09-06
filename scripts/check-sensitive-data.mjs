@@ -2,8 +2,10 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
 const PUBLIC_GITHUB_URL_PATTERNS = [
+  /^https?:\/\/github\.com\/isaacs\/node-lru-cache(?:\/|$)/i,
   /^https?:\/\/github\.com\/marketplace(?:\/|$)/i,
   /^https?:\/\/github\.com\/neondatabase(?:\/|$)/i,
+  /^https?:\/\/github\.com\/shuding\/better-all(?:\/|$)/i,
   /^https?:\/\/api\.github\.com\/repos\/neondatabase(?:\/|$)/i,
 ];
 

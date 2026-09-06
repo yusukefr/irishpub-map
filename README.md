@@ -80,6 +80,13 @@ Codex はリポジトリ配下の `.agents/skills` を自動検出します。�
 - `neon-postgres`: Neon上のPostgreSQLのSchema、Migration、Connection、性能設計を案内します。
 - `neon-postgres-branches`: MigrationやテストのためのNeon Branchの選択・作成・運用を案内します。
 
+- `next-best-practices`: App Router、Server/Client境界、Route Handler、データ取得、Next.js 16の実装判断を案内します。
+- `next-cache-components`: Cache Components、キャッシュタグ、無効化、動的・静的レンダリング境界を扱います。Skill導入だけでは`cacheComponents: true`を有効化しません。
+- `vercel-react-best-practices`: MapLibreを含むReact/Next.jsのクライアントUIで、Bundle、Hydration、再レンダリング、データ取得の性能改善を案内します。
+- `agent-browser`: AI Coding Agentが実装後に画面表示や操作を確認するためのブラウザ自動化CLIです。CIのE2Eテストを置き換えません。
+
+役割分担として、`web-test-workflow`はVitest・Testing Library・Playwrightのテスト実装と検証を、`agent-browser`はAI Coding Agentによる実装後の操作・表示確認を担当します。CIで保証する主要なUser FlowはPlaywrightで維持します。`vercel-deploy`はPreview / Productionデプロイの実行を担当し、今回導入したNext.js・React関連Skillsは設計、実装、性能判断に限定します。
+
 Skills は繰り返し実行する手順を補助するものであり、リポジトリ固有の作業ルール・変更範囲・承認要件は常に [AGENTS.md](AGENTS.md) を優先します。
 
 ## バージョン情報の更新
