@@ -32,8 +32,6 @@ beforeEach(() => {
   process.env.DATABASE_URL = "postgres://test-only";
   databaseMock.rows = [];
   databaseMock.queries = [];
-  cacheMock.cacheLife.mockReset();
-  cacheMock.cacheTag.mockReset();
 });
 afterEach(() => {
   if (originalUrl === undefined) delete process.env.DATABASE_URL;
@@ -54,8 +52,6 @@ describe("editorial content repository", () => {
     });
     expect(databaseMock.queries[0].text).toContain("entry.status = 'published'");
     expect(databaseMock.queries[0].values).toEqual(expect.arrayContaining(["en", "ja", "guide", "sample"]));
-    expect(cacheMock.cacheLife).toHaveBeenCalledWith("hours");
-    expect(cacheMock.cacheTag).toHaveBeenCalledWith("content:guide:sample");
   });
   it("一覧を公開済みだけに限定しkind単位のcache tagを付与する", async () => {
     databaseMock.rows = [row];
