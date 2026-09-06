@@ -81,6 +81,11 @@ describe("quiz data validation", () => {
       (data: any) => (data.questions[0].source.url = "http://example.com"),
       /ireland-basics-st-brigid-001.*source\.url.*HTTPS/,
     ],
+    [
+      "未登録の関連Guide",
+      (data: any) => (data.questions[2].relatedGuide.slug = "split-the-gg"),
+      /pub-guinness-st-james-gate-001.*relatedGuide\.slug.*registered guide/,
+    ],
   ])("%sを場所の分かるエラーで拒否する", (_name, mutate, message) => {
     const data = structuredClone(rawQuizData);
     mutate(data);
@@ -119,6 +124,20 @@ describe("daily quiz selection", () => {
   it("同梱データでSt. Patrick's DayとBloomsdayの問題を優先する", () => {
     expect(selectDailyQuiz({ year: 2026, month: 3, day: 17 }).id).toBe("ireland-basics-st-patrick-001");
     expect(selectDailyQuiz({ year: 2026, month: 6, day: 16 }).id).toBe("literature-bloomsday-001");
+  });
+
+  it.each([
+    { date: { year: 2026, month: 1, day: 31 }, specialId: "ireland-basics-st-brigid-001" },
+    { date: { year: 2026, month: 2, day: 2 }, specialId: "ireland-basics-st-brigid-001" },
+    { date: { year: 2026, month: 3, day: 16 }, specialId: "ireland-basics-st-patrick-001" },
+    { date: { year: 2026, month: 3, day: 18 }, specialId: "ireland-basics-st-patrick-001" },
+  ])("記念日の前日・翌日は記念日問題を通常ローテーションへ含めない", ({ date, specialId }) => {
+    expect(selectDailyQuiz(date).id).not.toBe(specialId);
+  });
+
+  it("通常問題がない場合も記念日以外の日に決定的な問題を返す", () => {
+    const questions = [question("special-only", { month: 3, day: 17 })];
+    expect(selectDailyQuiz({ year: 2026, month: 3, day: 18 }, questions).id).toBe("special-only");
   });
 });
 

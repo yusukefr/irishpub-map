@@ -54,7 +54,9 @@ export function selectDailyQuiz(date: QuizDate, questions: readonly QuizQuestion
   const specialQuestions = questions.filter(
     (question) => question.specialDate?.month === date.month && question.specialDate.day === date.day,
   );
-  const candidates = specialQuestions.length > 0 ? specialQuestions : questions;
+  const regularQuestions = questions.filter((question) => question.specialDate === undefined);
+  const candidates =
+    specialQuestions.length > 0 ? specialQuestions : regularQuestions.length > 0 ? regularQuestions : questions;
   const index = ((dateIndex(date) % candidates.length) + candidates.length) % candidates.length;
   return candidates[index];
 }
