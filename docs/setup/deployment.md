@@ -176,6 +176,15 @@ npm run check:sensitive-data
 
 Vercelへのデプロイでは `db/migrations` を自動適用しません。Issue #278以降のアプリケーションをデプロイする前に、接続先の各Neonブランチへ必要なマイグレーションを手動適用し、検証SQLを実行します。接続文字列はシェルの一時変数で渡し、リポジトリへ保存しません。
 
+Editorial Content基盤（マイグレーション010）は、Productionへ直接適用しません。まずProduction相当のデータを確認する必要がある場合は期限付き通常Neon Branch、データを複製できない場合はSchema-only Branchを作成し、Direct / Unpooled Connection Stringを一時的に `MIGRATION_DATABASE_URL` へ設定して検証します。Migration実行後はverify SQLのテーブル・制約・許可Locale・外部キー・適用履歴を確認し、関連するアプリケーション・テストが成功した場合だけProductionへの適用を判断します。
+
+```bash
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/010_add_editorial_content_up.sql
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/010_add_editorial_content_verify.sql
+```
+
+Productionへ適用する場合も同じ順序で実行し、verify SQLの結果を確認するまではContent RepositoryやAdmin Content機能をデプロイしません。010は既存MDXを移行せず、既存の公開画面には影響しません。
+
 マイグレーション008が未適用のブランチでは、先に008を適用します。up SQLは既存店舗が公開条件を満たさない場合、DDL適用前に停止します。
 
 ```bash

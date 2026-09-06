@@ -6,23 +6,25 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 現行スキーマは、Issue #262で確認し、Issue #272で再確認したNeon上の実スキーマを基準とします。`apps/web/app/lib/pub-repository.ts` など現在のアプリケーション実装とも照合しています。`db/migrations` は設計経緯を確認するための補助資料であり、現行スキーマの根拠にはしません。カラム・制約・インデックスの詳細は[テーブル・カラム定義](database-columns.md)を参照してください。
 
-Issue #273のマイグレーション008で `pubs.is_published` を追加し、Issue #278では下書き用NULL制約を定義するマイグレーション009を追加しました。実DBへの適用状況はアプリケーション実装と区別し、[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従って009の適用・検証後にアプリケーションをデプロイします。管理用DTOとtransaction保存を含む保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+Issue #273のマイグレーション008で `pubs.is_published` を追加し、Issue #278では下書き用NULL制約を定義するマイグレーション009を追加しました。Issue #342ではEditorial Content用にマイグレーション010を追加しました。実DBへの適用状況はアプリケーション実装と区別し、[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従って必要なMigrationを適用・検証してから対応アプリケーションをデプロイします。管理用DTOとtransaction保存を含む保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 ## テーブル
 
-| テーブル                    | 用途                                                           |
-| --------------------------- | -------------------------------------------------------------- |
-| `pubs`                      | 言語非依存の店舗属性、都道府県・市区町村・営業状況コードを保存 |
-| `pub_translations`          | 店舗名・読み・住所をロケール別に保存                           |
-| `prefectures`               | JIS都道府県コードを保存                                        |
-| `prefecture_translations`   | 都道府県表示名・読みをロケール別に保存                         |
-| `municipality_codes`        | 6桁の市区町村コードと所属都道府県を保存                        |
-| `municipality_translations` | 市区町村表示名・読みをロケール別に保存                         |
-| `pub_statuses`              | 営業状況コードと内部キーを保存                                 |
-| `pub_status_translations`   | 営業状況表示名をロケール別に保存                               |
-| `tags`                      | タグUUIDと正規化済み内部キーを保存                             |
-| `tag_translations`          | タグ表示名をロケール別に保存                                   |
-| `pub_tags`                  | 店舗とタグの多対多関係を保存                                   |
+| テーブル                    | 用途                                                            |
+| --------------------------- | --------------------------------------------------------------- |
+| `pubs`                      | 言語非依存の店舗属性、都道府県・市区町村・営業状況コードを保存  |
+| `pub_translations`          | 店舗名・読み・住所をロケール別に保存                            |
+| `prefectures`               | JIS都道府県コードを保存                                         |
+| `prefecture_translations`   | 都道府県表示名・読みをロケール別に保存                          |
+| `municipality_codes`        | 6桁の市区町村コードと所属都道府県を保存                         |
+| `municipality_translations` | 市区町村表示名・読みをロケール別に保存                          |
+| `pub_statuses`              | 営業状況コードと内部キーを保存                                  |
+| `pub_status_translations`   | 営業状況表示名をロケール別に保存                                |
+| `tags`                      | タグUUIDと正規化済み内部キーを保存                              |
+| `tag_translations`          | タグ表示名をロケール別に保存                                    |
+| `pub_tags`                  | 店舗とタグの多対多関係を保存                                    |
+| `content_entries`           | Guide・Storyの言語非依存メタデータと公開状態を保存              |
+| `content_translations`      | Editorial Contentのロケール別タイトル・要約・Markdown本文を保存 |
 
 管理者ユーザーやセッションを保存するテーブルはありません。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理します。
 
@@ -41,6 +43,7 @@ erDiagram
   PUBS ||--o{ PUB_TAGS : "has"
   TAGS ||--o{ TAG_TRANSLATIONS : "has translations"
   TAGS ||--o{ PUB_TAGS : "assigned through"
+  CONTENT_ENTRIES ||--o{ CONTENT_TRANSLATIONS : "has translations"
 
   PUBS {
     UUID id PK
@@ -104,9 +107,29 @@ erDiagram
     UUID pub_id PK, FK
     UUID tag_id PK, FK
   }
+  CONTENT_ENTRIES {
+    UUID id PK
+    TEXT kind
+    TEXT slug
+    TEXT category
+    TEXT status
+    TIMESTAMPTZ published_at
+    TIMESTAMPTZ created_at
+    TIMESTAMPTZ updated_at
+  }
+  CONTENT_TRANSLATIONS {
+    UUID content_id PK, FK
+    TEXT locale PK
+    TEXT title
+    TEXT summary
+    TEXT body_markdown
+    TIMESTAMPTZ updated_at
+  }
 ```
 
 翻訳テーブルは親IDと `locale` の複合主キーを持ちます。`prefecture_translations` と `tag_translations` は、同じロケール内で表示名が重複しないよう `UNIQUE (locale, name)` も持ちます。
+
+`content_entries` は `(kind, slug)` の複合一意制約を持ちます。statusは `draft` と `published` に限定し、draftは `published_at` をNULL、publishedは公開日時を必須とします。`kind` は `story` / `guide`、`category` は `history` / `culture` / `pub-culture` / `food-drink` をアプリケーション側のAllow Listで検証します。DBでは将来のRenderer・分類追加を妨げないため、いずれも空白を禁止する `TEXT` とします。`content_translations` は `ja` / `en` だけを保存でき、親Contentの削除時にカスケード削除されます。
 
 `pubs` の所在地、座標、営業状態と `pub_translations.address` は下書きではNULLを許可します。管理APIは市区町村コードが選択した都道府県に所属することと、各参照マスタに日本語表示名があることを保存前に検証します。
 
@@ -131,6 +154,8 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 | タグ管理削除 | `deleteAdminTag` | タグ行をロックし、`pub_tags` が0件の場合だけ条件付き削除 |
 
 マイグレーション008は適用前に既存店舗が公開条件を満たすか検査し、成功した場合だけ既存店舗を公開状態へ移行します。マイグレーション009は既存値を変更せず下書き対象カラムのNOT NULLを外し、公開中店舗に欠損が生じていないことを検証SQLで確認します。どちらも適用履歴を `schema_migrations` に記録します。
+
+マイグレーション010は既存コンテンツを移行せず、Editorial Contentの2テーブルだけを追加します。適用後は、テーブル・制約・許可Locale・外部キーと適用履歴をverify SQLで確認します。Content Repository、Markdown Renderer、Admin API/UI、既存MDXの移行は後続Issueの対象です。
 
 店舗またはタグの削除時は、対応する翻訳と `pub_tags` が `ON DELETE CASCADE` で削除されます。ただし管理タグ機能は使用中タグのDELETE自体をtransaction内で拒否し、店舗関連や店舗を変更しません。都道府県・市区町村・営業状況を参照する店舗にはカスケード削除を設定していません。
 

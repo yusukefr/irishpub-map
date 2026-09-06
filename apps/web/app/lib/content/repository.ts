@@ -1,7 +1,7 @@
 import { contentRegistry } from "./registry";
+import { isContentCategory } from "./types";
 import type {
   ContentArticleMetadata,
-  ContentCategory,
   ContentKind,
   ContentLocaleLoaders,
   ContentModule,
@@ -9,8 +9,6 @@ import type {
   ContentRegistryEntry,
 } from "./types";
 import type { Locale } from "../i18n";
-
-const CONTENT_CATEGORIES = new Set<ContentCategory>(["history", "culture", "pub-culture", "food-drink"]);
 
 /** 読み込み済み記事の表示に必要なMDX Componentとメタデータです。 */
 export type LoadedContent = {
@@ -41,7 +39,7 @@ function isContentMetadata(value: unknown, kind: ContentKind, slug: string): val
     typeof value.title === "string" &&
     typeof value.summary === "string" &&
     typeof value.category === "string" &&
-    CONTENT_CATEGORIES.has(value.category as ContentCategory) &&
+    isContentCategory(value.category) &&
     Array.isArray(value.tags) &&
     value.tags.every((tag) => typeof tag === "string") &&
     typeof value.publishedAt === "string"
