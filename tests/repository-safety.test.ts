@@ -26,6 +26,9 @@ describe("repository safety check", () => {
 
     expect(findSensitiveData(stagedAddedLines(diff))).toEqual([]);
     expect(findSensitiveData("https://example.vercel.app")).toEqual([]);
+    expect(findSensitiveData("https://github.com/neondatabase/agent-skills")).toEqual([]);
+    expect(findSensitiveData("https://api.github.com/repos/neondatabase/agent-skills")).toEqual([]);
+    expect(findSensitiveData("https://github.com/marketplace/actions/neon-schema-diff-github-action")).toEqual([]);
   });
 
   it("ignores package lock funding URLs in staged additions", () => {
