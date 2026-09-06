@@ -1,117 +1,74 @@
-import { describe, expect, it } from "vitest";
-import type { MDXContent } from "mdx/types";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const databaseMock = vi.hoisted(() => ({
+  rows: [] as Array<Record<string, unknown>>,
+  queries: [] as Array<{ text: string; values: unknown[] }>,
+}));
+vi.mock("@neondatabase/serverless", () => ({
+  neon:
+    () =>
+    (strings: TemplateStringsArray, ...values: unknown[]) => {
+      databaseMock.queries.push({ text: strings.join("?"), values });
+      return Promise.resolve(databaseMock.rows);
+    },
+}));
 import {
-  getContentLoaders,
-  getContentSlugs,
-  listContent,
-  loadContent,
+  getPublishedContentBySlug,
+  listPublishedContent,
+  parsePublishedContent,
 } from "../../apps/web/app/lib/content/repository";
-import {
-  isContentCategory,
-  isContentKind,
-  type ContentArticleMetadata,
-  type ContentModule,
-  type ContentRegistry,
-} from "../../apps/web/app/lib/content/types";
 
-const ContentComponent = (() => null) as MDXContent;
-const guideMetadata = {
-  slug: "sample-guide",
+const originalUrl = process.env.DATABASE_URL;
+const row = {
   kind: "guide",
-  title: "Sample Guide",
-  summary: "A sample guide.",
+  slug: "sample",
   category: "culture",
-  tags: ["guinness"],
-  publishedAt: "2026-09-01",
-} satisfies ContentArticleMetadata;
+  published_at: "2026-09-02T00:00:00.000Z",
+  title: "サンプル",
+  summary: "要約",
+  body_markdown: "# 本文",
+};
+beforeEach(() => {
+  process.env.DATABASE_URL = "postgres://test-only";
+  databaseMock.rows = [];
+  databaseMock.queries = [];
+  cacheMock.cacheLife.mockReset();
+  cacheMock.cacheTag.mockReset();
+});
+afterEach(() => {
+  if (originalUrl === undefined) delete process.env.DATABASE_URL;
+  else process.env.DATABASE_URL = originalUrl;
+});
 
-function createRegistry(
-  metadata: ContentArticleMetadata,
-  registrySlug = metadata.slug,
-  entrySlug = registrySlug,
-  entryKind: "guide" | "story" = "guide",
-): ContentRegistry {
-  const createModule = (): Promise<ContentModule> => Promise.resolve({ default: ContentComponent, metadata });
-  return {
-    story: {},
-    guide: {
-      [registrySlug]: {
-        slug: entrySlug,
-        kind: entryKind,
-        loaders: {
-          ja: createModule,
-          en: createModule,
-        },
-      },
-    },
-  };
-}
-
-function createRegistryWithModule(contentModule: unknown): ContentRegistry {
-  const loadModule = async () => contentModule as ContentModule;
-  return {
-    story: {},
-    guide: {
-      "sample-guide": {
-        slug: "sample-guide",
-        kind: "guide",
-        loaders: { ja: loadModule, en: loadModule },
-      },
-    },
-  };
-}
-
-describe("content repository", () => {
-  it("uses the content kind and category allow lists for application-side validation", () => {
-    expect(isContentKind("guide")).toBe(true);
-    expect(isContentKind("quiz")).toBe(false);
-    expect(isContentCategory("pub-culture")).toBe(true);
-    expect(isContentCategory("other")).toBe(false);
-  });
-
-  it("exposes only explicitly registered own-property slugs", async () => {
-    const registry = createRegistry(guideMetadata);
-
-    expect(getContentSlugs("guide", registry)).toEqual(["sample-guide"]);
-    expect(getContentLoaders("guide", "sample-guide", registry)).toBeDefined();
-
-    for (const slug of ["toString", "constructor", "__proto__"]) {
-      expect(getContentLoaders("guide", slug, registry)).toBeUndefined();
-      await expect(loadContent("guide", slug, "en", registry)).resolves.toBeNull();
-    }
-  });
-
-  it("loads locale-specific content and lists its metadata", async () => {
-    const registry = createRegistry(guideMetadata);
-
-    await expect(loadContent("guide", "sample-guide", "ja", registry)).resolves.toMatchObject({
-      metadata: guideMetadata,
-      Component: ContentComponent,
+describe("editorial content repository", () => {
+  it("公開済みContentだけをパラメータ化SQLとlocaleフォールバックで取得する", async () => {
+    databaseMock.rows = [row];
+    await expect(getPublishedContentBySlug("guide", "sample", "en")).resolves.toEqual({
+      kind: "guide",
+      slug: "sample",
+      category: "culture",
+      publishedAt: row.published_at,
+      title: "サンプル",
+      summary: "要約",
+      bodyMarkdown: "# 本文",
     });
-    await expect(listContent("guide", "en", registry)).resolves.toEqual([guideMetadata]);
-    await expect(loadContent("guide", "unknown", "en", registry)).resolves.toBeNull();
+    expect(databaseMock.queries[0].text).toContain("entry.status = 'published'");
+    expect(databaseMock.queries[0].values).toEqual(expect.arrayContaining(["en", "ja", "guide", "sample"]));
+    expect(cacheMock.cacheLife).toHaveBeenCalledWith("hours");
+    expect(cacheMock.cacheTag).toHaveBeenCalledWith("content:guide:sample");
   });
-
-  it.each([
-    ["metadata missing", { default: ContentComponent }],
-    ["invalid category", { default: ContentComponent, metadata: { ...guideMetadata, category: "other" } }],
-    ["tags not array", { default: ContentComponent, metadata: { ...guideMetadata, tags: "guinness" } }],
-    ["title not string", { default: ContentComponent, metadata: { ...guideMetadata, title: 123 } }],
-    ["slug mismatch", { default: ContentComponent, metadata: { ...guideMetadata, slug: "other-guide" } }],
-    ["kind mismatch", { default: ContentComponent, metadata: { ...guideMetadata, kind: "story" } }],
-  ])("rejects invalid runtime metadata: %s", async (_caseName, contentModule) => {
-    const registry = createRegistryWithModule(contentModule);
-
-    await expect(loadContent("guide", "sample-guide", "ja", registry)).rejects.toThrow(
-      "Invalid content module metadata",
-    );
+  it("一覧を公開済みだけに限定しkind単位のcache tagを付与する", async () => {
+    databaseMock.rows = [row];
+    await expect(listPublishedContent("guide", "ja")).resolves.toHaveLength(1);
+    expect(databaseMock.queries[0].text).toContain("ORDER BY entry.published_at DESC");
   });
-
-  it("rejects a registry entry whose canonical fields do not match the route", async () => {
-    const registry = createRegistry(guideMetadata, "sample-guide", "other-guide");
-
-    await expect(loadContent("guide", "sample-guide", "ja", registry)).rejects.toThrow(
-      "Content registry entry does not match the requested route",
-    );
+  it("DB未設定時は接続せず公開Contentを返さない", async () => {
+    delete process.env.DATABASE_URL;
+    await expect(getPublishedContentBySlug("guide", "sample")).resolves.toBeNull();
+    await expect(listPublishedContent("guide")).resolves.toEqual([]);
+    expect(databaseMock.queries).toEqual([]);
+  });
+  it("Allow List外のDB値を拒否する", () => {
+    expect(() => parsePublishedContent({ ...row, category: "other" })).toThrow("Invalid published content");
   });
 });

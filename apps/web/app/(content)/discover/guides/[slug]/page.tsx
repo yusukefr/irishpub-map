@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getContentRenderer } from "../../../../lib/content/registry";
+import { GuideRenderer } from "../../../../lib/content/renderer";
 import { getPublishedContentBySlug } from "../../../../lib/content/repository";
 import { getTranslation } from "../../../../lib/i18n";
 import { getRequestLocale } from "../../../../lib/i18n/server";
@@ -37,15 +37,13 @@ export default async function GuidePage({ params }: GuidePageProps) {
   if (!content) notFound();
 
   const t = getTranslation(locale).discover;
-  const GuideContent = getContentRenderer(content.kind);
-
   return (
     <article className="content-container content-article">
       <p className="content-kicker">{t.guides}</p>
       <h1>{content.title}</h1>
       <p className="content-lead">{content.summary}</p>
       <div className="content-prose">
-        <GuideContent markdown={content.bodyMarkdown} />
+        <GuideRenderer markdown={content.bodyMarkdown} />
       </div>
       <Link className="content-back-link" href="/discover">
         ← {t.back}
