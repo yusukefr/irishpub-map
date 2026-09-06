@@ -1,18 +1,26 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ContentArticleMetadata } from "../../apps/web/app/lib/content/types";
+type GuideMetadata = {
+  slug: string;
+  kind: "guide";
+  title: string;
+  summary: string;
+  category: "culture" | "pub-culture";
+  tags: readonly string[];
+  publishedAt: string;
+};
 
 const pageMocks = vi.hoisted(() => ({
   getRequestLocale: vi.fn(),
-  listContent: vi.fn(),
-  loadContent: vi.fn(),
+  listLegacyGuides: vi.fn(),
+  loadLegacyGuide: vi.fn(),
   notFound: vi.fn(),
 }));
 
 vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: pageMocks.getRequestLocale }));
-vi.mock("../../apps/web/app/lib/content/repository", () => ({
-  listContent: pageMocks.listContent,
-  loadContent: pageMocks.loadContent,
+vi.mock("../../apps/web/app/lib/content/legacy-repository", () => ({
+  listLegacyGuides: pageMocks.listLegacyGuides,
+  loadLegacyGuide: pageMocks.loadLegacyGuide,
 }));
 vi.mock("next/navigation", () => ({ notFound: pageMocks.notFound }));
 
@@ -42,7 +50,7 @@ const metadataByLocale = {
     tags: ["sample"],
     publishedAt: "2026-09-02",
   },
-} satisfies Record<"ja" | "en", ContentArticleMetadata>;
+} satisfies Record<"ja" | "en", GuideMetadata>;
 
 const splitTheGMetadataByLocale = {
   ja: {
@@ -63,17 +71,19 @@ const splitTheGMetadataByLocale = {
     tags: ["split-the-g", "guinness"],
     publishedAt: "2026-09-05",
   },
-} satisfies Record<"ja" | "en", ContentArticleMetadata>;
+} satisfies Record<"ja" | "en", GuideMetadata>;
 
 let locale: "ja" | "en" = "ja";
 
 beforeEach(() => {
   locale = "ja";
   pageMocks.getRequestLocale.mockReset().mockImplementation(() => Promise.resolve(locale));
-  pageMocks.listContent
+  pageMocks.listLegacyGuides
     .mockReset()
-    .mockImplementation(() => Promise.resolve([splitTheGMetadataByLocale[locale], metadataByLocale[locale]]));
-  pageMocks.loadContent.mockReset().mockImplementation((_kind, slug, contentLocale: "ja" | "en") => {
+    .mockImplementation((contentLocale: "ja" | "en") =>
+      Promise.resolve([splitTheGMetadataByLocale[contentLocale], metadataByLocale[contentLocale]]),
+    );
+  pageMocks.loadLegacyGuide.mockReset().mockImplementation((slug, contentLocale: "ja" | "en") => {
     if (slug === "sample") {
       const GuideContent = () => (
         <p>{contentLocale === "ja" ? "コンテンツは後日追加予定です。" : "Content will be added later."}</p>
@@ -97,7 +107,7 @@ beforeEach(() => {
 });
 
 describe("Discover pages", () => {
-  it("HubでStories placeholderとRegistry由来Guide、Quizへの導線を表示する", async () => {
+  it("HubでStories placeholderと既存MDX Guide、Quizへの導線を表示する", async () => {
     render(await DiscoverPage());
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

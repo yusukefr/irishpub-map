@@ -1,131 +1,104 @@
-import { contentRegistry } from "./registry";
-import { isContentCategory } from "./types";
-import type {
-  ContentArticleMetadata,
-  ContentKind,
-  ContentLocaleLoaders,
-  ContentModule,
-  ContentRegistry,
-  ContentRegistryEntry,
-} from "./types";
-import type { Locale } from "../i18n";
+import { neon } from "@neondatabase/serverless";
+import { DEFAULT_LOCALE, type Locale } from "@irishpub-map/shared/locale";
+import { isContentCategory, type ContentKind, type PublishedContent, type PublishedContentSummary } from "./types";
 
-/** 読み込み済み記事の表示に必要なMDX Componentとメタデータです。 */
-export type LoadedContent = {
-  Component: ContentModule["default"];
-  metadata: ContentArticleMetadata;
+type DbContentSummaryRow = {
+  kind: unknown;
+  slug: unknown;
+  category: unknown;
+  published_at: unknown;
+  title: unknown;
+  summary: unknown;
 };
+type DbContentRow = DbContentSummaryRow & {
+  body_markdown: unknown;
+};
+let sqlClient: ReturnType<typeof neon> | null = null;
 
-function resolveContentEntry(
-  kind: ContentKind,
-  slug: string,
-  registry: ContentRegistry,
-): ContentRegistryEntry | undefined {
-  const entries = registry[kind];
-
-  return Object.hasOwn(entries, slug) ? entries[slug] : undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isContentMetadata(value: unknown, kind: ContentKind, slug: string): value is ContentArticleMetadata {
-  if (!isRecord(value)) return false;
-
-  return (
-    value.slug === slug &&
-    value.kind === kind &&
-    typeof value.title === "string" &&
-    typeof value.summary === "string" &&
-    typeof value.category === "string" &&
-    isContentCategory(value.category) &&
-    Array.isArray(value.tags) &&
-    value.tags.every((tag) => typeof tag === "string") &&
-    typeof value.publishedAt === "string"
-  );
-}
-
-function validateContentModule(
-  contentModule: unknown,
-  kind: ContentKind,
-  slug: string,
-): asserts contentModule is ContentModule {
+/**
+ * DB行を公開Contentへ変換します。
+ * @param {DbContentRow} row - DBから返されたContent行。
+ * @returns {PublishedContent} 検証済み公開Content。
+ */
+export function parsePublishedContent(row: DbContentRow): PublishedContent {
   if (
-    !isRecord(contentModule) ||
-    typeof contentModule.default !== "function" ||
-    !isContentMetadata(contentModule.metadata, kind, slug)
-  ) {
-    throw new Error("Invalid content module metadata for " + kind + "/" + slug + ".");
-  }
+    (row.kind !== "guide" && row.kind !== "story") ||
+    typeof row.slug !== "string" ||
+    !isContentCategory(typeof row.category === "string" ? row.category : "") ||
+    typeof row.title !== "string" ||
+    typeof row.summary !== "string" ||
+    typeof row.body_markdown !== "string" ||
+    typeof row.published_at !== "string"
+  )
+    throw new Error("Invalid published content returned from database.");
+  return {
+    kind: row.kind,
+    slug: row.slug,
+    category: row.category as PublishedContent["category"],
+    publishedAt: row.published_at,
+    title: row.title,
+    summary: row.summary,
+    bodyMarkdown: row.body_markdown,
+  };
 }
-
 /**
- * kindとslugに対応する記事の日本語・英語Loaderを取得します。
- * @param {ContentKind} kind - 記事の種類。
- * @param {string} slug - Registryで許可されたslug。
- * @param {ContentRegistry} registry - 解決対象のAllow List。
- * @returns {ContentLocaleLoaders | undefined} 登録済みLoader、または未登録時のundefined。
+ * 公開済みContentだけを要求locale優先・日本語フォールバックで取得します。
+ * @param {ContentKind} kind - 記事種別。
+ * @param {string} slug - 記事slug。
+ * @param {Locale} locale - 優先locale。
+ * @returns {Promise<PublishedContent | null>} 公開Content。
  */
-export function getContentLoaders(
+export async function getPublishedContentBySlug(
   kind: ContentKind,
   slug: string,
-  registry: ContentRegistry = contentRegistry,
-): ContentLocaleLoaders | undefined {
-  return resolveContentEntry(kind, slug, registry)?.loaders;
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<PublishedContent | null> {
+  if (!process.env.DATABASE_URL) return null;
+  return getPublishedContentBySlugFromDatabase(kind, slug, locale);
 }
-
 /**
- * kindに登録された記事slugを返します。
- * @param {ContentKind} kind - 記事の種類。
- * @param {ContentRegistry} registry - 解決対象のAllow List。
- * @returns {readonly string[]} 登録順のslug一覧。
+ * kindに属する公開済みContentだけを要求locale優先・日本語フォールバックで取得します。
+ * @param {ContentKind} kind - 記事種別。
+ * @param {Locale} locale - 優先locale。
+ * @returns {Promise<readonly PublishedContentSummary[]>} 公開Content一覧メタデータ。
  */
-export function getContentSlugs(kind: ContentKind, registry: ContentRegistry = contentRegistry): readonly string[] {
-  return Object.keys(registry[kind]);
-}
-
-/**
- * Registryで許可された記事だけを指定localeで読み込みます。
- * @param {ContentKind} kind - 記事の種類。
- * @param {string} slug - 読み込む記事slug。
- * @param {Locale} locale - 本文の表示言語。
- * @param {ContentRegistry} registry - 解決対象のAllow List。
- * @returns {Promise<LoadedContent | null>} 未登録slugの場合はnull。
- */
-export async function loadContent(
+export async function listPublishedContent(
   kind: ContentKind,
-  slug: string,
-  locale: Locale,
-  registry: ContentRegistry = contentRegistry,
-): Promise<LoadedContent | null> {
-  const entry = resolveContentEntry(kind, slug, registry);
-  if (!entry) return null;
-  if (entry.slug !== slug || entry.kind !== kind) {
-    throw new Error("Content registry entry does not match the requested route: " + kind + "/" + slug + ".");
-  }
-
-  const contentModule = await entry.loaders[locale]();
-
-  validateContentModule(contentModule, kind, slug);
-
-  return { Component: contentModule.default, metadata: contentModule.metadata };
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<readonly PublishedContentSummary[]> {
+  if (!process.env.DATABASE_URL) return [];
+  return listPublishedContentFromDatabase(kind, locale);
 }
-
-/**
- * kindに登録された記事の指定localeメタデータを一覧取得します。
- * @param {ContentKind} kind - 記事の種類。
- * @param {Locale} locale - 本文の表示言語。
- * @param {ContentRegistry} registry - 解決対象のAllow List。
- * @returns {Promise<readonly ContentArticleMetadata[]>} Registry順のメタデータ一覧。
- */
-export async function listContent(
-  kind: ContentKind,
-  locale: Locale,
-  registry: ContentRegistry = contentRegistry,
-): Promise<readonly ContentArticleMetadata[]> {
-  const articles = await Promise.all(
-    getContentSlugs(kind, registry).map((slug) => loadContent(kind, slug, locale, registry)),
-  );
-  return articles.flatMap((article) => (article ? [article.metadata] : []));
+async function getPublishedContentBySlugFromDatabase(kind: ContentKind, slug: string, locale: Locale) {
+  const rows =
+    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary, translation.body_markdown FROM content_entries AS entry JOIN LATERAL (SELECT value.title, value.summary, value.body_markdown FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.kind = ${kind} AND entry.slug = ${slug}`) as DbContentRow[];
+  return rows[0] ? parsePublishedContent(rows[0]) : null;
+}
+function parsePublishedContentSummary(row: DbContentSummaryRow): PublishedContentSummary {
+  if (
+    (row.kind !== "guide" && row.kind !== "story") ||
+    typeof row.slug !== "string" ||
+    !isContentCategory(typeof row.category === "string" ? row.category : "") ||
+    typeof row.title !== "string" ||
+    typeof row.summary !== "string" ||
+    typeof row.published_at !== "string"
+  )
+    throw new Error("Invalid published content returned from database.");
+  return {
+    kind: row.kind,
+    slug: row.slug,
+    category: row.category as PublishedContentSummary["category"],
+    publishedAt: row.published_at,
+    title: row.title,
+    summary: row.summary,
+  };
+}
+async function listPublishedContentFromDatabase(kind: ContentKind, locale: Locale) {
+  const rows =
+    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary FROM content_entries AS entry JOIN LATERAL (SELECT value.title, value.summary FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.kind = ${kind} ORDER BY entry.published_at DESC, entry.slug`) as DbContentSummaryRow[];
+  return rows.map(parsePublishedContentSummary);
+}
+function getSql() {
+  sqlClient ??= neon(process.env.DATABASE_URL!);
+  return sqlClient;
 }
