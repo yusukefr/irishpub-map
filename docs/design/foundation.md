@@ -4,7 +4,7 @@
 
 Public UIは、次の優先順位で設計・実装・レビューします。外部Skillは補助的なレビュー基準であり、プロジェクト固有の方針を上書きしません。
 
-1. Irish Pub Map Design System（この文書と後続のDesign Token文書）
+1. Irish Pub Map Design System（この文書と[Design Tokens](tokens.md)）
 2. Reference ScreensとVisual Regressionの基準画像
 3. 既存の共通コンポーネント
 4. `web-design-guidelines`
@@ -14,9 +14,9 @@ Public UIは、次の優先順位で設計・実装・レビューします。�
 
 ## Design Token方針
 
-Tailwind CSS 4の `@theme` をToken宣言の基盤とします。Phase 0では既存の視覚値を `apps/web/app/globals.css` の `--color-irish-*`、`--radius-irish-*`、`--spacing-irish-*` へ写し、画面の見た目は変更しません。
+Tailwind CSS 4の `@theme` をToken宣言の基盤とします。`apps/web/app/globals.css`の正式なToken名・値・使用方法は[Design Tokens](tokens.md)を参照してください。
 
-Phase 1でColor、Typography、Spacing、Radius、Elevation、Motionの正式な名前と値を決定し、既存のCSSカスタムプロパティ・個別値を段階的に移行します。新しいCSS Framework、MUI、Chakra UI、shadcn/uiの全面導入は行いません。
+Phase 1で定義したColor、Typography、Spacing、Radius、Elevation、Motionへ、既存のCSSカスタムプロパティ・個別値を段階的に移行します。新しいCSS Framework、MUI、Chakra UI、shadcn/uiの全面導入は行いません。
 
 ## Component確認
 
