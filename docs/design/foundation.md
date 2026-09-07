@@ -37,3 +37,7 @@ Design Tokens → Shared UI Component + Story → Screen実装
   → web-design-guidelines review → agent-browser確認
   → Playwright screenshot + axe → E2E
 ```
+
+Visual Regressionの基準画像は、CIのE2E jobと同じPlaywright 1.62.1 Noble Docker imageで生成・比較します。image digestは`.github/workflows/ci.yml`へ固定し、基準画像更新時も同じimageを使用します。
+
+`web-design-guidelines`の外部レビュー基準は、上流commit `e3d624baaf29dc1fc645aff3e38f03e564d2d6b1`からvendorしています。実行時に未固定の外部Instructionは取得しません。更新はvendorファイル・Skill metadata・`skills-lock.json`を同一のレビュー済み変更で更新します。

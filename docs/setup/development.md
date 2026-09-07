@@ -175,7 +175,9 @@ npm run test:e2e
 `e2e/visual-regression.spec.ts`は主要なPublic UIをスクリーンショット比較します。意図したUI変更をレビューした場合だけ、次のコマンドで基準画像を更新します。
 
 ```bash
-npx playwright test e2e/visual-regression.spec.ts --update-snapshots
+docker run --rm --ipc=host --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
+  mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e \
+  bash -lc 'npm ci && npx playwright test e2e/visual-regression.spec.ts --update-snapshots'
 ```
 
 `e2e/accessibility.spec.ts`は`@axe-core/playwright`でcritical/seriousな自動検出可能違反を検査します。Visualとアクセシビリティを含むE2E全体は次で実行します。
@@ -190,7 +192,7 @@ axeの結果だけでアクセシビリティを保証しません。キーボ�
 
 E2Eでは `DATABASE_URL` を使用せず、Playwright設定からサーバー専用の `E2E_TEST_MODE=1` と固定fixtureを設定します。このモードはVercel Productionでの有効化を拒否し、fixtureに対する作成・更新・削除も拒否します。管理画面は認証を迂回せず、テスト専用の固定資格情報でログインします。
 
-失敗時のHTML reportは `playwright-report/`、traceとscreenshotは `test-results/` に出力されます。CIでは通常のLint・Test・Build完了後に独立したE2E jobを実行し、失敗時のみ両ディレクトリをartifactとして10日間保存します。
+失敗時のHTML reportは `playwright-report/`、traceとscreenshotは `test-results/` に出力されます。CIでは通常のLint・Test・Build・Storybook build完了後に独立したE2E jobを実行し、失敗時のみ両ディレクトリをartifactとして10日間保存します。
 
 ## 型チェック
 
