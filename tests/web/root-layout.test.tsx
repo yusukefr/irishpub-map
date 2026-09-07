@@ -13,6 +13,11 @@ vi.mock("@vercel/speed-insights/next", () => ({
   SpeedInsights: () => null,
 }));
 
+vi.mock("next/font/google", () => ({
+  Lora: () => ({ variable: "font-editorial" }),
+  Noto_Sans_JP: () => ({ variable: "font-ui" }),
+}));
+
 import RootLayout from "../../apps/web/app/layout";
 
 describe("RootLayout", () => {
