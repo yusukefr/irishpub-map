@@ -26,7 +26,7 @@
     "format:check": "prettier --check ."
   },
   "overrides": {
-    "postcss": "8.5.26"
+    "postcss": "8.5.28"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
