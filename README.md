@@ -84,6 +84,8 @@ Codex はリポジトリ配下の `.agents/skills` を自動検出します。�
 - `next-cache-components`: Cache Components、キャッシュタグ、無効化、動的・静的レンダリング境界を扱います。Skill導入だけでは`cacheComponents: true`を有効化しません。
 - `vercel-react-best-practices`: MapLibreを含むReact/Next.jsのクライアントUIで、Bundle、Hydration、再レンダリング、データ取得の性能改善を案内します。
 - `agent-browser`: AI Coding Agentが実装後に画面表示や操作を確認するためのブラウザ自動化CLIです。CIのE2Eテストを置き換えません。
+- `web-design-guidelines`: Public UIの視覚階層、アクセシビリティ、レスポンシブ、セマンティックHTMLをレビューします。プロジェクト固有Design Systemより優先しません。
+- `frontend-design`: 意図ある視覚設計を補助します。Modern Irish Explorer、Design Token、既存コンポーネント、参照画面の制約を必ず優先します。
 
 役割分担として、`web-test-workflow`はVitest・Testing Library・Playwrightのテスト実装と検証を、`agent-browser`はAI Coding Agentによる実装後の操作・表示確認を担当します。CIで保証する主要なUser FlowはPlaywrightで維持します。`vercel-deploy`はPreview / Productionデプロイの実行を担当し、今回導入したNext.js・React関連Skillsは設計、実装、性能判断に限定します。
 

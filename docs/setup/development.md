@@ -26,6 +26,20 @@ npm run dev
 
 Web アプリは `apps/web` の Next.js アプリとして起動します。
 
+## Storybook
+
+共通UI ComponentはStorybookでアプリ本体から独立して確認します。Storyはアプリの`globals.css`と同じDesign Tokenを共有し、Storybook専用のStyleを追加しません。
+
+```bash
+npm run storybook
+```
+
+静的成果物を確認する場合は次を実行します。生成先の`storybook-static/`は追跡しません。
+
+```bash
+npm run build-storybook
+```
+
 ## agent-browserによるブラウザ確認
 
 ブラウザから公開画面を確認する場合は、プロジェクトに追加した`agent-browser`を使用します。`agent-browser`のバージョンは`package-lock.json`で固定され、Chrome本体はリポジトリへ含めません。
@@ -155,6 +169,22 @@ Playwright TestによるE2Eスモークテストは、Chromiumのproduction buil
 npx playwright install chromium
 npm run test:e2e
 ```
+
+### Visual Regressionとアクセシビリティ
+
+`e2e/visual-regression.spec.ts`は主要なPublic UIをスクリーンショット比較します。意図したUI変更をレビューした場合だけ、次のコマンドで基準画像を更新します。
+
+```bash
+npx playwright test e2e/visual-regression.spec.ts --update-snapshots
+```
+
+`e2e/accessibility.spec.ts`は`@axe-core/playwright`でcritical/seriousな自動検出可能違反を検査します。Visualとアクセシビリティを含むE2E全体は次で実行します。
+
+```bash
+npm run test:e2e
+```
+
+axeの結果だけでアクセシビリティを保証しません。キーボード操作、visible focus、操作領域、色以外の状態表現、日英表示はブラウザ確認でも検証します。
 
 `test:e2e` はPlaywrightの `webServer` でbuildと `next start` を自動実行します。手動で開発サーバーを起動する必要はありません。対話UIで実行する場合は `npm run test:e2e:ui` を使用します。
 

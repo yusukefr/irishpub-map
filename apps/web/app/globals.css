@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+/* Phase 0では既存の視覚値をTailwind Tokenへ写し、Phase 1で命名と利用箇所を段階的に統一します。 */
+@theme {
+  --color-irish-page: #f6f4ef;
+  --color-irish-surface: #ffffff;
+  --color-irish-ink: #17211d;
+  --color-irish-muted: #60706a;
+  --color-irish-line: #d7ddd7;
+  --color-irish-accent: #0f7b54;
+  --color-irish-accent-strong: #0b553e;
+  --radius-irish-content-card: 18px;
+  --spacing-irish-unit: 4px;
+}
+
 :root {
   color-scheme: light;
   --background: #f6f4ef;
