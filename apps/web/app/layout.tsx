@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Lora, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { getTranslation } from "./lib/i18n";
 import { getRequestLocale } from "./lib/i18n/server";
+
+const uiFont = Noto_Sans_JP({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-ui",
+  weight: ["400", "500", "600", "700"],
+});
+const editorialFont = Lora({ display: "swap", subsets: ["latin"], variable: "--font-editorial" });
 
 /**
  * リクエストの選択言語に対応するページメタデータを生成します。
@@ -37,7 +46,7 @@ export default async function RootLayout({
   const locale = await getRequestLocale();
 
   return (
-    <html lang={locale}>
+    <html className={`${uiFont.variable} ${editorialFont.variable}`} lang={locale}>
       <body>
         {children}
         <Analytics />

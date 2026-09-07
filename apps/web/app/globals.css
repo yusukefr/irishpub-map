@@ -1,29 +1,68 @@
 @import "tailwindcss";
 
-/* Phase 0では既存の視覚値をTailwind Tokenへ写し、Phase 1で命名と利用箇所を段階的に統一します。 */
+/* Design Tokenはdocs/design/tokens.mdを唯一の定義書とし、役割名で参照します。 */
 @theme {
-  --color-irish-page: #f6f4ef;
-  --color-irish-surface: #ffffff;
-  --color-irish-ink: #17211d;
-  --color-irish-muted: #60706a;
-  --color-irish-line: #d7ddd7;
-  --color-irish-accent: #0f7b54;
-  --color-irish-accent-strong: #0b553e;
-  --radius-irish-content-card: 18px;
-  --spacing-irish-unit: 4px;
+  --color-brand-primary: #0b553e;
+  --color-brand-interactive: #0f7b54;
+  --color-brand-soft: #ddebe4;
+  --color-brand-accent: #c79b3b;
+  --color-brand-accent-soft: #f1e5c7;
+  --color-surface-page: #f7f3ea;
+  --color-surface-primary: #fffdf8;
+  --color-surface-raised: #ffffff;
+  --color-surface-muted: #f2f5f2;
+  --color-surface-inverse: #16231c;
+  --color-text-primary: #18211d;
+  --color-text-secondary: #5a6b61;
+  --color-text-inverse: #fffdf8;
+  --color-text-brand: #0b553e;
+  --color-border-default: #cfdbd1;
+  --color-border-strong: #9db4a6;
+  --color-border-brand: #0b553e;
+  --color-success: #075235;
+  --color-warning: #745300;
+  --color-danger: #b42318;
+  --color-status-closed: #4d5a55;
+  --color-focus-ring: #175cd3;
+  --font-sans: var(--font-ui), Arial, sans-serif;
+  --font-display: var(--font-editorial), Georgia, serif;
+  --spacing-space-1: 4px;
+  --spacing-space-2: 8px;
+  --spacing-space-3: 12px;
+  --spacing-space-4: 16px;
+  --spacing-space-5: 20px;
+  --spacing-space-6: 24px;
+  --spacing-space-8: 32px;
+  --spacing-space-10: 40px;
+  --spacing-space-12: 48px;
+  --spacing-space-16: 64px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 9999px;
+  --shadow-elevation-1: 0 4px 12px rgb(22 35 28 / 8%);
+  --shadow-elevation-2: 0 12px 30px rgb(22 35 28 / 14%);
+  --shadow-elevation-3: 0 18px 42px rgb(22 35 28 / 20%);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
 :root {
   color-scheme: light;
-  --background: #f6f4ef;
-  --surface: #ffffff;
-  --ink: #17211d;
-  --muted: #60706a;
-  --line: #d7ddd7;
-  --accent: #0f7b54;
-  --accent-strong: #0b553e;
-  --danger: #b42318;
-  --content-card-radius: 18px;
+  --motion-duration-fast: 120ms;
+  --motion-duration-normal: 180ms;
+  --motion-duration-slow: 280ms;
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 3px;
+  /* 既存画面を保つ互換名。利用箇所は後続PhaseでSemantic Tokenへ移行します。 */
+  --background: var(--color-surface-page);
+  --surface: var(--color-surface-raised);
+  --ink: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --line: var(--color-border-default);
+  --accent: var(--color-brand-interactive);
+  --accent-strong: var(--color-brand-primary);
+  --danger: var(--color-danger);
+  --content-card-radius: var(--radius-lg);
 }
 
 * {
@@ -36,10 +75,15 @@ body {
   min-height: 100%;
 }
 
+:where(a, button, input, select, textarea):focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 body {
   background: var(--background);
   color: var(--ink);
-  font-family: Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  font-family: var(--font-sans);
 }
 
 a {
