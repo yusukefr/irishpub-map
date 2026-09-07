@@ -20,6 +20,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
     "prepare": "node scripts/install-git-hooks.mjs",
     "check:sensitive-data": "node scripts/check-sensitive-data.mjs --tracked",
     "format": "prettier --write .",
@@ -29,7 +31,10 @@
     "postcss": "8.5.28"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "1.62.1",
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/nextjs-vite": "^10.6.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@vitest/coverage-v8": "^4.1.11",
@@ -38,6 +43,7 @@
     "prettier": "^3.9.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "storybook": "^10.6.0",
     "vitest": "^4.1.11",
     "xlsx": "^0.18.5"
   },

@@ -21,3 +21,4 @@ apps/web/public/maplibre/
 !.github/ISSUE_TEMPLATE/*.yml
 !.github/workflows/
 !.github/workflows/*.yml
+storybook-static
