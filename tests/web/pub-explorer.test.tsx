@@ -430,16 +430,17 @@ describe("PubExplorer", () => {
     fireEvent.click(kyotoSelect);
 
     const kyotoMarker = (maplibreMock.markerConstructor.mock.calls[2][0] as { element: HTMLButtonElement }).element;
-    expect(kyotoCard).toHaveClass("pub-card-selected");
+    expect(kyotoCard).toHaveAttribute("data-selected", "true");
     expect(kyotoMarker).toHaveClass("pub-map-marker-selected");
     expect(kyotoMarker).toHaveAttribute("aria-pressed", "true");
 
     fireEvent.click(tokyoMarker);
 
-    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article")).toHaveClass(
-      "pub-card-selected",
+    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article")).toHaveAttribute(
+      "data-selected",
+      "true",
     );
-    expect(kyotoCard).not.toHaveClass("pub-card-selected");
+    expect(kyotoCard).not.toHaveAttribute("data-selected");
     expect(tokyoMarker).toHaveClass("pub-map-marker-selected");
     expect(tokyoMarker).toHaveAttribute("aria-pressed", "true");
   });
@@ -451,7 +452,7 @@ describe("PubExplorer", () => {
 
     expect(tokyoCard).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }));
-    expect(tokyoCard).toHaveClass("pub-card-selected");
+    expect(tokyoCard).toHaveAttribute("data-selected", "true");
 
     fireEvent.click(screen.getByRole("button", { name: /件のPubが見つかりました/ }));
     openDetailedFilters();
@@ -460,8 +461,8 @@ describe("PubExplorer", () => {
     fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
     openResults();
 
-    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article")).not.toHaveClass(
-      "pub-card-selected",
+    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article")).not.toHaveAttribute(
+      "data-selected",
     );
   });
 

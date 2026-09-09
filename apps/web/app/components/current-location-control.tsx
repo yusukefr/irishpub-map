@@ -1,6 +1,8 @@
 "use client";
 
 import { useId } from "react";
+import { Button } from "./ui/button";
+import { Icon } from "./ui/ui-icon";
 
 /** 現在地取得の進行状態です。 */
 export type GeolocationStatus = "idle" | "requesting" | "success" | "no-pubs" | "denied" | "error" | "unsupported";
@@ -35,18 +37,10 @@ export function CurrentLocationControl({
         {privacyDescription}
       </span>
       {!isUnavailable ? (
-        <button
-          type="button"
-          className="current-location-action"
-          onClick={onRequest}
-          disabled={isRequesting}
-          aria-describedby={privacyDescriptionId}
-        >
-          <span className="current-location-icon" aria-hidden="true">
-            ◎
-          </span>
+        <Button variant="secondary" onClick={onRequest} loading={isRequesting} aria-describedby={privacyDescriptionId}>
+          <Icon name="location" />
           <span>{actionLabel}</span>
-        </button>
+        </Button>
       ) : null}
       {statusMessage ? (
         <p

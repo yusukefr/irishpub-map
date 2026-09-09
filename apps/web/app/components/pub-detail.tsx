@@ -4,6 +4,7 @@ import type { Pub } from "@irishpub-map/shared/pub";
 import { getTagLabel } from "../lib/i18n";
 import type { Locale, Translation } from "../lib/i18n";
 import { getSafeExternalUrl } from "../lib/external-url";
+import { StatusBadge } from "./ui/status-badge";
 
 type PubDetailProps = {
   pub: Pub;
@@ -33,9 +34,7 @@ export function PubDetail({ pub, locale, labels }: PubDetailProps) {
   return (
     <section className="pub-detail-view" aria-labelledby="pub-detail-heading">
       <h3 id="pub-detail-heading">{pub.name}</h3>
-      <span className={["pub-status", statusClass(pub.status)].join(" ")}>
-        {pub.statusDisplayName ?? labels.statuses[pub.status]}
-      </span>
+      <StatusBadge status={pub.status} label={pub.statusDisplayName ?? labels.statuses[pub.status]} />
       <dl>
         <div>
           <dt>{labels.area}</dt>
@@ -65,15 +64,6 @@ export function PubDetail({ pub, locale, labels }: PubDetailProps) {
       <ExternalLinks pub={pub} labels={labels} />
     </section>
   );
-}
-
-function statusClass(status: Pub["status"]) {
-  return {
-    open: "pub-status-open",
-    temporarily_closed: "pub-status-temporarily-closed",
-    closed: "pub-status-closed",
-    unknown: "pub-status-unknown",
-  }[status];
 }
 
 function ExternalLinks({ pub, labels }: { pub: Pub; labels: PubDetailProps["labels"] }) {

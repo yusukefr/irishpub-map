@@ -7,6 +7,17 @@ const layout = readFileSync("apps/web/app/layout.tsx", "utf8");
 const css = parse(styles);
 
 describe("Design Tokens", () => {
+  it("resolves every shared component token against the canonical definitions", () => {
+    const componentStyles = readFileSync("apps/web/app/components/ui/ui.module.css", "utf8");
+    const defined = new Set<string>();
+    css.walkDecls(/^--/, (declaration) => {
+      defined.add(declaration.prop);
+    });
+    for (const [, token] of componentStyles.matchAll(/var\((--[\w-]+)/g)) {
+      expect(defined.has(token), token).toBe(true);
+    }
+    expect(styles).toContain("--spacing-control: 44px");
+  });
   it("defines semantic color, scale, motion, and focus tokens", () => {
     [
       "--color-brand-primary: #0b553e",

@@ -55,6 +55,7 @@
   --text-caption--line-height: 1.4;
   --text-caption--font-weight: 500;
   --spacing-space-1: 4px;
+  --spacing-control: 44px;
   --spacing-space-2: 8px;
   --spacing-space-3: 12px;
   --spacing-space-4: 16px;
@@ -3377,6 +3378,50 @@ body {
 
 .content-back-link {
   margin-top: 28px;
+}
+
+/* MapLibreが生成するDOMにもReactのMapControlと同じ操作寸法・surfaceを適用します。 */
+.map-search-controls-toolbar {
+  /* 右上の44px操作とfocus ringの領域を予約し、検索欄との重なりを防ぎます。 */
+  padding-inline-end: calc(var(--spacing-control) + var(--spacing-space-8));
+}
+
+.map-search-controls-toolbar > .current-location-control > button {
+  width: 100%;
+}
+
+@media (max-width: 680px) {
+  .map-search-controls-toolbar > .filter-toggle,
+  .map-search-controls-toolbar > .current-location-control {
+    /* 長い英語の操作名も単語途中で縦に分断せず、予約した地図操作領域の左に収めます。 */
+    flex: 1 1 100%;
+  }
+}
+
+.map-app-main .maplibregl-ctrl-group {
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevation-1);
+}
+
+.map-app-main .maplibregl-ctrl-group button {
+  width: var(--spacing-control);
+  height: var(--spacing-control);
+  color: var(--color-text-primary);
+}
+
+.map-app-main .maplibregl-ctrl-group button:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.map-app-main .maplibregl-ctrl-group button:hover {
+  background-color: var(--color-brand-soft);
+}
+
+.map-app-main .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+  background-size: var(--spacing-space-5) var(--spacing-space-5);
 }
 
 @media (max-width: 680px) {

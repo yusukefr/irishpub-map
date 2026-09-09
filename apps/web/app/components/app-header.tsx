@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BrandLink, NavigationLink } from "./ui/header-primitives";
 import { LanguageSwitcher } from "./language-switcher";
 import { getTranslation, type Locale } from "../lib/i18n";
 
@@ -25,15 +25,15 @@ export function AppHeader({ locale, navigationItems = [] }: AppHeaderProps) {
   return (
     <header className="app-header">
       <div className="app-header-inner">
-        <Link className="app-brand" href="/">
+        <BrandLink className="app-brand" href="/">
           Irish Pub Map
-        </Link>
+        </BrandLink>
         {navigationItems.length ? (
           <nav className="app-navigation" aria-label={t.navigation.label}>
             {navigationItems.map((item) => (
-              <Link key={item.href} href={item.href} aria-current={item.current ? "page" : undefined}>
+              <NavigationLink key={item.href} href={item.href} current={item.current}>
                 {item.label}
-              </Link>
+              </NavigationLink>
             ))}
           </nav>
         ) : null}

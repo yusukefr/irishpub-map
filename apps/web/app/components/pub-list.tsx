@@ -1,7 +1,8 @@
 "use client";
 
-import type { Pub, PubStatus } from "@irishpub-map/shared/pub";
-import { DEFAULT_LOCALE, formatMessage, getTagLabel, getTranslation } from "../lib/i18n";
+import type { Pub } from "@irishpub-map/shared/pub";
+import { DEFAULT_LOCALE, formatMessage, getTranslation } from "../lib/i18n";
+import { PubCard } from "./ui/pub-card";
 import type { MutableRefObject } from "react";
 import type { Locale } from "../lib/i18n";
 
@@ -13,13 +14,6 @@ type PubListProps = {
   resultRefs?: MutableRefObject<Map<string, HTMLElement>>;
   locale?: Locale;
   hideHeader?: boolean;
-};
-
-const STATUS_BADGE_CLASSES: Record<PubStatus, string> = {
-  open: "pub-status-open",
-  temporarily_closed: "pub-status-temporarily-closed",
-  closed: "pub-status-closed",
-  unknown: "pub-status-unknown",
 };
 
 /**
@@ -50,68 +44,27 @@ export function PubList({
         </div>
       ) : null}
       <div className="pub-items">
-        {pubs.map((pub) => {
-          const isSelected = selectedPubId === pub.id;
-          const visibleTags = pub.tags.slice(0, 2);
-          const additionalTagCount = Math.max(pub.tags.length - visibleTags.length, 0);
+        {pubs.map((pub) => (
+          <PubCard
+            key={pub.id}
+            pub={pub}
+            locale={locale}
+            selected={selectedPubId === pub.id}
+            onSelect={onSelectPub}
+            onShowDetails={onShowDetails}
+            ref={(element) => {
+              if (!resultRefs) {
+                return;
+              }
 
-          return (
-            <article
-              className={[
-                "pub-card",
-                "pub-card-compact",
-                pub.status === "closed" ? "pub-card-closed" : "",
-                isSelected ? "pub-card-selected" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              data-selected={isSelected || undefined}
-              key={pub.id}
-              ref={(element) => {
-                if (!resultRefs) {
-                  return;
-                }
-
-                if (element) {
-                  resultRefs.current.set(pub.id, element);
-                } else {
-                  resultRefs.current.delete(pub.id);
-                }
-              }}
-            >
-              <button
-                type="button"
-                className="pub-result-select"
-                aria-pressed={isSelected}
-                aria-label={formatMessage(t.list.selectPub, { name: pub.name })}
-                onClick={() => onSelectPub(pub.id)}
-              >
-                <span className="pub-result-main">
-                  <span className="pub-result-name" role="heading" aria-level={3}>
-                    {pub.name}
-                  </span>
-                  <span>{[pub.prefecture, pub.city].filter(Boolean).join(" / ")}</span>
-                </span>
-                <span className={["pub-status", STATUS_BADGE_CLASSES[pub.status]].join(" ")}>
-                  {pub.statusDisplayName ?? t.list.statuses[pub.status]}
-                </span>
-              </button>
-              {visibleTags.length > 0 ? (
-                <ul className="pub-tags" aria-label={formatMessage(t.list.pubTagsLabel, { name: pub.name })}>
-                  {visibleTags.map((tag) => (
-                    <li key={tag}>{pub.tagDisplayNames?.[tag] ?? getTagLabel(locale, tag)}</li>
-                  ))}
-                  {additionalTagCount > 0 ? <li>+{additionalTagCount}</li> : null}
-                </ul>
-              ) : null}
-              {onShowDetails ? (
-                <button type="button" className="pub-detail-toggle" onClick={() => onShowDetails(pub.id)}>
-                  {t.list.details}
-                </button>
-              ) : null}
-            </article>
-          );
-        })}
+              if (element) {
+                resultRefs.current.set(pub.id, element);
+              } else {
+                resultRefs.current.delete(pub.id);
+              }
+            }}
+          />
+        ))}
       </div>
     </div>
   );

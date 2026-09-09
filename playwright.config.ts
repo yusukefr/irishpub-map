@@ -8,6 +8,7 @@ const passwordHash = scryptSync(E2E_ADMIN_CREDENTIALS.password, passwordSalt, 64
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: "**/*.storybook.spec.ts",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,

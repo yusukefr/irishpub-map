@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ContentCard } from "../../components/ui/content-card";
 import { listLegacyGuides } from "../../lib/content/legacy-repository";
 import { getTranslation } from "../../lib/i18n";
 import { getRequestLocale } from "../../lib/i18n/server";
@@ -34,13 +35,9 @@ export default async function DiscoverPage() {
       </header>
 
       <div className="discover-sections">
-        <section className="discover-section" aria-labelledby="discover-stories-heading">
-          <h2 id="discover-stories-heading">{t.stories}</h2>
-          <p>{t.comingSoon}</p>
-        </section>
+        <ContentCard titleId="discover-stories-heading" title={t.stories} description={t.comingSoon} />
 
-        <section className="discover-section" aria-labelledby="discover-guides-heading">
-          <h2 id="discover-guides-heading">{t.guides}</h2>
+        <ContentCard titleId="discover-guides-heading" title={t.guides}>
           <ul className="discover-links">
             {guides.map((guide) => (
               <li key={guide.slug}>
@@ -48,22 +45,28 @@ export default async function DiscoverPage() {
               </li>
             ))}
           </ul>
-        </section>
+        </ContentCard>
 
-        <section className="discover-section" aria-labelledby="discover-quiz-heading">
-          <h2 id="discover-quiz-heading">{t.quiz}</h2>
-          <Link className="content-action-link" href="/discover/quiz">
-            {t.viewQuiz} →
-          </Link>
-        </section>
+        <ContentCard
+          titleId="discover-quiz-heading"
+          title={t.quiz}
+          action={
+            <Link className="content-action-link" href="/discover/quiz">
+              {t.viewQuiz} →
+            </Link>
+          }
+        />
 
-        <section className="discover-section" aria-labelledby="discover-calendar-heading">
-          <h2 id="discover-calendar-heading">{t.calendarTitle}</h2>
-          <p>{t.calendarSummary}</p>
-          <Link className="content-action-link discover-section-action" href="/discover/calendar">
-            {t.viewCalendar} →
-          </Link>
-        </section>
+        <ContentCard
+          titleId="discover-calendar-heading"
+          title={t.calendarTitle}
+          description={t.calendarSummary}
+          action={
+            <Link className="content-action-link discover-section-action" href="/discover/calendar">
+              {t.viewCalendar} →
+            </Link>
+          }
+        />
       </div>
     </section>
   );
