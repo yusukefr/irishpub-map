@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { HeaderAction } from "./ui/header-primitives";
+import styles from "./ui/ui.module.css";
 import {
   LANGUAGE_OPTIONS,
   LOCALE_COOKIE,
@@ -116,11 +118,10 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
   };
 
   return (
-    <div className="language-switcher" ref={containerRef}>
-      <button
+    <div className={`language-switcher ${styles.languageContainer}`} ref={containerRef}>
+      <HeaderAction
         ref={triggerRef}
         type="button"
-        className="language-switcher-trigger"
         aria-label={`${t.label}: ${currentLanguage.label}`}
         aria-expanded={isOpen}
         aria-haspopup="menu"
@@ -135,7 +136,7 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
         <span className="language-switcher-chevron" aria-hidden="true">
           {isOpen ? "▴" : "▾"}
         </span>
-      </button>
+      </HeaderAction>
       {isOpen ? (
         <div id={menuId} className="language-switcher-menu" role="menu" aria-label={t.label}>
           {languageOptions.map((option, index) => {

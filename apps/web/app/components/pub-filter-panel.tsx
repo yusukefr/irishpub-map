@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { FilterChip, FilterChipGroup } from "./ui/filter-chip";
 
 type TagOption = {
   id: string;
@@ -104,17 +105,17 @@ export function PubFilterPanel({
         </label>
         <fieldset className="tag-filter">
           <legend>{tagsLabel}</legend>
-          <div className="tag-filter-options">
+          <FilterChipGroup label={tagsLabel}>
             {availableTags.map((tag) => {
               const isSelected = selectedTags.includes(tag.id);
 
               return (
-                <button type="button" key={tag.id} aria-pressed={isSelected} onClick={() => onTagToggle(tag.id)}>
+                <FilterChip key={tag.id} selected={isSelected} onClick={() => onTagToggle(tag.id)}>
                   {tag.label}
-                </button>
+                </FilterChip>
               );
             })}
-          </div>
+          </FilterChipGroup>
         </fieldset>
         <label className="closed-filter">
           <input

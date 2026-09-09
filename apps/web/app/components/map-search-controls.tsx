@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, type RefObject } from "react";
+import { Search } from "./ui/search";
 import { PubFilterPanel } from "./pub-filter-panel";
 import { CurrentLocationControl, type GeolocationStatus } from "./current-location-control";
 
@@ -103,26 +104,14 @@ export function MapSearchControls({
     <div className="map-search-controls" aria-label={filterPanelLabel}>
       <div className="map-search-controls-toolbar">
         <div className="map-search-field">
-          <label className="visually-hidden" htmlFor="pub-search">
-            {searchLabel}
-          </label>
-          <div className="search-row">
-            <span className="search-icon" aria-hidden="true">
-              ⌕
-            </span>
-            <input
-              id="pub-search"
-              type="search"
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder={searchPlaceholder}
-            />
-            {query ? (
-              <button type="button" onClick={() => onQueryChange("")}>
-                {clearLabel}
-              </button>
-            ) : null}
-          </div>
+          <Search
+            id="pub-search"
+            label={searchLabel}
+            value={query}
+            onValueChange={onQueryChange}
+            placeholder={searchPlaceholder}
+            clearLabel={clearLabel}
+          />
         </div>
         <button
           ref={filterTriggerRef}

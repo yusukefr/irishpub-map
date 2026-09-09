@@ -36,6 +36,24 @@ for (const locale of ["ja", "en"] as const) {
         expect(computed.font).toContain(computed.family);
         expect(computed.loaded).toBe(true);
         expect(computed.overflow).toBe(false);
+        if (path === "/") {
+          const mapControls = page.locator(".maplibregl-ctrl-group");
+          await expect(mapControls).toBeVisible();
+          const mapRect = (await mapControls.boundingBox())!;
+          for (const control of await page
+            .locator(".map-search-controls-toolbar input, .map-search-controls-toolbar button")
+            .all()) {
+            const rect = (await control.boundingBox())!;
+            expect(rect.x + rect.width <= mapRect.x || rect.y >= mapRect.y + mapRect.height).toBe(true);
+          }
+          for (const button of await mapControls.getByRole("button").all()) {
+            const rect = (await button.boundingBox())!;
+            expect(rect.width).toBeGreaterThanOrEqual(44);
+            expect(rect.height).toBeGreaterThanOrEqual(44);
+          }
+          const locationButton = page.locator(".current-location-control > button");
+          expect((await locationButton.boundingBox())!.height).toBeLessThanOrEqual(88);
+        }
         await page.screenshot({
           path: testInfo.outputPath(`${path === "/" ? "map" : "discover"}.png`),
           fullPage: true,

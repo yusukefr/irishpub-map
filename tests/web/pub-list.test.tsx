@@ -66,15 +66,15 @@ describe("PubList", () => {
     render(<PubList pubs={pubs} />);
 
     const cards = screen.getAllByRole("article");
-    expect(within(cards[0]).getByText("Open")).toHaveClass("pub-status-open");
+    expect(within(cards[0]).getByText("Open")).toHaveAttribute("data-status", "open");
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("Guinness");
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("Live music");
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("+1");
     expect(within(cards[0]).queryByText("seasonal-event")).not.toBeInTheDocument();
-    expect(within(cards[1]).getByText("不明")).toHaveClass("pub-status-unknown");
+    expect(within(cards[1]).getByText("不明")).toHaveAttribute("data-status", "unknown");
     expect(within(cards[1]).queryByRole("list")).not.toBeInTheDocument();
-    expect(within(cards[2]).getByText("閉業")).toHaveClass("pub-status-closed");
-    expect(cards[2]).toHaveClass("pub-card", "pub-card-closed");
+    expect(within(cards[2]).getByText("閉業")).toHaveAttribute("data-status", "closed");
+    expect(cards[2]).toHaveAttribute("data-status", "closed");
   });
 
   it("selects a card with a real button and reflects the selected state", () => {
@@ -91,7 +91,7 @@ describe("PubList", () => {
       "aria-pressed",
       "true",
     );
-    expect(screen.getAllByRole("article")[0]).toHaveClass("pub-card-selected");
+    expect(screen.getAllByRole("article")[0]).toHaveAttribute("data-selected", "true");
   });
 
   it("delegates detail navigation separately from card selection", () => {
