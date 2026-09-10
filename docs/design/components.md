@@ -14,7 +14,7 @@
 | FilterChip / `filter-chip.tsx` | `selected`を色・check・aria-pressedで表現。多数ある場合は`FilterChipGroup label`内で横スクロールさせる。 |
 | StatusBadge / `status-badge.tsx` | `status`は共有PubStatus、`label`は翻訳済みの必須文字。操作ボタンではない。閉業は破線も併用。 |
 | PubCard / `pub-card.tsx` | `pub` / `onSelect`が必須。`selected`は地図と親で同期する。`onShowDetails`は選択とは独立。任意の`media` / `metadata` / `distance`は表示専用で、DB形式を変えない。タグは2件と残り件数を表示。 |
-| ContentCard / `content-card.tsx` | `titleId` / `title`が必須。`description` / `eyebrow` / `metadata` / `media` / `action` / childrenを組み合わせる。`default` / `feature` / `compact`。featureのみEditorial見出し・限定的なGold罫線。店舗選択カードとは分ける。 |
+| ContentCard / `content-card.tsx` | `titleId` / `title`が必須。`description` / `eyebrow` / `metadata` / `media` / `action` / childrenを組み合わせる。`default` / `image` / `text-only` / `feature` / `compact`。section内では`headingLevel={3}`で見出し階層を保てる。featureのみEditorial見出し・限定的なGold罫線。店舗選択カードとは分ける。 |
 | MapControl / `map-control.tsx` | IconButtonを明るいsurface・radius-md・elevation-1で構成。`label`とアイコンを渡す。MapLibre生成DOMにもglobals.cssから同じ44px・focus・surfaceを適用する。 |
 | BottomSheet / `bottom-sheet.tsx` | 非モーダルのcontrolled primitive。`state` / `onStateChange` / `title` / `resizeLabel` / `stateLabels` / childrenを渡す。詳細は下記。 |
 | Header primitives / `header-primitives.tsx` | `BrandLink`、`NavigationLink current`、`HeaderAction`、`HeaderIconButton label`。暗いブランド背景用。Language Actionは既存`LanguageSwitcher`を使用し、Cookie保存やキーボードメニューを再実装しない。Menu ActionはHeaderIconButtonへIcon menuと操作を渡す。 |
@@ -61,6 +61,8 @@ Mobile Storyは追加addonなしで390px幅に制限した部品例です。実�
 - `npm run test:e2e`: 実アプリの検索・選択・言語・アクセシビリティとDesign Tokenの回帰確認。
 
 ブラウザ検証はCIと同じPlaywright固定コンテナを使用します。画像は`test-results`、失敗時のtraceとHTML reportは既存CI artifactに保存します。Storybookはシステムフォントfallbackで、本番フォントはNext.jsのE2Eで確認します。自動axeは手動の見た目・操作確認を置き換えるものではありません。
+
+Discover のページ構成、長文幅、関連導線、写真利用条件は[Discover Editorial Pattern](discover.md)を参照してください。
 
 ## Mobile Map（Phase 4）
 

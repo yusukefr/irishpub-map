@@ -11,7 +11,8 @@ export type ContentCardProps = {
   metadata?: ReactNode;
   action?: ReactNode;
   children?: ReactNode;
-  variant?: "default" | "feature" | "compact";
+  variant?: "default" | "image" | "text-only" | "feature" | "compact";
+  headingLevel?: 2 | 3;
 };
 
 /**
@@ -29,12 +30,15 @@ export function ContentCard({
   action,
   children,
   variant = "default",
+  headingLevel = 2,
 }: ContentCardProps) {
+  const Heading = headingLevel === 3 ? "h3" : "h2";
+
   return (
     <section className={styles.contentCard} data-variant={variant} aria-labelledby={titleId}>
       {media ? <div className={styles.cardMedia}>{media}</div> : null}
       {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
-      <h2 id={titleId}>{title}</h2>
+      <Heading id={titleId}>{title}</Heading>
       {description ? <p>{description}</p> : null}
       {metadata ? <div className={styles.metadata}>{metadata}</div> : null}
       {children}

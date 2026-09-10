@@ -200,6 +200,7 @@ describe("Public UI primitives", () => {
         titleId="guide"
         title="ガイド"
         variant="feature"
+        headingLevel={3}
         media={<span>写真</span>}
         eyebrow="Ireland"
         description="説明"
@@ -210,8 +211,14 @@ describe("Public UI primitives", () => {
       </ContentCard>,
     );
     expect(screen.getByRole("region")).toHaveAttribute("data-variant", "feature");
+    expect(screen.getByRole("heading", { level: 3, name: "ガイド" })).toBeInTheDocument();
     for (const text of ["写真", "Ireland", "説明", "5分", "補足"]) expect(screen.getByText(text)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "読む" })).toHaveAttribute("href", "/discover");
+
+    rerender(<ContentCard titleId="text-only" title="文字だけ" variant="text-only" />);
+    expect(screen.getByRole("region", { name: "文字だけ" })).toHaveAttribute("data-variant", "text-only");
+    rerender(<ContentCard titleId="image" title="画像付き" variant="image" media={<span>写真</span>} />);
+    expect(screen.getByRole("region", { name: "画像付き" })).toHaveAttribute("data-variant", "image");
   });
 
   it("shares button behavior for map and header and exposes current navigation", () => {
