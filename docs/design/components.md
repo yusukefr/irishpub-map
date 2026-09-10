@@ -46,7 +46,9 @@ Input / Search / BottomSheetはstate・ID・focusを扱うClient Componentです
 
 ## 既存画面との接続
 
-PubListのカード表示をPubCardへ、一覧と詳細の状態表示をStatusBadgeへ、Map検索をSearchへ、タグ操作をFilterChipへ、現在地操作をButtonへ統合しました。AppHeaderのリンクと言語トリガー、Discover内の4つのカードも共通部品を使います。検索・DB・認証・言語保存の仕様は変更しません。画面全体の配置・Map Panel・Markerの刷新は後続Phaseです。
+PubListのカード表示をPubCardへ、一覧と詳細の状態表示をStatusBadgeへ、Map検索をSearchへ、タグ操作をFilterChipへ、現在地操作をButtonへ統合しました。AppHeaderのリンクと言語トリガー、Discover内の4つのカードも共通部品を使います。検索・DB・認証・言語保存の仕様は変更しません。Desktopの配置・Panel・Markerは[Desktop Map Pattern](desktop-map.md)を参照してください。Mobileの全面移行は後続Phaseです。
+
+PubCardの`density="compact"`はDesktop Resultsなど幅の限られた一覧向けです。店舗名・地域・状態の順を維持し、タグと詳細を同じ行に配置します。既定値`comfortable`は既存画面用です。`DesktopPubCards` / `DesktopPubCardsEnglish` Storyで長文と各状態を確認できます。
 
 ## Storybookと検証
 

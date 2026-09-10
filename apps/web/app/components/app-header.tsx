@@ -1,12 +1,14 @@
 import { BrandLink, NavigationLink } from "./ui/header-primitives";
 import { LanguageSwitcher } from "./language-switcher";
 import { getTranslation, type Locale } from "../lib/i18n";
+import styles from "./app-header.module.css";
 
 /** Global Headerから提供する内部ナビゲーション項目です。 */
 export type AppNavigationItem = {
   href: string;
   label: string;
   current?: boolean;
+  desktopOnly?: boolean;
 };
 
 type AppHeaderProps = {
@@ -31,7 +33,12 @@ export function AppHeader({ locale, navigationItems = [] }: AppHeaderProps) {
         {navigationItems.length ? (
           <nav className="app-navigation" aria-label={t.navigation.label}>
             {navigationItems.map((item) => (
-              <NavigationLink key={item.href} href={item.href} current={item.current}>
+              <NavigationLink
+                key={item.href}
+                href={item.href}
+                current={item.current}
+                className={item.desktopOnly ? styles.desktopOnly : undefined}
+              >
                 {item.label}
               </NavigationLink>
             ))}

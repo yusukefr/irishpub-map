@@ -4,6 +4,7 @@
     "description": "Find Irish pubs across Japan using the map and filters."
   },
   "navigation": {
+    "map": "Map",
     "label": "Global navigation"
   },
   "discover": {
@@ -128,6 +129,13 @@
     }
   },
   "map": {
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "resetBearing": "Drag to rotate map, click to reset north",
+    "retry": "Reload map",
+    "pubsLoadFailed": "Pub information could not be loaded",
+    "pubsLoadFailedDescription": "Check your connection and try again. You can still move and zoom the map.",
+    "retryPubs": "Reload pub information",
     "locationsLabel": "Irish Pub locations",
     "currentLocation": "Current location",
     "unavailableHeading": "The map is unavailable",

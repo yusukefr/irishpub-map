@@ -14,7 +14,10 @@ test("店舗名検索から対象店舗だけを結果一覧へ表示する", as
 
   const filteredResultCount = page.getByRole("button", { name: "1件のPubが見つかりました" });
   await expect(filteredResultCount).toBeVisible();
-  await filteredResultCount.click();
+  // Desktopは初期表示、Mobileは件数ボタンから開きます。
+  if ((await filteredResultCount.getAttribute("aria-expanded")) === "false") {
+    await filteredResultCount.click();
+  }
 
   const results = page.getByRole("complementary", { name: "掲載店舗" });
   await expect(results.getByText(E2E_TEST_DATA.pubs.nagoya.name)).toBeVisible();

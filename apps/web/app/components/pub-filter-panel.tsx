@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { FilterChip, FilterChipGroup } from "./ui/filter-chip";
+import { Button } from "./ui/button";
 
 type TagOption = {
   id: string;
@@ -83,9 +84,9 @@ export function PubFilterPanel({
         <h2 id="pub-filter-options-heading" className="visually-hidden">
           {panelLabel}
         </h2>
-        <button ref={closeButtonRef} type="button" className="filter-panel-close" onClick={onClose}>
+        <Button ref={closeButtonRef} variant="ghost" className="filter-panel-close" onClick={onClose}>
           {closeLabel}
-        </button>
+        </Button>
       </div>
       <div className="filter-row">
         <label htmlFor="pub-prefecture-filter">
@@ -127,9 +128,9 @@ export function PubFilterPanel({
           <span>{includeClosedLabel}</span>
         </label>
         {hasActiveFilters ? (
-          <button type="button" className="filter-reset" onClick={onReset}>
+          <Button variant="secondary" className="filter-reset" onClick={onReset}>
             {resetLabel}
-          </button>
+          </Button>
         ) : null}
       </div>
       <p className="search-help">{help}</p>

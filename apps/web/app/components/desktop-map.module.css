@@ -1,0 +1,328 @@
+/* Mobileは既存のOverlayを維持し、Desktopだけ探索部品を左のrailへ配置します。 */
+.explorationPanel {
+  display: contents;
+}
+.layout :global(.map-results-indicator) {
+  display: none;
+}
+
+/* 地図の状態通知は操作を透過し、再試行ボタンだけを操作可能にします。 */
+.layout :global(.map-error button) {
+  pointer-events: auto;
+  margin-top: var(--spacing-space-3);
+}
+
+@media (max-width: 980px) {
+  /* 親をworkspaceからlayoutへ移しても、既存の地図内側の座標を維持します。 */
+  .layout :global(.map-search-controls) {
+    inset: 16px clamp(16px, 4vw, 48px);
+  }
+  .layout .explorationPanel > :global(.pub-results-panel) {
+    position: absolute;
+    top: auto;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: max(12px, env(safe-area-inset-left));
+    width: auto;
+    height: auto;
+    max-height: min(65dvh, calc(100% - 196px));
+    border-radius: 16px 16px 12px 12px;
+  }
+}
+
+@media (max-width: 680px) {
+  .layout :global(.map-search-controls) {
+    inset: 12px;
+  }
+}
+
+@media (max-width: 980px) and (orientation: landscape) and (max-height: 600px) {
+  .layout .explorationPanel > :global(.pub-results-panel) {
+    top: max(164px, env(safe-area-inset-top));
+    left: auto;
+    width: min(420px, calc(100% - 24px));
+    max-height: none;
+    border-radius: 16px;
+  }
+}
+
+@media (min-width: 981px) {
+  .layout.layout {
+    padding: 0;
+    grid-template-columns: clamp(360px, 28vw, 400px) minmax(0, 1fr);
+    gap: 0;
+    background: var(--color-surface-primary);
+  }
+
+  .layout :global(.map-canvas) {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .explorationPanel {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    flex-direction: column;
+    border-inline-end: 1px solid var(--color-border-default);
+    background: var(--color-surface-primary);
+  }
+
+  .explorationPanel :global(.map-search-controls) {
+    position: static;
+    flex: 0 1 auto;
+    max-height: 62%;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    align-items: stretch;
+    pointer-events: auto;
+    padding: var(--spacing-space-4);
+    gap: var(--spacing-space-3);
+    border-bottom: 1px solid var(--color-border-default);
+  }
+
+  .explorationPanel :global(.map-search-controls-toolbar) {
+    display: grid;
+    flex-shrink: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-space-2);
+    padding: 0;
+  }
+
+  .explorationPanel :global(.map-search-field) {
+    width: 100%;
+  }
+
+  .explorationPanel :global(.filter-toggle),
+  .explorationPanel :global(.filter-panel-close),
+  .explorationPanel :global(.filter-reset),
+  .explorationPanel :global(.pub-results-close),
+  .explorationPanel :global(.pub-results-back) {
+    min-height: var(--spacing-control);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-primary);
+    color: var(--color-brand-primary);
+    box-shadow: none;
+    font-size: var(--text-body-sm);
+  }
+
+  .explorationPanel :global(.filter-toggle-active),
+  .explorationPanel :global(.filter-toggle:hover),
+  .explorationPanel :global(.pub-results-close:hover),
+  .explorationPanel :global(.pub-results-back:hover) {
+    background: var(--color-brand-soft);
+  }
+
+  .explorationPanel :global(.filter-toggle-count) {
+    background: var(--color-brand-primary);
+    color: var(--color-text-inverse);
+  }
+
+  .explorationPanel :global(.filter-panel) {
+    position: static;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-height: none;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    margin: 0;
+    padding: var(--spacing-space-2);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .explorationPanel :global(.filter-row) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-space-3);
+  }
+
+  .explorationPanel :global(.filter-row select) {
+    width: 100%;
+    min-height: var(--spacing-control);
+    border-color: var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font-size: var(--text-body-sm);
+  }
+
+  .explorationPanel :global(.tag-filter) {
+    min-width: 0;
+  }
+
+  .explorationPanel :global(.closed-filter) {
+    min-height: var(--spacing-control);
+    color: var(--color-text-primary);
+    font-size: var(--text-body-sm);
+  }
+
+  .explorationPanel :global(.search-help),
+  .explorationPanel :global(.current-location-status) {
+    font-size: var(--text-body-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .explorationPanel :global(.current-location-status) {
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-primary);
+    box-shadow: none;
+    padding: var(--spacing-space-3);
+  }
+
+  .explorationPanel :global(.current-location-status[role="alert"]) {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+  }
+
+  .explorationPanel :global(.map-result-count) {
+    position: static;
+    flex-shrink: 0;
+    width: 100%;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    background: var(--color-brand-soft);
+    color: var(--color-brand-primary);
+    font-size: var(--text-body-sm);
+    text-align: start;
+    padding: var(--spacing-space-2) var(--spacing-space-3);
+  }
+
+  .explorationPanel :global(.map-result-count .map-results-indicator) {
+    display: inline;
+    float: right;
+  }
+
+  .explorationPanel :global(.pub-results-panel) {
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .explorationPanel :global(.pub-results-panel-header) {
+    align-items: center;
+    padding: var(--spacing-space-2) var(--spacing-space-4);
+  }
+
+  .explorationPanel :global(.pub-results-panel-header h2) {
+    color: var(--color-text-primary);
+    font-size: var(--text-body-md);
+  }
+
+  .explorationPanel :global(.pub-results-scroll) {
+    padding: var(--spacing-space-3) var(--spacing-space-4) var(--spacing-space-4);
+    scrollbar-gutter: stable;
+  }
+
+  .explorationPanel :global(.pub-items) {
+    gap: var(--spacing-space-3);
+  }
+
+  .explorationPanel :global(.pub-results-empty) {
+    overflow-y: auto;
+    align-content: start;
+    gap: var(--spacing-space-3);
+    padding: var(--spacing-space-6);
+  }
+
+  .explorationPanel :global(.pub-results-empty p) {
+    margin: 0;
+    font-size: var(--text-body-sm);
+  }
+
+  .explorationPanel :global(button:focus-visible),
+  .explorationPanel :global(select:focus-visible),
+  .explorationPanel :global(input:focus-visible) {
+    outline: var(--focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  .layout :global(.map-loading),
+  .layout :global(.map-error),
+  .layout :global(.map-fallback) {
+    inset: auto var(--spacing-space-4) var(--spacing-space-12);
+    width: fit-content;
+    max-width: calc(100% - var(--spacing-space-8));
+    padding: var(--spacing-space-4);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-primary);
+    box-shadow: var(--shadow-elevation-1);
+    text-align: start;
+  }
+
+  .layout :global(.map-loading-indicator) {
+    width: var(--spacing-space-5);
+    height: var(--spacing-space-5);
+    border-color: var(--color-brand-soft);
+    border-top-color: var(--color-brand-primary);
+  }
+
+  .layout :global(.map-error h2),
+  .layout :global(.map-fallback h2) {
+    font-size: var(--text-body-md);
+  }
+
+  .layout :global(.pub-map-marker) {
+    width: var(--spacing-control);
+    height: var(--spacing-control);
+    border-color: var(--color-brand-primary);
+    background: var(--color-brand-interactive);
+    box-shadow: var(--shadow-elevation-1);
+  }
+
+  .layout :global(.pub-map-marker-guinness)::before {
+    background: var(--color-brand-interactive);
+    border-color: var(--color-brand-primary);
+  }
+
+  .layout :global(.pub-map-marker:not(.pub-map-marker-open)) {
+    width: var(--spacing-control);
+    height: var(--spacing-control);
+    border-style: dashed;
+    border-color: var(--color-text-secondary);
+    background: var(--color-surface-primary);
+  }
+
+  .layout :global(.pub-map-marker:not(.pub-map-marker-open) span) {
+    background: var(--color-text-secondary);
+  }
+
+  .layout :global(.pub-map-marker.pub-map-marker-selected) {
+    width: var(--spacing-space-12);
+    height: var(--spacing-space-12);
+    outline: var(--focus-ring-width) solid var(--color-brand-primary);
+    outline-offset: var(--focus-ring-offset);
+    border-color: var(--color-surface-primary);
+    background: var(--color-brand-primary);
+    filter: none;
+  }
+
+  .layout :global(.pub-map-marker-selected)::before {
+    background: var(--color-brand-primary);
+    border-color: var(--color-brand-primary);
+  }
+
+  .layout :global(.pub-map-marker:focus-visible) {
+    outline: var(--focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  .layout :global(.current-location-marker) {
+    border-color: var(--color-surface-primary);
+    background: var(--color-focus-ring);
+    box-shadow:
+      0 0 0 var(--spacing-space-1) var(--color-surface-primary),
+      var(--shadow-elevation-1);
+  }
+}

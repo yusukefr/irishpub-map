@@ -20,7 +20,6 @@ export type Coordinates = {
   latitude: number;
   longitude: number;
 };
-const PREFECTURES_IN_JIS_ORDER = PREFECTURES.map(({ name }) => name);
 
 /**
  * 指定された検索・絞り込み条件をすべて満たす店舗を返します。
@@ -80,9 +79,20 @@ export function filterPubsByQuery(pubs: Pub[], query: string) {
  * @param {Pub[]} pubs - 絞り込み対象の店舗一覧。
  */
 export function getAvailablePrefectures(pubs: Pub[]) {
-  const availablePrefectures = new Set(pubs.map((pub) => pub.prefecture));
-
-  return PREFECTURES_IN_JIS_ORDER.filter((prefecture) => availablePrefectures.has(prefecture));
+  const available = new Map<string, number>();
+  for (const pub of pubs) {
+    // 翻訳済みの名称を落とさず、市区町村コードの先頭2桁でJIS順を保ちます。
+    // 旧データでコードがない場合は従来の日本語マスタ、未知の名称は末尾へ並べます。
+    const prefix = Number(pub.municipalityCode?.slice(0, 2));
+    const order =
+      prefix >= 1 && prefix <= 47
+        ? prefix
+        : (PREFECTURES.find(({ name }) => name === pub.prefecture)?.code ?? Infinity);
+    available.set(pub.prefecture, Math.min(order, available.get(pub.prefecture) ?? Infinity));
+  }
+  return [...available]
+    .sort(([nameA, orderA], [nameB, orderB]) => orderA - orderB || nameA.localeCompare(nameB, "ja"))
+    .map(([name]) => name);
 }
 
 /**

@@ -172,6 +172,9 @@ export function MapSearchControls({
         onClick={onToggleResults}
       >
         {resultCount}
+        <span className="map-results-indicator" aria-hidden="true">
+          {isResultsOpen ? "−" : "+"}
+        </span>
       </button>
     </div>
   );

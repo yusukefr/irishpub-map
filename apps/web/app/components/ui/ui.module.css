@@ -232,6 +232,24 @@
   align-content: start;
   align-self: start;
 }
+.pubCard[data-density="compact"] {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: var(--spacing-space-3);
+  gap: var(--spacing-space-2);
+}
+.pubCard[data-density="compact"] > :not(.tags):not(.button) {
+  grid-column: 1 / -1;
+}
+.pubCard[data-density="compact"] > .tags {
+  align-self: center;
+  grid-column: 1;
+}
+.pubCard[data-density="compact"] > .button {
+  grid-column: 2;
+}
+.pubCard[data-density="compact"] .pubName {
+  font-size: var(--text-body-lg);
+}
 .pubCard[data-status="closed"] {
   background: var(--color-surface-muted);
   border-style: dashed;

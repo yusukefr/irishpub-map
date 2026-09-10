@@ -10,6 +10,7 @@ export type PubCardProps = {
   pub: Pub;
   locale?: Locale;
   selected?: boolean;
+  density?: "comfortable" | "compact";
   onSelect: (pubId: string) => void;
   onShowDetails?: (pubId: string) => void;
   media?: ReactNode;
@@ -27,6 +28,7 @@ export function PubCard({
   pub,
   locale = DEFAULT_LOCALE,
   selected = false,
+  density = "comfortable",
   onSelect,
   onShowDetails,
   media,
@@ -38,7 +40,13 @@ export function PubCard({
   const tags = pub.tags.slice(0, 2);
   const additionalCount = pub.tags.length - tags.length;
   return (
-    <article ref={ref} className={styles.pubCard} data-selected={selected || undefined} data-status={pub.status}>
+    <article
+      ref={ref}
+      className={styles.pubCard}
+      data-selected={selected || undefined}
+      data-status={pub.status}
+      data-density={density}
+    >
       {media ? <div className={styles.cardMedia}>{media}</div> : null}
       <button
         type="button"

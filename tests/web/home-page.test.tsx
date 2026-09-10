@@ -9,7 +9,9 @@ const pageMocks = vi.hoisted(() => ({
 vi.mock("next/headers", () => ({ headers: pageMocks.headers }));
 vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: pageMocks.getRequestLocale }));
 vi.mock("../../apps/web/app/components/pub-explorer", () => ({
-  PubExplorer: () => <section aria-label="探索UI" />,
+  PubExplorer: ({ dataLoadFailed }: { dataLoadFailed: boolean }) => (
+    <section aria-label="探索UI" data-load-failed={dataLoadFailed} />
+  ),
 }));
 
 import Home from "../../apps/web/app/(map)/page";
@@ -29,6 +31,12 @@ beforeEach(() => {
 });
 
 describe("Home", () => {
+  it("keeps the explorer available without exposing a failed API response", async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error("internal connection detail"));
+    render(await Home());
+    expect(screen.getByRole("region", { name: "探索UI" })).toHaveAttribute("data-load-failed", "true");
+    expect(screen.queryByText("internal connection detail")).not.toBeInTheDocument();
+  });
   it("renders the map page content without owning the application shell", async () => {
     render(await Home());
 
