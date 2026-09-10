@@ -8,6 +8,7 @@ const STATES = ["collapsed", "medium", "expanded"] as const;
 export type BottomSheetState = (typeof STATES)[number];
 /** 非モーダルのcontrolled Sheet設定です。背景操作の禁止やfocus trapは行いません。 */
 export type BottomSheetProps = {
+  className?: string;
   state: BottomSheetState;
   onStateChange: (state: BottomSheetState) => void;
   title: string;
@@ -21,7 +22,15 @@ export type BottomSheetProps = {
  * @param {BottomSheetProps} props - 表示段階、変更通知、翻訳済みラベルとスクロール内容。
  * @returns safe areaと動的viewportへ対応したSheet。
  */
-export function BottomSheet({ state, onStateChange, title, resizeLabel, stateLabels, children }: BottomSheetProps) {
+export function BottomSheet({
+  className,
+  state,
+  onStateChange,
+  title,
+  resizeLabel,
+  stateLabels,
+  children,
+}: BottomSheetProps) {
   const id = useId();
   const handleRef = useRef<HTMLButtonElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -38,7 +47,11 @@ export function BottomSheet({ state, onStateChange, title, resizeLabel, stateLab
   }, [state]);
 
   return (
-    <section className={styles.sheet} data-state={state} aria-labelledby={`${id}-title`}>
+    <section
+      className={[styles.sheet, className].filter(Boolean).join(" ")}
+      data-state={state}
+      aria-labelledby={`${id}-title`}
+    >
       <button
         ref={handleRef}
         type="button"

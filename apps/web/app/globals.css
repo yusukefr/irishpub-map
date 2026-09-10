@@ -2549,8 +2549,8 @@ body {
   padding: 16px;
 }
 .map-search-field,
-.map-search-controls-toolbar > .filter-toggle,
-.map-search-controls-toolbar > .current-location-control {
+.map-filter-strip > .filter-toggle,
+.map-filter-strip > .current-location-control {
   pointer-events: auto;
 }
 .map-search-field {
@@ -2574,19 +2574,19 @@ body {
   flex: 0 0 auto;
   padding-inline: 12px;
 }
-.map-search-controls-toolbar > .filter-toggle {
+.map-filter-strip > .filter-toggle {
   min-height: 44px;
   background: rgb(255 255 255 / 96%);
   box-shadow: 0 6px 18px rgb(22 35 28 / 14%);
 }
-.map-search-controls-toolbar > .current-location-control {
+.map-filter-strip > .current-location-control {
   display: block;
   min-height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
 }
-.map-search-controls-toolbar > .current-location-control .current-location-action {
+.map-filter-strip > .current-location-control .current-location-action {
   display: inline-flex;
   min-height: 44px;
   align-items: center;
@@ -2922,12 +2922,12 @@ body {
     flex-basis: 100%;
     width: 100%;
   }
-  .map-search-controls-toolbar > .filter-toggle,
-  .map-search-controls-toolbar > .current-location-control {
+  .map-filter-strip > .filter-toggle,
+  .map-filter-strip > .current-location-control {
     min-width: 0;
     flex: 1 1 0;
   }
-  .map-search-controls-toolbar > .current-location-control .current-location-action {
+  .map-filter-strip > .current-location-control .current-location-action {
     width: 100%;
     justify-content: center;
     white-space: normal;
@@ -3386,13 +3386,13 @@ body {
   padding-inline-end: calc(var(--spacing-control) + var(--spacing-space-8));
 }
 
-.map-search-controls-toolbar > .current-location-control > button {
+.map-filter-strip > .current-location-control > button {
   width: 100%;
 }
 
 @media (max-width: 680px) {
-  .map-search-controls-toolbar > .filter-toggle,
-  .map-search-controls-toolbar > .current-location-control {
+  .map-filter-strip > .filter-toggle,
+  .map-filter-strip > .current-location-control {
     /* 長い英語の操作名も単語途中で縦に分断せず、予約した地図操作領域の左に収めます。 */
     flex: 1 1 100%;
   }

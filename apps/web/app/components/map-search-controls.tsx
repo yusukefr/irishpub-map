@@ -113,31 +113,33 @@ export function MapSearchControls({
             clearLabel={clearLabel}
           />
         </div>
-        <button
-          ref={filterTriggerRef}
-          type="button"
-          className={"filter-toggle" + (detailedFilterCount ? " filter-toggle-active" : "")}
-          aria-expanded={isFiltersExpanded}
-          aria-controls="pub-filter-options"
-          onClick={onToggleFilters}
-        >
-          <span>{isFiltersExpanded ? hideFiltersLabel : showFiltersLabel}</span>
-          {activeFilterCountLabel ? (
-            <span className="filter-toggle-count" aria-label={activeFilterCountLabel}>
-              {detailedFilterCount}
+        <div className="map-filter-strip">
+          <button
+            ref={filterTriggerRef}
+            type="button"
+            className={"filter-toggle" + (detailedFilterCount ? " filter-toggle-active" : "")}
+            aria-expanded={isFiltersExpanded}
+            aria-controls="pub-filter-options"
+            onClick={onToggleFilters}
+          >
+            <span>{isFiltersExpanded ? hideFiltersLabel : showFiltersLabel}</span>
+            {activeFilterCountLabel ? (
+              <span className="filter-toggle-count" aria-label={activeFilterCountLabel}>
+                {detailedFilterCount}
+              </span>
+            ) : null}
+            <span className="filter-toggle-chevron" aria-hidden="true">
+              {isFiltersExpanded ? "⌃" : "⌄"}
             </span>
-          ) : null}
-          <span className="filter-toggle-chevron" aria-hidden="true">
-            {isFiltersExpanded ? "⌃" : "⌄"}
-          </span>
-        </button>
-        <CurrentLocationControl
-          status={currentLocationStatus}
-          actionLabel={currentLocationActionLabel}
-          privacyDescription={currentLocationPrivacyDescription}
-          statusMessage={currentLocationStatusMessage}
-          onRequest={onRequestCurrentLocation}
-        />
+          </button>
+          <CurrentLocationControl
+            status={currentLocationStatus}
+            actionLabel={currentLocationActionLabel}
+            privacyDescription={currentLocationPrivacyDescription}
+            statusMessage={currentLocationStatusMessage}
+            onRequest={onRequestCurrentLocation}
+          />
+        </div>
       </div>
       {isFiltersExpanded ? (
         <PubFilterPanel

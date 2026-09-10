@@ -15,6 +15,8 @@ import { PubResultsPanel } from "./pub-results-panel";
 import { MapSearchControls } from "./map-search-controls";
 import { type GeolocationStatus } from "./current-location-control";
 import styles from "./desktop-map.module.css";
+import mobile from "./mobile-map.module.css";
+import { BottomSheet, type BottomSheetState } from "./ui/bottom-sheet";
 
 type PubExplorerProps = {
   pubs: Pub[];
@@ -61,10 +63,12 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
   const isDesktop = useSyncExternalStore(subscribeDesktop, getDesktopSnapshot, getServerDesktopSnapshot);
-  // 初回だけDesktopで一覧を表示し、明示的な開閉はviewportに関係なく尊重します。
+  // Desktopの開閉とMobileの高さを個別に保持し、幅変更で探索状態を初期化しません。
   const [resultsOpenOverride, setIsResultsOpen] = useState<boolean | null>(null);
+  const [sheetState, setSheetState] = useState<BottomSheetState>("collapsed");
+  const listSheetState = useRef<BottomSheetState>("medium");
   // Desktopで両方を開いたまま幅を狭めても、MobileのOverlayは重ねません。
-  const isResultsOpen = (resultsOpenOverride ?? isDesktop) && (isDesktop || !isFiltersExpanded);
+  const isResultsOpen = isDesktop ? (resultsOpenOverride ?? true) : sheetState !== "collapsed" && !isFiltersExpanded;
   const [resultsView, setResultsView] = useState<"list" | "detail">("list");
   const resultsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const hasSelectedPrefecture = useRef(false);
@@ -180,6 +184,10 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
 
   const selectPub = (pubId: string) => {
     setSelectedPubId(pubId);
+    if (!isDesktop) {
+      setIsFiltersExpanded(false);
+      setSheetState((current) => (current === "collapsed" ? "medium" : current));
+    }
     if (isDesktop && !isResultsOpen) {
       setIsResultsOpen(true);
     }
@@ -188,7 +196,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
   const toggleFilters = () => {
     setIsFiltersExpanded((current) => {
       if (!current && !isDesktop) {
-        setIsResultsOpen(false);
+        setSheetState("collapsed");
       }
       return !current;
     });
@@ -199,26 +207,66 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
       setIsFiltersExpanded(false);
       setResultsView("list");
     }
+    if (!isDesktop) setSheetState(isResultsOpen ? "collapsed" : "medium");
     setIsResultsOpen(!isResultsOpen);
   };
 
   const closeResults = () => {
+    setSheetState("collapsed");
     setIsResultsOpen(false);
     setResultsView("list");
     resultsTriggerRef.current?.focus();
   };
 
   const showResultDetails = (pubId: string) => {
+    listSheetState.current = sheetState === "collapsed" ? "medium" : sheetState;
+    if (!isDesktop) setSheetState("expanded");
     setSelectedPubId(pubId);
     setResultsView("detail");
   };
 
+  const resultsPanel = isResultsOpen ? (
+    <PubResultsPanel
+      compact={isDesktop}
+      focusOnOpen={resultsOpenOverride !== null}
+      escapeEnabled={!isFiltersExpanded}
+      resetLabel={dataLoadFailed ? t.map.retryPubs : t.explorer.resetFilters}
+      onReset={() => {
+        if (dataLoadFailed) {
+          window.location.reload();
+          return;
+        }
+        setQuery("");
+        resetDetailedFilters();
+        document.getElementById("pub-search")?.focus();
+      }}
+      pubs={filteredPubs}
+      selectedPubId={selectedPubId}
+      view={resultsView}
+      locale={locale}
+      closeLabel={t.list.closeResults}
+      backLabel={t.list.backToResults}
+      panelLabel={t.list.heading}
+      emptyLabel={dataLoadFailed ? t.map.pubsLoadFailed : t.list.noResults}
+      emptyDescription={dataLoadFailed ? t.map.pubsLoadFailedDescription : t.list.noResultsDescription}
+      emptyIsError={dataLoadFailed}
+      onClose={closeResults}
+      onSelectPub={selectPub}
+      onShowDetails={showResultDetails}
+      onBackToList={() => {
+        setResultsView("list");
+        if (!isDesktop) setSheetState(listSheetState.current);
+      }}
+    />
+  ) : null;
+
   return (
     <div className="pub-explorer">
       <section
-        className={["map-layout", styles.layout, isResultsOpen ? "map-layout-results-open" : ""]
+        className={["map-layout", styles.layout, mobile.layout, isResultsOpen ? "map-layout-results-open" : ""]
           .filter(Boolean)
           .join(" ")}
+        data-sheet-state={isFiltersExpanded ? "collapsed" : sheetState}
         aria-label={t.explorer.mapAndListLabel}
       >
         <div className={styles.explorationPanel}>
@@ -287,37 +335,25 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
             onResetFilters={resetDetailedFilters}
             onToggleResults={toggleResults}
           />
-          {isResultsOpen ? (
-            <PubResultsPanel
-              compact={isDesktop}
-              focusOnOpen={resultsOpenOverride !== null}
-              escapeEnabled={!isFiltersExpanded}
-              resetLabel={dataLoadFailed ? t.map.retryPubs : t.explorer.resetFilters}
-              onReset={() => {
-                if (dataLoadFailed) {
-                  window.location.reload();
-                  return;
-                }
-                setQuery("");
-                resetDetailedFilters();
-                document.getElementById("pub-search")?.focus();
-              }}
-              pubs={filteredPubs}
-              selectedPubId={selectedPubId}
-              view={resultsView}
-              locale={locale}
-              closeLabel={t.list.closeResults}
-              backLabel={t.list.backToResults}
-              panelLabel={t.list.heading}
-              emptyLabel={dataLoadFailed ? t.map.pubsLoadFailed : t.list.noResults}
-              emptyDescription={dataLoadFailed ? t.map.pubsLoadFailedDescription : t.list.noResultsDescription}
-              emptyIsError={dataLoadFailed}
-              onClose={closeResults}
-              onSelectPub={selectPub}
-              onShowDetails={showResultDetails}
-              onBackToList={() => setResultsView("list")}
-            />
-          ) : null}
+          {isDesktop ? (
+            resultsPanel
+          ) : (
+            <div className={mobile.sheetPosition}>
+              <BottomSheet
+                className={mobile.sheet}
+                state={isFiltersExpanded ? "collapsed" : sheetState}
+                onStateChange={(state) => {
+                  setIsFiltersExpanded(false);
+                  setSheetState(state);
+                }}
+                title={t.list.heading}
+                resizeLabel={t.explorer.resizeSheet}
+                stateLabels={t.explorer.sheetStates}
+              >
+                {resultsPanel}
+              </BottomSheet>
+            </div>
+          )}
         </div>
         <div className="map-workspace">
           <PubMap

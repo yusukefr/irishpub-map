@@ -61,6 +61,8 @@
     "listedPubs": "掲載店舗"
   },
   "explorer": {
+    "resizeSheet": "結果パネルの高さを変更",
+    "sheetStates": { "collapsed": "地図を広く表示", "medium": "一覧と地図を表示", "expanded": "一覧・詳細を広く表示" },
     "kicker": "Find a pub",
     "heading": "地図と条件から探す",
     "resultCount": "{count}件のPubが見つかりました",

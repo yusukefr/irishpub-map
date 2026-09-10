@@ -13,6 +13,7 @@ export type AppNavigationItem = {
 
 type AppHeaderProps = {
   locale: Locale;
+  compactMobile?: boolean;
   navigationItems?: readonly AppNavigationItem[];
 };
 
@@ -21,11 +22,11 @@ type AppHeaderProps = {
  * @param {AppHeaderProps} props - 表示言語と任意のナビゲーション項目。
  * @returns {JSX.Element} サービス名と言語切り替えを含むヘッダー。
  */
-export function AppHeader({ locale, navigationItems = [] }: AppHeaderProps) {
+export function AppHeader({ locale, compactMobile = false, navigationItems = [] }: AppHeaderProps) {
   const t = getTranslation(locale);
 
   return (
-    <header className="app-header">
+    <header className={["app-header", compactMobile ? styles.compact : ""].filter(Boolean).join(" ")}>
       <div className="app-header-inner">
         <BrandLink className="app-brand" href="/">
           Irish Pub Map
@@ -43,6 +44,20 @@ export function AppHeader({ locale, navigationItems = [] }: AppHeaderProps) {
               </NavigationLink>
             ))}
           </nav>
+        ) : null}
+        {compactMobile && navigationItems.length ? (
+          <details className={styles.mobileMenu}>
+            <summary aria-label={t.navigation.label}>
+              <span aria-hidden="true">☰</span>
+            </summary>
+            <nav aria-label={t.navigation.label}>
+              {navigationItems.map((item) => (
+                <NavigationLink key={item.href} href={item.href} current={item.current}>
+                  {item.label}
+                </NavigationLink>
+              ))}
+            </nav>
+          </details>
         ) : null}
         <LanguageSwitcher locale={locale} />
       </div>

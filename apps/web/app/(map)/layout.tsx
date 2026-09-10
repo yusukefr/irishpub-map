@@ -16,6 +16,7 @@ export default async function MapLayout({ children }: Readonly<{ children: React
   return (
     <div className="map-app-shell">
       <AppHeader
+        compactMobile
         locale={locale}
         navigationItems={[
           { href: "/", label: t.navigation.map, current: true, desktopOnly: true },
