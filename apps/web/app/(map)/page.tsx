@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { unstable_rethrow } from "next/navigation";
 import { PubExplorer } from "../components/pub-explorer";
 import { asPubs } from "@irishpub-map/shared/pub";
 import { getRequestLocale } from "../lib/i18n/server";
@@ -59,12 +60,16 @@ async function getPubs(locale: string) {
  */
 export default async function Home() {
   const locale = await getRequestLocale();
-  const pubList = await getPubs(locale);
+  const pubList = await getPubs(locale).catch((error: unknown) => {
+    // Next.js内部の描画制御は握り潰さず、取得失敗だけを安全な公開UIへ変換します。
+    unstable_rethrow(error);
+    return null;
+  });
 
   return (
     <>
       <h1 className="visually-hidden">Irish Pub Map</h1>
-      <PubExplorer pubs={pubList} locale={locale} />
+      <PubExplorer pubs={pubList ?? []} locale={locale} dataLoadFailed={pubList === null} />
     </>
   );
 }

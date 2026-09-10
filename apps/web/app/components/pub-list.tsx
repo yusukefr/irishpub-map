@@ -14,6 +14,7 @@ type PubListProps = {
   resultRefs?: MutableRefObject<Map<string, HTMLElement>>;
   locale?: Locale;
   hideHeader?: boolean;
+  density?: "comfortable" | "compact";
 };
 
 /**
@@ -29,6 +30,7 @@ export function PubList({
   resultRefs,
   locale = DEFAULT_LOCALE,
   hideHeader = false,
+  density = "comfortable",
 }: PubListProps) {
   const t = getTranslation(locale);
 
@@ -48,6 +50,7 @@ export function PubList({
           <PubCard
             key={pub.id}
             pub={pub}
+            density={density}
             locale={locale}
             selected={selectedPubId === pub.id}
             onSelect={onSelectPub}

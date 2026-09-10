@@ -15,7 +15,13 @@ export default async function MapLayout({ children }: Readonly<{ children: React
 
   return (
     <div className="map-app-shell">
-      <AppHeader locale={locale} navigationItems={[{ href: "/discover", label: t.discover.navigation }]} />
+      <AppHeader
+        locale={locale}
+        navigationItems={[
+          { href: "/", label: t.navigation.map, current: true, desktopOnly: true },
+          { href: "/discover", label: t.discover.navigation },
+        ]}
+      />
       <main className="map-app-main">{children}</main>
       <AppVersionFooter locale={locale} variant="compact" />
     </div>

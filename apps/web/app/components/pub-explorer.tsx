@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Pub } from "@irishpub-map/shared/pub";
 import { DEFAULT_LOCALE, formatMessage, getTagLabel, getTranslation, type Locale } from "../lib/i18n";
 import {
@@ -14,10 +14,12 @@ import { PubMap } from "./pub-map";
 import { PubResultsPanel } from "./pub-results-panel";
 import { MapSearchControls } from "./map-search-controls";
 import { type GeolocationStatus } from "./current-location-control";
+import styles from "./desktop-map.module.css";
 
 type PubExplorerProps = {
   pubs: Pub[];
   locale?: Locale;
+  dataLoadFailed?: boolean;
 };
 
 const GEOLOCATION_OPTIONS: PositionOptions = {
@@ -28,13 +30,26 @@ const GEOLOCATION_OPTIONS: PositionOptions = {
 
 const EMPTY_FOCUS_PUBS: Pub[] = [];
 
+// CSSのDesktop境界と揃え、リサイズの各pixelではなく境界変更だけを購読します。
+const DESKTOP_QUERY = "(min-width: 981px)";
+function subscribeDesktop(onChange: () => void) {
+  const media = window.matchMedia?.(DESKTOP_QUERY);
+  media?.addEventListener("change", onChange);
+  return () => media?.removeEventListener("change", onChange);
+}
+function getDesktopSnapshot() {
+  return window.matchMedia?.(DESKTOP_QUERY).matches ?? false;
+}
+function getServerDesktopSnapshot() {
+  return false;
+}
+
 /**
  * 検索条件、地図、店舗一覧で共有する探索状態を一元管理します。
- * @param {{ pubs: Pub[] }} root0 - 探索対象の店舗一覧。
- * @param {Pub[]} root0.pubs - 検索対象の店舗一覧。
+ * @param {PubExplorerProps} props - 検索対象、表示言語、店舗取得失敗の状態。
  * @returns {JSX.Element} 検索・地図・一覧を組み合わせた探索画面。
  */
-export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps) {
+export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = false }: PubExplorerProps) {
   const t = getTranslation(locale);
   const [query, setQuery] = useState("");
   const [selectedPrefecture, setSelectedPrefecture] = useState("");
@@ -45,7 +60,11 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
   const [includeClosed, setIncludeClosed] = useState(false);
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
-  const [isResultsOpen, setIsResultsOpen] = useState(false);
+  const isDesktop = useSyncExternalStore(subscribeDesktop, getDesktopSnapshot, getServerDesktopSnapshot);
+  // 初回だけDesktopで一覧を表示し、明示的な開閉はviewportに関係なく尊重します。
+  const [resultsOpenOverride, setIsResultsOpen] = useState<boolean | null>(null);
+  // Desktopで両方を開いたまま幅を狭めても、MobileのOverlayは重ねません。
+  const isResultsOpen = (resultsOpenOverride ?? isDesktop) && (isDesktop || !isFiltersExpanded);
   const [resultsView, setResultsView] = useState<"list" | "detail">("list");
   const resultsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const hasSelectedPrefecture = useRef(false);
@@ -161,11 +180,14 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
 
   const selectPub = (pubId: string) => {
     setSelectedPubId(pubId);
+    if (isDesktop && !isResultsOpen) {
+      setIsResultsOpen(true);
+    }
   };
 
   const toggleFilters = () => {
     setIsFiltersExpanded((current) => {
-      if (!current) {
+      if (!current && !isDesktop) {
         setIsResultsOpen(false);
       }
       return !current;
@@ -173,13 +195,11 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
   };
 
   const toggleResults = () => {
-    setIsResultsOpen((current) => {
-      if (!current) {
-        setIsFiltersExpanded(false);
-        setResultsView("list");
-      }
-      return !current;
-    });
+    if (!isResultsOpen) {
+      setIsFiltersExpanded(false);
+      setResultsView("list");
+    }
+    setIsResultsOpen(!isResultsOpen);
   };
 
   const closeResults = () => {
@@ -196,16 +216,22 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
   return (
     <div className="pub-explorer">
       <section
-        className={["map-layout", isResultsOpen ? "map-layout-results-open" : ""].filter(Boolean).join(" ")}
+        className={["map-layout", styles.layout, isResultsOpen ? "map-layout-results-open" : ""]
+          .filter(Boolean)
+          .join(" ")}
         aria-label={t.explorer.mapAndListLabel}
       >
-        <div className="map-workspace">
+        <div className={styles.explorationPanel}>
           <MapSearchControls
             query={query}
             searchLabel={t.explorer.searchLabel}
             searchPlaceholder={t.explorer.searchPlaceholder}
             clearLabel={t.explorer.clear}
-            resultCount={formatMessage(t.explorer.resultCount, { count: filteredPubs.length })}
+            resultCount={
+              dataLoadFailed
+                ? t.map.pubsLoadFailed
+                : formatMessage(t.explorer.resultCount, { count: filteredPubs.length })
+            }
             showFiltersLabel={t.explorer.showFilters}
             hideFiltersLabel={t.explorer.hideFilters}
             activeFilterCountLabel={
@@ -261,6 +287,39 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
             onResetFilters={resetDetailedFilters}
             onToggleResults={toggleResults}
           />
+          {isResultsOpen ? (
+            <PubResultsPanel
+              compact={isDesktop}
+              focusOnOpen={resultsOpenOverride !== null}
+              escapeEnabled={!isFiltersExpanded}
+              resetLabel={dataLoadFailed ? t.map.retryPubs : t.explorer.resetFilters}
+              onReset={() => {
+                if (dataLoadFailed) {
+                  window.location.reload();
+                  return;
+                }
+                setQuery("");
+                resetDetailedFilters();
+                document.getElementById("pub-search")?.focus();
+              }}
+              pubs={filteredPubs}
+              selectedPubId={selectedPubId}
+              view={resultsView}
+              locale={locale}
+              closeLabel={t.list.closeResults}
+              backLabel={t.list.backToResults}
+              panelLabel={t.list.heading}
+              emptyLabel={dataLoadFailed ? t.map.pubsLoadFailed : t.list.noResults}
+              emptyDescription={dataLoadFailed ? t.map.pubsLoadFailedDescription : t.list.noResultsDescription}
+              emptyIsError={dataLoadFailed}
+              onClose={closeResults}
+              onSelectPub={selectPub}
+              onShowDetails={showResultDetails}
+              onBackToList={() => setResultsView("list")}
+            />
+          ) : null}
+        </div>
+        <div className="map-workspace">
           <PubMap
             pubs={filteredPubs}
             focusPubs={mapFocusPubs}
@@ -270,23 +329,6 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE }: PubExplorerProps)
             locale={locale}
           />
         </div>
-        {isResultsOpen ? (
-          <PubResultsPanel
-            pubs={filteredPubs}
-            selectedPubId={selectedPubId}
-            view={resultsView}
-            locale={locale}
-            closeLabel={t.list.closeResults}
-            backLabel={t.list.backToResults}
-            panelLabel={t.list.heading}
-            emptyLabel={t.list.noResults}
-            emptyDescription={t.list.noResultsDescription}
-            onClose={closeResults}
-            onSelectPub={selectPub}
-            onShowDetails={showResultDetails}
-            onBackToList={() => setResultsView("list")}
-          />
-        ) : null}
       </section>
     </div>
   );

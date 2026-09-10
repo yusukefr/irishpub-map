@@ -57,6 +57,27 @@ for (const locale of ["japanese", "english"]) {
   }
 }
 
+for (const suffix of ["desktop-pub-cards", "desktop-pub-cards-english"]) {
+  test(`Compact PubCards: ${suffix}`, async ({ page }, testInfo) => {
+    await page.goto(`/iframe.html?id=design-system-public-ui--${suffix}&viewMode=story`);
+    const cards = page.locator('article[data-density="compact"]');
+    await expect(cards).toHaveCount(4);
+    for (const card of await cards.all()) {
+      expect(await card.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+      for (const button of await card.getByRole("button").all()) {
+        const box = (await button.boundingBox())!;
+        expect(box.width).toBeGreaterThanOrEqual(44);
+        expect(box.height).toBeGreaterThanOrEqual(44);
+      }
+    }
+    await cards.nth(2).locator("button[aria-pressed]").click();
+    await expect(cards.nth(2)).toHaveAttribute("data-selected", "true");
+    const axe = await new AxeBuilder({ page }).include("main").analyze();
+    expect(axe.violations.filter(({ impact }) => impact === "serious" || impact === "critical")).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath("compact-cards.png"), fullPage: true });
+  });
+}
+
 test("Bottom Sheet: keyboard, content scrolling, focus restoration and reduced motion", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });

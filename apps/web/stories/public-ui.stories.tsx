@@ -257,6 +257,38 @@ function MapAndSheet({ locale }: { locale: Locale }) {
   );
 }
 
+function CompactPubs({ locale }: { locale: Locale }) {
+  const [selected, setSelected] = useState("compact-open");
+  return (
+    <section className={styles.compactPanel} aria-label="Desktop pub cards">
+      {(["open", "temporarily_closed", "closed", "unknown"] as const).map((status) => {
+        const pub = {
+          ...samplePub,
+          id: `compact-${status}`,
+          status,
+          name:
+            locale === "ja"
+              ? "駅前の長い名前を持つアイリッシュパブとミュージックハウス"
+              : "The Welcoming Irish Pub and Traditional Music House Near the Station",
+          prefecture: locale === "ja" ? "東京都" : "Tokyo",
+          city: locale === "ja" ? "千代田区" : "Chiyoda station area",
+        };
+        return (
+          <PubCard
+            key={pub.id}
+            pub={pub}
+            locale={locale}
+            density="compact"
+            selected={selected === pub.id}
+            onSelect={setSelected}
+            onShowDetails={setSelected}
+          />
+        );
+      })}
+    </section>
+  );
+}
+
 function Gallery({ locale = "ja", only = "all" }: { locale?: Locale; only?: string }) {
   return (
     <main className={styles.gallery} lang={locale}>
@@ -280,6 +312,7 @@ function Gallery({ locale = "ja", only = "all" }: { locale?: Locale; only?: stri
       {only === "all" || only === "search" ? <SearchAndInputs locale={locale} /> : null}
       {only === "all" || only === "chip" ? <Chips locale={locale} /> : null}
       {only === "all" || only === "pub" ? <Pubs locale={locale} /> : null}
+      {only === "compact-pub" ? <CompactPubs locale={locale} /> : null}
       {only === "all" || only === "content" ? <Content locale={locale} /> : null}
       {only === "all" || only === "sheet" ? <MapAndSheet locale={locale} /> : null}
       <p id="story-end">End of component examples</p>
@@ -302,6 +335,8 @@ export const ButtonStates: Story = { args: { only: "button" } };
 export const SearchStates: Story = { args: { only: "search" } };
 export const FilterChips: Story = { args: { only: "chip" } };
 export const PubCards: Story = { args: { only: "pub" } };
+export const DesktopPubCards: Story = { args: { only: "compact-pub" } };
+export const DesktopPubCardsEnglish: Story = { args: { only: "compact-pub", locale: "en" } };
 export const ContentCards: Story = { args: { only: "content" } };
 export const BottomSheetStates: Story = { args: { only: "sheet" } };
 export const Mobile: Story = {

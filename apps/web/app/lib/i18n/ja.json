@@ -4,6 +4,7 @@
     "description": "日本国内の Irish Pub を地図から探せるサービス"
   },
   "navigation": {
+    "map": "地図",
     "label": "グローバルナビゲーション"
   },
   "discover": {
@@ -128,6 +129,13 @@
     }
   },
   "map": {
+    "zoomIn": "地図を拡大",
+    "zoomOut": "地図を縮小",
+    "resetBearing": "ドラッグで回転、クリックで北向きに戻す",
+    "retry": "地図を再読み込み",
+    "pubsLoadFailed": "店舗情報を読み込めませんでした",
+    "pubsLoadFailedDescription": "通信環境を確認して再試行してください。地図の移動や拡大は引き続き利用できます。",
+    "retryPubs": "店舗情報を再読み込み",
     "locationsLabel": "Irish Pub の所在地",
     "currentLocation": "現在地",
     "unavailableHeading": "地図を表示できませんでした",

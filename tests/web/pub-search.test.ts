@@ -59,6 +59,23 @@ const pubs: Pub[] = [
 ];
 
 describe("filterPubsByQuery", () => {
+  it("keeps translated prefecture options in JIS order without changing filter values", () => {
+    const translated = [
+      { ...pubs[1], prefecture: "Osaka" },
+      { ...pubs[0], prefecture: "Tokyo" },
+      { ...pubs[0], prefecture: "Tokyo" },
+    ];
+    expect(getAvailablePrefectures(translated)).toEqual(["Tokyo", "Osaka"]);
+    expect(filterPubs(translated, { prefecture: "Osaka" }).map((pub) => pub.id)).toEqual(["osaka-sample"]);
+    expect(getAvailablePrefectures(pubs.map((pub) => ({ ...pub, municipalityCode: undefined })))).toEqual([
+      "東京都",
+      "京都府",
+      "大阪府",
+    ]);
+    expect(getAvailablePrefectures([{ ...pubs[0], prefecture: "Unknown", municipalityCode: undefined }])).toEqual([
+      "Unknown",
+    ]);
+  });
   it("filters pubs by pub name", () => {
     expect(filterPubsByQuery(pubs, "osaka").map((pub) => pub.id)).toEqual(["osaka-sample"]);
   });

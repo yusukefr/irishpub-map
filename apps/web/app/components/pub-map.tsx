@@ -7,6 +7,7 @@ import type { Pub } from "@irishpub-map/shared/pub";
 import type { Coordinates } from "../lib/pub-search";
 import { DEFAULT_LOCALE, formatMessage, getTranslation, type Locale, type Translation } from "../lib/i18n";
 import { getSafeExternalUrl } from "../lib/external-url";
+import { Button } from "./ui/button";
 
 const NON_OPEN_PUB_MARKER_COLOR = "#6b7280";
 
@@ -46,22 +47,24 @@ type PubMapProps = {
 
 /**
  * 店舗ピン、選択状態、表示範囲をMapLibre上へ同期します。
- * @param {{ pubs: Pub[]; focusPubs?: Pub[]; currentLocation?: Coordinates | null; selectedPubId?: string | null; onSelectPub?: (pubId: string) => void }} root0 - 地図表示の状態。
- * @param {Pub[]} root0.pubs - 地図へ表示する店舗一覧。
- * @param {Pub[]} root0.focusPubs - 表示範囲を合わせる店舗一覧。
- * @param {Coordinates | null | undefined} root0.currentLocation - 現在地。
- * @param {string | null | undefined} root0.selectedPubId - 選択中の店舗ID。
- * @param {(pubId: string) => void} root0.onSelectPub - 店舗選択時のコールバック。
+ * @param {PubMapProps} props - 地図表示の状態。再試行でも親の探索条件を維持します。
  * @returns {JSX.Element} 店舗地図、またはWebGL非対応時のフォールバック。
  */
-export function PubMap({
+export function PubMap(props: PubMapProps) {
+  const [attempt, setAttempt] = useState(0);
+  // 再試行時だけ地図を作り直し、親の検索・選択状態は保持します。
+  return <PubMapCanvas key={attempt} {...props} onRetry={() => setAttempt((current) => current + 1)} />;
+}
+
+function PubMapCanvas({
   pubs,
   focusPubs = EMPTY_FOCUS_PUBS,
   currentLocation = null,
   selectedPubId = null,
   onSelectPub = () => undefined,
   locale = DEFAULT_LOCALE,
-}: PubMapProps) {
+  onRetry,
+}: PubMapProps & { onRetry: () => void }) {
   const t = getTranslation(locale);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markerElementsRef = useRef(new globalThis.Map<string, HTMLButtonElement>());
@@ -111,12 +114,19 @@ export function PubMap({
     try {
       // Next.jsがWorkerのmodule URLを解決しないため、build前に配置した自サイト配下のWorkerを明示します。
       setWorkerUrl(MAPLIBRE_WORKER_URL);
+      // 公開画面の言語切替はページ再読込。初期化時のラベル参照だけでMapを再生成しません。
+      const controlLabels = getTranslation(localeRef.current).map;
       map = new Map({
         container,
         // OpenFreeMap Bright は多言語属性を持つベクタースタイルです。MapLibre の標準帰属表示で必要な帰属を表示します。
         style: OPEN_FREE_MAP_BRIGHT_STYLE_URL,
         center: DEFAULT_MAP_CENTER,
         zoom: DEFAULT_MAP_ZOOM,
+        locale: {
+          "NavigationControl.ZoomIn": controlLabels.zoomIn,
+          "NavigationControl.ZoomOut": controlLabels.zoomOut,
+          "NavigationControl.ResetBearing": controlLabels.resetBearing,
+        },
       });
 
       map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
@@ -262,6 +272,9 @@ export function PubMap({
         <div className="map-error" role="alert" aria-live="assertive">
           <h2>{t.map.errorHeading}</h2>
           <p>{t.map.errorDescription}</p>
+          <Button variant="secondary" onClick={onRetry}>
+            {t.map.retry}
+          </Button>
         </div>
       ) : mapStatus === "loading" ? (
         <div className="map-loading" role="status" aria-live="polite">

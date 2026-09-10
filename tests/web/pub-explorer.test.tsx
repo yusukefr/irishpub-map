@@ -1,5 +1,5 @@
 // 検索・絞り込み・位置情報・カードとピンの共有状態を保証する結合テストです。
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PubExplorer } from "../../apps/web/app/components/pub-explorer";
 import type { Pub } from "../../packages/shared/src/pub";
@@ -83,6 +83,132 @@ function openResults() {
 }
 
 describe("PubExplorer", () => {
+  describe("Desktop pattern", () => {
+    let desktop = true;
+    let notifyResize: () => void;
+    const removeListener = vi.fn();
+
+    beforeEach(() => {
+      desktop = true;
+      removeListener.mockClear();
+      vi.stubGlobal(
+        "matchMedia",
+        vi.fn((query: string) => ({
+          matches: query === "(min-width: 981px)" && desktop,
+          addEventListener: (_event: string, listener: () => void) => {
+            notifyResize = listener;
+          },
+          removeEventListener: removeListener,
+        })),
+      );
+    });
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("shows results initially without stealing focus or requesting location", () => {
+      const getCurrentPosition = vi.fn();
+      mockGeolocation({ getCurrentPosition });
+      render(<PubExplorer pubs={pubs} />);
+      expect(screen.getByRole("complementary", { name: "掲載店舗" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "結果一覧を閉じる" })).not.toHaveFocus();
+      expect(getCurrentPosition).not.toHaveBeenCalled();
+      expect(maplibreMock.mapConstructor).toHaveBeenCalledOnce();
+    });
+
+    it("keeps results beside filters and Escape closes only the filters", () => {
+      render(<PubExplorer pubs={pubs} />);
+      openDetailedFilters();
+      expect(screen.getByRole("complementary", { name: "掲載店舗" })).toBeInTheDocument();
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(screen.queryByRole("region", { name: "地図と条件から探す" })).not.toBeInTheDocument();
+      expect(screen.getByRole("complementary", { name: "掲載店舗" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "条件を指定" })).toHaveFocus();
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /件のPubが見つかりました/ })).toHaveFocus();
+    });
+
+    it("clears both query and detailed conditions from an empty result", () => {
+      render(<PubExplorer pubs={pubs} />);
+      openDetailedFilters();
+      fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "no matching pub" } });
+      fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
+      fireEvent.click(screen.getByRole("button", { name: "条件をリセット" }));
+      expect(screen.getByRole("searchbox")).toHaveValue("");
+      expect(screen.getByRole("searchbox")).toHaveFocus();
+      expect(screen.getByRole("heading", { name: "Tokyo Sample Pub" })).toBeInTheDocument();
+      openDetailedFilters();
+      expect(screen.getByLabelText("都道府県")).toHaveValue("");
+    });
+
+    it("reacts only to breakpoint changes and preserves explicit dismissal", () => {
+      const { unmount } = render(<PubExplorer pubs={pubs} />);
+      act(() => {
+        desktop = false;
+        notifyResize();
+      });
+      expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+      act(() => {
+        desktop = true;
+        notifyResize();
+      });
+      expect(screen.getByRole("complementary")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "結果一覧を閉じる" }));
+      act(() => {
+        desktop = false;
+        notifyResize();
+      });
+      act(() => {
+        desktop = true;
+        notifyResize();
+      });
+      expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+      expect(maplibreMock.mapConstructor).toHaveBeenCalledOnce();
+      unmount();
+      expect(removeListener).toHaveBeenCalledWith("change", expect.any(Function));
+    });
+
+    it("reopens results from a marker without recreating the map", () => {
+      render(<PubExplorer pubs={pubs} />);
+      fireEvent.click(screen.getByRole("button", { name: "結果一覧を閉じる" }));
+      const marker = maplibreMock.markerConstructor.mock.calls[0][0].element as HTMLButtonElement;
+      fireEvent.click(marker);
+      expect(screen.getByRole("complementary")).toBeInTheDocument();
+      expect(marker).toHaveAttribute("aria-pressed", "true");
+      expect(document.querySelector('article[data-selected="true"]')).toHaveTextContent("Tokyo Sample Pub");
+      expect(maplibreMock.mapConstructor).toHaveBeenCalledOnce();
+    });
+
+    it("does not overlap filters and explicit results after switching to Mobile", () => {
+      render(<PubExplorer pubs={pubs} />);
+      fireEvent.click(screen.getByRole("button", { name: "結果一覧を閉じる" }));
+      openResults();
+      openDetailedFilters();
+      expect(screen.getByRole("complementary")).toBeInTheDocument();
+      act(() => {
+        desktop = false;
+        notifyResize();
+      });
+      expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "地図と条件から探す" })).toBeInTheDocument();
+      openResults();
+      expect(screen.getByRole("complementary")).toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "地図と条件から探す" })).not.toBeInTheDocument();
+    });
+
+    it.each(["ja", "en"] as const)("distinguishes a load failure from an empty search in %s", (locale) => {
+      render(<PubExplorer pubs={[]} locale={locale} dataLoadFailed />);
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        locale === "ja" ? "店舗情報を読み込めませんでした" : "Pub information could not be loaded",
+      );
+      expect(
+        screen.getByRole("button", { name: locale === "ja" ? "店舗情報を再読み込み" : "Reload pub information" }),
+      ).toBeInTheDocument();
+      expect(maplibreMock.mapConstructor).toHaveBeenCalledOnce();
+    });
+  });
+
   beforeEach(() => {
     resetMaplibreMock();
     mockWebglContext();
@@ -141,10 +267,9 @@ describe("PubExplorer", () => {
   it("places map search controls before the map in keyboard navigation order", () => {
     render(<PubExplorer pubs={pubs} />);
 
-    const workspace = document.querySelector(".map-workspace");
-
-    expect(workspace?.firstElementChild).toHaveClass("map-search-controls");
-    expect(workspace?.lastElementChild).toHaveClass("map-canvas");
+    const controls = document.querySelector(".map-search-controls")!;
+    const map = document.querySelector(".map-canvas")!;
+    expect(controls.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("keeps responsive sheets inside the Map App layout", () => {
@@ -152,7 +277,7 @@ describe("PubExplorer", () => {
 
     openDetailedFilters();
     const filterPanel = document.getElementById("pub-filter-options");
-    expect(filterPanel?.closest(".map-workspace")).toBe(document.querySelector(".map-workspace"));
+    expect(filterPanel?.closest(".map-layout")).toBe(document.querySelector(".map-layout"));
 
     fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
     openResults();

@@ -8,7 +8,9 @@ const css = parse(styles);
 
 describe("Design Tokens", () => {
   it("resolves every shared component token against the canonical definitions", () => {
-    const componentStyles = readFileSync("apps/web/app/components/ui/ui.module.css", "utf8");
+    const componentStyles = ["ui/ui.module.css", "desktop-map.module.css", "app-header.module.css"]
+      .map((path) => readFileSync(`apps/web/app/components/${path}`, "utf8"))
+      .join("\n");
     const defined = new Set<string>();
     css.walkDecls(/^--/, (declaration) => {
       defined.add(declaration.prop);

@@ -46,3 +46,9 @@
 .mobile {
   max-width: 390px;
 }
+.compactPanel {
+  display: grid;
+  align-content: start;
+  gap: var(--spacing-space-3);
+  width: min(100%, 360px);
+}

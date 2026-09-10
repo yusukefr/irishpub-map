@@ -460,6 +460,14 @@ describe("PubMap", () => {
     act(() => vi.advanceTimersByTime(15_000));
 
     expect(screen.getByRole("alert")).toHaveTextContent("地図タイルの読み込みに失敗しました");
+    fireEvent.click(screen.getByRole("button", { name: "地図を再読み込み" }));
+    expect(maplibreMock.mapRemove).toHaveBeenCalledOnce();
+    expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByText("地図を読み込んでいます…")).toBeInTheDocument();
+    act(() => emitMapEvent("load"));
+    act(() => vi.advanceTimersByTime(15_000));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("provides pointer cues and 44px popup link targets", () => {
