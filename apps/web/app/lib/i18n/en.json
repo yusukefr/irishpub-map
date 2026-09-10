@@ -61,6 +61,8 @@
     "listedPubs": "Listed pubs"
   },
   "explorer": {
+    "resizeSheet": "Resize results panel",
+    "sheetStates": { "collapsed": "Map focus", "medium": "Map and results", "expanded": "Full results and details" },
     "kicker": "Find a pub",
     "heading": "Search by map and filters",
     "resultCount": "{count} pub(s) found",

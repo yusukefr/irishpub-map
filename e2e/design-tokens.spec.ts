@@ -44,7 +44,14 @@ for (const locale of ["ja", "en"] as const) {
             .locator(".map-search-controls-toolbar input, .map-search-controls-toolbar button")
             .all()) {
             const rect = (await control.boundingBox())!;
-            expect(rect.x + rect.width <= mapRect.x || rect.y >= mapRect.y + mapRect.height).toBe(true);
+            // 地図操作と探索操作は、縦横のどちらかで完全に離れていれば重なりません。
+            // 右端に縦並びのMapLibre操作を置くMobileでは、片軸だけの比較では誤検知します。
+            expect(
+              rect.x + rect.width <= mapRect.x ||
+                mapRect.x + mapRect.width <= rect.x ||
+                rect.y + rect.height <= mapRect.y ||
+                mapRect.y + mapRect.height <= rect.y,
+            ).toBe(true);
           }
           for (const button of await mapControls.getByRole("button").all()) {
             const rect = (await button.boundingBox())!;

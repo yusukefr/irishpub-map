@@ -61,3 +61,13 @@ Mobile Storyは追加addonなしで390px幅に制限した部品例です。実�
 - `npm run test:e2e`: 実アプリの検索・選択・言語・アクセシビリティとDesign Tokenの回帰確認。
 
 ブラウザ検証はCIと同じPlaywright固定コンテナを使用します。画像は`test-results`、失敗時のtraceとHTML reportは既存CI artifactに保存します。Storybookはシステムフォントfallbackで、本番フォントはNext.jsのE2Eで確認します。自動axeは手動の見た目・操作確認を置き換えるものではありません。
+
+## Mobile Map（Phase 4）
+
+980px以下では共通BottomSheetを結果一覧・詳細の表示領域に使用します。初期はcollapsedで地図を優先し、件数ボタン・ハンドルからmediumへ、詳細操作からexpandedへ移ります。マーカー選択はcollapsedのときだけmediumへ開き、既に開いたSheetの高さとMap位置を保ちます。詳細の「戻る」は直前の一覧の高さを復元し、「閉じる」はcollapsedへ戻して検索・条件・選択店舗を維持します。
+
+ハンドルのクリックは3段階を巡回し、上下ドラッグは1段階、矢印キー・Home / Endでも高さを変更できます。ドラッグ対象は44px以上のハンドルに限定し、結果一覧の内部スクロール・地図pan / pinch・条件行の横スクロールとは分離します。Sheetは非モーダルで、focus trapは設けません。共通BottomSheetの`className`で呼び出し側のMap領域に高さを収めます。
+
+Map専用HeaderはモバイルのNavigationをネイティブdetailsのメニューへ集約し、ブランド・メニュー・言語切替を1行で表示します。検索と条件・現在地の操作行を上部へ、Sheetを下端へ配置します。Sheetの高さは100dvhの既存Map Shell内の利用可能領域を基準にし、下端safe areaを含みます。expandedと低い横向き画面では重なるzoom操作群を隠し、ハンドルから地図へ戻れます。現在地取得は従来どおり明示操作でのみ開始します。
+
+`e2e/mobile-map.spec.ts`は固定fixtureで日本語・英語の390 / 360px、3段階、選択と詳細復帰、検索・条件、Map pan / pinch、ハンドルdrag、内部scroll、axe、低いviewportと横向きを検証します。OSソフトウェアキーボード、実機ブラウザバー、端末固有safe areaはviewportエミュレーションだけでは完全に再現できないため、実機確認と区別します。

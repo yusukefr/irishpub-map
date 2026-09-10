@@ -338,6 +338,32 @@ describe("PubExplorer", () => {
     expect(screen.getByRole("heading", { name: "該当するPubがありません" })).toBeInTheDocument();
     expect(getCurrentPosition).toHaveBeenCalledOnce();
   });
+  it("opens the mobile sheet from a marker and restores list height after details", () => {
+    render(<PubExplorer pubs={pubs} />);
+    const handle = screen.getByRole("button", { name: /結果パネルの高さを変更/ });
+    expect(handle).toHaveAttribute("aria-expanded", "false");
+    const marker = (maplibreMock.markerConstructor.mock.calls[0][0] as { element: HTMLButtonElement }).element;
+    fireEvent.click(marker);
+    expect(handle).toHaveAccessibleName("結果パネルの高さを変更: 一覧と地図を表示");
+    fireEvent.click(screen.getByRole("button", { name: "詳細" }));
+    expect(handle).toHaveAccessibleName("結果パネルの高さを変更: 一覧・詳細を広く表示");
+    fireEvent.click(screen.getByRole("button", { name: /結果一覧に戻る/ }));
+    expect(handle).toHaveAccessibleName("結果パネルの高さを変更: 一覧と地図を表示");
+    fireEvent.keyDown(handle, { key: "End" });
+    fireEvent.click(screen.getByRole("button", { name: "詳細" }));
+    fireEvent.click(screen.getByRole("button", { name: /結果一覧に戻る/ }));
+    expect(handle).toHaveAccessibleName("結果パネルの高さを変更: 一覧・詳細を広く表示");
+    fireEvent.click(screen.getByRole("button", { name: "結果一覧を閉じる" }));
+    expect(handle).toHaveAttribute("aria-expanded", "false");
+    expect(marker).toHaveAttribute("aria-pressed", "true");
+    fireEvent.keyDown(handle, { key: "ArrowUp" });
+    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
+  });
+
   it("filters the displayed pubs by pub name", () => {
     render(<PubExplorer pubs={pubs} />);
 
