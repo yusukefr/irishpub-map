@@ -171,7 +171,8 @@
     padding: var(--spacing-space-4);
   }
   .layout.layout :global(.maplibregl-ctrl-top-right) {
-    top: 116px;
+    /* 検索と操作行の直下へ置き、狭い幅でも現在地・条件の操作と重ねません。 */
+    top: 176px;
     right: max(var(--spacing-space-1), env(safe-area-inset-right));
   }
   /* 拡大閲覧中は画面下のSheetと競合するzoom群を隠し、地図へ戻す操作を残します。 */
