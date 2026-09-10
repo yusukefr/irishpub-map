@@ -114,13 +114,18 @@ describe("Discover pages", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Explore Ireland" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Stories" })).toBeInTheDocument();
     expect(screen.getByText("準備中")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Split the Gを楽しむ →" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "ガイドを読む: Split the Gを楽しむ" })).toHaveAttribute(
       "href",
       "/discover/guides/split-the-g",
     );
-    expect(screen.getByRole("link", { name: "サンプルガイド →" })).toHaveAttribute("href", "/discover/guides/sample");
-    expect(screen.getByRole("link", { name: "今日のクイズに挑戦 →" })).toHaveAttribute("href", "/discover/quiz");
-    expect(screen.getByRole("link", { name: "カレンダーを見る →" })).toHaveAttribute("href", "/discover/calendar");
+    expect(screen.getByRole("link", { name: "ガイドを読む: サンプルガイド" })).toHaveAttribute(
+      "href",
+      "/discover/guides/sample",
+    );
+    expect(screen.getByRole("link", { name: "今日のクイズに挑戦" })).toHaveAttribute("href", "/discover/quiz");
+    expect(screen.getByRole("link", { name: "カレンダーを見る" })).toHaveAttribute("href", "/discover/calendar");
+    expect(screen.getByRole("link", { name: "地図でIrish Pubを探す" })).toHaveAttribute("href", "/");
+    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(2);
     expect(screen.queryByRole("main")).not.toBeInTheDocument();
   });
 
@@ -135,13 +140,15 @@ describe("Discover pages", () => {
     expect(screen.queryByLabelText("Irish Pub の地図と一覧")).not.toBeInTheDocument();
   });
 
-  it("GuideをLocale別に表示し、H1とHubへの戻り導線を1つずつ持つ", async () => {
+  it("GuideをLocale別に表示し、H1、パンくず、関連導線を持つ", async () => {
     const { unmount } = render(await GuidePage({ params: Promise.resolve({ slug: "sample" }) }));
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "サンプルガイド" })).toBeInTheDocument();
     expect(screen.getByText("コンテンツは後日追加予定です。")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "← Explore Irelandへ戻る" })).toHaveAttribute("href", "/discover");
+    expect(screen.getByRole("navigation", { name: "現在位置" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Explore Ireland" })).toHaveAttribute("href", "/discover");
+    expect(screen.getByRole("heading", { level: 2, name: "次にExploreする" })).toBeInTheDocument();
 
     unmount();
     locale = "en";
@@ -170,7 +177,7 @@ describe("Discover pages", () => {
     await expect(generateGuideMetadata({ params: Promise.resolve({ slug: "unknown" }) })).rejects.toThrow("not-found");
   });
 
-  it("QuizはLocale別の今日の1問と4択を表示してHubへ戻れる", async () => {
+  it("QuizはLocale別の今日の1問と4択、パンくずを表示する", async () => {
     locale = "en";
     render(await QuizPage());
 
@@ -178,7 +185,9 @@ describe("Discover pages", () => {
     expect(screen.getByRole("group", { name: "Choose one answer" })).toBeInTheDocument();
     expect(screen.getAllByRole("radio")).toHaveLength(4);
     expect(screen.getByRole("button", { name: "Submit answer" })).toBeDisabled();
-    expect(screen.getByRole("link", { name: "← Back to Explore Ireland" })).toHaveAttribute("href", "/discover");
+    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Explore Ireland" })).toHaveAttribute("href", "/discover");
+    expect(screen.getByRole("link", { name: "View: Irish Pub Map" })).toHaveAttribute("href", "/");
   });
 
   it("各ページのMetadataをLocaleとGuide metadataから生成する", async () => {

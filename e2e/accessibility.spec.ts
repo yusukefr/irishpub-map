@@ -14,10 +14,12 @@ test("公開Mapにcritical/seriousなaxe違反がない", async ({ page }) => {
   expect(results.violations.filter((violation) => seriousOrCritical(violation.impact))).toEqual([]);
 });
 
-test("Discoverにcritical/seriousなaxe違反がない", async ({ page }) => {
-  await page.goto("/discover");
-  await expect(page.getByRole("heading", { level: 1, name: "Explore Ireland" })).toBeVisible();
+for (const route of ["/discover", "/discover/calendar", "/discover/quiz", "/discover/guides/split-the-g"]) {
+  test(route + "にcritical/seriousなaxe違反がない", async ({ page }) => {
+    await page.goto(route);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-  const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations.filter((violation) => seriousOrCritical(violation.impact))).toEqual([]);
-});
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations.filter((violation) => seriousOrCritical(violation.impact))).toEqual([]);
+  });
+}

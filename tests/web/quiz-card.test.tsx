@@ -29,6 +29,8 @@ const labels = {
   answered: "回答済み",
   correct: "正解！ 🎉",
   incorrect: "残念！",
+  correctChoiceState: "✓ 正解",
+  incorrectChoiceState: "× 選択した回答",
   correctAnswer: "正解",
   explanationHeading: "解説",
   source: "情報源",
@@ -100,8 +102,12 @@ describe("QuizCard", () => {
     expect(await screen.findByRole("heading", { level: 3, name: "残念！" })).toBeInTheDocument();
     expect(screen.getByText("正解:")).toBeInTheDocument();
     expect(screen.getByText("Hurling", { selector: "strong" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Cricket" }).closest("label")).toHaveClass("quiz-choice-incorrect");
-    expect(screen.getByRole("radio", { name: "Hurling" }).closest("label")).toHaveClass("quiz-choice-correct");
+    expect(screen.getByRole("radio", { name: /Cricket.*選択した回答/u }).closest("label")).toHaveClass(
+      "quiz-choice-incorrect",
+    );
+    expect(screen.getByText("× 選択した回答")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Hurling.*正解/u }).closest("label")).toHaveClass("quiz-choice-correct");
+    expect(screen.getByText("✓ 正解")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /関連Guide/ })).not.toBeInTheDocument();
   });
 

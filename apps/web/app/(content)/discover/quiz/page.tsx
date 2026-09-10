@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getTranslation } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
 import { quizData } from "../../../lib/quiz/data";
 import { getQuizDateInTokyo, selectDailyQuiz } from "../../../lib/quiz/queries";
+import { DiscoverBreadcrumbs, RelatedContent } from "../components";
 import { QuizCard } from "./quiz-card";
 
 /**
@@ -31,28 +31,58 @@ export default async function QuizPage() {
 
   return (
     <article className="content-container quiz-page" aria-labelledby="quiz-heading">
+      <DiscoverBreadcrumbs
+        label={t.breadcrumbsLabel}
+        items={[{ label: t.heading, href: "/discover" }, { label: t.quiz }]}
+      />
+
       <header className="content-hero">
-        <p className="content-kicker">{t.heading}</p>
+        <p className="content-kicker">{t.kicker}</p>
         <h1 id="quiz-heading">{t.quiz}</h1>
         <p className="content-lead">{t.quizContent.lead}</p>
       </header>
 
-      <QuizCard
-        question={{
-          id: question.id,
-          category: {
-            icon: category.icon,
-            label: category.label[locale],
-          },
-          question: question.question[locale],
-          choices: question.choices.map((choice) => ({ id: choice.id, label: choice.label[locale] })),
-        }}
-        labels={t.quizContent}
-      />
+      <div className="quiz-column">
+        <QuizCard
+          question={{
+            id: question.id,
+            category: {
+              icon: category.icon,
+              label: category.label[locale],
+            },
+            question: question.question[locale],
+            choices: question.choices.map((choice) => ({ id: choice.id, label: choice.label[locale] })),
+          }}
+          labels={t.quizContent}
+        />
+      </div>
 
-      <Link className="content-back-link" href="/discover">
-        ← {t.back}
-      </Link>
+      <RelatedContent
+        heading={t.relatedHeading}
+        items={[
+          {
+            id: "calendar",
+            title: t.calendarTitle,
+            description: t.related.calendarDescription,
+            href: "/discover/calendar",
+            actionLabel: t.related.view,
+          },
+          {
+            id: "guides",
+            title: t.related.guidesTitle,
+            description: t.related.guidesDescription,
+            href: "/discover#discover-guides-heading",
+            actionLabel: t.related.view,
+          },
+          {
+            id: "map",
+            title: t.related.mapTitle,
+            description: t.related.mapDescription,
+            href: "/",
+            actionLabel: t.related.view,
+          },
+        ]}
+      />
     </article>
   );
 }

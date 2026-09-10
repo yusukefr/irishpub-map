@@ -315,7 +315,7 @@
   padding: var(--spacing-space-6);
   align-content: start;
 }
-.contentCard h2 {
+.contentCard :is(h2, h3) {
   margin: 0;
   color: var(--color-text-brand);
   font-size: var(--text-heading-md);
@@ -328,14 +328,14 @@
 .contentCard[data-variant="feature"] {
   border-block-start: var(--spacing-space-1) solid var(--color-brand-accent);
 }
-.contentCard[data-variant="feature"] h2 {
+.contentCard[data-variant="feature"] :is(h2, h3) {
   font-family: var(--font-display);
 }
 .contentCard[data-variant="compact"] {
   padding: var(--spacing-space-4);
   gap: var(--spacing-space-2);
 }
-.contentCard[data-variant="compact"] h2 {
+.contentCard[data-variant="compact"] :is(h2, h3) {
   font-size: var(--text-heading-sm);
 }
 .eyebrow {

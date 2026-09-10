@@ -32,7 +32,9 @@ describe("Irish Calendar page", () => {
     expect(screen.getByRole("heading", { level: 2, name: "今日のアイルランド" })).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 3, name: "アイルランド語週間" })).toHaveLength(2);
     expect(screen.getAllByRole("heading", { level: 3, name: "聖パトリックの日" })).toHaveLength(2);
-    expect(screen.getByRole("link", { name: "← Explore Irelandへ戻る" })).toHaveAttribute("href", "/discover");
+    expect(screen.getByRole("navigation", { name: "現在位置" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Explore Ireland" })).toHaveAttribute("href", "/discover");
+    expect(screen.getByRole("heading", { level: 2, name: "次にExploreする" })).toBeInTheDocument();
   });
 
   it("英語表示と当日0件を明示する", async () => {

@@ -5,6 +5,7 @@ import { getEventsForDate, getEventsForMonth, getTodayInTokyo } from "../../../l
 import type { CalendarDate, CalendarEventOccurrence } from "../../../lib/calendar/types";
 import { formatMessage, getTranslation, type Locale } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
+import { DiscoverBreadcrumbs, RelatedContent } from "../components";
 
 const CALENDAR_MONTH_RANGE = 12;
 
@@ -97,20 +98,27 @@ function EventList({ events, locale }: { events: readonly CalendarEventOccurrenc
   return (
     <ul className="calendar-event-list">
       {events.map((occurrence) => (
-        <li className="calendar-event-card" key={occurrence.event.id}>
+        <li
+          className="calendar-event-card"
+          data-featured={occurrence.event.featured ? "true" : undefined}
+          key={occurrence.event.id}
+        >
           <div className="calendar-event-meta">
             <time>{formatOccurrenceDate(occurrence, locale)}</time>
             <span>{calendarData.categories[occurrence.event.category][locale]}</span>
           </div>
-          <h3>{occurrence.event.name[locale]}</h3>
-          <p>{occurrence.event.description[locale]}</p>
+          <div className="calendar-event-copy">
+            <h3>{occurrence.event.name[locale]}</h3>
+            <p>{occurrence.event.description[locale]}</p>
+          </div>
         </li>
       ))}
     </ul>
   );
 }
 
-/** 選択言語に対応するIrish Calendarのメタデータを生成します。
+/**
+ * 選択言語に対応するIrish Calendarのメタデータを生成します。
  * @returns {Promise<Metadata>} ページのtitleとdescription。
  */
 export async function generateMetadata(): Promise<Metadata> {
@@ -118,13 +126,15 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: `${t.heading} | Irish Pub Map`, description: t.lead };
 }
 
-/** Asia/Tokyo基準の当日と、選択月に該当するアイルランドのイベントを表示します。
+/**
+ * Asia/Tokyo基準の当日と、選択月に該当するアイルランドのイベントを表示します。
  * @param {CalendarPageProps} props Next.jsから渡されるクエリパラメータ。
  * @returns {Promise<JSX.Element>} 日英ローカライズ済みのカレンダーページ。
  */
 export default async function CalendarPage({ searchParams }: CalendarPageProps) {
   const [locale, resolvedSearchParams] = await Promise.all([getRequestLocale(), searchParams]);
-  const t = getTranslation(locale).discover.calendar;
+  const discover = getTranslation(locale).discover;
+  const t = discover.calendar;
   const today = getTodayInTokyo();
   const currentMonth = { year: today.year, month: today.month };
   const selectedMonth = resolveSelectedMonth(resolvedSearchParams, currentMonth);
@@ -139,49 +149,79 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
 
   return (
     <article className="content-container calendar-page" aria-labelledby="calendar-heading">
+      <DiscoverBreadcrumbs
+        label={discover.breadcrumbsLabel}
+        items={[{ label: discover.heading, href: "/discover" }, { label: t.heading }]}
+      />
+
       <header className="content-hero">
         <p className="content-kicker">{t.kicker}</p>
         <h1 id="calendar-heading">{t.heading}</h1>
         <p className="content-lead">{t.lead}</p>
       </header>
 
-      <section className="calendar-section" aria-labelledby="calendar-today-heading">
-        <h2 id="calendar-today-heading">{t.todayHeading}</h2>
-        {todaysEvents.length > 0 ? (
-          <EventList events={todaysEvents} locale={locale} />
-        ) : (
-          <p className="calendar-empty">{t.noEventsToday}</p>
-        )}
-      </section>
-
-      <section className="calendar-section" aria-labelledby="calendar-month-heading">
-        <h2 id="calendar-month-heading">
-          {formatMessage(t.monthHeading, {
-            month: formatMonth(selectedMonth.year, selectedMonth.month, locale),
-          })}
-        </h2>
-        <nav className="calendar-month-navigation" aria-label={t.monthNavigationLabel}>
-          {previousMonth ? (
-            <Link href={getCalendarHref(previousMonth)}>{t.previousMonth}</Link>
+      <div className="calendar-column">
+        <section className="calendar-section" aria-labelledby="calendar-today-heading">
+          <h2 id="calendar-today-heading">{t.todayHeading}</h2>
+          {todaysEvents.length > 0 ? (
+            <EventList events={todaysEvents} locale={locale} />
           ) : (
-            <span aria-disabled="true">{t.previousMonth}</span>
+            <p className="calendar-empty">{t.noEventsToday}</p>
           )}
-          {nextMonth ? (
-            <Link href={getCalendarHref(nextMonth)}>{t.nextMonth}</Link>
-          ) : (
-            <span aria-disabled="true">{t.nextMonth}</span>
-          )}
-        </nav>
-        {monthlyEvents.length > 0 ? (
-          <EventList events={monthlyEvents} locale={locale} />
-        ) : (
-          <p className="calendar-empty">{t.noEventsThisMonth}</p>
-        )}
-      </section>
+        </section>
 
-      <Link className="content-back-link" href="/discover">
-        ← {t.back}
-      </Link>
+        <section className="calendar-section" aria-labelledby="calendar-month-heading">
+          <h2 id="calendar-month-heading">
+            {formatMessage(t.monthHeading, {
+              month: formatMonth(selectedMonth.year, selectedMonth.month, locale),
+            })}
+          </h2>
+          <nav className="calendar-month-navigation" aria-label={t.monthNavigationLabel}>
+            {previousMonth ? (
+              <Link href={getCalendarHref(previousMonth)}>{t.previousMonth}</Link>
+            ) : (
+              <span aria-disabled="true">{t.previousMonth}</span>
+            )}
+            {nextMonth ? (
+              <Link href={getCalendarHref(nextMonth)}>{t.nextMonth}</Link>
+            ) : (
+              <span aria-disabled="true">{t.nextMonth}</span>
+            )}
+          </nav>
+          {monthlyEvents.length > 0 ? (
+            <EventList events={monthlyEvents} locale={locale} />
+          ) : (
+            <p className="calendar-empty">{t.noEventsThisMonth}</p>
+          )}
+        </section>
+      </div>
+
+      <RelatedContent
+        heading={discover.relatedHeading}
+        items={[
+          {
+            id: "quiz",
+            title: discover.quiz,
+            description: discover.related.quizDescription,
+            href: "/discover/quiz",
+            actionLabel: discover.related.view,
+          },
+          {
+            id: "guides",
+            title: discover.related.guidesTitle,
+            description: discover.related.guidesDescription,
+            href: "/discover#discover-guides-heading",
+            actionLabel: discover.related.view,
+          },
+          {
+            id: "map",
+            title: discover.related.mapTitle,
+            description: discover.related.mapDescription,
+            href: "/",
+            actionLabel: discover.related.view,
+          },
+        ]}
+      />
     </article>
   );
 }

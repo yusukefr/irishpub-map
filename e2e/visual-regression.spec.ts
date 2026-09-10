@@ -41,10 +41,18 @@ test.describe("Public UI visual regression", () => {
     await expect(page).toHaveScreenshot("map-mobile-ja.png", { animations: "disabled", fullPage: true });
   });
 
-  test("Discover mobile Japanese", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/discover");
-    await expect(page.getByRole("heading", { level: 1, name: "Explore Ireland" })).toBeVisible();
-    await expect(page).toHaveScreenshot("discover-mobile-ja.png", { animations: "disabled", fullPage: true });
-  });
+  for (const scenario of [
+    { name: "desktop Japanese", locale: "ja" as const, width: 1440, height: 900, snapshot: "discover-desktop-ja.png" },
+    { name: "desktop English", locale: "en" as const, width: 1280, height: 900, snapshot: "discover-desktop-en.png" },
+    { name: "mobile Japanese", locale: "ja" as const, width: 390, height: 844, snapshot: "discover-mobile-ja.png" },
+    { name: "mobile English", locale: "en" as const, width: 360, height: 800, snapshot: "discover-mobile-en.png" },
+  ]) {
+    test("Discover " + scenario.name, async ({ context, page }) => {
+      await useLocale(context, scenario.locale);
+      await page.setViewportSize({ width: scenario.width, height: scenario.height });
+      await page.goto("/discover");
+      await expect(page.getByRole("heading", { level: 1, name: "Explore Ireland" })).toBeVisible();
+      await expect(page).toHaveScreenshot(scenario.snapshot, { animations: "disabled", fullPage: true });
+    });
+  }
 });

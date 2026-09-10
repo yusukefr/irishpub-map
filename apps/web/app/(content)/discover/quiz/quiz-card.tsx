@@ -22,6 +22,8 @@ export type QuizLabels = Readonly<{
   answered: string;
   correct: string;
   incorrect: string;
+  correctChoiceState: string;
+  incorrectChoiceState: string;
   correctAnswer: string;
   explanationHeading: string;
   source: string;
@@ -103,6 +105,11 @@ export function QuizCard({ question, labels }: QuizCardProps) {
                     {choiceLetter(index)}
                   </span>
                   <span>{choice.label}</span>
+                  {isCorrectChoice ? (
+                    <span className="quiz-choice-state">{labels.correctChoiceState}</span>
+                  ) : isSelectedIncorrect ? (
+                    <span className="quiz-choice-state">{labels.incorrectChoiceState}</span>
+                  ) : null}
                 </label>
               );
             })}

@@ -191,7 +191,7 @@ function Content({ locale }: { locale: Locale }) {
     <section className={styles.section} aria-label="Content Card">
       <h2>Content Card</h2>
       <div className={styles.grid}>
-        {(["default", "feature", "compact"] as const).map((variant) => (
+        {(["default", "image", "text-only", "feature", "compact"] as const).map((variant) => (
           <ContentCard
             key={variant}
             titleId={`story-${variant}`}
@@ -199,7 +199,7 @@ function Content({ locale }: { locale: Locale }) {
             title={title}
             description={description}
             eyebrow="Explore Ireland"
-            media={variant === "feature" ? <Media /> : undefined}
+            media={variant === "image" ? <Media /> : undefined}
             metadata={locale === "ja" ? "5分で読めます" : "5 minute read"}
             action={<a href="#story-end">{locale === "ja" ? "ガイドを読む" : "Read the guide"}</a>}
           />
