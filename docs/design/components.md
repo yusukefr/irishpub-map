@@ -73,3 +73,81 @@ Discover のページ構成、長文幅、関連導線、写真利用条件は[D
 Map専用HeaderはモバイルのNavigationをネイティブdetailsのメニューへ集約し、ブランド・メニュー・言語切替を1行で表示します。検索と条件・現在地の操作行を上部へ、Sheetを下端へ配置します。Sheetの高さは100dvhの既存Map Shell内の利用可能領域を基準にし、下端safe areaを含みます。expandedと低い横向き画面では重なるzoom操作群を隠し、ハンドルから地図へ戻れます。現在地取得は従来どおり明示操作でのみ開始します。
 
 `e2e/mobile-map.spec.ts`は固定fixtureで日本語・英語の390 / 360px、3段階、選択と詳細復帰、検索・条件、Map pan / pinch、ハンドルdrag、内部scroll、axe、低いviewportと横向きを検証します。OSソフトウェアキーボード、実機ブラウザバー、端末固有safe areaはviewportエミュレーションだけでは完全に再現できないため、実機確認と区別します。
+
+## Component specification
+
+各Componentは次の共通構造でレビューします。実装APIは`apps/web/app/components/ui`を正とし、追加・変更時はStoryとこの文書を同時に更新します。
+
+### Button / Icon Button
+
+- **Purpose:** 一つの明示操作を開始する。Icon Buttonは表示領域が限られる操作に使う。
+- **Variants:** Primary / Secondary / Ghost / Destructive。Icon Buttonは同じ重要度のvariantとiconを組み合わせる。
+- **States:** Default / Hover / Focus / Active / Disabled / Loading。
+- **Usage:** 同一領域のPrimaryは原則1つ。NavigationにはLink、状態切替には適切なpressed属性を使う。
+- **Accessibility:** 44px以上、visible focus、Icon Buttonの`label`必須。Loading中は`aria-busy`と連打防止を使い、幅を維持する。
+- **Do:** 操作の重要度をvariantで選ぶ。**Don't:** GoldをPrimary背景にする、`div`へclickだけを付ける。
+- **Example:** 保存はPrimary、キャンセルはSecondaryまたはGhost、削除はDestructive。
+
+### Input / Search
+
+- **Purpose:** 文字入力と店舗検索を提供する。
+- **Variants:** 標準Input、Search。Searchはiconとclear actionを含むcontrolled component。
+- **States:** Default / Focus / Disabled / Read only / Invalid、Searchは値あり / clear可能。
+- **Usage:** `label`、必要に応じて`error`と既存`aria-describedby`を渡す。通信とdebounceは親で扱う。
+- **Accessibility:** Hidden labelでもAccessible Nameを保持する。InvalidはborderとError textで伝え、clear後はInputへfocusを戻す。
+- **Do:** native input属性を使う。**Don't:** placeholderだけをlabelにする、通信処理を共通Searchへ持たせる。
+
+### Filter Chip / Status Badge
+
+- **Purpose:** ChipはFilterの選択、Badgeは操作できない店舗状態を示す。
+- **Variants:** Chipはselected / unselected、Badgeはopen / temporarily closed / closed / unknown。
+- **States:** ChipはDefault / Hover / Focus / Active / Disabled。Badgeは操作stateを持たない。
+- **Usage:** 多数のChipはlabel付きGroupへ置く。Badge labelはlocaleに合わせて必ず渡す。
+- **Accessibility:** Chipは`aria-pressed`とcheck、BadgeはTextとBorderを使い、色だけに依存しない。
+- **Do:** 状態の意味を文字で示す。**Don't:** Status BadgeをButtonに見せる、色だけで選択を示す。
+
+### Pub Card
+
+- **Purpose:** Mapと同期する店舗候補を比較し、選択と詳細操作を提供する。
+- **Variants:** comfortable / compact、with photo / without photo、optional metadata / distanceあり・なし。
+- **States:** Default / Hover / Focus / Selected / Closed。
+- **Information hierarchy:** Pub name → Area / location → Status → metadata → distance → tags → action。
+- **Usage:** `pub`と`onSelect`を必須とし、`selected`をMarkerと同期する。Tagは2件と残数を示す。長い日英名や欠損optional情報でも構造を保つ。
+- **Accessibility:** Card全体を曖昧なclick targetにせず、選択Buttonと詳細Buttonを区別する。SelectedとClosedはborder、Surface、Textを併用する。
+- **Do:** compactを幅の狭いDesktop railで使う。**Don't:** DB fieldを表示都合で増やす、Markerだけを選択手段にする。
+
+### Content Card
+
+- **Purpose:** DiscoverのFeature、Guide、Related Contentを構造化する。
+- **Variants:** default / image / text-only / feature / compact。
+- **States:** LinkやActionのHover / Focus / Active。Card自体に不要なclick stateを付けない。
+- **Usage:** `titleId`と`title`を必須にし、Section内は`headingLevel={3}`で階層を保つ。FeatureとGold borderは主要導線だけに使う。
+- **Accessibility:** `media`には追跡可能な画像、意味のあるalt、寸法を渡す。Actionは目的が分かるLink / Buttonにする。
+- **Do:** Contentの役割に合うvariantを使う。**Don't:** 写真がないCardへ架空画像を追加する、すべてをFeatureにする。
+
+### Map Control
+
+- **Purpose:** Mapのzoomや現在地など、Mapに直接関係する操作を提供する。
+- **Variants:** 共通Icon Button、MapLibre生成DOMへ同じvisual ruleを適用。
+- **States:** Default / Hover / Focus / Active / Disabled。
+- **Usage:** Cream surface、Dark icon、radius-md、elevation-1を使い、SheetやToolbarとの重なりを避ける。
+- **Accessibility:** `label`必須、44px以上、Keyboard操作、visible focus。意味をiconだけへ依存させない。
+- **Do:** Map上の位置をResponsiveに調整する。**Don't:** 操作領域をMap iconの見た目の大きさまで縮める。
+
+### Bottom Sheet
+
+- **Purpose:** Mobile Mapで結果一覧と詳細をMapとの関係を保って表示する。
+- **Variants:** 非モーダルの`collapsed` / `medium` / `expanded`。
+- **States:** 3段階の高さ、drag中、内部scroll、reduced motion。
+- **Usage:** 結果はmedium、詳細はexpandedを基本とし、直前の一覧高さを保持する。Map gestureとhandle gestureを分離する。
+- **Accessibility:** Handleは44px以上で、Arrow Up / Down、Home / End、Enter / Spaceを利用できる。State labelを読み上げ、非表示内容へfocusを残さない。
+- **Do:** backgroundを操作可能な非モーダルとして扱う。**Don't:** focus trapや`inert`を付ける、内容全体をdrag領域にする。
+
+### Navigation primitives
+
+- **Purpose:** Brand、現在Page、Public navigation、Header actionを一貫して構成する。
+- **Variants:** BrandLink / NavigationLink / HeaderAction / HeaderIconButton。Mobile menuは既存AppHeaderで構成する。
+- **States:** Current / Hover / Focus / Active、Menu open / closed。
+- **Usage:** Language SwitcherのCookie保存とKeyboard操作を再実装しない。Desktop / Mobileの詳細は[Navigation Pattern](patterns/navigation.md)を参照する。
+- **Accessibility:** Currentは`aria-current`と下線、icon actionはlabel、`nav`はAccessible Nameを持つ。
+- **Do:** Header primitivesを再利用する。**Don't:** Page固有Headerでlocaleやnavigation stateを複製する。

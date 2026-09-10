@@ -4,7 +4,7 @@
 
 Public UIは、次の優先順位で設計・実装・レビューします。外部Skillは補助的なレビュー基準であり、プロジェクト固有の方針を上書きしません。
 
-1. Irish Pub Map Design System（この文書と[Design Tokens](tokens.md)）
+1. Irish Pub Map Design System（[入口](README.md)と関連文書）
 2. Reference ScreensとVisual Regressionの基準画像
 3. 既存の共通コンポーネント
 4. `web-design-guidelines`
