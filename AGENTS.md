@@ -105,11 +105,12 @@ npm run dev
 
 ## Public UI Design Rules
 
-- 公開画面のデザインを変更する場合は、[UI とアクセシビリティ](docs/development/conventions.md)の「公開画面のデザイン基準」に従ってください。
-- 探索体験では「目的を伝える」「検索・絞り込みを操作する」「地図と結果一覧を確認する」の順に、見出しとレイアウトで情報階層を明確にします。
-- 既存の意味的なデザイントークンを再利用し、深いグリーン、温かいゴールド、明るい生成りを基調とする Irish Pub Map の視覚言語を維持します。新しい色、余白、角丸、影を繰り返し使う場合は、個別の値を増やさずトークンとして定義します。
-- 操作要素は原則44px以上の操作領域、視認できるキーボードフォーカス、目的が分かるラベルを備えます。動的に変わる検索結果数や状態は、必要に応じて支援技術へ通知します。
-- 公開画面の視覚的な変更では、関連する挙動テストに加えて、デスクトップ幅と390px幅程度のモバイル幅でブラウザ表示を確認します。読み込み、主要操作、エラーオーバーレイの有無を確認してください。
+- Public UIを変更する前に、[Irish Pub Map Design System](docs/design/README.md)を読み、関係するToken、Component、Screen Pattern、Reference Screenを確認してください。
+- UI実装は、Requirement、既存Token、既存Component、既存Pattern、既存Reference Screen、Component拡張、新規Token / Componentの順で判断します。
+- 新しい色、余白、角丸、影、Typography、Component、画面Patternを追加する場合は、既存のDesign Systemで表現できない理由を確認し、実装とDesign Documentationを同じ変更で更新してください。
+- Public UI変更中はDesign Tokenと既存Componentを優先し、日本語・英語、Desktop・Mobile、Semantic HTML、Keyboard操作、Accessible Nameを維持してください。既存Behaviorを変える場合は、明示されたRequirementと対応テストを用意してください。
+- 実装後は[UI Definition of Done](docs/design/README.md#ui-definition-of-done)に従い、関係するStorybook、ブラウザ、Visual Regression、E2E、Accessibilityを確認してください。視覚的な変更はDesktop幅と390px程度のMobile幅で確認します。
+- Design Systemへ影響するPublic UI変更では、PR本文にTokens / Components / Patterns / Reference Screens / Documentationの更新要否を記載してください。
 
 ## Pull Request Rules
 

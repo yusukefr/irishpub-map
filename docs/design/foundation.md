@@ -4,13 +4,17 @@
 
 Public UIは、次の優先順位で設計・実装・レビューします。外部Skillは補助的なレビュー基準であり、プロジェクト固有の方針を上書きしません。
 
-1. Irish Pub Map Design System（この文書と[Design Tokens](tokens.md)）
-2. Reference ScreensとVisual Regressionの基準画像
-3. 既存の共通コンポーネント
-4. `web-design-guidelines`
-5. `frontend-design`
+1. Current Product Requirement
+2. Current Design Documentation（[入口](README.md)と関連文書）
+3. Existing Design Tokens
+4. Existing Components
+5. Existing Screen Patterns
+6. Reference Screens
+7. External Skills（`web-design-guidelines`、`frontend-design`など）
 
 `frontend-design` は Modern Irish Explorer の視覚言語、既存トークン、レスポンシブ規則を守る範囲で用います。新しいUIパターンや色を自由に追加する根拠にはしません。
+
+Reference Screenは現在の実装を視覚的に確認する資料です。上位のRequirement、Documentation、Token、Component、Patternと競合する場合は、実装を画像へ戻さずReference Screenを更新します。FrameworkやLibraryの技術仕様は使用中バージョンの公式Documentationを優先します。
 
 ## Design Token方針
 
@@ -26,9 +30,9 @@ Phase 1で定義したColor、Typography、Spacing、Radius、Elevation、Motion
 
 ## Visual Regressionとアクセシビリティ
 
-`e2e/visual-regression.spec.ts` は公開Mapの日本語・英語、デスクトップ・モバイルとDiscoverのモバイルをスクリーンショット比較します。基準画像の更新は、意図したUI変更をレビューしたうえで `--update-snapshots` を明示して実行します。
+`e2e/visual-regression.spec.ts`は、公開MapのDesktop日本語・英語とMobile日本語、DiscoverのDesktop / Mobile日本語・英語をスクリーンショット比較します。Map Mobile英語はこのVisual Regressionの対象ではなく、`e2e/mobile-map.spec.ts`の挙動・画面比較で確認します。基準画像の更新は、意図したUI変更をレビューしたうえで`--update-snapshots`を明示して実行します。
 
-`e2e/accessibility.spec.ts` は `@axe-core/playwright` で公開MapとDiscoverのcritical/serious違反を検出します。axeだけでは保証できないため、キーボード操作、visible focus、44px程度の操作領域、色以外の状態表現、日英表示はブラウザ確認と既存E2Eで補完します。
+`e2e/accessibility.spec.ts`は`@axe-core/playwright`で公開Map（`/`）とDiscover Top（`/discover`）、Calendar（`/discover/calendar`）、Quiz（`/discover/quiz`）、Guide（`/discover/guides/split-the-g`）のcritical / serious違反を検出します。axeだけでは保証できないため、キーボード操作、visible focus、44px程度の操作領域、色以外の状態表現、日英表示はブラウザ確認と既存E2Eで補完します。
 
 ## 実装フロー
 
