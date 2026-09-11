@@ -12,12 +12,13 @@ describe("content renderer registry", () => {
     render(
       <SafeMarkdownRenderer
         markdown={
-          "# 見出し\n\n[危険](javascript:alert(1))\n\n<script>window.__xss = true</script>\n\n| A | B |\n| - | - |\n| 1 | 2 |"
+          "# 見出し\n\n[危険](javascript:alert(1))\n\n[email](mailto:feedback)\n\n<script>window.__xss = true</script>\n\n| A | B |\n| - | - |\n| 1 | 2 |"
         }
       />,
     );
     expect(screen.getByRole("heading", { level: 2, name: "見出し" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "危険" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "email" })).not.toBeInTheDocument();
     expect(screen.queryByText("window.__xss = true")).not.toBeInTheDocument();
     expect(screen.getByRole("table")).toBeInTheDocument();
   });

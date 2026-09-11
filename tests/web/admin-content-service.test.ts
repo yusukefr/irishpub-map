@@ -62,6 +62,15 @@ describe("admin content service", () => {
       code: "validation",
       fieldErrors: { "translations.en.bodyMarkdown": "invalid_format" },
     });
+    await expect(
+      createAdminContent({
+        ...completeInput,
+        translations: {
+          ...completeInput.translations,
+          en: { ...completeInput.translations.en, bodyMarkdown: "[bad](&#9999999999;)" },
+        },
+      }),
+    ).rejects.toMatchObject({ code: "validation" });
     expect(repositoryMocks.insertAdminContent).not.toHaveBeenCalled();
   });
 

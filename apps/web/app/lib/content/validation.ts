@@ -1,8 +1,15 @@
 import type { AdminContentWriteInput } from "@irishpub-map/shared/admin-content";
+import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import { unified } from "unified";
 
-const INLINE_DESTINATION = /!?\[[^\]]*\]\(\s*(?:<([^>]+)>|([^\s)]+))/g;
-const REFERENCE_DESTINATION = /^\s*\[[^\]]+\]:\s*(?:<([^>]+)>|([^\s]+))/gm;
-const AUTOLINK_DESTINATION = /<((?:[a-z][a-z0-9+.-]*:|\/|#)[^<>]*)>/gi;
+type MarkdownNode = {
+  type?: unknown;
+  url?: unknown;
+  children?: unknown;
+};
+
+const markdownParser = unified().use(remarkParse).use(remarkGfm);
 
 /**
  * Content入力の公開必須項目を列挙します。
@@ -18,43 +25,51 @@ export function getContentPublicationMissingFields(input: AdminContentWriteInput
     const translation = input.translations[locale];
     if (!translation.title) missing.push(`translations.${locale}.title`);
     if (!translation.summary) missing.push(`translations.${locale}.summary`);
-    if (!translation.bodyMarkdown) missing.push(`translations.${locale}.bodyMarkdown`);
+    if (!translation.bodyMarkdown.trim()) missing.push(`translations.${locale}.bodyMarkdown`);
   }
   return missing;
 }
 
 /**
- * Markdown内のリンク・画像・参照定義・autolinkが許可済みURLだけかを検証します。
+ * MarkdownをRendererと同じCommonMark・GFM Parserで解析し、リンク先を検証します。
  * @param {string} markdown - 検証するMarkdown本文。
- * @returns {boolean} HTTP(S)、ルート相対、ページ内アンカーだけならtrue。
+ * @returns {boolean} すべてのlink・image・definitionが許可済みURLならtrue。
  */
 export function hasOnlySafeMarkdownUrls(markdown: string): boolean {
-  const destinations = [
-    ...extractDestinations(markdown, INLINE_DESTINATION),
-    ...extractDestinations(markdown, REFERENCE_DESTINATION),
-    ...extractDestinations(markdown, AUTOLINK_DESTINATION),
-  ];
-  return destinations.every(isAllowedDestination);
-}
-
-function extractDestinations(markdown: string, pattern: RegExp) {
-  return [...markdown.matchAll(pattern)].map((match) => match[1] ?? match[2] ?? "");
-}
-
-function isAllowedDestination(value: string) {
-  const normalized = decodeNumericEntities(value.trim()).replace(/[\u0000-\u001f\u007f\s]/g, "");
-  if (normalized.startsWith("/") && !normalized.startsWith("//")) return true;
-  if (normalized.startsWith("#")) return true;
   try {
-    const url = new URL(normalized);
+    const pending: unknown[] = [markdownParser.parse(markdown)];
+    while (pending.length > 0) {
+      const node = pending.pop();
+      if (!isMarkdownNode(node)) return false;
+      if (isUrlNode(node) && (typeof node.url !== "string" || !isAllowedMarkdownUrl(node.url))) return false;
+      if (Array.isArray(node.children)) pending.push(...node.children);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Markdownリンクとして許可するURLかを判定します。
+ * @param {string} value - Parserが解決したURL。
+ * @returns {boolean} HTTP(S)、ルート相対、ページ内アンカーの場合はtrue。
+ */
+export function isAllowedMarkdownUrl(value: string): boolean {
+  if (value.startsWith("/") && !value.startsWith("//")) return true;
+  if (value.startsWith("#")) return true;
+  try {
+    const url = new URL(value);
     return url.protocol === "https:" || url.protocol === "http:";
   } catch {
     return false;
   }
 }
 
-function decodeNumericEntities(value: string) {
-  return value
-    .replace(/&#(\d+);?/g, (_, decimal: string) => String.fromCodePoint(Number(decimal)))
-    .replace(/&#x([\da-f]+);?/gi, (_, hexadecimal: string) => String.fromCodePoint(Number.parseInt(hexadecimal, 16)));
+function isMarkdownNode(value: unknown): value is MarkdownNode {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function isUrlNode(node: MarkdownNode) {
+  return node.type === "link" || node.type === "image" || node.type === "definition";
 }

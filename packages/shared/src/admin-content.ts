@@ -163,13 +163,7 @@ function parseTranslation(value: unknown, locale: Locale, errors: AdminContentFi
   validateKeys(translation, ["title", "summary", "bodyMarkdown"], errors, path + ".");
   const title = parseText(translation.title, path + ".title", CONTENT_TITLE_MAX_LENGTH, errors, true);
   const summary = parseText(translation.summary, path + ".summary", CONTENT_SUMMARY_MAX_LENGTH, errors, true);
-  const bodyMarkdown = parseText(
-    translation.bodyMarkdown,
-    path + ".bodyMarkdown",
-    CONTENT_BODY_MAX_LENGTH,
-    errors,
-    true,
-  );
+  const bodyMarkdown = parseMarkdown(translation.bodyMarkdown, path + ".bodyMarkdown", CONTENT_BODY_MAX_LENGTH, errors);
   return title === null || summary === null || bodyMarkdown === null ? null : { title, summary, bodyMarkdown };
 }
 
@@ -245,4 +239,13 @@ function validateKeys(
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function parseMarkdown(value: unknown, path: string, maxLength: number, errors: AdminContentFieldErrors) {
+  if (typeof value !== "string") {
+    errors[path] = value === undefined ? "required" : "invalid_type";
+    return null;
+  }
+  if (value.length > maxLength) errors[path] = "too_long";
+  return value;
 }

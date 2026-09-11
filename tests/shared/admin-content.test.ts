@@ -25,7 +25,7 @@ describe("admin content input", () => {
         slug: "  pub-etiquette  ",
         category: "pub-culture",
         translations: {
-          ja: { title: "  パブの作法  ", summary: "", bodyMarkdown: "  # 本文  " },
+          ja: { title: "  パブの作法  ", summary: "", bodyMarkdown: "    const value = 1;\n" },
           en: { title: "", summary: "", bodyMarkdown: "" },
         },
       }),
@@ -34,7 +34,7 @@ describe("admin content input", () => {
       slug: "pub-etiquette",
       category: "pub-culture",
       translations: {
-        ja: { title: "パブの作法", summary: "", bodyMarkdown: "# 本文" },
+        ja: { title: "パブの作法", summary: "", bodyMarkdown: "    const value = 1;\n" },
         en: { title: "", summary: "", bodyMarkdown: "" },
       },
     });
