@@ -69,7 +69,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 }
 ```
 
-共通コードは `unauthorized`、`forbidden`、`invalid_json`、`invalid_content_type`、`database_unavailable`、`internal_error` です。ログイン、店舗、タグ、マスタ固有のコードには `invalid_credentials`、`auth_not_configured`、`invalid_pub_data`、`pub_not_found`、`publication_requirements_not_met`、`tag_conflict`、`tag_not_found`、`tag_in_use`、`invalid_tag_id`、`invalid_prefecture_code` があります。フィールド理由は `required`、`too_long`、`invalid_format`、`invalid_type`、`leading_or_trailing_space`、`immutable` です。未知のコードやJSONでないレスポンスはClientで一般化し、APIは例外文、DB・SQL・接続情報を返しません。HTTPステータスは従来どおり、認証 `401`、権限 `403`、入力 `400` / `415` / `422`、対象なし `404`、競合 `409`、設定不足 `503`、内部エラー `500` を使います。
+共通コードは `unauthorized`、`forbidden`、`invalid_json`、`invalid_content_type`、`database_unavailable`、`internal_error` です。ログイン、店舗、タグ、マスタ固有のコードには `invalid_credentials`、`auth_not_configured`、`invalid_pub_data`、`pub_not_found`、`publication_requirements_not_met`、`content_conflict`、`content_not_found`、`tag_conflict`、`tag_not_found`、`tag_in_use`、`invalid_tag_id`、`invalid_prefecture_code` があります。フィールド理由は `required`、`too_long`、`invalid_format`、`invalid_type`、`leading_or_trailing_space`、`immutable` です。未知のコードやJSONでないレスポンスはClientで一般化し、APIは例外文、DB・SQL・接続情報を返しません。HTTPステータスは従来どおり、認証 `401`、権限 `403`、入力 `400` / `415` / `422`、対象なし `404`、競合 `409`、設定不足 `503`、内部エラー `500` を使います。
 
 営業ステータス管理固有のコードは、不正なURLパラメーターの `invalid_status_code` と、更新対象が存在しない `status_not_found` です。
 
@@ -93,6 +93,15 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 | `PUT` | `/api/admin/pubs/:id` | `200` と公開状態を維持した `{ pub }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、参照競合は `409`、対象なしは `404`、DB未設定は `503` |
 | `PATCH` | `/api/admin/pubs/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
 | `DELETE` | `/api/admin/pubs/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、対象なしは `404`、DB 未設定は `503` |
+| `GET` | `/api/admin/content` | `200` と `{ content, databaseConfigured }`。DraftとPublishedを含む | 未認証は `401`、取得失敗は `500` |
+| `POST` | `/api/admin/content` | `201` とDraftの `{ content }` | 未認証は `401`、Origin不正は `403`、入力不正は `422`、重複は `409`、DB未設定は `503` |
+| `GET` | `/api/admin/content/:id` | `200` と日英翻訳を含む `{ content }` | 未認証は `401`、ID不正は `400`、対象なしは `404`、DB未設定は `503` |
+| `PUT` | `/api/admin/content/:id` | `200` と公開状態を維持した `{ content }` | 未認証は `401`、Origin不正は `403`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404` |
+| `PATCH` | `/api/admin/content/:id/publication` | `200` と `{ publication: { id, status, unchanged } }` | 未認証は `401`、Origin不正は `403`、入力不正・公開条件不足は `422`、対象なしは `404` |
+
+Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`translations: { ja, en }` を含む全体スナップショットを受け付けます。各翻訳は `title`、`summary`、`bodyMarkdown` を持ちます。Draftでは言語非依存項目を `null`、翻訳文言を空文字で保存できます。kindは `story` / `guide`、categoryは既知分類、localeは `ja` / `en`、slugは小文字英数字と単語間のハイフンだけを許可します。bodyMarkdownは先頭・末尾の空白を含む原文を保持します。MarkdownはRendererと同じCommonMark・GFM ParserでAST化し、link・image・definitionのURLにはHTTP(S)、ルート相対、ページ内アンカーだけを許可します。
+
+公開状態変更本文は `{ "status": "draft" | "published" }` だけを受け付けます。公開時はkind、slug、category、日英すべてのtitle、summary、bodyMarkdownをサーバー側とtransaction内で検証します。Publishedの通常更新にも更新後の公開条件を適用します。本体と日英翻訳は単一transactionで作成・更新し、公開状態を変える操作とPublished更新の成功後に公開Contentの個別・一覧キャッシュタグを失効させます。
 
 `POST` と `PUT` は、`prefectureCode`、`municipalityCode`、座標、URL、`status`、`translations: { ja, en }`、`tagIds` を含む管理用全体スナップショットを受け付けます。日本語店舗名だけが下書きの必須項目で、その他の未入力値はNULL、英語翻訳なしは `translations.en = null`、タグ全解除は `tagIds = []` とします。`id`、`isPublished`、`updatedAt` は入力に含めません。新規IDはサーバーで生成し、常に非公開で作成します。
 

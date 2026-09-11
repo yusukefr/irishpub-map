@@ -21,6 +21,8 @@ export const ADMIN_API_ERROR_CODES = [
   "invalid_status_code",
   "status_not_found",
   "publication_requirements_not_met",
+  "content_conflict",
+  "content_not_found",
 ] as const;
 
 /** 管理APIが返す、表示言語に依存しないエラーコードです。 */

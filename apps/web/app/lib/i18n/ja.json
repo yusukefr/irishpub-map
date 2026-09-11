@@ -211,7 +211,9 @@
       "invalid_tag_id": "タグIDが正しくありません。",
       "invalid_status_code": "営業ステータスコードが正しくありません。",
       "status_not_found": "営業ステータスが見つかりません。",
-      "publication_requirements_not_met": "この店舗は公開条件を満たしていません。"
+      "publication_requirements_not_met": "この店舗は公開条件を満たしていません。",
+      "content_conflict": "同じ種類とslugのContentが存在します。",
+      "content_not_found": "Contentが見つかりません。"
     },
     "tagFieldErrors": {
       "key": {

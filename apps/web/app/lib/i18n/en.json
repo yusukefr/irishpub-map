@@ -211,7 +211,9 @@
       "invalid_tag_id": "The tag ID is invalid.",
       "invalid_status_code": "The status code is invalid.",
       "status_not_found": "The status was not found.",
-      "publication_requirements_not_met": "This pub does not meet the publication requirements."
+      "publication_requirements_not_met": "This pub does not meet the publication requirements.",
+      "content_conflict": "Content with the same kind and slug already exists.",
+      "content_not_found": "The content was not found."
     },
     "tagFieldErrors": {
       "key": {

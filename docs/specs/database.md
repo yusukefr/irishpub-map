@@ -6,7 +6,7 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 現行スキーマは、Issue #262で確認し、Issue #272で再確認したNeon上の実スキーマを基準とします。`apps/web/app/lib/pub-repository.ts` など現在のアプリケーション実装とも照合しています。`db/migrations` は設計経緯を確認するための補助資料であり、現行スキーマの根拠にはしません。カラム・制約・インデックスの詳細は[テーブル・カラム定義](database-columns.md)を参照してください。
 
-Issue #273のマイグレーション008で `pubs.is_published` を追加し、Issue #278では下書き用NULL制約を定義するマイグレーション009を追加しました。Issue #342ではEditorial Content用にマイグレーション010を追加しました。実DBへの適用状況はアプリケーション実装と区別し、[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従って必要なMigrationを適用・検証してから対応アプリケーションをデプロイします。管理用DTOとtransaction保存を含む保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+Issue #273のマイグレーション008で `pubs.is_published` を追加し、Issue #278では下書き用NULL制約を定義するマイグレーション009を追加しました。Issue #342ではEditorial Content用にマイグレーション010を追加し、Issue #344では入力途中のContent Draftを保存するマイグレーション011を追加しました。実DBへの適用状況はアプリケーション実装と区別し、[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従って必要なMigrationを適用・検証してから対応アプリケーションをデプロイします。管理用DTOとtransaction保存を含む保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 ## テーブル
 
@@ -129,7 +129,7 @@ erDiagram
 
 翻訳テーブルは親IDと `locale` の複合主キーを持ちます。`prefecture_translations` と `tag_translations` は、同じロケール内で表示名が重複しないよう `UNIQUE (locale, name)` も持ちます。
 
-`content_entries` は `(kind, slug)` の複合一意制約を持ちます。statusは `draft` と `published` に限定し、draftは `published_at` をNULL、publishedは公開日時を必須とします。`kind` は `story` / `guide`、`category` は `history` / `culture` / `pub-culture` / `food-drink` をアプリケーション側のAllow Listで検証します。DBでは将来のRenderer・分類追加を妨げないため、いずれも空白を禁止する `TEXT` とします。`content_translations` は `ja` / `en` だけを保存でき、親Contentの削除時にカスケード削除されます。
+`content_entries` は `(kind, slug)` の複合一意制約を持ちます。statusは `draft` と `published` に限定し、draftは `published_at` をNULL、publishedは公開日時を必須とします。`kind` は `story` / `guide`、`category` は `history` / `culture` / `pub-culture` / `food-drink` をアプリケーション側のAllow Listで検証します。DraftではこれらをNULLにでき、公開時は管理APIのPublish Validationで必須にします。`content_translations` は `ja` / `en` だけを保存でき、親Contentの削除時にカスケード削除されます。
 
 `pubs` の所在地、座標、営業状態と `pub_translations.address` は下書きではNULLを許可します。管理APIは市区町村コードが選択した都道府県に所属することと、各参照マスタに日本語表示名があることを保存前に検証します。
 
@@ -155,7 +155,9 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 
 マイグレーション008は適用前に既存店舗が公開条件を満たすか検査し、成功した場合だけ既存店舗を公開状態へ移行します。マイグレーション009は既存値を変更せず下書き対象カラムのNOT NULLを外し、公開中店舗に欠損が生じていないことを検証SQLで確認します。どちらも適用履歴を `schema_migrations` に記録します。
 
-マイグレーション010は既存コンテンツを移行せず、Editorial Contentの2テーブルだけを追加します。適用後は、テーブル・制約・許可Locale・外部キーと適用履歴をverify SQLで確認します。Content Repository、Markdown Renderer、Admin API/UI、既存MDXの移行は後続Issueの対象です。
+マイグレーション010は既存コンテンツを移行せず、Editorial Contentの2テーブルだけを追加します。適用後は、テーブル・制約・許可Locale・外部キーと適用履歴をverify SQLで確認します。Content RepositoryとMarkdown RendererはIssue #343、Admin APIはIssue #344で実装しました。Admin UIと既存MDXの移行は後続Issueの対象です。
+
+マイグレーション011はContentの言語非依存項目をDraftではNULL可とし、翻訳文言の非空CHECKを外します。Publishedの完全性は管理APIが行ロックを伴うtransaction内で再検証し、verify SQLでも欠損がないことを確認します。
 
 店舗またはタグの削除時は、対応する翻訳と `pub_tags` が `ON DELETE CASCADE` で削除されます。ただし管理タグ機能は使用中タグのDELETE自体をtransaction内で拒否し、店舗関連や店舗を変更しません。都道府県・市区町村・営業状況を参照する店舗にはカスケード削除を設定していません。
 

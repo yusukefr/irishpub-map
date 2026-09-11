@@ -4,7 +4,7 @@
 
 この文書は、Issue #262で確認し、Issue #272で2026年8月26日に再確認したNeon上の実スキーマを基準に、現在存在するアプリケーション用テーブルのカラム・制約・インデックスを定義します。再確認では記載内容との意味上の差異はありませんでした。現在のアプリケーション実装を照合に用い、`db/migrations` は設計経緯を確認するための補助資料として扱います。表示文言は翻訳テーブル、言語に依存しない値は親テーブル、店舗とタグの関係は中間テーブルに保存します。
 
-Issue #273のマイグレーション008で `is_published` を追加し、Issue #278では日本語店舗名のみの下書きを保存できるよう対象カラムのNULL制約を緩和するマイグレーション009を追加しました。Issue #342ではEditorial Contentの2テーブルを追加するマイグレーション010を追加しました。実DBへ必要なMigrationを適用・検証してから対応アプリケーションをデプロイします。確定した保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+Issue #273のマイグレーション008で `is_published` を追加し、Issue #278では日本語店舗名のみの下書きを保存できるよう対象カラムのNULL制約を緩和するマイグレーション009を追加しました。Issue #342ではEditorial Contentの2テーブルを追加するマイグレーション010を追加し、Issue #344のマイグレーション011でContentの下書き用制約を緩和しました。実DBへ必要なMigrationを適用・検証してから対応アプリケーションをデプロイします。確定した保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 `NULL` 欄の「不可」は `NOT NULL` または主キー制約、「可」はDB制約上NULLを許可することを表します。
 
@@ -122,9 +122,9 @@ Issue #273のマイグレーション008で `is_published` を追加し、Issue 
 | カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
 | --- | --- | --- | --- | --- | --- |
 | `id` | UUID | 不可 | PK | `gen_random_uuid()` | Editorial Content ID |
-| `kind` | TEXT | 不可 | `slug` と複合UNIQUE | なし | 空白のみを禁止。アプリケーション側で `story` / `guide` をAllow List検証 |
-| `slug` | TEXT | 不可 | `kind` と複合UNIQUE | なし | 空白のみを禁止。kind内のURL識別子 |
-| `category` | TEXT | 不可 |  | なし | 空白のみを禁止。アプリケーション側で既知分類をAllow List検証 |
+| `kind` | TEXT | 可 | `slug` と複合UNIQUE | なし | DraftはNULL可。アプリケーション側で `story` / `guide` をAllow List検証 |
+| `slug` | TEXT | 可 | `kind` と複合UNIQUE | なし | DraftはNULL可。kind内のURL識別子 |
+| `category` | TEXT | 可 |  | なし | DraftはNULL可。アプリケーション側で既知分類をAllow List検証 |
 | `status` | TEXT | 不可 |  | なし | `draft` / `published` のみ |
 | `published_at` | TIMESTAMPTZ | 条件付き |  | なし | draftはNULL、publishedは必須 |
 | `created_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 作成日時 |
@@ -138,9 +138,9 @@ Issue #273のマイグレーション008で `is_published` を追加し、Issue 
 | --- | --- | --- | --- | --- | --- |
 | `content_id` | UUID | 不可 | PK、FK → `content_entries.id` ON DELETE CASCADE | なし | Editorial Content ID |
 | `locale` | TEXT | 不可 | PK | なし | `ja` / `en` のみ |
-| `title` | TEXT | 不可 |  | なし | 空白のみを禁止。表示タイトル |
-| `summary` | TEXT | 不可 |  | なし | 空白のみを禁止。説明文 |
-| `body_markdown` | TEXT | 不可 |  | なし | 空白のみを禁止。安全な描画は後続Rendererで担保するMarkdown本文 |
+| `title` | TEXT | 不可 |  | なし | Draftは空文字可。公開時は非空の表示タイトル |
+| `summary` | TEXT | 不可 |  | なし | Draftは空文字可。公開時は非空の説明文 |
+| `body_markdown` | TEXT | 不可 |  | なし | Draftは空文字可。管理APIでURLを検証し、Rendererでも安全な要素とURLに限定するMarkdown本文 |
 | `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 翻訳の更新日時 |
 
 主キーは `(content_id, locale)` です。親Contentを削除すると翻訳も削除されます。

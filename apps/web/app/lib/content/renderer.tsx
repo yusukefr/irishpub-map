@@ -1,5 +1,6 @@
 import Markdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { isAllowedMarkdownUrl } from "./validation";
 import type { ContentRendererProps } from "./types";
 const headingComponents = {
   h1: ({ node, ...props }) => {
@@ -60,6 +61,7 @@ const allowedElements = [
  * @returns {string | undefined} 安全なURL。
  */
 export function sanitizeMarkdownUrl(value: string): string | undefined {
+  if (!isAllowedMarkdownUrl(value)) return undefined;
   const sanitized = defaultUrlTransform(value);
   return sanitized === "" ? undefined : sanitized;
 }
