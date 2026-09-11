@@ -16,6 +16,7 @@ export function AdminNavigation({ locale }: { locale: Locale }) {
   const t = getTranslation(locale).admin;
   const items = [
     { href: "/admin/pubs", label: t.navPubs },
+    { href: "/admin/content", label: t.navContent },
     { href: "/admin/tags", label: t.navTags },
     { href: "/admin/statuses", label: t.navStatuses },
   ];

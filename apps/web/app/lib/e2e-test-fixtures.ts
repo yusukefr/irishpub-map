@@ -13,10 +13,15 @@ import type {
 } from "@irishpub-map/shared/admin-master";
 import type { AdminPubStatus } from "@irishpub-map/shared/admin-status";
 import type { AdminTag } from "@irishpub-map/shared/admin-tag";
+import type { AdminContent, AdminContentListItem } from "@irishpub-map/shared/admin-content";
 import type { Locale } from "@irishpub-map/shared/locale";
 import type { Pub } from "@irishpub-map/shared/pub";
 
 export const E2E_TEST_DATA = {
+  content: {
+    draft: { id: "30000000-0000-4000-8000-000000000201", title: "E2E 下書きガイド" },
+    published: { id: "30000000-0000-4000-8000-000000000202", title: "E2E 公開ガイド" },
+  },
   pubs: {
     nagoya: { id: "30000000-0000-4000-8000-000000000001", name: "E2E Irish Pub Nagoya" },
     tokyo: { id: "30000000-0000-4000-8000-000000000002", name: "E2E Irish Pub Tokyo" },
@@ -28,6 +33,52 @@ export const E2E_TEST_DATA = {
 } as const;
 
 const UPDATED_AT = "2026-01-15T12:00:00.000Z";
+const contentDefinitions: AdminContent[] = [
+  {
+    id: E2E_TEST_DATA.content.draft.id,
+    kind: "guide",
+    slug: "e2e-draft-guide",
+    category: "pub-culture",
+    status: "draft",
+    publishedAt: null,
+    translations: {
+      ja: {
+        title: E2E_TEST_DATA.content.draft.title,
+        summary: "E2Eで管理画面を確認するための下書きです。",
+        bodyMarkdown: "## 下書き本文\n\n[安全なリンク](/discover)",
+      },
+      en: {
+        title: "E2E Draft Guide",
+        summary: "A draft used to verify the content admin UI.",
+        bodyMarkdown: "## Draft body\n\n[Safe link](/discover)",
+      },
+    },
+    createdAt: UPDATED_AT,
+    updatedAt: UPDATED_AT,
+  },
+  {
+    id: E2E_TEST_DATA.content.published.id,
+    kind: "guide",
+    slug: "e2e-published-guide",
+    category: "culture",
+    status: "published",
+    publishedAt: UPDATED_AT,
+    translations: {
+      ja: {
+        title: E2E_TEST_DATA.content.published.title,
+        summary: "E2Eで管理画面を確認するための公開記事です。",
+        bodyMarkdown: "## 公開本文",
+      },
+      en: {
+        title: "E2E Published Guide",
+        summary: "Published content used to verify the content admin UI.",
+        bodyMarkdown: "## Published body",
+      },
+    },
+    createdAt: UPDATED_AT,
+    updatedAt: UPDATED_AT,
+  },
+];
 const statusDefinitions = [
   { code: 1, key: "open", ja: "営業中", en: "Open" },
   { code: 3, key: "closed", ja: "閉店", en: "Closed" },
@@ -189,6 +240,27 @@ export function getE2EAdminTags(): AdminTag[] {
  */
 export function getE2EAdminPubStatuses(): AdminPubStatus[] {
   return statusDefinitions.map((value) => ({ code: value.code, key: value.key, nameJa: value.ja, nameEn: value.en }));
+}
+
+/**
+ * E2EでContent管理一覧へ返す固定データを取得します。
+ * @returns {AdminContentListItem[]} DraftとPublishedを含む固定一覧。
+ */
+export function getE2EAdminContentList(): AdminContentListItem[] {
+  return contentDefinitions.map(({ translations, ...content }) => ({
+    ...content,
+    titleJa: translations.ja.title,
+    titleEn: translations.en.title,
+  }));
+}
+
+/**
+ * E2EでContent編集画面へ返す固定詳細を取得します。
+ * @param {string} id - 取得対象のContent UUID。
+ * @returns {AdminContent | null} 固定Content詳細、または対象なし。
+ */
+export function getE2EAdminContent(id: string): AdminContent | null {
+  return contentDefinitions.find((content) => content.id === id) ?? null;
 }
 
 type PubDefinition = (typeof pubDefinitions)[number];

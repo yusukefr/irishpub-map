@@ -8,6 +8,7 @@ import type {
   ContentStatus,
 } from "@irishpub-map/shared/admin-content";
 import { isContentCategory, isContentKind } from "@irishpub-map/shared/admin-content";
+import { getE2EAdminContent, getE2EAdminContentList } from "./e2e-test-fixtures";
 import { isE2ETestMode, rejectE2ETestMutation } from "./e2e-test-mode";
 
 type DbRow = Record<string, unknown>;
@@ -33,7 +34,8 @@ let sqlClient: ReturnType<typeof neon> | null = null;
  * @returns {Promise<AdminContentListItem[]>} DB未設定時は空配列、それ以外はDraftを含む一覧。
  */
 export async function listAdminContent(): Promise<AdminContentListItem[]> {
-  if (!process.env.DATABASE_URL || isE2ETestMode()) return [];
+  if (isE2ETestMode()) return getE2EAdminContentList();
+  if (!process.env.DATABASE_URL) return [];
   const rows = (await getRequiredSql()`
     SELECT entry.id::text, entry.kind, entry.slug, entry.category, entry.status,
       entry.published_at, entry.created_at, entry.updated_at,
@@ -52,6 +54,7 @@ export async function listAdminContent(): Promise<AdminContentListItem[]> {
  * @returns {Promise<AdminContent | null>} 対象が存在しない場合はnull。
  */
 export async function getAdminContent(id: string): Promise<AdminContent | null> {
+  if (isE2ETestMode()) return getE2EAdminContent(id);
   const rows = (await getRequiredSql()`
     SELECT entry.id::text, entry.kind, entry.slug, entry.category, entry.status,
       entry.published_at, entry.created_at, entry.updated_at,

@@ -32,6 +32,19 @@ export function getAdminApiErrorMessage(locale: Locale, value: unknown) {
 }
 
 /**
+ * Editorial Contentの公開条件エラーをContent向け文言へ変換します。
+ * @param {Locale} locale - 現在の画面表示言語。
+ * @param {unknown} value - APIから受け取った未検証JSON。
+ * @returns {string} Content向けエラー文言、または共通管理APIエラー文言。
+ */
+export function getAdminContentApiErrorMessage(locale: Locale, value: unknown) {
+  if (getErrorCode(value) === "publication_requirements_not_met") {
+    return getTranslation(locale).admin.content.publicationError;
+  }
+  return getAdminApiErrorMessage(locale, value);
+}
+
+/**
  * タグAPIのフィールド別Validationを優先し、現在のlocaleの文言へ変換します。
  * @param {Locale} locale - 現在の画面表示言語。
  * @param {unknown} value - APIから受け取った未検証JSON。

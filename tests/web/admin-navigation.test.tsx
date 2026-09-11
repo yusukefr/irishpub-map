@@ -23,6 +23,7 @@ describe("AdminNavigation", () => {
     render(<AdminNavigation locale="ja" />);
 
     expect(screen.getByRole("link", { name: "パブ" })).toHaveAttribute("href", "/admin/pubs");
+    expect(screen.getByRole("link", { name: "Content" })).toHaveAttribute("href", "/admin/content");
     expect(screen.getByRole("link", { name: "タグ" })).toHaveAttribute("href", "/admin/tags");
     expect(screen.getByRole("link", { name: "ステータス" })).toHaveAttribute("href", "/admin/statuses");
     expect(screen.getByRole("link", { name: "パブ" })).toHaveAttribute("aria-current", "page");
