@@ -114,14 +114,23 @@ describe("admin content repository", () => {
 
   it("checks both locales inside the publication transaction", async () => {
     databaseMock.responses = [
-      [{ kind: "guide", slug: "pub-etiquette", status: "draft" }],
-      [{ id, kind: "guide", slug: "pub-etiquette", status: "published" }],
+      [{ kind: "guide", slug: "pub-etiquette", status: "draft", published_at: null }],
+      [
+        {
+          id,
+          kind: "guide",
+          slug: "pub-etiquette",
+          status: "published",
+          published_at: "2026-09-11T02:30:00.000Z",
+        },
+      ],
     ];
 
     await expect(setAdminContentPublication(id, "published")).resolves.toEqual({
       id,
       status: "published",
       unchanged: false,
+      publishedAt: "2026-09-11T02:30:00.000Z",
       identity: { kind: "guide", slug: "pub-etiquette" },
     });
     expect(databaseMock.queries[0].text).toContain("FOR UPDATE");

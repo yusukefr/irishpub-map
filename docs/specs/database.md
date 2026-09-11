@@ -155,7 +155,7 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 
 マイグレーション008は適用前に既存店舗が公開条件を満たすか検査し、成功した場合だけ既存店舗を公開状態へ移行します。マイグレーション009は既存値を変更せず下書き対象カラムのNOT NULLを外し、公開中店舗に欠損が生じていないことを検証SQLで確認します。どちらも適用履歴を `schema_migrations` に記録します。
 
-マイグレーション010は既存コンテンツを移行せず、Editorial Contentの2テーブルだけを追加します。適用後は、テーブル・制約・許可Locale・外部キーと適用履歴をverify SQLで確認します。Content RepositoryとMarkdown RendererはIssue #343、Admin APIはIssue #344で実装しました。Admin UIと既存MDXの移行は後続Issueの対象です。
+マイグレーション010は既存コンテンツを移行せず、Editorial Contentの2テーブルだけを追加します。適用後は、テーブル・制約・許可Locale・外部キーと適用履歴をverify SQLで確認します。Content RepositoryとMarkdown RendererはIssue #343、Admin APIはIssue #344、Admin UIはIssue #345で実装しました。既存MDXの移行は後続Issueの対象です。Admin UIはRepository / Service / APIを介して日英ContentをDraft保存・公開し、認証済み画面内のPreviewでは公開Repositoryや公開Cacheを経由しません。
 
 マイグレーション011はContentの言語非依存項目をDraftではNULL可とし、翻訳文言の非空CHECKを外します。Publishedの完全性は管理APIが行ロックを伴うtransaction内で再検証し、verify SQLでも欠損がないことを確認します。
 

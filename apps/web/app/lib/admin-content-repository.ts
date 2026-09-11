@@ -8,6 +8,7 @@ import type {
   ContentStatus,
 } from "@irishpub-map/shared/admin-content";
 import { isContentCategory, isContentKind } from "@irishpub-map/shared/admin-content";
+import { getE2EAdminContent, getE2EAdminContentList } from "./e2e-test-fixtures";
 import { isE2ETestMode, rejectE2ETestMutation } from "./e2e-test-mode";
 
 type DbRow = Record<string, unknown>;
@@ -23,6 +24,7 @@ export type AdminContentPublicationResult = {
   id: string;
   status: ContentStatus;
   unchanged: boolean;
+  publishedAt: string | null;
   identity: ContentIdentity | null;
 };
 
@@ -33,7 +35,8 @@ let sqlClient: ReturnType<typeof neon> | null = null;
  * @returns {Promise<AdminContentListItem[]>} DB未設定時は空配列、それ以外はDraftを含む一覧。
  */
 export async function listAdminContent(): Promise<AdminContentListItem[]> {
-  if (!process.env.DATABASE_URL || isE2ETestMode()) return [];
+  if (isE2ETestMode()) return getE2EAdminContentList();
+  if (!process.env.DATABASE_URL) return [];
   const rows = (await getRequiredSql()`
     SELECT entry.id::text, entry.kind, entry.slug, entry.category, entry.status,
       entry.published_at, entry.created_at, entry.updated_at,
@@ -52,6 +55,7 @@ export async function listAdminContent(): Promise<AdminContentListItem[]> {
  * @returns {Promise<AdminContent | null>} 対象が存在しない場合はnull。
  */
 export async function getAdminContent(id: string): Promise<AdminContent | null> {
+  if (isE2ETestMode()) return getE2EAdminContent(id);
   const rows = (await getRequiredSql()`
     SELECT entry.id::text, entry.kind, entry.slug, entry.category, entry.status,
       entry.published_at, entry.created_at, entry.updated_at,
@@ -145,7 +149,7 @@ export async function setAdminContentPublication(
   const [lockedRows, updatedRows] = (await sql.transaction(
     (transaction) => [
       transaction`
-        SELECT kind, slug, status FROM content_entries
+        SELECT kind, slug, status, published_at FROM content_entries
         WHERE id = ${id}::uuid FOR UPDATE
       `,
       transaction`
@@ -174,7 +178,7 @@ export async function setAdminContentPublication(
               )
             )
           )
-        RETURNING entry.id, entry.kind, entry.slug, entry.status
+        RETURNING entry.id, entry.kind, entry.slug, entry.status, entry.published_at
       `,
     ],
     { isolationLevel: "ReadCommitted" },
@@ -182,11 +186,20 @@ export async function setAdminContentPublication(
 
   if (lockedRows.length === 0) return null;
   const currentStatus = requiredStatus(lockedRows[0].status);
+  const currentPublishedAt = nullableDate(lockedRows[0].published_at);
   if (currentStatus === status) {
-    return { id, status, unchanged: true, identity: rowIdentity(lockedRows[0]) };
+    return { id, status, unchanged: true, publishedAt: currentPublishedAt, identity: rowIdentity(lockedRows[0]) };
   }
-  if (updatedRows.length === 0) return { id, status: currentStatus, unchanged: true, identity: null };
-  return { id, status, unchanged: false, identity: rowIdentity(updatedRows[0]) };
+  if (updatedRows.length === 0) {
+    return { id, status: currentStatus, unchanged: true, publishedAt: currentPublishedAt, identity: null };
+  }
+  return {
+    id,
+    status,
+    unchanged: false,
+    publishedAt: nullableDate(updatedRows[0].published_at),
+    identity: rowIdentity(updatedRows[0]),
+  };
 }
 
 /**

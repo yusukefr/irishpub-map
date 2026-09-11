@@ -97,11 +97,11 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 | `POST` | `/api/admin/content` | `201` とDraftの `{ content }` | 未認証は `401`、Origin不正は `403`、入力不正は `422`、重複は `409`、DB未設定は `503` |
 | `GET` | `/api/admin/content/:id` | `200` と日英翻訳を含む `{ content }` | 未認証は `401`、ID不正は `400`、対象なしは `404`、DB未設定は `503` |
 | `PUT` | `/api/admin/content/:id` | `200` と公開状態を維持した `{ content }` | 未認証は `401`、Origin不正は `403`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404` |
-| `PATCH` | `/api/admin/content/:id/publication` | `200` と `{ publication: { id, status, unchanged } }` | 未認証は `401`、Origin不正は `403`、入力不正・公開条件不足は `422`、対象なしは `404` |
+| `PATCH` | `/api/admin/content/:id/publication` | `200` と `{ publication: { id, status, unchanged, publishedAt } }` | 未認証は `401`、Origin不正は `403`、入力不正・公開条件不足は `422`、対象なしは `404` |
 
 Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`translations: { ja, en }` を含む全体スナップショットを受け付けます。各翻訳は `title`、`summary`、`bodyMarkdown` を持ちます。Draftでは言語非依存項目を `null`、翻訳文言を空文字で保存できます。kindは `story` / `guide`、categoryは既知分類、localeは `ja` / `en`、slugは小文字英数字と単語間のハイフンだけを許可します。bodyMarkdownは先頭・末尾の空白を含む原文を保持します。MarkdownはRendererと同じCommonMark・GFM ParserでAST化し、link・image・definitionのURLにはHTTP(S)、ルート相対、ページ内アンカーだけを許可します。
 
-公開状態変更本文は `{ "status": "draft" | "published" }` だけを受け付けます。公開時はkind、slug、category、日英すべてのtitle、summary、bodyMarkdownをサーバー側とtransaction内で検証します。Publishedの通常更新にも更新後の公開条件を適用します。本体と日英翻訳は単一transactionで作成・更新し、公開状態を変える操作とPublished更新の成功後に公開Contentの個別・一覧キャッシュタグを失効させます。
+公開状態変更本文は `{ "status": "draft" | "published" }` だけを受け付けます。レスポンスの `publishedAt` はDBで確定した公開日時を返し、Draftでは `null` です。公開時はkind、slug、category、日英すべてのtitle、summary、bodyMarkdownをサーバー側とtransaction内で検証します。Publishedの通常更新にも更新後の公開条件を適用します。本体と日英翻訳は単一transactionで作成・更新し、公開状態を変える操作とPublished更新の成功後に公開Contentの個別・一覧キャッシュタグを失効させます。
 
 `POST` と `PUT` は、`prefectureCode`、`municipalityCode`、座標、URL、`status`、`translations: { ja, en }`、`tagIds` を含む管理用全体スナップショットを受け付けます。日本語店舗名だけが下書きの必須項目で、その他の未入力値はNULL、英語翻訳なしは `translations.en = null`、タグ全解除は `tagIds = []` とします。`id`、`isPublished`、`updatedAt` は入力に含めません。新規IDはサーバーで生成し、常に非公開で作成します。
 

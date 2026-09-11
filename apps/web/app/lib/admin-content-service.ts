@@ -112,7 +112,7 @@ export async function updateAdminContent(id: string, value: unknown): Promise<Ad
  * Editorial Contentを公開またはDraftへ変更します。
  * @param {string} id - Content UUID。
  * @param {ContentStatus} status - 変更後状態。
- * @returns {Promise<{ id: string; status: ContentStatus; unchanged: boolean }>} 公開状態変更結果。
+ * @returns {Promise<{ id: string; status: ContentStatus; unchanged: boolean; publishedAt: string | null }>} 公開状態変更結果。
  */
 export async function changeAdminContentPublication(id: string, status: ContentStatus) {
   const current = await readAdminContent(id);
@@ -130,7 +130,12 @@ export async function changeAdminContentPublication(id: string, status: ContentS
     throw new AdminContentServiceError("publication_requirements_not_met", {}, getPublicationMissingFields(latest));
   }
   if (!result.unchanged && result.identity) invalidateContentCache(result.identity.kind, result.identity.slug);
-  return { id: result.id, status: result.status, unchanged: result.unchanged };
+  return {
+    id: result.id,
+    status: result.status,
+    unchanged: result.unchanged,
+    publishedAt: result.publishedAt,
+  };
 }
 
 /**

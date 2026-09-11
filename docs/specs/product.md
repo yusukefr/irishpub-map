@@ -32,11 +32,14 @@
 ### 管理画面
 
 - `/admin/login` で管理者がログインする
-- `/admin` から `/admin/pubs` へ移動し、共通ナビゲーションでパブ・タグ・ステータスを切り替える
+- `/admin` から `/admin/pubs` へ移動し、共通ナビゲーションでパブ・Content・タグ・ステータスを切り替える
 - 現在の管理機能をナビゲーション上のアクティブ表示で確認する
 - `/admin/pubs` で公開・非公開を含む店舗一覧を確認し、店舗名、都道府県、市区町村、営業ステータス、タグ、公開状態を組み合わせて絞り込む。条件はURLに保持し、一覧は50件ずつ表示する
 - 一覧で公開状態を確認・変更する。非公開化前は一般サイトから見えなくなることを確認し、公開時はサーバー側の公開条件を満たさない項目を一覧表示する
 - Neon が設定されている場合は一覧の「新規登録」または各店舗の「編集」から `/admin/pubs/new`・`/admin/pubs/:id/edit` を開き、基本情報・所在地・日英翻訳・外部リンク・登録済みタグをセクションごとに追加・編集・下書き保存・削除する
+- `/admin/content` でEditorial ContentのDraft / Published一覧を確認し、`/admin/content/new` と `/admin/content/:id` でkind、slug、category、日英のtitle・summary・Markdown本文を編集する
+- ContentのPreviewは認証済み管理画面内で未保存入力を安全なMarkdownとして描画し、Public Routeや公開Content Cacheを経由しない。公開時は日英すべての必須項目を検証し、未保存変更がある間は公開状態を変更しない
+- ContentのDraft保存とPublishは別操作とする。Publishedを編集して保存した場合は既存の公開内容へ即時反映されるため、画面にその動作を明示し、公開前の編集を続ける場合は先にDraftへ戻す
 - 管理APIでは公開・非公開の両方を取得し、新規店舗は非公開で作成する
 - 管理者認証または `DATABASE_URL` が未設定の場合、書き込みを拒否して閲覧・設定案内に限定する
 - 管理マスタAPIから都道府県、市区町村、タグ、営業ステータスを参照し、市区町村とタグは画面内検索、都道府県変更時は市区町村をリセットする。公開Validationの不足項目、フィールド別入力エラー、保存・削除中の状態をフォームへ表示する
@@ -77,7 +80,7 @@ Issue #273で公開状態のDB保持、公開APIの絞り込み、管理取得�
 
 公開画面はRoot Layoutを共通のApplication責務として維持し、Mapは`app/(map)/layout.tsx`のViewport Shell、Story / Guide / Quizは`app/(content)/layout.tsx`の通常Document Flowへ配置するNested Layout構成を採用します。Route GroupはURLへ含まれず、既存の`/`、`/privacy`、`/admin`、`/api`のURLと責務は維持します。MapとContentの両Headerから`/discover`へ移動でき、ブランドLinkからMapへ戻れます。
 
-Content記事はRepository内のTrusted MDXを対象とし、`apps/web/app/lib/content/`の明示的RegistryとRepository APIからのみ取得します。記事は`story` / `guide`のkind、独立したcategory、Locale非依存のStable Tag ID、日英両方のLoaderを持つ共通Metadataモデルで扱います。未登録slugはRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。
+既存の公開Content記事は、Issue #346でNeonへ移行するまでRepository内のTrusted MDXを対象とし、`apps/web/app/lib/content/`の明示的RegistryとRepository APIからのみ取得します。記事は`story` / `guide`のkind、独立したcategory、Locale非依存のStable Tag ID、日英両方のLoaderを持つ共通Metadataモデルで扱います。未登録slugはRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。Editorial Contentの管理データはNeonの`content_entries`・`content_translations`へ保存し、管理画面でのみDraftを取得します。
 
 Explore Ireland Hubは`/discover`でStories placeholder、Registry由来のGuide一覧、Today's Ireland Quiz導線、Irish Calendar導線を表示します。Guideは`/discover/guides/[slug]`でLocale別MDXを読み込み、未登録slugは404とします。
 
@@ -85,4 +88,4 @@ Today's Ireland Quizは`/discover/quiz`で、Asia/Tokyo基準の日付から決�
 
 Irish Calendarは`/discover/calendar`で、Asia/Tokyo基準の当日と選択月に該当するアイルランド共和国の祝日・文化イベントを日英表示します。月別一覧は`?year=<年>&month=<月>`で当月の前後12か月を移動でき、範囲端ではそれ以上の移動を無効にします。不正または範囲外の年月は当月へ戻し、「今日のアイルランド」は選択月にかかわらず実際の当日を表示します。イベント内容は`apps/web/data/ireland/calendar.json`を唯一のデータソースとし、Calendar domain layerが起動時検証、暦日計算、当日・月別検索を担当します。開催日が年ごとに公式発表されるイベントは通常月の月別一覧に未確定と明示し、具体日を推測しません。Content Registry、API、DBには接続しません。
 
-MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Guideも同じContent Registry / Trusted MDXの仕組みで追加し、`split-the-g`を最初の本番Guideとして提供します。本番Story、関連記事、CMS、Content管理画面は後続Issueで追加します。
+MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Guideも既存移行が完了するまでは同じContent Registry / Trusted MDXの仕組みで提供します。管理画面のMarkdown PreviewはRaw HTML・MDX・JavaScriptを実行せず、許可済み要素とURLだけを描画します。本番Story、関連記事、既存GuideのNeon移行は後続Issueで追加します。
