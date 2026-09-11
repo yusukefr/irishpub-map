@@ -14,6 +14,7 @@
     "./admin-api-error": "./src/admin-api-error.ts",
     "./admin-status": "./src/admin-status.ts",
     "./admin-tag": "./src/admin-tag.ts",
-    "./admin-pub": "./src/admin-pub.ts"
+    "./admin-pub": "./src/admin-pub.ts",
+    "./admin-content": "./src/admin-content.ts"
   }
 }

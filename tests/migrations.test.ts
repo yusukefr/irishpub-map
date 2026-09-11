@@ -166,4 +166,20 @@ describe("pubs database migrations", () => {
     expect(verifySql).toContain("orphan_content_translations");
     expect(verifySql).toContain("editorial_content_migration_recorded");
   });
+  it("allows incomplete editorial drafts and keeps a published-data verification", async () => {
+    const upSql = await readMigration("011_allow_editorial_content_drafts_up.sql");
+    const verifySql = await readMigration("011_allow_editorial_content_drafts_verify.sql");
+
+    expect(upSql).toContain("ALTER COLUMN kind DROP NOT NULL");
+    expect(upSql).toContain("ALTER COLUMN slug DROP NOT NULL");
+    expect(upSql).toContain("ALTER COLUMN category DROP NOT NULL");
+    expect(upSql).toContain("DROP CONSTRAINT content_translations_title_check");
+    expect(upSql).toContain("DROP CONSTRAINT content_translations_summary_check");
+    expect(upSql).toContain("DROP CONSTRAINT content_translations_body_markdown_check");
+    expect(upSql).toContain("VALUES ('011_allow_editorial_content_drafts')");
+    expect(verifySql).toContain("draft_nullable_entry_columns");
+    expect(verifySql).toContain("remaining_nonempty_translation_checks");
+    expect(verifySql).toContain("incomplete_published_content");
+    expect(verifySql).toContain("editorial_draft_migration_recorded");
+  });
 });
