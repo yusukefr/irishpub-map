@@ -24,6 +24,7 @@ export type AdminContentPublicationResult = {
   id: string;
   status: ContentStatus;
   unchanged: boolean;
+  publishedAt: string | null;
   identity: ContentIdentity | null;
 };
 
@@ -148,7 +149,7 @@ export async function setAdminContentPublication(
   const [lockedRows, updatedRows] = (await sql.transaction(
     (transaction) => [
       transaction`
-        SELECT kind, slug, status FROM content_entries
+        SELECT kind, slug, status, published_at FROM content_entries
         WHERE id = ${id}::uuid FOR UPDATE
       `,
       transaction`
@@ -177,7 +178,7 @@ export async function setAdminContentPublication(
               )
             )
           )
-        RETURNING entry.id, entry.kind, entry.slug, entry.status
+        RETURNING entry.id, entry.kind, entry.slug, entry.status, entry.published_at
       `,
     ],
     { isolationLevel: "ReadCommitted" },
@@ -185,11 +186,20 @@ export async function setAdminContentPublication(
 
   if (lockedRows.length === 0) return null;
   const currentStatus = requiredStatus(lockedRows[0].status);
+  const currentPublishedAt = nullableDate(lockedRows[0].published_at);
   if (currentStatus === status) {
-    return { id, status, unchanged: true, identity: rowIdentity(lockedRows[0]) };
+    return { id, status, unchanged: true, publishedAt: currentPublishedAt, identity: rowIdentity(lockedRows[0]) };
   }
-  if (updatedRows.length === 0) return { id, status: currentStatus, unchanged: true, identity: null };
-  return { id, status, unchanged: false, identity: rowIdentity(updatedRows[0]) };
+  if (updatedRows.length === 0) {
+    return { id, status: currentStatus, unchanged: true, publishedAt: currentPublishedAt, identity: null };
+  }
+  return {
+    id,
+    status,
+    unchanged: false,
+    publishedAt: nullableDate(updatedRows[0].published_at),
+    identity: rowIdentity(updatedRows[0]),
+  };
 }
 
 /**

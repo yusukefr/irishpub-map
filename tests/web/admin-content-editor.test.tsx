@@ -72,10 +72,42 @@ describe("AdminContentEditor", () => {
     expect(payload.kind).toBeNull();
   });
 
-  it("保存済みDraftを公開し、公開済みの保存が即時反映されることを表示する", async () => {
+  it("保存処理中は日英の入力を無効化し、応答内容で編集中の値が消えることを防ぐ", async () => {
+    let resolveSave: (response: Response) => void = () => undefined;
+    fetchMock.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+    render(<AdminContentEditor initialContent={content} databaseConfigured locale="ja" />);
+
+    fireEvent.submit(screen.getByRole("button", { name: "下書きを保存" }).closest("form")!);
+
+    const japanese = screen.getByRole("group", { name: "日本語" });
+    const english = screen.getByRole("group", { name: "English" });
+    await waitFor(() => {
+      expect(japanese).toBeDisabled();
+      expect(english).toBeDisabled();
+    });
+
+    resolveSave(new Response(JSON.stringify({ content })));
+    expect(await screen.findByRole("status")).toHaveTextContent("下書きを保存しました。");
+  });
+
+  it("保存済みDraftを公開し、DBで確定した公開日時を表示する", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
+    const databasePublishedAt = "2026-09-11T02:30:00.000Z";
     fetchMock.mockResolvedValueOnce(
-      new Response(JSON.stringify({ publication: { id: content.id, status: "published", unchanged: false } })),
+      new Response(
+        JSON.stringify({
+          publication: {
+            id: content.id,
+            status: "published",
+            unchanged: false,
+            publishedAt: databasePublishedAt,
+          },
+        }),
+      ),
     );
     const { unmount } = render(<AdminContentEditor initialContent={content} databaseConfigured locale="ja" />);
 
@@ -85,6 +117,11 @@ describe("AdminContentEditor", () => {
       `/api/admin/content/${content.id}/publication`,
       expect.objectContaining({ method: "PATCH", body: JSON.stringify({ status: "published" }) }),
     );
+    const formattedPublishedAt = new Intl.DateTimeFormat("ja", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(databasePublishedAt));
+    expect(screen.getByText(`公開日時: ${formattedPublishedAt}`)).toBeInTheDocument();
 
     unmount();
     render(
@@ -96,6 +133,39 @@ describe("AdminContentEditor", () => {
     );
     expect(screen.getByText(/保存した変更は公開内容へ即時反映されます/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "公開内容を保存" })).toBeInTheDocument();
+  });
+
+  it("公開済みContentに未保存変更があっても、入力を保ったままDraftへ戻せる", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          publication: { id: content.id, status: "draft", unchanged: false, publishedAt: null },
+        }),
+      ),
+    );
+    render(
+      <AdminContentEditor
+        initialContent={{ ...content, status: "published", publishedAt: content.updatedAt }}
+        databaseConfigured
+        locale="ja"
+      />,
+    );
+    const japanese = screen.getByRole("group", { name: "日本語" });
+    const title = within(japanese).getByLabelText("タイトル");
+    fireEvent.change(title, { target: { value: "編集中のタイトル" } });
+
+    const returnToDraft = screen.getByRole("button", { name: "下書きに戻す" });
+    expect(returnToDraft).toBeEnabled();
+    fireEvent.click(returnToDraft);
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Contentを下書きに戻しました。");
+    expect(title).toHaveValue("編集中のタイトル");
+    expect(screen.getByText("下書き", { selector: ".admin-publication-badge" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/admin/content/${content.id}/publication`,
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ status: "draft" }) }),
+    );
   });
 
   it("未保存変更がある間は公開を止め、保存後にAPI Validationをフィールドへ表示する", async () => {

@@ -112,6 +112,7 @@ describe("admin content service", () => {
       id,
       status: "published",
       unchanged: false,
+      publishedAt: "2026-09-11T02:30:00.000Z",
       identity: { kind: "guide", slug: "pub-etiquette" },
     });
 
@@ -119,6 +120,7 @@ describe("admin content service", () => {
       id,
       status: "published",
       unchanged: false,
+      publishedAt: "2026-09-11T02:30:00.000Z",
     });
     expect(cacheMocks.invalidateContentCache).toHaveBeenCalledWith("guide", "pub-etiquette");
   });

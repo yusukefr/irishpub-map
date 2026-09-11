@@ -29,7 +29,7 @@ type Props = {
 
 type ApiResponse = {
   content?: AdminContent;
-  publication?: { id: string; status: ContentStatus; unchanged: boolean };
+  publication?: { id: string; status: ContentStatus; unchanged: boolean; publishedAt: string | null };
   errorCode?: unknown;
   fieldErrors?: unknown;
   missingFields?: unknown;
@@ -165,7 +165,7 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
   }
 
   async function changePublication(nextStatus: ContentStatus) {
-    if (!contentId || busy || !databaseConfigured || isDirty) return;
+    if (!contentId || busy || !databaseConfigured || (nextStatus === "published" && isDirty)) return;
     const title = values.translations.ja.title || values.slug || c.untitled;
     const confirmation =
       nextStatus === "published"
@@ -187,7 +187,7 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
         return;
       }
       setStatus(body.publication.status);
-      setPublishedAt(body.publication.status === "published" ? new Date().toISOString() : null);
+      setPublishedAt(body.publication.publishedAt);
       setMessage(body.publication.status === "published" ? c.publishedSuccess : c.returnedToDraft);
       router.refresh();
     } catch {
@@ -292,7 +292,7 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
         {(["ja", "en"] as const).map((language) => {
           const translation = values.translations[language];
           return (
-            <fieldset key={language}>
+            <fieldset key={language} disabled={busy || !databaseConfigured}>
               <legend>{language === "ja" ? c.japaneseContent : c.englishContent}</legend>
               <label>
                 {c.title}
@@ -417,7 +417,7 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
           <button
             type="button"
             className="admin-secondary-action"
-            disabled={busy || isDirty || !databaseConfigured}
+            disabled={busy || !databaseConfigured}
             onClick={() => void changePublication("draft")}
           >
             {publishing ? c.changingStatus : c.returnToDraft}

@@ -127,14 +127,24 @@ describe("admin content API", () => {
     );
     expect(invalid.status).toBe(422);
 
-    serviceMocks.changeAdminContentPublication.mockResolvedValue({ id, status: "published", unchanged: false });
+    serviceMocks.changeAdminContentPublication.mockResolvedValue({
+      id,
+      status: "published",
+      unchanged: false,
+      publishedAt: "2026-09-11T02:30:00.000Z",
+    });
     const response = await PATCH(
       adminRequest("/api/admin/content/" + id + "/publication", "PATCH", JSON.stringify({ status: "published" })),
       context(id),
     );
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      publication: { id, status: "published", unchanged: false },
+      publication: {
+        id,
+        status: "published",
+        unchanged: false,
+        publishedAt: "2026-09-11T02:30:00.000Z",
+      },
     });
   });
 

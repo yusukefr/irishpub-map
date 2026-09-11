@@ -60,7 +60,12 @@ test("Content一覧から日英Preview、Draft保存、Publishを操作する", 
     await route.fulfill({
       contentType: "application/json",
       json: {
-        publication: { id: E2E_TEST_DATA.content.draft.id, status: "published", unchanged: false },
+        publication: {
+          id: E2E_TEST_DATA.content.draft.id,
+          status: "published",
+          unchanged: false,
+          publishedAt: "2026-09-11T02:30:00.000Z",
+        },
       },
     });
   });
