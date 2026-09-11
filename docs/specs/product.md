@@ -88,4 +88,4 @@ Today's Ireland Quizは`/discover/quiz`で、Asia/Tokyo基準の日付から決�
 
 Irish Calendarは`/discover/calendar`で、Asia/Tokyo基準の当日と選択月に該当するアイルランド共和国の祝日・文化イベントを日英表示します。月別一覧は`?year=<年>&month=<月>`で当月の前後12か月を移動でき、範囲端ではそれ以上の移動を無効にします。不正または範囲外の年月は当月へ戻し、「今日のアイルランド」は選択月にかかわらず実際の当日を表示します。イベント内容は`apps/web/data/ireland/calendar.json`を唯一のデータソースとし、Calendar domain layerが起動時検証、暦日計算、当日・月別検索を担当します。開催日が年ごとに公式発表されるイベントは通常月の月別一覧に未確定と明示し、具体日を推測しません。Content Registry、API、DBには接続しません。
 
-MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Guideも既存移行が完了するまでは同じContent Registry / Trusted MDXの仕組みで提供します。管理画面のMarkdown PreviewはRaw HTML・MDX・JavaScriptを実行せず、許可済み要素とURLだけを描画します。本番Story、関連記事、既存GuideのNeon移行は後続Issueで追加します。
+MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Guideも既存移行が完了するまでは同じContent Registry / Trusted MDXの仕組みで提供します。管理画面のMarkdown PreviewはRaw HTML・MDX・JavaScriptを実行せず、許可済み要素とURLだけを描画します。本番Story、関連記事、既存GuideのNeon移行は後続Issueで追加します。既存MDX Guideの対象、依存表、移行難易度、DB対応は[既存MDX Guide移行棚卸し](editorial-guide-migration-inventory.md)を参照してください。
