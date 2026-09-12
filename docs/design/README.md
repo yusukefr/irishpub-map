@@ -2,45 +2,41 @@
 
 このディレクトリは、公開画面における **Modern Irish Explorer** の Source of Truth です。日本のアイリッシュパブを探す体験を小さな旅として楽しめるように、Mapの実用性、旅のガイドの温かさ、Irishらしさを一貫した判断へ落とし込みます。
 
-## 最初に読む順序
+## Design Documentation Router
 
-Public UIを変更するときは、次の順で確認します。
+すべてのDesign文書を事前に読む必要はありません。Public UIを変更するときは、Issueや現行実装を確認したうえで、変更対象に対応する文書をこの表から選びます。
 
 1. Issueや仕様書にある現在のProduct Requirement
-2. このREADMEと、変更に関係するDesign Documentation
-3. [Design Tokens](tokens.md)と[Public UI Components](components.md)
-4. 関係する[Screen Pattern](#documentation-map)
-5. [Reference Screens](reference/README.md)
-6. 現行実装とStorybook
-7. Framework / Libraryの公式Documentation
-8. `frontend-design`、`web-design-guidelines`などの外部Skill
+2. このREADMEと変更対象のDesign Documentation
+3. 現行実装、Storybook、Playwright / visual regression
+4. Framework / Libraryの公式Documentation
 
 Requirementと古いReference Screenが異なる場合はRequirementを優先し、Reference Screenを更新します。技術仕様は使用中バージョンの公式Documentationを優先します。現行の画面BehaviorをDesign変更だけで暗黙に変えません。
 
 ## Documentation map
 
-| 目的                                    | 読む文書                                               |
-| --------------------------------------- | ------------------------------------------------------ |
-| ブランドと判断原則                      | [Design Principles](principles.md)                     |
-| 色、余白、形、影、Motion、写真、Map表現 | [Visual Language](visual-language.md)                  |
-| 実装値と追加基準                        | [Design Tokens](tokens.md)                             |
-| 日本語・英語のFont roleとscale          | [Typography](typography.md)                            |
-| Button、Card、Bottom Sheetなど          | [Public UI Components](components.md)                  |
-| Semantic HTML、Keyboard、Map固有要件    | [Accessibility](accessibility.md)                      |
-| Desktop / MobileのMap探索               | [Map Explorer](patterns/map-explorer.md)               |
-| 検索と絞り込み                          | [Search / Filter](patterns/search-filter.md)           |
-| 店舗詳細と一覧への復帰                  | [Pub Detail](patterns/pub-detail.md)                   |
-| Discover / Guideなど                    | [Content Page](patterns/content-page.md)               |
-| Map / Discover間の移動                  | [Navigation](patterns/navigation.md)                   |
-| 実装済み画面の視覚基準                  | [Reference Screens](reference/README.md)               |
-| Storybook、Visual Regression、axeの基盤 | [Design System開発基盤](foundation.md)                 |
-| Phase 3 / Phase 5の実装記録             | [Desktop Map](desktop-map.md)、[Discover](discover.md) |
+| 目的                                    | 読む文書                                     |
+| --------------------------------------- | -------------------------------------------- |
+| ブランドと判断原則                      | [Design Principles](principles.md)           |
+| 色、余白、形、影、Motion、写真、Map表現 | [Visual Language](visual-language.md)        |
+| 実装値と追加基準                        | [Design Tokens](tokens.md)                   |
+| 日本語・英語のFont roleとscale          | [Typography](typography.md)                  |
+| Button、Card、Bottom Sheetなど          | [Public UI Components](components.md)        |
+| Semantic HTML、Keyboard、Map固有要件    | [Accessibility](accessibility.md)            |
+| Desktop / MobileのMap探索               | [Map Explorer](patterns/map-explorer.md)     |
+| 検索と絞り込み                          | [Search / Filter](patterns/search-filter.md) |
+| 店舗詳細と一覧への復帰                  | [Pub Detail](patterns/pub-detail.md)         |
+| Discover / Guideなど                    | [Content Page](patterns/content-page.md)     |
+| Discover Hub                            | [Discover](patterns/discover.md)             |
+| Map / Discover間の移動                  | [Navigation](patterns/navigation.md)         |
+| 実装済み画面の視覚基準                  | [E2E Reference Screens](reference/README.md) |
+| Storybook、Visual Regression、axeの基盤 | [Design System開発基盤](foundation.md)       |
 
 ## AI Agent workflow
 
 ### Before implementation
 
-1. このREADMEと関係するPattern、Component仕様を読む。
+1. このREADMEと変更対象のPattern、Component仕様を読む。
 2. 既存Token、既存Component、Storyを検索する。
 3. 関係するReference Screenを確認する。
 4. Issue Requirement、現行Behavior、日英両方の表示条件を照合する。

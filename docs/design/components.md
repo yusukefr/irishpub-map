@@ -1,4 +1,4 @@
-# Public UI Components（Phase 2）
+# Public UI Components
 
 新しい公開画面は **既存Component → 既存Variant → 拡張 → 新規Component** の順で検討します。`apps/web/app/components/ui`の部品を直接importし、[Design Tokens](tokens.md)と組み合わせて使います。画面専用の色違いButtonやCardは追加しません。
 
@@ -42,11 +42,11 @@ Input / Search / BottomSheetはstate・ID・focusを扱うClient Componentです
 - キーボードはArrowUp / ArrowDown、Home / End。Enter / Spaceはnative buttonのクリックとして利用します。
 - 内容は内部スクロール。touch-action:noneはハンドルだけで、内容の通常スクロールを妨げません。内容内にfocusがあるままcollapsedへ変わった場合はハンドルへ戻します。
 - 非モーダルなので背景をinertにせず、focus trapや自動的なfocus取得もしません。表示／非表示・画面上の配置・閉じた後のトリガーへのfocus復帰は親が管理します。
-- reduced-motionでは高さのtransitionを停止。地図への配置とMap gesture調整はPhase 4で行い、本Issueでは実画面へBottom Sheetを追加しません。
+- reduced-motionでは高さのtransitionを停止。地図への配置とMap gesture調整はMap Explorerの親が管理します。
 
 ## 既存画面との接続
 
-PubListのカード表示をPubCardへ、一覧と詳細の状態表示をStatusBadgeへ、Map検索をSearchへ、タグ操作をFilterChipへ、現在地操作をButtonへ統合しました。AppHeaderのリンクと言語トリガー、Discover内の4つのカードも共通部品を使います。検索・DB・認証・言語保存の仕様は変更しません。Desktopの配置・Panel・Markerは[Desktop Map Pattern](desktop-map.md)を参照してください。Mobileの全面移行は後続Phaseです。
+PubListのカード表示はPubCard、一覧と詳細の状態表示はStatusBadge、Map検索はSearch、タグ操作はFilterChip、現在地操作はButtonを使います。AppHeaderのリンクと言語トリガー、Discover内のカードも共通部品を使います。検索・DB・認証・言語保存の仕様は変更しません。Mapの配置・Panel・Markerは[Map Explorer Pattern](patterns/map-explorer.md)を参照してください。
 
 PubCardの`density="compact"`はDesktop Resultsなど幅の限られた一覧向けです。店舗名・地域・状態の順を維持し、タグと詳細を同じ行に配置します。既定値`comfortable`は既存画面用です。`DesktopPubCards` / `DesktopPubCardsEnglish` Storyで長文と各状態を確認できます。
 
@@ -62,9 +62,9 @@ Mobile Storyは追加addonなしで390px幅に制限した部品例です。実�
 
 ブラウザ検証はCIと同じPlaywright固定コンテナを使用します。画像は`test-results`、失敗時のtraceとHTML reportは既存CI artifactに保存します。Storybookはシステムフォントfallbackで、本番フォントはNext.jsのE2Eで確認します。自動axeは手動の見た目・操作確認を置き換えるものではありません。
 
-Discover のページ構成、長文幅、関連導線、写真利用条件は[Discover Editorial Pattern](discover.md)を参照してください。
+Discover のページ構成、長文幅、関連導線、写真利用条件は[Discover Pattern](patterns/discover.md)を参照してください。
 
-## Mobile Map（Phase 4）
+## Mobile Map
 
 980px以下では共通BottomSheetを結果一覧・詳細の表示領域に使用します。初期はcollapsedで地図を優先し、件数ボタン・ハンドルからmediumへ、詳細操作からexpandedへ移ります。マーカー選択はcollapsedのときだけmediumへ開き、既に開いたSheetの高さとMap位置を保ちます。詳細の「戻る」は直前の一覧の高さを復元し、「閉じる」はcollapsedへ戻して検索・条件・選択店舗を維持します。
 

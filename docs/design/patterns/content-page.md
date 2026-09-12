@@ -1,6 +1,6 @@
 # Content Page Pattern
 
-Content PageはDiscover、Guide、Calendar、Quizなど、Irish PubとIrelandの文化・旅・物語を扱う編集領域です。Phase 5の具体的な画面構成は[Discover Editorial Pattern](../discover.md)を参照してください。
+Content PageはDiscover、Guide、Calendar、Quizなど、Irish PubとIrelandの文化・旅・物語を扱う編集領域です。Discover Hubの情報階層は[Discover Pattern](discover.md)を参照してください。
 
 ## Structure
 

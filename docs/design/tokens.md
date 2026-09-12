@@ -1,4 +1,4 @@
-# Design Tokens（Phase 1）
+# Design Tokens
 
 Public UIは`apps/web/app/globals.css`の意味ベースTokenを優先します。色名や任意値をコンポーネントへ追加せず、必要性を検討してからGlobal Tokenを増やします。
 
@@ -41,9 +41,9 @@ Spacingは4px gridで4 / 8 / 12 / 16 / 20 / 24 / 32 / 40 / 48 / 64px、Radiusは
 
 ## 既存CSSの移行方針
 
-Phase 2の共通操作寸法として`--spacing-control: 44px`を追加します。Button / IconButton / Input / Chip / MapControl / Header操作の最低寸法へ適用し、一般的な余白とは区別します。共通ComponentのAPIと検証手順は[Public UI Components](components.md)を参照してください。
+`--spacing-control: 44px`はButton / IconButton / Input / Chip / MapControl / Header操作の最低寸法へ適用し、一般的な余白とは区別します。共通ComponentのAPIと検証手順は[Public UI Components](components.md)を参照してください。
 
-Phase 1では`--background`、`--surface`、`--ink`、`--muted`、`--line`、`--accent`、`--accent-strong`、`--danger`、`--content-card-radius`を削除せず、新しいSemantic Tokenへの互換マッピングとして維持します。後続Phaseで共通Componentから段階的に移行します。Map／Bottom Sheetの位置計算、Marker形状、Admin固有値は対象外です。
+`--background`、`--surface`、`--ink`、`--muted`、`--line`、`--accent`、`--accent-strong`、`--danger`、`--content-card-radius`は既存実装との互換マッピングとして維持します。Map／Bottom Sheetの位置計算、Marker形状、Admin固有値はGlobal Tokenの対象外です。
 
 互換変数は先頭の`:root`へ一元化し、後半でliteralによる再定義をしません。`--gold` / `--gold-soft` / `--focus`もそれぞれ`brand-accent` / `brand-accent-soft` / `focus-ring`を参照します。`body`のフォントは`var(--font-sans)`だけで定義し、共通`:focus-visible`はwidth / offset / colorのTokenを利用します。管理ナビゲーションの暗い背景用focusなど、個別のアクセシビリティ調整は維持します。
 

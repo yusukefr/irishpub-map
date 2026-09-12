@@ -1,4 +1,4 @@
-# Discover Editorial Pattern
+# Discover Pattern
 
 Discover は Irish Pub Map の文化・旅・物語を扱う編集コンテンツ領域です。Map と同じ意味的 Design Token と Header を使い、Warm Cream のページ、Deep Irish Green の見出し、Brass Gold の限定的な強調で同じブランドとして見せます。
 
