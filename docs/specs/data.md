@@ -87,4 +87,4 @@ DBでは数値の `pubs.status_code` と `pub_statuses.code` で関連付け、�
 
 ## 運用
 
-管理API経由の新規データは管理画面からNeonへ投入します。別系統の運用用インポートとして `scripts/import-pubs.mjs` も利用できます。どちらも `pubs.is_published` のDB既定値により非公開で作成されます。一括投入は既存UUIDを更新せずスキップします。リポジトリには店舗データのスナップショットを保存しません。
+管理API経由の新規店舗はApplication側で `is_published = FALSE` を明示して非公開で作成します。別系統の運用用インポートとして `scripts/import-pubs.mjs` も利用できます。インポート処理では `is_published` を明示せず、`pubs.is_published` のDB既定値により非公開で作成します。一括投入は既存UUIDを更新せずスキップします。リポジトリには店舗データのスナップショットを保存しません。
