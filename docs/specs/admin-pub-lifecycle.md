@@ -1,6 +1,6 @@
 # 管理店舗の下書き・公開設計
 
-この文書は、管理店舗のDraft / Publish業務ルールを定義します。型と入力Validationは `packages/shared/src/admin-pub.ts`、HTTP契約は[API方針](api.md)、DBの物理制約は[テーブル・カラム定義](database-columns.md)を正とします。
+この文書は、管理店舗のDraft / Publish業務ルールを定義します。型と入力Validationは `packages/shared/src/admin-pub.ts`、HTTP契約は[API方針](api.md)、DBの物理制約は[生成済みスキーマ](../generated/database-schema.md)を正とします。
 
 ## 結論
 
@@ -14,7 +14,7 @@
 
 ## DBとの境界
 
-下書きに必要なNULL許容、公開状態、参照整合性はDBでも保持します。物理Schema、制約、Migration履歴はこの文書に重複させず、[テーブル・カラム定義](database-columns.md)と `db/migrations` を参照してください。
+下書きに必要なNULL許容、公開状態、参照整合性はDBでも保持します。物理Schema、制約、Migration履歴はこの文書に重複させず、[生成済みスキーマ](../generated/database-schema.md)と `db/migrations` を参照してください。
 
 ## 下書き保存条件
 
