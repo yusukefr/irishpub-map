@@ -131,3 +131,7 @@ Issue #381で公開取得元をNeonへ切り替える際は、`/discover`の一�
 ## 再棚卸し条件
 
 この結果は上記基準commitのsnapshotです。Issue #380着手までに`.mdx`、`guideLoaders`、`contentRegistry.guide`のいずれかが変更された場合は、対象数、locale対応、依存表、Migration Levelを再確認します。
+
+## Migration実装
+
+Issue #380の変換規則・tags除外・sample投入・再実行方針は[Content Data Migration手順](../operations/editorial-guide-migration.md)を参照してください。
