@@ -74,7 +74,7 @@
 - `answer`は同じ問題内に存在するchoice IDを指定します。
 - `source.url`は根拠を確認できる公式・一次情報のHTTPS URLを指定します。
 - `specialDate`は任意です。指定した月日に一致する問題は通常の日次ローテーションより優先されます。
-- `relatedGuide`は任意です。slugは安全なkebab-case形式を必須とし、回答後は公開Guide Routeへの導線として使用します。公開可否と存在判定のSource of TruthはNeonの公開Content Repositoryであり、Static Registryには複製しません。削除・Draft化されたGuideは遷移先で404になります。
+- `relatedGuide`は任意です。slugは安全なkebab-case形式を必須とし、回答後は公開Guide Routeへの導線として使用します。公開可否と存在判定のSource of TruthはNeonの公開Content Repositoryであり、Static Registryには複製しません。未登録・削除・Draft・Translation不足、またはRepositoryの取得障害により公開Guideを取得できない場合、採点結果は表示して関連Guide導線だけを返しません。
 
 ## 日次選択
 
