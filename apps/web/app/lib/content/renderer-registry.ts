@@ -1,8 +1,6 @@
 import type { ContentKind, ContentRenderer } from "./types";
 import { GuideRenderer, StoryRenderer } from "./renderer";
 /** DBのkindを許可済みRendererへ固定対応させるAllow Listです。 */
-export const contentRegistry = { story: {}, guide: { "split-the-g": {}, sample: {} } } as const;
-
 export const contentRendererRegistry = { guide: GuideRenderer, story: StoryRenderer } satisfies Record<
   ContentKind,
   ContentRenderer

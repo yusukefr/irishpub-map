@@ -86,6 +86,6 @@ Explore Ireland Hubは`/discover`でStories placeholder、Neon由来の公開Gui
 
 Today's Ireland Quizは`/discover/quiz`で、Asia/Tokyo基準の日付から決定した4択問題を日英表示します。同じ日と問題データではLocaleや端末によらず同じ問題を選び、記念日指定がある問題を通常ローテーションより優先します。回答はServer Actionで採点し、回答後に正解・解説・公式情報源と任意の関連Guideを表示します。問題データと追加方法は[Today's Ireland Quiz データ仕様](quiz.md)に従います。回答履歴や長期スコアは保持しません。
 
-Irish Calendarは`/discover/calendar`で、Asia/Tokyo基準の当日と選択月に該当するアイルランド共和国の祝日・文化イベントを日英表示します。月別一覧は`?year=<年>&month=<月>`で当月の前後12か月を移動でき、範囲端ではそれ以上の移動を無効にします。不正または範囲外の年月は当月へ戻し、「今日のアイルランド」は選択月にかかわらず実際の当日を表示します。イベント内容は`apps/web/data/ireland/calendar.json`を唯一のデータソースとし、Calendar domain layerが起動時検証、暦日計算、当日・月別検索を担当します。開催日が年ごとに公式発表されるイベントは通常月の月別一覧に未確定と明示し、具体日を推測しません。Content Registry、API、DBには接続しません。
+Irish Calendarは`/discover/calendar`で、Asia/Tokyo基準の当日と選択月に該当するアイルランド共和国の祝日・文化イベントを日英表示します。月別一覧は`?year=<年>&month=<月>`で当月の前後12か月を移動でき、範囲端ではそれ以上の移動を無効にします。不正または範囲外の年月は当月へ戻し、「今日のアイルランド」は選択月にかかわらず実際の当日を表示します。イベント内容は`apps/web/data/ireland/calendar.json`を唯一のデータソースとし、Calendar domain layerが起動時検証、暦日計算、当日・月別検索を担当します。開催日が年ごとに公式発表されるイベントは通常月の月別一覧に未確定と明示し、具体日を推測しません。公開Content Repository、API、DBには接続しません。
 
-公開本文と管理画面のMarkdown PreviewはRaw HTML・MDX・JavaScriptを実行せず、許可済み要素と安全なURLだけを描画します。旧MDXはIssue #382までRollback Sourceとして保持しますが、公開経路にDB → MDX fallbackは設けません。既存MDX Guideの対象、依存表、移行難易度、DB対応は[既存MDX Guide移行棚卸し](editorial-guide-migration-inventory.md)を参照してください。
+公開本文と管理画面のMarkdown PreviewはRaw HTML・MDX・JavaScriptを実行せず、許可済み要素と安全なURLだけを描画します。公開GuideはNeonだけをSource of Truthとし、Repository内MDX、Static Loader、DB → MDX fallbackは保持しません。RendererはApplication側の固定Allow Listでkindに対応させ、DB値からComponent名やmodule pathを解決しません。RollbackにはGit履歴とNeonのBackup / Branchを利用します。

@@ -82,9 +82,9 @@ describe("quiz data validation", () => {
       /ireland-basics-st-brigid-001.*source\.url.*HTTPS/,
     ],
     [
-      "未登録の関連Guide",
-      (data: any) => (data.questions[2].relatedGuide.slug = "split-the-gg"),
-      /pub-guinness-st-james-gate-001.*relatedGuide\.slug.*registered guide/,
+      "不正な関連Guide slug",
+      (data: any) => (data.questions[2].relatedGuide.slug = "Split the G"),
+      /pub-guinness-st-james-gate-001.*relatedGuide\.slug.*kebab-case/,
     ],
   ])("%sを場所の分かるエラーで拒否する", (_name, mutate, message) => {
     const data = structuredClone(rawQuizData);

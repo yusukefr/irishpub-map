@@ -16,6 +16,7 @@ flowchart TB
 
   subgraph vercel[Vercel / Next.js アプリ]
     publicPage["公開ページ /"]
+    contentPage["公開Content<br/>/discover, /discover/guides/*"]
     publicApi["公開 API<br/>GET /api/pubs"]
     adminPage["管理画面<br/>/admin/{pubs,content,tags,statuses}, /admin/login"]
     adminApi["管理 API<br/>/api/admin/*"]
@@ -28,7 +29,9 @@ flowchart TB
   neon[(Neon Postgres<br/>店舗・Editorial Content・各種マスタテーブル)]
 
   visitor --> publicPage
+  visitor --> contentPage
   publicPage --> publicApi
+  contentPage --> contentRepository
   publicApi --> repository
   visitor --> maplibre
   maplibre --> osm
@@ -55,6 +58,7 @@ flowchart TB
 ## データの扱い
 
 - `DATABASE_URL` が設定された環境では、`pub-repository` がNeonの店舗・マスタテーブルを読み書きします。未設定時は公開APIと画面が空の店舗一覧を返します。
+- 公開Guideは`content-repository`がNeonのPublished Contentだけを取得し、安全なMarkdown Rendererへ渡します。Repository内MDX、Static Loader、MDX fallbackは使用しません。
 - 店舗テーブルが空の場合も自動投入は行わず、管理画面またはNeonインポート手順による明示的な投入を必要とします。市区町村コードは `municipality_codes` と結合して解決します。
 - API とリポジトリ層は、共有パッケージの `asPubs` で読み出した店舗データを検証します。型の詳細は[店舗データ仕様](../specs/data.md)を参照してください。
 - 現在地は利用目的を確認した明示操作後にだけ取得し、生の座標はブラウザ内でだけ保持します。アプリのAPIやDBへ送信・保存しません。ただし、現在地周辺を描画するOpenStreetMapタイル要求から、おおよその閲覧地域を送信先が推測できる可能性があります。

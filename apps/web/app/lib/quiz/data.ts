@@ -1,5 +1,4 @@
 import rawQuizData from "../../../data/ireland/quiz.json";
-import { contentRegistry } from "../content/registry";
 import type {
   QuizCategory,
   QuizCategoryDefinition,
@@ -22,7 +21,6 @@ const CATEGORY_IDS = [
   "myth-folklore",
   "history",
 ] as const satisfies readonly QuizCategory[];
-const GUIDE_SLUGS = new Set(Object.keys(contentRegistry.guide));
 
 function fail(path: string, message: string): never {
   throw new Error(`Invalid quiz data at ${path}: ${message}`);
@@ -72,7 +70,6 @@ function relatedGuide(value: unknown, path: string): QuizRelatedGuide {
   const input = record(value, path);
   const slug = string(input.slug, `${path}.slug`);
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(slug)) fail(`${path}.slug`, "must be a kebab-case slug");
-  if (!GUIDE_SLUGS.has(slug)) fail(`${path}.slug`, `must reference a registered guide, received "${slug}"`);
   return Object.freeze({ slug, label: localizedText(input.label, `${path}.label`) });
 }
 
