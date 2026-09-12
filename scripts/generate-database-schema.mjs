@@ -158,7 +158,11 @@ function formatType(column) {
 }
 
 function formatValue(value) {
-  return value ? `\`${String(value).replaceAll("|", "\\|")}\`` : "—";
+  if (!value) return "—";
+
+  const normalized = String(value).replace(/\s+/g, " ").trim().replaceAll("|", "\\|");
+
+  return "`" + normalized + "`";
 }
 
 async function main() {

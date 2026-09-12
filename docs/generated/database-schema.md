@@ -410,23 +410,16 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 ### Constraints
 
-| Name                                     | Type        | Definition                                                                                                                                                               |
-| ---------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `quiz_questions_category_check`          | CHECK       | `CHECK (category IS NULL OR btrim(category) <> ''::text)`                                                                                                                |
-| `quiz_questions_correct_choice_fkey`     | FOREIGN KEY | `FOREIGN KEY (id, correct_choice_id) REFERENCES quiz_choices(question_id, id) DEFERRABLE INITIALLY DEFERRED`                                                             |
-| `quiz_questions_correct_choice_id_check` | CHECK       | `CHECK (correct_choice_id IS NULL OR btrim(correct_choice_id) <> ''::text)`                                                                                              |
-| `quiz_questions_id_check`                | CHECK       | `CHECK (btrim(id) <> ''::text)`                                                                                                                                          |
-| `quiz_questions_pkey`                    | PRIMARY KEY | `PRIMARY KEY (id)`                                                                                                                                                       |
-| `quiz_questions_related_content_id_fkey` | FOREIGN KEY | `FOREIGN KEY (related_content_id) REFERENCES content_entries(id) ON DELETE SET NULL`                                                                                     |
-| `quiz_questions_source_url_check`        | CHECK       | `CHECK (source_url IS NULL OR btrim(source_url) <> ''::text)`                                                                                                            |
-| `quiz_questions_special_date_check`      | CHECK       | `CHECK ((special_month IS NULL) = (special_day IS NULL) AND (special_month IS NULL OR special_month >= 1 AND special_month <= 12 AND special_day >= 1 AND special_day <= |
-| CASE                                     |
-
-    WHEN special_month = 2 THEN 29
-    WHEN special_month = ANY (ARRAY[4, 6, 9, 11]) THEN 30
-    ELSE 31
-
-END))` |
+| Name                                     | Type        | Definition                                                                                                                                                                                                                                                                        |
+| ---------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `quiz_questions_category_check`          | CHECK       | `CHECK (category IS NULL OR btrim(category) <> ''::text)`                                                                                                                                                                                                                         |
+| `quiz_questions_correct_choice_fkey`     | FOREIGN KEY | `FOREIGN KEY (id, correct_choice_id) REFERENCES quiz_choices(question_id, id) DEFERRABLE INITIALLY DEFERRED`                                                                                                                                                                      |
+| `quiz_questions_correct_choice_id_check` | CHECK       | `CHECK (correct_choice_id IS NULL OR btrim(correct_choice_id) <> ''::text)`                                                                                                                                                                                                       |
+| `quiz_questions_id_check`                | CHECK       | `CHECK (btrim(id) <> ''::text)`                                                                                                                                                                                                                                                   |
+| `quiz_questions_pkey`                    | PRIMARY KEY | `PRIMARY KEY (id)`                                                                                                                                                                                                                                                                |
+| `quiz_questions_related_content_id_fkey` | FOREIGN KEY | `FOREIGN KEY (related_content_id) REFERENCES content_entries(id) ON DELETE SET NULL`                                                                                                                                                                                              |
+| `quiz_questions_source_url_check`        | CHECK       | `CHECK (source_url IS NULL OR btrim(source_url) <> ''::text)`                                                                                                                                                                                                                     |
+| `quiz_questions_special_date_check`      | CHECK       | `CHECK ((special_month IS NULL) = (special_day IS NULL) AND (special_month IS NULL OR special_month >= 1 AND special_month <= 12 AND special_day >= 1 AND special_day <= CASE WHEN special_month = 2 THEN 29 WHEN special_month = ANY (ARRAY[4, 6, 9, 11]) THEN 30 ELSE 31 END))` |
 
 ### Indexes
 

@@ -4,11 +4,7 @@
 
 Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定された環境では、`apps/web/app/lib/pub-repository.ts` が正規化済みの店舗・マスタ・翻訳・タグ関係テーブルを読み書きします。未設定時は公開APIと管理画面が空の店舗一覧を返し、更新操作は利用できません。
 
-現行の物理スキーマは、Neon PostgreSQLのカタログを読み取り専用で照会して生成する[生成済みスキーマ](../generated/database-schema.md)を基準とします。`npm run generate:database-schema` はテーブル、カラム、制約、外部キー、インデックスを安定した順序で再生成します。生成ファイルは手動編集せず、`DATABASE_URL` やデータ値を出力しません。`db/migrations` は設計経緯を確認するための補助資料であり、現行スキーマの根拠にはしません。
-
-Issue #273のマイグレーション008で `pubs.is_published` を追加し、Issue #278では下書き用NULL制約を定義するマイグレーション009を追加しました。Issue #342ではEditorial Content用にマイグレーション010を追加し、Issue #344では入力途中のContent Draftを保存するマイグレーション011を追加しました。実DBへの適用状況はアプリケーション実装と区別し、[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従って必要なMigrationを適用・検証してから対応アプリケーションをデプロイします。管理用DTOとtransaction保存を含む保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
-
-Issue #389のマイグレーション012はIrish Quiz用の4テーブルを追加します。実DBへの適用状況はアプリケーション実装と区別し、[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従ってMigrationを適用・検証します。
+現行の物理スキーマは、Neon PostgreSQLのカタログを読み取り専用で照会して生成する[生成済みスキーマ](../generated/database-schema.md)を基準とします。`npm run generate:database-schema` はテーブル、カラム、制約、外部キー、インデックスを安定した順序で再生成します。生成ファイルは手動編集せず、`DATABASE_URL` やデータ値を出力しません。Schema変更の履歴と適用手順は `db/migrations/` と[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)を参照し、現行スキーマの根拠にはしません。
 
 ## 概念モデル
 
@@ -52,14 +48,6 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 | 管理Quiz取得 | `listAdminQuizQuestions` / `getAdminQuizQuestion` | DraftとPublished、日英翻訳、Choiceを管理DTOへ変換し、不正DB行を拒否 |
 | 管理Quiz保存 | `insertAdminQuizQuestion` / `replaceAdminQuizQuestion` | Question本体、日英翻訳、Choiceを単一transactionで作成・全体更新 |
 | Quiz公開状態 | `setAdminQuizPublication` | 行ロック後にCategory・正解・Source・日英翻訳・4 Choicesを再検証してPublish / Unpublish |
-
-マイグレーション008は適用前に既存店舗が公開条件を満たすか検査し、成功した場合だけ既存店舗を公開状態へ移行します。マイグレーション009は既存値を変更せず下書き対象カラムのNOT NULLを外し、公開中店舗に欠損が生じていないことを検証SQLで確認します。どちらも適用履歴を `schema_migrations` に記録します。
-
-マイグレーション010は既存コンテンツを移行せず、Editorial Contentの2テーブルだけを追加します。適用後は、テーブル・制約・許可Locale・外部キーと適用履歴をverify SQLで確認します。Content RepositoryとMarkdown RendererはIssue #343、Admin APIはIssue #344、Admin UIはIssue #345で実装し、既存GuideはIssue #380でNeonへ移行、Issue #381で公開取得元をNeonへ切り替え、Issue #382で旧Static MDX経路を削除しました。Admin UIはRepository / Service / APIを介して日英ContentをDraft保存・公開し、認証済み画面内のPreviewでは公開Repositoryや公開Cacheを経由しません。
-
-マイグレーション011はContentの言語非依存項目をDraftではNULL可とし、翻訳文言の非空CHECKを外します。Publishedの完全性は管理APIが行ロックを伴うtransaction内で再検証し、verify SQLでも欠損がないことを確認します。
-
-マイグレーション012はQuizの入力途中Draftを保存できるSchemaを直接作成します。Issue #390のQuiz Repositoryは公開操作時にCategory・正解・Source・日英翻訳・4 Choicesと各ラベルを行ロックを伴うtransaction内で再検証し、条件を満たした場合だけ `is_published = TRUE` にします。Issue #392の管理APIは入力Validationと認可を担当し、このRepositoryを介して保存・公開します。
 
 店舗またはタグの削除時は、対応する翻訳と `pub_tags` が `ON DELETE CASCADE` で削除されます。ただし管理タグ機能は使用中タグのDELETE自体をtransaction内で拒否し、店舗関連や店舗を変更しません。都道府県・市区町村・営業状況を参照する店舗にはカスケード削除を設定していません。
 
