@@ -185,6 +185,15 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/010_add_edito
 
 Productionへ適用する場合も同じ順序で010・011を適用・検証してから、Neonを公開取得元とするアプリケーションをデプロイします。公開GuideにRepository内MDX fallbackはないため、デプロイ前に接続先の`content_entries`・`content_translations`へ必要なPublished Guideと翻訳が存在することを管理画面または読み取り専用SQLで確認します。
 
+Irish Quiz基盤（マイグレーション012）は `content_entries` を参照するため、010適用済みの期限付き通常Neon Branchで検証します。Productionへ直接適用せず、Direct / Unpooled Connectionでup SQLとverify SQLを順に実行し、4テーブル・複合外部キー・Special Date・Locale・Index・適用履歴を確認します。012はSchemaのみを追加し、Quizデータ投入やPublic Quizの参照元切替は行いません。
+
+```bash
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/012_add_quiz_domain_up.sql
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/012_add_quiz_domain_verify.sql
+```
+
+Draft QuestionはCategory・正解・Source、翻訳、Choiceが未完成でも保存できます。正解を設定する場合はQuestionとChoiceを同一transactionで登録し、Questionの後にChoiceを追加してcommitします。`quiz_questions_correct_choice_fkey` はcommit時に検査されるため、指定済みの正解Choiceが存在しない場合や別Questionに所属する場合はtransaction全体が失敗します。Publishedへの変更時は管理APIで必須項目を検証します。
+
 マイグレーション008が未適用のブランチでは、先に008を適用します。up SQLは既存店舗が公開条件を満たさない場合、DDL適用前に停止します。
 
 ```bash

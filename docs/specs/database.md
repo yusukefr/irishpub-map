@@ -8,23 +8,29 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 Issue #273のマイグレーション008で `pubs.is_published` を追加し、Issue #278では下書き用NULL制約を定義するマイグレーション009を追加しました。Issue #342ではEditorial Content用にマイグレーション010を追加し、Issue #344では入力途中のContent Draftを保存するマイグレーション011を追加しました。実DBへの適用状況はアプリケーション実装と区別し、[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従って必要なMigrationを適用・検証してから対応アプリケーションをデプロイします。管理用DTOとtransaction保存を含む保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
+Issue #389のマイグレーション012はIrish Quiz用の4テーブルを追加します。実DBへの適用状況はアプリケーション実装と区別し、[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従ってMigrationを適用・検証します。
+
 ## テーブル
 
-| テーブル                    | 用途                                                            |
-| --------------------------- | --------------------------------------------------------------- |
-| `pubs`                      | 言語非依存の店舗属性、都道府県・市区町村・営業状況コードを保存  |
-| `pub_translations`          | 店舗名・読み・住所をロケール別に保存                            |
-| `prefectures`               | JIS都道府県コードを保存                                         |
-| `prefecture_translations`   | 都道府県表示名・読みをロケール別に保存                          |
-| `municipality_codes`        | 6桁の市区町村コードと所属都道府県を保存                         |
-| `municipality_translations` | 市区町村表示名・読みをロケール別に保存                          |
-| `pub_statuses`              | 営業状況コードと内部キーを保存                                  |
-| `pub_status_translations`   | 営業状況表示名をロケール別に保存                                |
-| `tags`                      | タグUUIDと正規化済み内部キーを保存                              |
-| `tag_translations`          | タグ表示名をロケール別に保存                                    |
-| `pub_tags`                  | 店舗とタグの多対多関係を保存                                    |
-| `content_entries`           | Guide・Storyの言語非依存メタデータと公開状態を保存              |
-| `content_translations`      | Editorial Contentのロケール別タイトル・要約・Markdown本文を保存 |
+| テーブル                     | 用途                                                            |
+| ---------------------------- | --------------------------------------------------------------- |
+| `pubs`                       | 言語非依存の店舗属性、都道府県・市区町村・営業状況コードを保存  |
+| `pub_translations`           | 店舗名・読み・住所をロケール別に保存                            |
+| `prefectures`                | JIS都道府県コードを保存                                         |
+| `prefecture_translations`    | 都道府県表示名・読みをロケール別に保存                          |
+| `municipality_codes`         | 6桁の市区町村コードと所属都道府県を保存                         |
+| `municipality_translations`  | 市区町村表示名・読みをロケール別に保存                          |
+| `pub_statuses`               | 営業状況コードと内部キーを保存                                  |
+| `pub_status_translations`    | 営業状況表示名をロケール別に保存                                |
+| `tags`                       | タグUUIDと正規化済み内部キーを保存                              |
+| `tag_translations`           | タグ表示名をロケール別に保存                                    |
+| `pub_tags`                   | 店舗とタグの多対多関係を保存                                    |
+| `content_entries`            | Guide・Storyの言語非依存メタデータと公開状態を保存              |
+| `content_translations`       | Editorial Contentのロケール別タイトル・要約・Markdown本文を保存 |
+| `quiz_questions`             | Quiz問題の言語非依存属性・正解・公開状態を保存                  |
+| `quiz_question_translations` | Quiz問題・解説・情報源名をロケール別に保存                      |
+| `quiz_choices`               | 問題内で一意なChoice IDと表示順を保存                           |
+| `quiz_choice_translations`   | Choiceの表示ラベルをロケール別に保存                            |
 
 管理者ユーザーやセッションを保存するテーブルはありません。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理します。
 
@@ -44,6 +50,10 @@ erDiagram
   TAGS ||--o{ TAG_TRANSLATIONS : "has translations"
   TAGS ||--o{ PUB_TAGS : "assigned through"
   CONTENT_ENTRIES ||--o{ CONTENT_TRANSLATIONS : "has translations"
+  CONTENT_ENTRIES o|--o{ QUIZ_QUESTIONS : "is related from"
+  QUIZ_QUESTIONS ||--o{ QUIZ_QUESTION_TRANSLATIONS : "has translations"
+  QUIZ_QUESTIONS ||--o{ QUIZ_CHOICES : "has choices"
+  QUIZ_CHOICES ||--o{ QUIZ_CHOICE_TRANSLATIONS : "has translations"
 
   PUBS {
     UUID id PK
@@ -125,9 +135,45 @@ erDiagram
     TEXT body_markdown
     TIMESTAMPTZ updated_at
   }
+  QUIZ_QUESTIONS {
+    TEXT id PK
+    TEXT category
+    SMALLINT special_month
+    SMALLINT special_day
+    TEXT correct_choice_id FK
+    TEXT source_url
+    UUID related_content_id FK
+    BOOLEAN is_published
+    TIMESTAMPTZ created_at
+    TIMESTAMPTZ updated_at
+  }
+  QUIZ_QUESTION_TRANSLATIONS {
+    TEXT question_id PK, FK
+    TEXT locale PK
+    TEXT question
+    TEXT explanation
+    TEXT source_label
+    TIMESTAMPTZ updated_at
+  }
+  QUIZ_CHOICES {
+    TEXT question_id PK, FK
+    TEXT id PK
+    SMALLINT sort_order UK
+    TIMESTAMPTZ created_at
+    TIMESTAMPTZ updated_at
+  }
+  QUIZ_CHOICE_TRANSLATIONS {
+    TEXT question_id PK, FK
+    TEXT choice_id PK, FK
+    TEXT locale PK
+    TEXT label
+    TIMESTAMPTZ updated_at
+  }
 ```
 
 翻訳テーブルは親IDと `locale` の複合主キーを持ちます。`prefecture_translations` と `tag_translations` は、同じロケール内で表示名が重複しないよう `UNIQUE (locale, name)` も持ちます。
+
+`quiz_questions` は既存JSONのQuestion IDをTEXTで保持し、`is_published` で下書きと公開を管理します。DraftではCategory・正解・SourceをNULLにでき、翻訳行は未作成または空文字のまま保存できます。Special Dateは月日を両方NULLまたは両方設定し、2月29日、4・6・9・11月30日、その他31日までに限定します。Choiceは `(question_id, id)` で一意とし、Questionの `(id, correct_choice_id)` から同じ複合キーへ遅延外部キーを張ることで、指定済みの正解を同一QuestionのChoiceだけに制限します。Question削除時はChoiceと各翻訳をカスケード削除し、関連Content削除時は `related_content_id` だけをNULLにします。
 
 `content_entries` は `(kind, slug)` の複合一意制約を持ちます。statusは `draft` と `published` に限定し、draftは `published_at` をNULL、publishedは公開日時を必須とします。`kind` は `story` / `guide`、`category` は `history` / `culture` / `pub-culture` / `food-drink` をアプリケーション側のAllow Listで検証します。DraftではこれらをNULLにでき、公開時は管理APIのPublish Validationで必須にします。`content_translations` は `ja` / `en` だけを保存でき、親Contentの削除時にカスケード削除されます。
 
@@ -158,6 +204,8 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 マイグレーション010は既存コンテンツを移行せず、Editorial Contentの2テーブルだけを追加します。適用後は、テーブル・制約・許可Locale・外部キーと適用履歴をverify SQLで確認します。Content RepositoryとMarkdown RendererはIssue #343、Admin APIはIssue #344、Admin UIはIssue #345で実装し、既存GuideはIssue #380でNeonへ移行、Issue #381で公開取得元をNeonへ切り替え、Issue #382で旧Static MDX経路を削除しました。Admin UIはRepository / Service / APIを介して日英ContentをDraft保存・公開し、認証済み画面内のPreviewでは公開Repositoryや公開Cacheを経由しません。
 
 マイグレーション011はContentの言語非依存項目をDraftではNULL可とし、翻訳文言の非空CHECKを外します。Publishedの完全性は管理APIが行ロックを伴うtransaction内で再検証し、verify SQLでも欠損がないことを確認します。
+
+マイグレーション012はQuizの入力途中Draftを保存できるSchemaを直接作成します。Publishedへの変更時はIssue #392の管理APIがCategory・正解・Source・Special Date・日英翻訳・4 Choicesと各ラベルを同一transaction内で検証し、条件を満たした場合だけ `is_published = TRUE` にします。
 
 店舗またはタグの削除時は、対応する翻訳と `pub_tags` が `ON DELETE CASCADE` で削除されます。ただし管理タグ機能は使用中タグのDELETE自体をtransaction内で拒否し、店舗関連や店舗を変更しません。都道府県・市区町村・営業状況を参照する店舗にはカスケード削除を設定していません。
 
