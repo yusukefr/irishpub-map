@@ -2,11 +2,11 @@
 
 ## 概要
 
-公開API、Web、管理画面は `packages/shared/src/pub.ts` の共有 `Pub` 型を使用します。永続化時は、言語に依存しない属性を `pubs`、表示文言を各翻訳テーブル、タグを `tags` と `pub_tags` に分けて保存します。DB構成は[データベース定義書](database.md)、カラムと制約は[テーブル・カラム定義](database-columns.md)を参照してください。
+公開APIとWebは `packages/shared/src/pub.ts` の共有 `Pub` 型を使用します。管理画面と管理APIは `packages/shared/src/admin-pub.ts` のDTOと入力型を使用します。永続化時は、言語に依存しない属性を `pubs`、表示文言を各翻訳テーブル、タグを `tags` と `pub_tags` に分けて保存します。DB構成は[データベース定義書](database.md)、カラムと制約は[テーブル・カラム定義](database-columns.md)を参照してください。
 
 店舗データはNeon Postgresを正とします。`DATABASE_URL` が未設定の環境では公開APIと管理画面は空の店舗一覧を表示し、更新操作は利用できません。
 
-この文書の `Pub` は現行の公開・表示用データ形式です。公開APIは公開状態の店舗だけをこの型で返し、公開状態そのものは含めません。管理一覧は移行段階の形式として `Pub & { isPublished: boolean }` を返します。親Issue #264の後続改修では、未完成の下書きをこの型へ混在させず、公開用 `PublicPub`、NULL許容の管理用 `AdminPub`、作成・更新入力を分離します。確定した後続設計は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+公開用の `Pub` は公開条件を満たす表示データを表し、公開APIは公開状態そのものを含めません。管理一覧は未完成の下書きを表現できる `AdminPubListItem`、管理詳細は日英翻訳とタグIDを含む `AdminPub` を返します。作成・更新は公開状態を含まない `AdminPubWriteInput`、公開状態の変更は `SetAdminPubPublicationInput` を使用します。正確な型定義とValidationは `packages/shared/src/pub.ts` および `packages/shared/src/admin-pub.ts` を正とし、業務ルールは[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 管理画面の選択肢は `packages/shared/src/admin-master.ts` の `PrefectureOption`、`MunicipalityOption`、`TagOption`、`PubStatusOption` を使用します。これらは表示に必要なコード・ID・内部キー・表示名だけを持ち、DBの行や監査用カラムをそのまま公開しません。
 
