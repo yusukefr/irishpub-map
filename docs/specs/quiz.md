@@ -6,6 +6,8 @@
 
 マイグレーション012は後続のNeon移行に使うQuiz Domain Schemaを定義しますが、この段階ではRepositoryや画面の参照元を変更しません。Quizデータの投入はIssue #391、Public QuizのNeon切替はIssue #393で行うため、012適用後も現在の画面挙動とSource of Truthは引き続きこのJSONです。
 
+マイグレーション012のDB Schemaは入力途中のDraftを許容します。Category・正解・SourceはNULL、翻訳は未作成または空文字、Choiceは0件から保存でき、Publishedへの変更時にIssue #392の管理APIでこのJSON仕様と同等の必須項目を検証します。
+
 データは`apps/web/app/lib/quiz/data.ts`で起動時に検証され、`apps/web/app/lib/quiz/queries.ts`が日次選択と採点を担当します。
 
 ## ルート構造

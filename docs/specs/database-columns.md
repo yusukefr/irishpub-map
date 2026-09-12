@@ -152,17 +152,17 @@ Issue #389のマイグレーション012はIrish QuizのQuestion・Choiceと各�
 | カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
 | --- | --- | --- | --- | --- | --- |
 | `id` | TEXT | 不可 | PK、`correct_choice_id` と複合FK | なし | 空白のみを禁止。既存JSONのQuestion ID |
-| `category` | TEXT | 不可 |  | なし | 空白のみを禁止。Locale非依存のカテゴリID |
+| `category` | TEXT | 可 |  | なし | DraftはNULL可。NULL以外は空白のみを禁止するLocale非依存カテゴリID |
 | `special_month` | SMALLINT | 条件付き |  | なし | `special_day` と同時にNULLまたは設定。1〜12 |
-| `special_day` | SMALLINT | 条件付き |  | なし | `special_month` と同時にNULLまたは設定。1〜31 |
-| `correct_choice_id` | TEXT | 不可 | `id` と複合FK → `quiz_choices(question_id, id)` | なし | 空白のみを禁止。同一QuestionのChoiceだけを遅延検査 |
-| `source_url` | TEXT | 不可 |  | なし | 空白のみを禁止。URL形式はアプリケーションでも検証 |
+| `special_day` | SMALLINT | 条件付き |  | なし | `special_month` と同時にNULLまたは設定。2月は29、4・6・9・11月は30、その他は31以下 |
+| `correct_choice_id` | TEXT | 可 | `id` と複合FK → `quiz_choices(question_id, id)` | なし | DraftはNULL可。NULL以外は空白のみを禁止し、同一QuestionのChoiceだけを遅延検査 |
+| `source_url` | TEXT | 可 |  | なし | DraftはNULL可。NULL以外は空白のみを禁止し、URL形式はアプリケーションでも検証 |
 | `related_content_id` | UUID | 可 | FK → `content_entries.id` ON DELETE SET NULL | なし | 任意の関連Editorial Content |
 | `is_published` | BOOLEAN | 不可 |  | `FALSE` | 下書き・公開状態 |
 | `created_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 作成日時 |
 | `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 更新日時 |
 
-正解の複合外部キーは `DEFERRABLE INITIALLY DEFERRED` とし、Questionを作成してから同じtransaction内でChoiceを追加できます。commit時点で正解Choiceが存在しない場合や別Questionに所属する場合は拒否します。
+正解の複合外部キーは `DEFERRABLE INITIALLY DEFERRED` とします。Draftでは正解未選択のQuestionだけを保存でき、正解設定後はQuestionとChoiceを同じtransaction内で追加できます。commit時点で指定済みの正解Choiceが存在しない場合や別Questionに所属する場合は拒否します。PublishedのCategory・正解・Source・日英翻訳・4 Choicesの完全性は、Issue #392の管理APIが公開transaction内で検証します。
 
 ## `quiz_question_translations`
 
@@ -170,9 +170,9 @@ Issue #389のマイグレーション012はIrish QuizのQuestion・Choiceと各�
 | --- | --- | --- | --- | --- | --- |
 | `question_id` | TEXT | 不可 | PK、FK → `quiz_questions.id` ON DELETE CASCADE | なし | Question ID |
 | `locale` | TEXT | 不可 | PK | なし | `ja` / `en` のみ |
-| `question` | TEXT | 不可 |  | なし | 空白のみを禁止。問題文 |
-| `explanation` | TEXT | 不可 |  | なし | 空白のみを禁止。解説 |
-| `source_label` | TEXT | 不可 |  | なし | 空白のみを禁止。情報源表示名 |
+| `question` | TEXT | 不可 |  | なし | Draftは空文字可。公開時は非空の問題文 |
+| `explanation` | TEXT | 不可 |  | なし | Draftは空文字可。公開時は非空の解説 |
+| `source_label` | TEXT | 不可 |  | なし | Draftは空文字可。公開時は非空の情報源表示名 |
 | `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 翻訳の更新日時 |
 
 主キーは `(question_id, locale)` です。親Questionを削除すると翻訳も削除されます。
@@ -196,7 +196,7 @@ Issue #389のマイグレーション012はIrish QuizのQuestion・Choiceと各�
 | `question_id` | TEXT | 不可 | PK、`choice_id` と複合FK | なし | Question ID |
 | `choice_id` | TEXT | 不可 | PK、`question_id` と複合FK → `quiz_choices(question_id, id)` ON DELETE CASCADE | なし | Choice ID |
 | `locale` | TEXT | 不可 | PK | なし | `ja` / `en` のみ |
-| `label` | TEXT | 不可 |  | なし | 空白のみを禁止。Choice表示名 |
+| `label` | TEXT | 不可 |  | なし | Draftは空文字可。公開時は非空のChoice表示名 |
 | `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 翻訳の更新日時 |
 
 主キーは `(question_id, choice_id, locale)` です。親Choiceを削除すると翻訳も削除されます。

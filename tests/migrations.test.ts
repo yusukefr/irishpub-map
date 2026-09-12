@@ -199,6 +199,17 @@ describe("quiz database migration", () => {
     expect(upSql).toContain("CHECK (locale IN ('ja', 'en'))");
     expect(upSql).toContain("quiz_questions_special_date_check");
     expect(upSql).toContain("(special_month IS NULL) = (special_day IS NULL)");
+    expect(upSql).toContain("WHEN special_month = 2 THEN 29");
+    expect(upSql).toContain("WHEN special_month IN (4, 6, 9, 11) THEN 30");
+    expect(upSql).toContain("category TEXT CHECK (category IS NULL");
+    expect(upSql).toContain("correct_choice_id TEXT CHECK (correct_choice_id IS NULL");
+    expect(upSql).toContain("source_url TEXT CHECK (source_url IS NULL");
+    expect(upSql).not.toContain("category TEXT NOT NULL");
+    expect(upSql).not.toContain("correct_choice_id TEXT NOT NULL");
+    expect(upSql).not.toContain("source_url TEXT NOT NULL");
+    expect(upSql).toContain("question TEXT NOT NULL,");
+    expect(upSql).toContain("explanation TEXT NOT NULL,");
+    expect(upSql).toContain("label TEXT NOT NULL,");
     expect(upSql).toContain("FOREIGN KEY (id, correct_choice_id)");
     expect(upSql).toContain("REFERENCES quiz_choices(question_id, id)");
     expect(upSql).toContain("DEFERRABLE INITIALLY DEFERRED");
@@ -214,6 +225,8 @@ describe("quiz database migration", () => {
     expect(verifySql).toContain("quiz_constraints");
     expect(verifySql).toContain("quiz_indexes");
     expect(verifySql).toContain("invalid_special_dates");
+    expect(verifySql).toContain("special_day > CASE");
+    expect(verifySql).toContain("question.correct_choice_id IS NOT NULL");
     expect(verifySql).toContain("invalid_correct_choices");
     expect(verifySql).toContain("unsupported_question_translation_locales");
     expect(verifySql).toContain("unsupported_choice_translation_locales");

@@ -30,14 +30,14 @@ BEGIN
 END
 $migration$;
 
--- 既存JSONのQuestion IDとChoice IDを維持し、公開状態にかかわらず構造的な整合性をDBで保証します。
+-- Draftは入力途中のNULL・空文字を許容し、Publishedの完全性は後続の管理APIで保証します。
 CREATE TABLE quiz_questions (
   id TEXT PRIMARY KEY CHECK (btrim(id) <> ''),
-  category TEXT NOT NULL CHECK (btrim(category) <> ''),
+  category TEXT CHECK (category IS NULL OR btrim(category) <> ''),
   special_month SMALLINT,
   special_day SMALLINT,
-  correct_choice_id TEXT NOT NULL CHECK (btrim(correct_choice_id) <> ''),
-  source_url TEXT NOT NULL CHECK (btrim(source_url) <> ''),
+  correct_choice_id TEXT CHECK (correct_choice_id IS NULL OR btrim(correct_choice_id) <> ''),
+  source_url TEXT CHECK (source_url IS NULL OR btrim(source_url) <> ''),
   related_content_id UUID REFERENCES content_entries(id) ON DELETE SET NULL,
   is_published BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -46,7 +46,14 @@ CREATE TABLE quiz_questions (
     (special_month IS NULL) = (special_day IS NULL)
     AND (
       special_month IS NULL
-      OR (special_month BETWEEN 1 AND 12 AND special_day BETWEEN 1 AND 31)
+      OR (
+        special_month BETWEEN 1 AND 12
+        AND special_day BETWEEN 1 AND CASE
+          WHEN special_month = 2 THEN 29
+          WHEN special_month IN (4, 6, 9, 11) THEN 30
+          ELSE 31
+        END
+      )
     )
   )
 );
@@ -54,9 +61,9 @@ CREATE TABLE quiz_questions (
 CREATE TABLE quiz_question_translations (
   question_id TEXT NOT NULL REFERENCES quiz_questions(id) ON DELETE CASCADE,
   locale TEXT NOT NULL CHECK (locale IN ('ja', 'en')),
-  question TEXT NOT NULL CHECK (btrim(question) <> ''),
-  explanation TEXT NOT NULL CHECK (btrim(explanation) <> ''),
-  source_label TEXT NOT NULL CHECK (btrim(source_label) <> ''),
+  question TEXT NOT NULL,
+  explanation TEXT NOT NULL,
+  source_label TEXT NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (question_id, locale)
 );
@@ -76,7 +83,7 @@ CREATE TABLE quiz_choice_translations (
   question_id TEXT NOT NULL,
   choice_id TEXT NOT NULL,
   locale TEXT NOT NULL CHECK (locale IN ('ja', 'en')),
-  label TEXT NOT NULL CHECK (btrim(label) <> ''),
+  label TEXT NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (question_id, choice_id, locale),
   CONSTRAINT quiz_choice_translations_choice_fkey
@@ -85,7 +92,7 @@ CREATE TABLE quiz_choice_translations (
     ON DELETE CASCADE
 );
 
--- Questionを先に作り、Choiceを同じtransaction内で追加できるようcommit時に正解所属を検査します。
+-- 正解設定後は、QuestionとChoiceを同じtransactionで追加できるようcommit時にChoice所属を検査します。
 ALTER TABLE quiz_questions
   ADD CONSTRAINT quiz_questions_correct_choice_fkey
   FOREIGN KEY (id, correct_choice_id)

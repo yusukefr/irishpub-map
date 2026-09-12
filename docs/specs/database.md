@@ -173,7 +173,7 @@ erDiagram
 
 翻訳テーブルは親IDと `locale` の複合主キーを持ちます。`prefecture_translations` と `tag_translations` は、同じロケール内で表示名が重複しないよう `UNIQUE (locale, name)` も持ちます。
 
-`quiz_questions` は既存JSONのQuestion IDをTEXTで保持し、`is_published` で下書きと公開を管理します。Special Dateは月日を両方NULLまたは両方設定し、月1〜12・日1〜31に限定します。Choiceは `(question_id, id)` で一意とし、Questionの `(id, correct_choice_id)` から同じ複合キーへ遅延外部キーを張ることで、同一QuestionのChoiceだけを正解にできます。Question削除時はChoiceと各翻訳をカスケード削除し、関連Content削除時は `related_content_id` だけをNULLにします。
+`quiz_questions` は既存JSONのQuestion IDをTEXTで保持し、`is_published` で下書きと公開を管理します。DraftではCategory・正解・SourceをNULLにでき、翻訳行は未作成または空文字のまま保存できます。Special Dateは月日を両方NULLまたは両方設定し、2月29日、4・6・9・11月30日、その他31日までに限定します。Choiceは `(question_id, id)` で一意とし、Questionの `(id, correct_choice_id)` から同じ複合キーへ遅延外部キーを張ることで、指定済みの正解を同一QuestionのChoiceだけに制限します。Question削除時はChoiceと各翻訳をカスケード削除し、関連Content削除時は `related_content_id` だけをNULLにします。
 
 `content_entries` は `(kind, slug)` の複合一意制約を持ちます。statusは `draft` と `published` に限定し、draftは `published_at` をNULL、publishedは公開日時を必須とします。`kind` は `story` / `guide`、`category` は `history` / `culture` / `pub-culture` / `food-drink` をアプリケーション側のAllow Listで検証します。DraftではこれらをNULLにでき、公開時は管理APIのPublish Validationで必須にします。`content_translations` は `ja` / `en` だけを保存でき、親Contentの削除時にカスケード削除されます。
 
@@ -204,6 +204,8 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 マイグレーション010は既存コンテンツを移行せず、Editorial Contentの2テーブルだけを追加します。適用後は、テーブル・制約・許可Locale・外部キーと適用履歴をverify SQLで確認します。Content RepositoryとMarkdown RendererはIssue #343、Admin APIはIssue #344、Admin UIはIssue #345で実装し、既存GuideはIssue #380でNeonへ移行、Issue #381で公開取得元をNeonへ切り替え、Issue #382で旧Static MDX経路を削除しました。Admin UIはRepository / Service / APIを介して日英ContentをDraft保存・公開し、認証済み画面内のPreviewでは公開Repositoryや公開Cacheを経由しません。
 
 マイグレーション011はContentの言語非依存項目をDraftではNULL可とし、翻訳文言の非空CHECKを外します。Publishedの完全性は管理APIが行ロックを伴うtransaction内で再検証し、verify SQLでも欠損がないことを確認します。
+
+マイグレーション012はQuizの入力途中Draftを保存できるSchemaを直接作成します。Publishedへの変更時はIssue #392の管理APIがCategory・正解・Source・Special Date・日英翻訳・4 Choicesと各ラベルを同一transaction内で検証し、条件を満たした場合だけ `is_published = TRUE` にします。
 
 店舗またはタグの削除時は、対応する翻訳と `pub_tags` が `ON DELETE CASCADE` で削除されます。ただし管理タグ機能は使用中タグのDELETE自体をtransaction内で拒否し、店舗関連や店舗を変更しません。都道府県・市区町村・営業状況を参照する店舗にはカスケード削除を設定していません。
 

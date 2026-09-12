@@ -192,7 +192,7 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/012_add_quiz_
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/012_add_quiz_domain_verify.sql
 ```
 
-QuestionとChoiceは同一transactionで登録し、Questionの後にChoiceを追加してcommitします。`quiz_questions_correct_choice_fkey` はcommit時に検査されるため、正解Choiceが存在しない場合や別Questionに所属する場合はtransaction全体が失敗します。
+Draft QuestionはCategory・正解・Source、翻訳、Choiceが未完成でも保存できます。正解を設定する場合はQuestionとChoiceを同一transactionで登録し、Questionの後にChoiceを追加してcommitします。`quiz_questions_correct_choice_fkey` はcommit時に検査されるため、指定済みの正解Choiceが存在しない場合や別Questionに所属する場合はtransaction全体が失敗します。Publishedへの変更時は管理APIで必須項目を検証します。
 
 マイグレーション008が未適用のブランチでは、先に008を適用します。up SQLは既存店舗が公開条件を満たさない場合、DDL適用前に停止します。
 

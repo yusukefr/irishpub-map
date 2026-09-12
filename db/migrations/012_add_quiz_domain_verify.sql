@@ -54,7 +54,15 @@ SELECT
 FROM quiz_questions
 WHERE (special_month IS NULL) <> (special_day IS NULL)
   OR special_month NOT BETWEEN 1 AND 12
-  OR special_day NOT BETWEEN 1 AND 31;
+  OR special_day NOT BETWEEN 1 AND 31
+  OR (
+    special_month IS NOT NULL
+    AND special_day > CASE
+      WHEN special_month = 2 THEN 29
+      WHEN special_month IN (4, 6, 9, 11) THEN 30
+      ELSE 31
+    END
+  );
 
 SELECT
   'invalid_correct_choices' AS check_name,
@@ -63,7 +71,8 @@ FROM quiz_questions AS question
 LEFT JOIN quiz_choices AS choice
   ON choice.question_id = question.id
   AND choice.id = question.correct_choice_id
-WHERE choice.id IS NULL;
+WHERE question.correct_choice_id IS NOT NULL
+  AND choice.id IS NULL;
 
 SELECT
   'unsupported_question_translation_locales' AS check_name,
