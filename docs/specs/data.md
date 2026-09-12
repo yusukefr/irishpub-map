@@ -2,7 +2,7 @@
 
 ## 概要
 
-公開APIとWebは `packages/shared/src/pub.ts` の共有 `Pub` 型を使用します。管理画面と管理APIは `packages/shared/src/admin-pub.ts` のDTOと入力型を使用します。永続化時は、言語に依存しない属性を `pubs`、表示文言を各翻訳テーブル、タグを `tags` と `pub_tags` に分けて保存します。DB構成は[データベース定義書](database.md)、カラムと制約は[テーブル・カラム定義](database-columns.md)を参照してください。
+公開APIとWebは `packages/shared/src/pub.ts` の共有 `Pub` 型を使用します。管理画面と管理APIは `packages/shared/src/admin-pub.ts` のDTOと入力型を使用します。永続化時は、言語に依存しない属性を `pubs`、表示文言を各翻訳テーブル、タグを `tags` と `pub_tags` に分けて保存します。DB構成は[データベース定義書](database.md)、カラムと制約は[生成済みスキーマ](../generated/database-schema.md)を参照してください。
 
 店舗データはNeon Postgresを正とします。`DATABASE_URL` が未設定の環境では公開APIと管理画面は空の店舗一覧を表示し、更新操作は利用できません。
 

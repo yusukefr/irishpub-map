@@ -10,6 +10,8 @@
     "dev": "npm run dev -w apps/web",
     "build": "npm run build -w apps/web",
     "import-pubs": "node scripts/import-pubs.mjs",
+    "generate:database-schema": "node scripts/generate-database-schema.mjs",
+    "check:database-schema": "node scripts/generate-database-schema.mjs --check",
     "export-municipality-csv": "node scripts/export-municipality-codes.mjs",
     "validate:production-env": "node scripts/validate-production-env.mjs",
     "update-app-version": "node scripts/update-app-version.mjs",

@@ -9,3 +9,5 @@ test-results
 .agents/skills
 *.min.js
 *.sql
+
+docs/generated/

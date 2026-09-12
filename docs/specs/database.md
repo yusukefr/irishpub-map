@@ -4,184 +4,33 @@
 
 Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定された環境では、`apps/web/app/lib/pub-repository.ts` が正規化済みの店舗・マスタ・翻訳・タグ関係テーブルを読み書きします。未設定時は公開APIと管理画面が空の店舗一覧を返し、更新操作は利用できません。
 
-現行スキーマは、Issue #262で確認し、Issue #272で再確認したNeon上の実スキーマを基準とします。`apps/web/app/lib/pub-repository.ts` など現在のアプリケーション実装とも照合しています。`db/migrations` は設計経緯を確認するための補助資料であり、現行スキーマの根拠にはしません。カラム・制約・インデックスの詳細は[テーブル・カラム定義](database-columns.md)を参照してください。
+現行の物理スキーマは、Neon PostgreSQLのカタログを読み取り専用で照会して生成する[生成済みスキーマ](../generated/database-schema.md)を基準とします。`npm run generate:database-schema` はテーブル、カラム、制約、外部キー、インデックスを安定した順序で再生成します。生成ファイルは手動編集せず、`DATABASE_URL` やデータ値を出力しません。`db/migrations` は設計経緯を確認するための補助資料であり、現行スキーマの根拠にはしません。
 
 Issue #273のマイグレーション008で `pubs.is_published` を追加し、Issue #278では下書き用NULL制約を定義するマイグレーション009を追加しました。Issue #342ではEditorial Content用にマイグレーション010を追加し、Issue #344では入力途中のContent Draftを保存するマイグレーション011を追加しました。実DBへの適用状況はアプリケーション実装と区別し、[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従って必要なMigrationを適用・検証してから対応アプリケーションをデプロイします。管理用DTOとtransaction保存を含む保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 Issue #389のマイグレーション012はIrish Quiz用の4テーブルを追加します。実DBへの適用状況はアプリケーション実装と区別し、[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)に従ってMigrationを適用・検証します。
 
-## テーブル
+## 概念モデル
 
-| テーブル                     | 用途                                                            |
-| ---------------------------- | --------------------------------------------------------------- |
-| `pubs`                       | 言語非依存の店舗属性、都道府県・市区町村・営業状況コードを保存  |
-| `pub_translations`           | 店舗名・読み・住所をロケール別に保存                            |
-| `prefectures`                | JIS都道府県コードを保存                                         |
-| `prefecture_translations`    | 都道府県表示名・読みをロケール別に保存                          |
-| `municipality_codes`         | 6桁の市区町村コードと所属都道府県を保存                         |
-| `municipality_translations`  | 市区町村表示名・読みをロケール別に保存                          |
-| `pub_statuses`               | 営業状況コードと内部キーを保存                                  |
-| `pub_status_translations`    | 営業状況表示名をロケール別に保存                                |
-| `tags`                       | タグUUIDと正規化済み内部キーを保存                              |
-| `tag_translations`           | タグ表示名をロケール別に保存                                    |
-| `pub_tags`                   | 店舗とタグの多対多関係を保存                                    |
-| `content_entries`            | Guide・Storyの言語非依存メタデータと公開状態を保存              |
-| `content_translations`       | Editorial Contentのロケール別タイトル・要約・Markdown本文を保存 |
-| `quiz_questions`             | Quiz問題の言語非依存属性・正解・公開状態を保存                  |
-| `quiz_question_translations` | Quiz問題・解説・情報源名をロケール別に保存                      |
-| `quiz_choices`               | 問題内で一意なChoice IDと表示順を保存                           |
-| `quiz_choice_translations`   | Choiceの表示ラベルをロケール別に保存                            |
+アプリケーションは、店舗・地域・営業状況・タグ・Editorial Content・Quizを扱います。各概念の物理テーブル名、カラム、制約、インデックスは、現行Neonから生成した[生成済みスキーマ](../generated/database-schema.md)を参照してください。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理し、アプリケーション用の認証テーブルは持ちません。
 
-管理者ユーザーやセッションを保存するテーブルはありません。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理します。
+## 関係
 
-## ER図
+店舗は都道府県・市区町村・営業状況に分類され、各概念はロケール別の翻訳を持ちます。店舗とタグは多対多で関連付けます。Editorial Contentは翻訳を持ち、Quizは任意の関連Contentを参照し、問題・Choice・各翻訳を親子関係で管理します。
 
-```mermaid
-erDiagram
-  PREFECTURES ||--o{ PREFECTURE_TRANSLATIONS : "has translations"
-  PREFECTURES ||--o{ MUNICIPALITY_CODES : "contains"
-  PREFECTURES ||--o{ PUBS : "classifies"
-  MUNICIPALITY_CODES ||--o{ MUNICIPALITY_TRANSLATIONS : "has translations"
-  MUNICIPALITY_CODES o|--o{ PUBS : "locates"
-  PUB_STATUSES ||--o{ PUB_STATUS_TRANSLATIONS : "has translations"
-  PUB_STATUSES ||--o{ PUBS : "classifies"
-  PUBS ||--o{ PUB_TRANSLATIONS : "has translations"
-  PUBS ||--o{ PUB_TAGS : "has"
-  TAGS ||--o{ TAG_TRANSLATIONS : "has translations"
-  TAGS ||--o{ PUB_TAGS : "assigned through"
-  CONTENT_ENTRIES ||--o{ CONTENT_TRANSLATIONS : "has translations"
-  CONTENT_ENTRIES o|--o{ QUIZ_QUESTIONS : "is related from"
-  QUIZ_QUESTIONS ||--o{ QUIZ_QUESTION_TRANSLATIONS : "has translations"
-  QUIZ_QUESTIONS ||--o{ QUIZ_CHOICES : "has choices"
-  QUIZ_CHOICES ||--o{ QUIZ_CHOICE_TRANSLATIONS : "has translations"
-
-  PUBS {
-    UUID id PK
-    SMALLINT prefecture_code FK
-    TEXT municipality_code FK
-    DOUBLE_PRECISION latitude
-    DOUBLE_PRECISION longitude
-    TEXT website_url
-    TEXT google_maps_url
-    TEXT instagram_url
-    SMALLINT status_code FK
-    BOOLEAN is_published
-    TIMESTAMPTZ updated_at
-  }
-  PUB_TRANSLATIONS {
-    UUID pub_id PK, FK
-    TEXT locale PK
-    TEXT name
-    TEXT name_reading
-    TEXT address
-    TIMESTAMPTZ updated_at
-  }
-  PREFECTURES {
-    SMALLINT code PK
-  }
-  PREFECTURE_TRANSLATIONS {
-    SMALLINT prefecture_code PK, FK
-    TEXT locale PK
-    TEXT name
-    TEXT name_reading
-  }
-  MUNICIPALITY_CODES {
-    TEXT code PK
-    SMALLINT prefecture_code FK
-  }
-  MUNICIPALITY_TRANSLATIONS {
-    TEXT municipality_code PK, FK
-    TEXT locale PK
-    TEXT name
-    TEXT name_reading
-  }
-  PUB_STATUSES {
-    SMALLINT code PK
-    TEXT key UK
-  }
-  PUB_STATUS_TRANSLATIONS {
-    SMALLINT status_code PK, FK
-    TEXT locale PK
-    TEXT display_name
-  }
-  TAGS {
-    UUID id PK
-    TEXT key UK
-  }
-  TAG_TRANSLATIONS {
-    UUID tag_id PK, FK
-    TEXT locale PK
-    TEXT name
-  }
-  PUB_TAGS {
-    UUID pub_id PK, FK
-    UUID tag_id PK, FK
-  }
-  CONTENT_ENTRIES {
-    UUID id PK
-    TEXT kind
-    TEXT slug
-    TEXT category
-    TEXT status
-    TIMESTAMPTZ published_at
-    TIMESTAMPTZ created_at
-    TIMESTAMPTZ updated_at
-  }
-  CONTENT_TRANSLATIONS {
-    UUID content_id PK, FK
-    TEXT locale PK
-    TEXT title
-    TEXT summary
-    TEXT body_markdown
-    TIMESTAMPTZ updated_at
-  }
-  QUIZ_QUESTIONS {
-    TEXT id PK
-    TEXT category
-    SMALLINT special_month
-    SMALLINT special_day
-    TEXT correct_choice_id FK
-    TEXT source_url
-    UUID related_content_id FK
-    BOOLEAN is_published
-    TIMESTAMPTZ created_at
-    TIMESTAMPTZ updated_at
-  }
-  QUIZ_QUESTION_TRANSLATIONS {
-    TEXT question_id PK, FK
-    TEXT locale PK
-    TEXT question
-    TEXT explanation
-    TEXT source_label
-    TIMESTAMPTZ updated_at
-  }
-  QUIZ_CHOICES {
-    TEXT question_id PK, FK
-    TEXT id PK
-    SMALLINT sort_order UK
-    TIMESTAMPTZ created_at
-    TIMESTAMPTZ updated_at
-  }
-  QUIZ_CHOICE_TRANSLATIONS {
-    TEXT question_id PK, FK
-    TEXT choice_id PK, FK
-    TEXT locale PK
-    TEXT label
-    TIMESTAMPTZ updated_at
-  }
-```
-
-翻訳テーブルは親IDと `locale` の複合主キーを持ちます。`prefecture_translations` と `tag_translations` は、同じロケール内で表示名が重複しないよう `UNIQUE (locale, name)` も持ちます。
-
-`quiz_questions` は既存JSONのQuestion IDをTEXTで保持し、`is_published` で下書きと公開を管理します。DraftではCategory・正解・SourceをNULLにでき、翻訳行は未作成または空文字のまま保存できます。Special Dateは月日を両方NULLまたは両方設定し、2月29日、4・6・9・11月30日、その他31日までに限定します。Choiceは `(question_id, id)` で一意とし、Questionの `(id, correct_choice_id)` から同じ複合キーへ遅延外部キーを張ることで、指定済みの正解を同一QuestionのChoiceだけに制限します。Question削除時はChoiceと各翻訳をカスケード削除し、関連Content削除時は `related_content_id` だけをNULLにします。
-
-`content_entries` は `(kind, slug)` の複合一意制約を持ちます。statusは `draft` と `published` に限定し、draftは `published_at` をNULL、publishedは公開日時を必須とします。`kind` は `story` / `guide`、`category` は `history` / `culture` / `pub-culture` / `food-drink` をアプリケーション側のAllow Listで検証します。DraftではこれらをNULLにでき、公開時は管理APIのPublish Validationで必須にします。`content_translations` は `ja` / `en` だけを保存でき、親Contentの削除時にカスケード削除されます。
-
-`pubs` の所在地、座標、営業状態と `pub_translations.address` は下書きではNULLを許可します。管理APIは市区町村コードが選択した都道府県に所属することと、各参照マスタに日本語表示名があることを保存前に検証します。
+この関係はアプリケーションの概念モデルです。物理カラム、NULL許容、外部キー、削除規則は生成済みスキーマを正とします。
 
 ## 翻訳の選択
 
 Repositoryは要求ロケールの翻訳を優先し、存在しない場合は共通locale定義の既定localeへフォールバックします。対象は店舗、都道府県、市区町村、営業状況、タグ、Editorial Content、Quizです。店舗の緯度経度、URL、コード、タグ関係やQuizのCategory、Special Date、正解など言語に依存しない値は親テーブルに保持します。
+
+## 正規化とアプリケーション境界
+
+店舗、都道府県、市区町村、営業状況、タグ、Editorial Content、Quizは、言語に依存しない親テーブルとロケール別の翻訳テーブルへ分離します。これにより表示言語を追加しても、識別子・コード・関係を複製しません。店舗とタグは `pub_tags` を介した多対多で、複合主キーが重複を防ぎます。
+
+コードと内部キーは画面表示に直接使用しません。Repositoryは要求ロケールの翻訳を優先して読み、未登録なら日本語へフォールバックします。共有 `Pub` 型へ変換するときは、店舗の表示文言を `pub_translations`、地域の表示名を各翻訳テーブル、営業状態を `pub_statuses` と翻訳、タグを `pub_tags`・`tags`・翻訳から取得します。
+
+削除時の関係維持は物理スキーマに従います。店舗・タグ・Content・Quizの親を削除した場合、対応する翻訳や中間行は必要に応じてカスケード削除されます。一方、都道府県、市区町村、営業状況を参照する店舗にはカスケード削除を設定しません。公開条件のように複数テーブルにまたがる業務ルールは、DB制約だけで代替せず、Application ServiceとRepositoryがtransaction内で検証します。
 
 ## 読み書き
 
@@ -216,8 +65,7 @@ Repositoryは要求ロケールの翻訳を優先し、存在しない場合は�
 
 ## 関連ドキュメント
 
-- [テーブル・カラム定義](database-columns.md)
-- [正規化方針](database-normalization.md)
+- [生成済みスキーマ](../generated/database-schema.md)
 - [店舗データ仕様](data.md)
 - [タグの正規化仕様](tag-normalization.md)
 - [管理タグ仕様](tag-management.md)
