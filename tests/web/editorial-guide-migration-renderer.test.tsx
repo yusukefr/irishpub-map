@@ -2,6 +2,12 @@ import { render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadGuides } from "../../scripts/migrate-editorial-guides.mjs";
 import { SafeMarkdownRenderer } from "../../apps/web/app/lib/content/renderer";
+
+vi.mock("next/cache", () => ({
+  unstable_cache: (query: () => Promise<unknown>) => () => query(),
+  revalidateTag: vi.fn(),
+}));
+
 import { getPublishedContentBySlug } from "../../apps/web/app/lib/content/repository";
 
 const guides = await loadGuides();
