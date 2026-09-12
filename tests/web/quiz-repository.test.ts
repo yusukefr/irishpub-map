@@ -38,6 +38,7 @@ import {
 } from "../../apps/web/app/lib/quiz/repository";
 
 const originalDatabaseUrl = process.env.DATABASE_URL;
+const originalE2ETestMode = process.env.E2E_TEST_MODE;
 const relatedContentId = "550e8400-e29b-41d4-a716-446655440001";
 
 function publicRows(id = "question-1", specialMonth: number | null = null, specialDay: number | null = null) {
@@ -103,6 +104,7 @@ const writeInput: AdminQuizWriteInput = {
 
 beforeEach(() => {
   process.env.DATABASE_URL = "postgres://test-only";
+  delete process.env.E2E_TEST_MODE;
   mocks.queries = [];
   mocks.responses = [];
   mocks.transactionCount = 0;
@@ -112,6 +114,8 @@ beforeEach(() => {
 afterEach(() => {
   if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
   else process.env.DATABASE_URL = originalDatabaseUrl;
+  if (originalE2ETestMode === undefined) delete process.env.E2E_TEST_MODE;
+  else process.env.E2E_TEST_MODE = originalE2ETestMode;
 });
 
 describe("public quiz repository", () => {
@@ -231,6 +235,22 @@ describe("public quiz repository", () => {
 });
 
 describe("admin quiz repository", () => {
+  it("E2E Test Modeでは全MutationをDB接続前に拒否する", async () => {
+    process.env.E2E_TEST_MODE = "1";
+
+    await expect(insertAdminQuizQuestion("question-1", writeInput)).rejects.toThrow(
+      "Mutations are disabled in E2E test mode.",
+    );
+    await expect(replaceAdminQuizQuestion("question-1", writeInput)).rejects.toThrow(
+      "Mutations are disabled in E2E test mode.",
+    );
+    await expect(setAdminQuizPublication("question-1", true)).rejects.toThrow(
+      "Mutations are disabled in E2E test mode.",
+    );
+    expect(mocks.transactionCount).toBe(0);
+    expect(mocks.queries).toEqual([]);
+  });
+
   it("DraftとPublishedを含む一覧を取得する", async () => {
     mocks.responses = [
       [

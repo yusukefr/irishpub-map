@@ -1,6 +1,7 @@
 import { neon, type NeonQueryFunctionInTransaction } from "@neondatabase/serverless";
 import { DEFAULT_LOCALE, isSupportedLocale, type Locale } from "@irishpub-map/shared/locale";
 import { getPublishedContentById } from "../content/repository";
+import { rejectE2ETestMutation } from "../e2e-test-mode";
 import { getQuizDateInTokyo, selectDailyQuiz } from "./queries";
 import {
   QUIZ_CATEGORIES,
@@ -227,6 +228,7 @@ export async function getAdminQuizQuestion(id: string): Promise<AdminQuizQuestio
  * @returns {Promise<void>} transaction完了時に解決します。
  */
 export async function insertAdminQuizQuestion(id: string, input: AdminQuizWriteInput): Promise<void> {
+  rejectE2ETestMutation();
   validateAdminWriteInput(id, input);
   const sql = getRequiredSql();
   await sql.transaction(
@@ -253,6 +255,7 @@ export async function insertAdminQuizQuestion(id: string, input: AdminQuizWriteI
  * @returns {Promise<AdminQuizUpdateResult>} 更新・対象なし・公開条件不足の結果。
  */
 export async function replaceAdminQuizQuestion(id: string, input: AdminQuizWriteInput): Promise<AdminQuizUpdateResult> {
+  rejectE2ETestMutation();
   validateAdminWriteInput(id, input);
   const sql = getRequiredSql();
   const publishReady = isPublishReady(input);
@@ -298,6 +301,7 @@ export async function setAdminQuizPublication(
   id: string,
   isPublished: boolean,
 ): Promise<AdminQuizPublicationResult | null> {
+  rejectE2ETestMutation();
   requiredNonEmptyString(id);
   const sql = getRequiredSql();
   const [lockedRows, updatedRows] = (await sql.transaction(
