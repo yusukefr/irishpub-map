@@ -2,13 +2,23 @@
 
 ## 概要
 
-`/discover/quiz`は、Repository内の`apps/web/data/ireland/quiz.json`からAsia/Tokyo基準の「今日の1問」を表示します。DB、ユーザー登録、回答履歴、長期スコアは使用しません。
+`/discover/quiz`は、移行完了まではRepository内の`apps/web/data/ireland/quiz.json`からAsia/Tokyo基準の「今日の1問」を表示します。ユーザー登録、回答履歴、長期スコアは使用しません。
 
-マイグレーション012は後続のNeon移行に使うQuiz Domain Schemaを定義しますが、この段階ではRepositoryや画面の参照元を変更しません。Quizデータの投入はIssue #391、Public QuizのNeon切替はIssue #393で行うため、012適用後も現在の画面挙動とSource of Truthは引き続きこのJSONです。
+マイグレーション012はQuiz Domain Schemaを定義し、Issue #390はNeonアクセスをQuiz Repositoryへ集約します。Quizデータの投入はIssue #391、Public QuizのNeon切替はIssue #393で行うため、Repository追加後も現在の画面挙動とSource of Truthは引き続きこのJSONです。
 
-マイグレーション012のDB Schemaは入力途中のDraftを許容します。Category・正解・SourceはNULL、翻訳は未作成または空文字、Choiceは0件から保存でき、Publishedへの変更時にIssue #392の管理APIでこのJSON仕様と同等の必須項目を検証します。
+マイグレーション012のDB Schemaは入力途中のDraftを許容します。Category・正解・SourceはNULL、翻訳は未作成または空文字、Choiceは0件から保存できます。Publishedへの変更時はIssue #390のRepositoryがこのJSON仕様と同等の必須項目をDB内で再検証し、Issue #392の管理APIは入力Validationと認可を担当します。
 
 データは`apps/web/app/lib/quiz/data.ts`で起動時に検証され、`apps/web/app/lib/quiz/queries.ts`が日次選択と採点を担当します。
+
+## Quiz Repository
+
+`apps/web/app/lib/quiz/repository.ts`はQuiz DomainのNeonアクセスを所有します。Public取得はSQLで`is_published = TRUE`を固定し、指定Localeの翻訳を優先して日本語へフォールバックします。回答前の`PublicQuizQuestion`はQuestion・Category・Special Date・Choiceだけを持ち、正解、解説、Source、Related Contentを含みません。
+
+日次取得はRepositoryが検証した公開問題集合を既存Domain Logicへ渡し、Asia/Tokyoの暦日、Special Date優先、決定的選択を維持します。採点は公開Questionと送信Choiceをparameterized queryで確認した後にだけ回答情報を返します。Related Contentは公開Content Repositoryで解決し、未登録・Draft・翻訳不足・取得障害時は採点結果を維持して導線だけを省略します。
+
+Admin取得はDraftとPublishedの両方を返します。作成・全体更新はQuestion本体、日英翻訳、Choiceと各翻訳を単一transactionで保存し、公開操作は行ロック後にCategory・正解・Source・日英翻訳・4 ChoicesをDB内で再検証します。DB行はCategory、日付、URL、UUID、Choice件数・順序を検証し、不正値をSilentにDomain Modelへ変換しません。
+
+`DATABASE_URL`未設定時は一覧を空、ID指定取得を`null`とし、更新と採点は設定エラーにします。静的JSONへのfallbackは行いません。既存画面とServer ActionのRepository切替はIssue #393で行います。
 
 ## ルート構造
 

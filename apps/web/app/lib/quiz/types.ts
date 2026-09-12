@@ -1,15 +1,19 @@
 import type { Locale } from "../i18n";
 
+/** Quizで利用できるLocale非依存カテゴリIDのAllow Listです。 */
+export const QUIZ_CATEGORIES = [
+  "ireland-basics",
+  "pub-guinness",
+  "irish-whiskey",
+  "irish-music",
+  "irish-sports",
+  "literature",
+  "myth-folklore",
+  "history",
+] as const;
+
 /** クイズで利用できるLocale非依存のカテゴリIDです。 */
-export type QuizCategory =
-  | "ireland-basics"
-  | "pub-guinness"
-  | "irish-whiskey"
-  | "irish-music"
-  | "irish-sports"
-  | "literature"
-  | "myth-folklore"
-  | "history";
+export type QuizCategory = (typeof QUIZ_CATEGORIES)[number];
 
 /** 日英の表示文言です。 */
 export type QuizLocalizedText = Readonly<Record<Locale, string>>;
@@ -62,3 +66,66 @@ export type QuizAnswerResult = Readonly<{
   source: Readonly<{ label: string; url: string }>;
   relatedGuide?: Readonly<{ slug: string; label: string }>;
 }>;
+
+/** 回答前のClientへ渡せる、採点情報を含まないChoiceです。 */
+export type PublicQuizChoice = Readonly<{ id: string; label: string }>;
+
+/** 回答前のClientへ渡せる公開Questionです。 */
+export type PublicQuizQuestion = Readonly<{
+  id: string;
+  category: QuizCategory;
+  question: string;
+  choices: readonly PublicQuizChoice[];
+  specialDate?: QuizSpecialDate;
+}>;
+
+/** 入力途中のDraftを保持できる管理用翻訳です。 */
+export type AdminQuizTranslation = Readonly<{
+  question: string;
+  explanation: string;
+  sourceLabel: string;
+}>;
+
+/** 入力途中のDraftを保持できる管理用Choiceです。 */
+export type AdminQuizChoice = Readonly<{
+  id: string;
+  sortOrder: number;
+  translations: Readonly<Record<Locale, string>>;
+}>;
+
+/** 管理画面で編集するQuestion全体のスナップショットです。 */
+export type AdminQuizQuestion = Readonly<{
+  id: string;
+  category: QuizCategory | null;
+  specialDate: QuizSpecialDate | null;
+  correctChoiceId: string | null;
+  sourceUrl: string | null;
+  relatedContentId: string | null;
+  isPublished: boolean;
+  translations: Readonly<Record<Locale, AdminQuizTranslation>>;
+  choices: readonly AdminQuizChoice[];
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+/** 管理一覧用の軽量なQuestionです。 */
+export type AdminQuizListItem = Omit<AdminQuizQuestion, "translations" | "choices"> & {
+  questionJa: string;
+  questionEn: string;
+  choiceCount: number;
+};
+
+/** 作成・更新で保存する、公開状態と監査日時を除いたQuestion全体です。 */
+export type AdminQuizWriteInput = Pick<
+  AdminQuizQuestion,
+  "category" | "specialDate" | "correctChoiceId" | "sourceUrl" | "relatedContentId" | "translations" | "choices"
+>;
+
+/**
+ * 指定値がQuizカテゴリのAllow Listに含まれるか判定します。
+ * @param {string} value 判定対象。
+ * @returns {value is QuizCategory} 許可済みカテゴリの場合はtrue。
+ */
+export function isQuizCategory(value: string): value is QuizCategory {
+  return QUIZ_CATEGORIES.includes(value as QuizCategory);
+}
