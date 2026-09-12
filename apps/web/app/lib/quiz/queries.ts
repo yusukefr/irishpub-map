@@ -45,10 +45,18 @@ export function getQuizDateInTokyo(now: Date = new Date()): QuizDate {
 
 /** 暦日から決定的に今日の問題を選び、記念日一致問題を優先します。
  * @param {QuizDate} date Asia/Tokyo基準の暦日。
- * @param {readonly QuizQuestion[]} questions 選択対象。省略時は同梱JSONを使用します。
- * @returns {QuizQuestion} 同じ日付と問題集合に対して常に同じ問題。
+ * @param {readonly T[]} questions Special Dateを判定できる選択対象。省略時は同梱JSONを使用します。
+ * @returns {T} 同じ日付と問題集合に対して常に同じ問題。
  */
-export function selectDailyQuiz(date: QuizDate, questions: readonly QuizQuestion[] = quizQuestions): QuizQuestion {
+export function selectDailyQuiz<T extends Pick<QuizQuestion, "specialDate">>(
+  date: QuizDate,
+  questions: readonly T[],
+): T;
+export function selectDailyQuiz(date: QuizDate): QuizQuestion;
+export function selectDailyQuiz(
+  date: QuizDate,
+  questions: readonly Pick<QuizQuestion, "specialDate">[] = quizQuestions,
+): Pick<QuizQuestion, "specialDate"> {
   if (!isValidDate(date)) throw new Error("A valid quiz date of 1583 or later is required");
   if (questions.length === 0) throw new Error("At least one quiz question is required");
   const specialQuestions = questions.filter(

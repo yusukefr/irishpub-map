@@ -18,6 +18,7 @@ type DbContentRow = DbContentSummaryRow & {
   body_markdown: unknown;
 };
 let sqlClient: ReturnType<typeof neon> | null = null;
+const CONTENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 /**
  * DB行を公開Contentへ変換します。
@@ -63,6 +64,20 @@ export async function getPublishedContentBySlug(
   return getCachedPublishedContent(kind, slug, locale, () => getPublishedContentBySlugFromDatabase(kind, slug, locale));
 }
 /**
+ * 公開済みContentだけをID指定で要求locale優先・日本語フォールバックして取得します。
+ * @param {string} id Content UUID。
+ * @param {Locale} locale 優先locale。
+ * @returns {Promise<PublishedContent | null>} 不正ID・DB未設定・非公開・対象なしの場合はnull。
+ */
+export async function getPublishedContentById(
+  id: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<PublishedContent | null> {
+  if (!CONTENT_ID_PATTERN.test(id) || !process.env.DATABASE_URL) return null;
+  return getPublishedContentByIdFromDatabase(id, locale);
+}
+
+/**
  * kindに属する公開済みContentだけを要求locale優先・日本語フォールバックで取得します。
  * @param {ContentKind} kind - 記事種別。
  * @param {Locale} locale - 優先locale。
@@ -81,6 +96,13 @@ async function getPublishedContentBySlugFromDatabase(kind: ContentKind, slug: st
     (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary, translation.body_markdown FROM content_entries AS entry JOIN LATERAL (SELECT value.title, value.summary, value.body_markdown FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.kind = ${kind} AND entry.slug = ${slug}`) as DbContentRow[];
   return rows[0] ? parsePublishedContent(rows[0]) : null;
 }
+async function getPublishedContentByIdFromDatabase(id: string, locale: Locale) {
+  const rows =
+    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary, translation.body_markdown FROM content_entries AS entry JOIN LATERAL (SELECT value.title, value.summary, value.body_markdown FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.id = ${id}::uuid`) as DbContentRow[];
+  if (rows.length > 1) throw new Error("Invalid published content result.");
+  return rows[0] ? parsePublishedContent(rows[0]) : null;
+}
+
 function parsePublishedContentSummary(row: DbContentSummaryRow): PublishedContentSummary {
   if (
     (row.kind !== "guide" && row.kind !== "story") ||

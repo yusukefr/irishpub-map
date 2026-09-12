@@ -10,17 +10,7 @@ import type {
   QuizSource,
   QuizSpecialDate,
 } from "./types";
-
-const CATEGORY_IDS = [
-  "ireland-basics",
-  "pub-guinness",
-  "irish-whiskey",
-  "irish-music",
-  "irish-sports",
-  "literature",
-  "myth-folklore",
-  "history",
-] as const satisfies readonly QuizCategory[];
+import { QUIZ_CATEGORIES } from "./types";
 
 function fail(path: string, message: string): never {
   throw new Error(`Invalid quiz data at ${path}: ${message}`);
@@ -83,7 +73,7 @@ function question(value: unknown, index: number): QuizQuestion {
   const input = record(value, basePath);
   const id = string(input.id, `${basePath}.id`);
   const category = string(input.category, `${basePath}(${id}).category`);
-  if (!CATEGORY_IDS.includes(category as QuizCategory)) {
+  if (!QUIZ_CATEGORIES.includes(category as QuizCategory)) {
     fail(`${basePath}(${id}).category`, `unsupported category "${category}"`);
   }
   if (!Array.isArray(input.choices) || input.choices.length !== 4) {
@@ -129,7 +119,7 @@ export function parseQuizData(value: unknown): QuizData {
 
   const categoryInput = record(input.categories, "categories");
   const categories = Object.fromEntries(
-    CATEGORY_IDS.map((id) => {
+    QUIZ_CATEGORIES.map((id) => {
       const item = record(categoryInput[id], `categories.${id}`);
       return [
         id,
