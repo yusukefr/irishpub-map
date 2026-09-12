@@ -46,7 +46,7 @@
 緯度、経度、営業ステータス
 ```
 
-日本語店舗名読み、英語翻訳、タグ、外部リンクは公開条件に含めません。Application Serviceは文字列、座標範囲、URL形式に加えて次を検証します。
+日本語店舗名読み、英語翻訳、タグ、外部リンクは公開条件に含めません。通常更新ではApplication Serviceが公開必須項目を判定し、Repositoryが参照整合性と保存条件を検証します。公開状態変更ではRepositoryが現在値と公開条件のsnapshotを検証します。
 
 - 都道府県コードが `prefectures` に存在する。
 - 市区町村コードが `municipality_codes` に存在し、選択した都道府県に所属する。
@@ -56,7 +56,7 @@
 - 選択したすべてのタグIDが `tags` に存在する。タグは0件でもよい。
 - 選択したタグに日本語表示名が存在する。
 
-公開条件は複数テーブルを参照する業務ルールなのでDB制約だけに依存しません。公開状態を変更するApplication Serviceで検証し、不足項目をまとめて返します。加えて、公開済み店舗の通常更新では、更新後のスナップショットにPublish Validationを適用します。不足項目を作る更新は `422` で拒否し、管理者の意図なしに自動で非公開へ変更しません。非公開へ戻す操作には公開条件を適用しません。
+公開条件は複数テーブルを参照する業務ルールなのでDB制約だけに依存しません。通常更新ではApplication Serviceが入力上の必須項目を判定し、Repositoryが公開済み店舗の更新gateを適用します。公開状態変更ではRepositoryが現在値と公開条件を確認し、不足項目をまとめて返します。公開済み店舗の更新で不足項目を作る場合は `422` で拒否し、管理者の意図なしに自動で非公開へ変更しません。非公開へ戻す操作には公開条件を適用しません。
 
 ## 型とDTO
 
@@ -76,12 +76,12 @@
 
 ## Validationの責務
 
-| レイヤー            | 責務                                                                  |
-| ------------------- | --------------------------------------------------------------------- |
-| Route Handler       | 認証、同一Origin、HTTPメソッド、Content-Type、JSON構文、入力サイズ    |
-| Application Service | Draft / Publish Validation、マスタ存在、市区町村の所属、公開状態遷移  |
-| Repository          | コードとIDをパラメータ化クエリへ変換し、1操作をトランザクションで保存 |
-| Database            | 型、NULL、FK、UNIQUE、CHECKによる最低限の整合性                       |
+| レイヤー | 責務 |
+| --- | --- |
+| Route Handler | 認証、同一Origin、HTTPメソッド、Content-Type、JSON構文、入力サイズ |
+| Application Service | Draft入力のValidation、店舗の作成・通常更新・削除のオーケストレーション、通常更新時の公開必須項目判定 |
+| Repository | マスタ参照検証、店舗データのtransaction保存、公開状態変更のsnapshot確認と条件付き更新 |
+| Database | 型、NULL、FK、UNIQUE、CHECKによる最低限の整合性 |
 
 クライアント側Validationは入力支援に使いますが、保存可否の判定には使いません。公開できない場合は不足項目を一括で返し、画面が概要と各項目付近へ表示できる構造化エラーにします。
 
@@ -97,7 +97,7 @@
 
 `getPublishedPubs` と管理取得は分離します。`getPublishedPubs` は `pubs.is_published = TRUE` をSQLで絞り込み、公開用 `Pub` として検証します。`getAdminPubPage` は公開・非公開とNULLを含む下書きを一覧DTOで返し、`getAdminPub` は日英翻訳とタグIDを含む完全な `AdminPub` を返します。
 
-Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`createAdminPub`、`updateAdminPub`、`setAdminPubPublication`、`deleteAdminPub` というApplication Serviceを境界にします。
+店舗の作成・通常更新・削除は `admin-pub-service.ts` のApplication Serviceを経由します。公開状態変更は専用Route Handlerから `pub-repository.ts` の `setAdminPubPublication` を直接呼び出し、公開時のsnapshot確認、Publish Validation、条件付き状態更新を行います。
 
 | メソッド | パス | 入力・用途 |
 | --- | --- | --- |
@@ -112,18 +112,17 @@ Route HandlerからRepositoryへ直接業務ルールを持ち込まず、`creat
 
 ## トランザクション方針
 
-使用中の `@neondatabase/serverless` 1.1.0は、`sql.transaction()` による単一の非対話型Postgresトランザクションを提供します。店舗作成・更新では `pubs` のINSERT / UPDATE、`pub_translations` のUPSERT / DELETE、`pub_tags` のDELETE / INSERTを同じトランザクションへ含めます。
+### 通常更新
 
-- `sql.transaction(tx => [...], { isolationLevel: "ReadCommitted" })` を使います。
-- UUIDはApplication Serviceで先に生成し、後続SQLが前のSQL結果へ依存しない形にします。
-- マスタ存在・所属関係は保存前に検証し、保存時もFKを最終防衛線にします。
-- 最初の `SELECT ... FOR UPDATE` で対象行と公開状態をロックします。後続の `UPDATE`、翻訳、タグ関係の各SQLは、`WHERE EXISTS` またはCTEで「対象が存在し、非公開または更新後入力が公開条件を満たす」場合だけ実行します。
-- トランザクション完了後、ロック対象が0件なら `404`、対象が存在して公開条件のgateを通らなかった場合は `422` を返します。関連INSERTも同じgateを使い、対象なしでFK違反を発生させません。
-- 通常更新と公開切替の両方が同じ行ロックとPublish Validationを使うため、競合時は直列化され、公開条件の確認と更新が原子的に行われます。
-- 値はすべてタグ付きテンプレートのパラメータとして渡し、外部入力から動的SQLを構築しません。
-- いずれかが失敗した場合は全体をロールバックし、部分保存を残しません。
+公開状態を維持した店舗更新は `admin-pub-repository.ts` の `replaceAdminPub` が `sql.transaction()` 内で処理します。最初に対象店舗を `SELECT ... FOR UPDATE` でロックし、店舗本体、日英翻訳、タグrelationを同一transaction内で更新します。公開済み店舗では、更新後入力がPublish Validationを満たす場合だけ更新し、条件を満たさない場合は全体をロールバックして `422` と不足項目を返します。
 
-英語翻訳の削除やタグ全解除も同じ更新トランザクションに含めます。店舗削除は単一の `DELETE` とFKのCASCADEで完結します。
+英語翻訳の削除やタグ全解除も同じ更新transactionに含め、いずれかのSQLが失敗した場合はtransaction全体をロールバックします。店舗の作成も `insertAdminPub` による単一transactionで行い、店舗削除は単一の `DELETE` とFKのCASCADEで完結します。
+
+### 公開状態変更
+
+公開状態変更は `pub-repository.ts` の `setAdminPubPublication` が専用処理として行います。まず現在値と公開条件のsnapshotを取得し、公開へ変更する場合だけ不足項目を確認します。条件を満たす場合は、SQL側でも公開条件を再確認した条件付き `UPDATE pubs` を行います。更新できなかった場合は対象の現在状態を再取得して `404` または `422` に変換します。
+
+非公開へ戻す場合はPublish Validationを要求しません。同じ状態への要求は `unchanged: true` として更新しません。通常更新と公開状態変更は同じtransaction／行ロック方式ではないため、両者を共通のConcurrency実装として説明しません。
 
 ## 認証・認可・CSRF
 

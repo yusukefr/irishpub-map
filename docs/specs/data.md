@@ -75,14 +75,16 @@ DBでは数値の `pubs.status_code` と `pub_statuses.code` で関連付け、�
 
 ## 検証と保存
 
-- 読み出した店舗は `asPubs` で検証します。必須項目の欠落、不正な緯度経度、重複ID、未定義の営業状況を含む値は受け付けません。
-- 新規作成時の `id` はサーバーがUUIDを発行します。更新時はURLに指定した `id` を維持します。
-- 作成・更新では日本語の市区町村名を `municipality_translations` から一意に解決し、`pubs.municipality_code` に保存します。解決できない場合はエラーにします。
-- 店舗名、読み、住所の作成・更新は、日本語の `pub_translations` へ保存します。
-- タグは共有定義で正規化・重複排除し、`tags`、`tag_translations`、`pub_tags` へ保存します。
-- URL項目は省略または `null` にできます。DB制約はHTTP(S) URLだけを許可します。
-- 削除時は、店舗翻訳と店舗・タグ関係が外部キーによってカスケード削除されます。
+- 公開用データの読み出しは `asPubs` で検証します。必須項目の欠落、不正な緯度経度、重複ID、未定義の営業状況を含む値は受け付けません。
+- 管理画面・管理APIの作成・更新入力には `AdminPubWriteInput` を使用します。
+- 新規作成時の `id` はApplication ServiceがUUIDを発行し、更新時はURLで指定された既存IDを維持します。
+- `prefectureCode`、`municipalityCode`、`status`、`tagIds` は保存前にDB上のマスタと照合します。市区町村については指定された都道府県への所属も検証します。
+- 日本語翻訳は必須として `pub_translations` に保存し、英語翻訳は任意で保存します。英語翻訳が `null` の場合は既存の英語翻訳を削除します。
+- タグは既存のタグIDを受け取り、`pub_tags` のrelationとして保存します。`tagIds = []` の場合は店舗のタグrelationをすべて解除します。
+- 店舗本体、翻訳、タグrelationの作成・更新は単一transactionで処理します。
+- URL項目は `null` を許可し、HTTP(S) URLだけを受け付けます。
+- 削除時は店舗を削除し、店舗翻訳と `pub_tags` は外部キーのCASCADEにより削除します。
 
 ## 運用
 
-新規データは管理画面または `scripts/import-pubs.mjs` でNeonへ投入します。どちらも `pubs.is_published` のDB既定値により非公開で作成されます。一括投入は既存UUIDを更新せずスキップします。リポジトリには店舗データのスナップショットを保存しません。
+管理API経由の新規データは管理画面からNeonへ投入します。別系統の運用用インポートとして `scripts/import-pubs.mjs` も利用できます。どちらも `pubs.is_published` のDB既定値により非公開で作成されます。一括投入は既存UUIDを更新せずスキップします。リポジトリには店舗データのスナップショットを保存しません。
