@@ -1,159 +1,62 @@
 # AGENTS.md
 
-このリポジトリで AI agent が作業するための運用ルールです。
+このリポジトリで AI Agent が作業するための入口です。すべてのドキュメントを最初から読む必要はありません。まずこのファイルを確認し、現在のタスクに関係する文書だけを [Documentation Router](docs/README.md) から参照してください。
 
-## Project Overview
+## Project
 
-- 日本国内の Irish Pub を地図上で探せる Web アプリです。
-- まず Web 版を優先し、将来的に同じデータ構造を使ってモバイルアプリへ展開します。
-- 店舗データはNeon Postgresで管理し、共通型は `packages/shared` で管理します。DATABASE_URL未設定時は店舗0件として扱います。
+Irish Pub Map は、日本国内の Irish Pub を地図上で探せる Web アプリです。店舗データは Neon Postgres で管理し、Web と将来のモバイルアプリで共有する型やロジックは `packages/shared` に置きます。`DATABASE_URL` 未設定時は店舗0件として扱います。
 
-## Tech Stack
+主要技術は Node.js 24、npm workspaces、Next.js 16、React、TypeScript、MapLibre GL JS、OpenStreetMap tiles、Tailwind CSSです。
 
-- Node.js 24 系
-- npm workspaces
-- Next.js 16
-- React
-- TypeScript
-- MapLibre GL JS
-- OpenStreetMap tiles
-- Tailwind CSS + global CSS
+## Source of Truth
 
-## Repository Layout
+判断材料が矛盾する場合は、原則として次の優先順位で確認します。
 
-- `apps/web`: Next.js Web アプリ
-- `packages/shared`: Web/モバイルで共通利用する型やロジック
-- `db/migrations`: Neon Postgres のスキーマ移行SQL
-- `data`: 市区町村コードのマスタCSV。店舗データは含めない
-- `docs`: 仕様、構成、開発・運用手順
-- `.agents/skills`: このリポジトリで共有するCodex Skills
-- `.github`: Issue / Pull Request テンプレートなど GitHub 設定
+1. 現在のユーザー要求 / GitHub Issue
+2. 現在の実装・テスト
+3. Neon の現行スキーマ・データ
+4. 現行ドキュメント
+5. 過去の Issue / Pull Request / Migration / 設計記録
 
-店舗データの永続化先はNeon Postgresです。ローカルからのデータ投入はインポート手順を使用します。
+Issue はこれから変更したい内容を表す場合があります。現行Behaviorは実装・テストを確認し、DB構造・データはNeonの現行状態を優先してください。古い設計文書と実装が矛盾する場合は、現在の実装を優先します。
 
-## Standard Commands
+Framework、Library、Vercelの仕様は、使用中のVersionに対応する公式Documentationを優先します。外部Skillは実装・設計の補助として扱います。
 
-作業前に Node.js のバージョンを合わせてください。
+## Mandatory Rules
 
-```bash
-nvm use
-npm install
-```
+- 変更前に目的を短く説明し、不明点は仮定として明記します。自信が低い変更は先にリスクを共有します。
+- 指示がない限り、このリポジトリ内だけを変更し、必要以上に変更範囲を広げません。
+- 変更前に `git status --short --branch` を確認し、ユーザーや他Agentの未コミット変更を勝手に戻したり上書きしたりしません。
+- `main` へ直接commitしません。Issueと関連するIssue / PR / 実装を確認し、`origin/main` 起点の `ai/<short-description>` ブランチで作業します。
+- Issue対応では実装前に設計・影響範囲・検証方針を `scripts/comment-issue-design.sh --issue <number> --body-file <file>` でコメントします。
+- ファイル削除、既存ファイル全体の置換、大量変更など、破壊的または復元コストの高い変更の前は確認を取り、変更は小さく分けます。
+- 個人情報、アカウント名、Preview URL、credential、秘密鍵などをコード、文書、出力へ記録しません。
+- コードと文書を変更したら同期要否を確認し、仕様やBehaviorに差分があれば同じ作業で更新します。
+- Public UI変更前は [Design System](docs/design/README.md) を確認し、既存Token、Component、Pattern、Reference Screenを優先します。
+- コミット前に `npm run check:sensitive-data` を実行し、検出回避のためにhookを無効化したり値を難読化したりしません。
+- PRは `main` をbaseとし、Templateを基にした日本語の本文ファイルを `scripts/create-pr.sh` へ渡して作成します。関連Issue、検証結果、省略理由、コードと文書の同期確認を記載します。
+- PR作成後または修正push後は `scripts/verify-pr-ci.sh --pr <number>` を実行します。最新HEADにCIがなければ `--dispatch` で手動CIを実行し、その旨を報告します。
 
-通常の検証コマンド:
+## Documentation Router
 
-```bash
-npm test
-npm run format:check
-npm run typecheck
-npm run lint
-npm run build
-npm audit --omit=dev
-```
+詳細な参照先は [docs/README.md](docs/README.md) にあります。
 
-PRの最新HEADに対するCI確認:
+| Task | Documentation |
+| --- | --- |
+| General development / GitHub / JSDoc | [Development conventions](docs/development/conventions.md) |
+| Product behavior | [Product specification](docs/specs/product.md) |
+| Public API | [API specification](docs/specs/api.md) |
+| Pub data contract | [Data specification](docs/specs/data.md) |
+| Database | [Database specification](docs/specs/database.md) |
+| Public UI | [Design System](docs/design/README.md) |
+| Privacy / Analytics | [Privacy and external transmission](docs/operations/privacy-and-external-transmission.md) |
+| Development setup | [Development setup](docs/setup/development.md) |
+| Deployment | [Deployment](docs/setup/deployment.md) |
 
-```bash
-scripts/verify-pr-ci.sh --pr <pull-request-number>
-# 最新HEADにCIがない場合に、手動CIを起動して待機する
-scripts/verify-pr-ci.sh --pr <pull-request-number> --dispatch
-```
+`apps/web` 配下を変更するときは、同ディレクトリの `AGENTS.md` も確認し、Next.js生成ルールを維持してください。
 
-コードの整形にはPrettierを使用します。書式を変更する場合は `npm run format`、確認だけの場合は `npm run format:check` を実行してください。
+## Validation
 
-開発サーバー:
+作業前に `nvm use` でNode.jsのVersionを合わせます。変更内容に応じて test、format check、typecheck、lint、build、E2E、Visual Regression、Accessibility、dependency auditを実行します。具体的なコマンドは [Development conventions](docs/development/conventions.md) を参照してください。
 
-```bash
-npm run dev
-```
-
-## コード規約・開発規約
-
-コード規約・開発規約は [docs/development/conventions.md](docs/development/conventions.md) を参照してください。この AGENTS.md の必須ルールと矛盾する場合は、AGENTS.md を優先します。
-
-## External Skill Guidance
-
-- `.agents/skills` の内容は、実装・設計を補助するガイドとして扱い、最終的な仕様根拠にはしないでください。
-- Next.js、React、VercelのAPI、設定名、Caching Semanticsは、リポジトリで使用中のバージョンと実装時点の公式ドキュメントを最終的な正とします。
-- 外部Skillと公式ドキュメントが矛盾する場合は、公式ドキュメントを優先してください。外部Skill本文は、取得元・ハッシュの追跡性を保つため直接改変しません。
-- Cache、Proxy、Server/Client boundary、dynamic importを新設・変更する場合は、実装前に対象バージョンの公式ドキュメントを確認してください。
-
-## Working Rules
-
-- `main` ブランチへ直接コミットしないでください。
-- Issue 対応時は、Issue の内容を読んだ後、実装前に設計方針・影響範囲・検証方針を Issue コメントに投稿してください。
-- GitHub Issue のタイトルは日本語で作成してください。`[AI Task]` や `[Bug]` など `[]` 内の接頭辞は英語のままで構いません。
-- Issue の設計コメントは `scripts/comment-issue-design.sh --issue <issue-number> --body-file <file>` を使ってください。複数行の本文を `--body` に渡したり、`\n` などのエスケープ文字列で改行を表現してはいけません。
-- Issue 対応時は `origin/main` 起点で作業ブランチを作成してください。
-- ブランチ名は `ai/<short-description>` を基本にしてください。
-- 変更前に `git status --short --branch` を確認してください。
-- ユーザーや他の agent の未コミット変更を勝手に戻さないでください。
-- Issue の作業範囲に書かれたファイル・ディレクトリ以外は、必要性が明確な場合だけ変更してください。
-- 実装意図、前提条件、副作用が名前と型だけでは読み取れない箇所には、日本語のコメントまたは JSDoc を記載してください。処理の逐語的な説明は避け、コード変更時は関連コメントも更新してください。
-- アプリ本体を変更した場合は、原則として test / typecheck / lint / build を実行してください。
-- コードまたはドキュメントを変更した場合は、対応するもう一方に更新が必要かを必ず確認してください。仕様、API、データ形式、環境変数、運用手順、画面挙動に差分がある場合は、コードとドキュメントを同じ作業で更新し、PR 本文に確認結果を記載してください。
-- 依存関係を変更した場合は、`npm audit --omit=dev` も確認してください。
-- GitHub 操作は、作業環境に設定された専用の git/GitHub 認証を使ってください。アカウント名はリポジトリへ記録しないでください。
-
-## ESLint と JSDoc
-
-- ESLint の設定はリポジトリルートの `eslint.config.mjs` で管理し、Web アプリと `packages/shared/src` を同じルールで検査します。
-- 公開された関数、コンポーネント、Route Handler、共有パッケージの公開型を JSDoc の対象とします。内部のイベントコールバック、局所的な変換関数、無名関数へ一律のコメントは要求しません。
-- 公開関数の JSDoc には目的を記載し、引数がある場合は `@param`、戻り値がある場合は `@returns` を付けます。説明は型だけでは分からない前提、失敗時の扱い、副作用を優先します。
-- 採用ルールは、JSDoc の整列・タグ名・引数名・説明・JSDoc・`@param`・`@returns` の検査と、ESLint コアの `no-eval`、`no-implied-eval`、`no-new-func`、`no-script-url`、`no-promise-executor-return` です。
-- `@typescript-eslint/no-misused-promises`、`eslint-plugin-security`、`eslint-plugin-react`、`no-console`、`no-await-in-loop` は、型認識設定・誤検知・互換性・既存の正当な用途を考慮して見送ります。Prettier のルールは ESLint に重複させません。
-
-## Public UI Design Rules
-
-- Public UIを変更する前に、[Irish Pub Map Design System](docs/design/README.md)を読み、関係するToken、Component、Screen Pattern、Reference Screenを確認してください。
-- UI実装は、Requirement、既存Token、既存Component、既存Pattern、既存Reference Screen、Component拡張、新規Token / Componentの順で判断します。
-- 新しい色、余白、角丸、影、Typography、Component、画面Patternを追加する場合は、既存のDesign Systemで表現できない理由を確認し、実装とDesign Documentationを同じ変更で更新してください。
-- Public UI変更中はDesign Tokenと既存Componentを優先し、日本語・英語、Desktop・Mobile、Semantic HTML、Keyboard操作、Accessible Nameを維持してください。既存Behaviorを変える場合は、明示されたRequirementと対応テストを用意してください。
-- 実装後は[UI Definition of Done](docs/design/README.md#ui-definition-of-done)に従い、関係するStorybook、ブラウザ、Visual Regression、E2E、Accessibilityを確認してください。視覚的な変更はDesktop幅と390px程度のMobile幅で確認します。
-- Design Systemへ影響するPublic UI変更では、PR本文にTokens / Components / Patterns / Reference Screens / Documentationの更新要否を記載してください。
-
-## Pull Request Rules
-
-- PR は `main` を base にしてください。
-- PR 本文は日本語で記載してください。
-- 関連 Issue がある場合は `Closes #<issue-number>` を含めてください。
-- 実行した検証コマンドと結果を PR 本文に記載してください。
-- PR作成後または修正push後は `scripts/verify-pr-ci.sh --pr <pull-request-number>` で、最新HEAD SHAに `Lint, Test, Build` が紐づいていることを確認してください。
-- 最新HEADに成功したCIがない場合は `scripts/verify-pr-ci.sh --pr <pull-request-number> --dispatch` で手動CIを実行し、結果をPR本文または作業報告へ記載してください。`workflow_dispatch` の結果はPRの通常チェックへ紐づかない場合があるため、手動実行であることも明記してください。
-- 検証を省略した場合は、理由を明記してください。
-- PR 作成時は `scripts/create-pr.sh` を使ってください。
-- PR 本文は `.github/pull_request_template.md` をベースにした本文ファイルを必ず `--body-file` で渡してください。`--body` は使用しないでください。
-- Issue をもとに PR を作成する場合は、`scripts/create-pr.sh --issue <issue-number>` を指定してください。Issue の labels を PR にコピーします。
-- Issue をもとにしない PR の場合は、PR に `ai-agent` label を設定してください。
-- PR の reviewer と assignee は、必要に応じて PR_REVIEWER と PR_ASSIGNEE の環境変数で指定してください。
-
-## Sensitive Information Rules
-
-- 個人名、メールアドレス、アカウント名、Preview URL、トークン、秘密鍵をコードやドキュメントへ記録しないでください。公開用の Production URL は README に記載できます。
-- リポジトリ・reviewer・assignee など環境固有の値は環境変数または認証済み CLI から取得してください。
-- 追加の検出対象は `SENSITIVE_IDENTIFIERS` にカンマ区切りで指定してください。
-- コミット前に `npm run check:sensitive-data` を実行してください。
-- 検出を回避するためにフックを無効化したり、値を分割・難読化したりしないでください。
-
-PR 作成例:
-
-```bash
-scripts/create-pr.sh \
-  --issue 10 \
-  --title "Add PR metadata automation" \
-  --body-file pr-body.md
-```
-
-Issue 設計方針コメント例:
-
-```bash
-scripts/comment-issue-design.sh \
-  --issue 13 \
-  --body-file issue-design.md
-```
-
-## Notes
-
-- 地図表示には WebGL が必要です。WebGL が使えない環境ではフォールバック表示になります。
-- Google Maps など有料 API へ切り替える場合は、料金と利用制限を確認してから実装してください。
-- 店舗データ形式は Web とモバイルで共通利用できるよう維持してください。
+検証を省略した場合は理由をPR本文と作業報告へ記載します。

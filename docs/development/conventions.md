@@ -88,6 +88,7 @@ Migrationの実行にはPooled ConnectionではなくDirect / Unpooled Connectio
 ### Git と GitHub
 
 - `main` へ直接コミットせず、`origin/main` から作成した作業ブランチで変更します。
+- GitHub Issue のタイトルは日本語で作成します。`[AI Task]` や `[Bug]` など `[]` 内の接頭辞は英語のままで構いません。
 - Issue 対応では、実装前に `scripts/comment-issue-design.sh --issue <number> --body-file <file>` で設計方針を投稿します。
 - 複数行の Issue コメントは `--body-file` を使い、PR 本文は `.github/pull_request_template.md` をベースにした本文ファイルを `--body-file` で渡します。`--body` はPR作成に使用しません。
 - PR は `scripts/create-pr.sh` で作成し、関連 Issue、検証結果、必要な reviewer / assignee を設定します。
