@@ -108,14 +108,14 @@ cp .env.example .env.local
 | --- | --- | --- |
 | `IRISHPUB_MAP_API_KEY` | 任意 | `GET /api/pubs` の API key。設定時は直接アクセスに `x-api-key` が必要 |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Preview の Deployment Protection を使う場合 | サーバー側の公開 API fetch で送る bypass ヘッダー |
-| `DATABASE_URL` | 管理画面で永続化する場合 | Neon Postgres の接続文字列 |
+| `DATABASE_URL` | 公開Guideを表示する場合、または管理画面で永続化する場合 | Neon Postgres の接続文字列 |
 | `ADMIN_USERNAME` | 管理画面を有効にする場合 | 管理者 ID |
 | `ADMIN_PASSWORD_HASH` | 管理画面を有効にする場合 | `salt:base64-hash` 形式の scrypt パスワードハッシュ |
 | `ADMIN_SESSION_SECRET` | 管理画面を有効にする場合 | セッション Cookie 署名用の十分に長いランダム値 |
 
 `IRISHPUB_MAP_API_KEY` が未設定または空の場合、ローカル開発では API key チェックは無効です。値を設定した場合、Web アプリのトップページはサーバー側で同じ値を付与して API を呼び出します。
 
-管理画面の表示とログインは、3 つの `ADMIN_*` 変数がすべて設定されている場合に有効です。店舗の追加・編集・削除には、さらに `DATABASE_URL` が必要です。DB未設定時は `/admin` で店舗0件の状態を表示できますが、更新操作は失敗します。
+管理画面の表示とログインは、3 つの `ADMIN_*` 変数がすべて設定されている場合に有効です。公開Guideの表示と店舗の追加・編集・削除には、さらに `DATABASE_URL` が必要です。DB未設定時は公開Guideが0件となり、`/admin` で店舗0件の状態を表示できますが、更新操作は失敗します。
 
 ## 店舗データの一括インポート
 
@@ -190,7 +190,7 @@ axeの結果だけでアクセシビリティを保証しません。キーボ�
 
 `test:e2e` はPlaywrightの `webServer` でbuildと `next start` を自動実行します。手動で開発サーバーを起動する必要はありません。対話UIで実行する場合は `npm run test:e2e:ui` を使用します。
 
-E2Eでは `DATABASE_URL` を使用せず、Playwright設定からサーバー専用の `E2E_TEST_MODE=1` と固定fixtureを設定します。このモードはVercel Productionでの有効化を拒否し、fixtureに対する作成・更新・削除も拒否します。管理画面は認証を迂回せず、テスト専用の固定資格情報でログインします。
+E2Eでは `DATABASE_URL` を使用せず、Playwright設定からサーバー専用の `E2E_TEST_MODE=1` と公開店舗・公開Editorial Contentを含む固定fixtureを設定します。このモードはVercel Productionでの有効化を拒否し、fixtureに対する作成・更新・削除も拒否します。管理画面は認証を迂回せず、テスト専用の固定資格情報でログインします。
 
 失敗時のHTML reportは `playwright-report/`、traceとscreenshotは `test-results/` に出力されます。CIでは通常のLint・Test・Build・Storybook build完了後に独立したE2E jobを実行し、失敗時のみ両ディレクトリをartifactとして10日間保存します。
 

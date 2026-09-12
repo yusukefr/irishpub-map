@@ -1,26 +1,26 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-type GuideMetadata = {
+type GuideContent = {
   slug: string;
   kind: "guide";
   title: string;
   summary: string;
   category: "culture" | "pub-culture";
-  tags: readonly string[];
   publishedAt: string;
+  bodyMarkdown: string;
 };
 
 const pageMocks = vi.hoisted(() => ({
   getRequestLocale: vi.fn(),
-  listLegacyGuides: vi.fn(),
-  loadLegacyGuide: vi.fn(),
+  listPublishedContent: vi.fn(),
+  getPublishedContentBySlug: vi.fn(),
   notFound: vi.fn(),
 }));
 
 vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: pageMocks.getRequestLocale }));
-vi.mock("../../apps/web/app/lib/content/legacy-repository", () => ({
-  listLegacyGuides: pageMocks.listLegacyGuides,
-  loadLegacyGuide: pageMocks.loadLegacyGuide,
+vi.mock("../../apps/web/app/lib/content/repository", () => ({
+  listPublishedContent: pageMocks.listPublishedContent,
+  getPublishedContentBySlug: pageMocks.getPublishedContentBySlug,
 }));
 vi.mock("next/navigation", () => ({ notFound: pageMocks.notFound }));
 
@@ -38,8 +38,8 @@ const metadataByLocale = {
     title: "サンプルガイド",
     summary: "Explore Irelandセクション用のサンプルコンテンツです。",
     category: "culture",
-    tags: ["sample"],
-    publishedAt: "2026-09-02",
+    publishedAt: "2026-09-02T00:00:00.000Z",
+    bodyMarkdown: "コンテンツは後日追加予定です。",
   },
   en: {
     slug: "sample",
@@ -47,10 +47,10 @@ const metadataByLocale = {
     title: "Sample Guide",
     summary: "Sample content for the Explore Ireland section.",
     category: "culture",
-    tags: ["sample"],
-    publishedAt: "2026-09-02",
+    publishedAt: "2026-09-02T00:00:00.000Z",
+    bodyMarkdown: "Content will be added later.",
   },
-} satisfies Record<"ja" | "en", GuideMetadata>;
+} satisfies Record<"ja" | "en", GuideContent>;
 
 const splitTheGMetadataByLocale = {
   ja: {
@@ -59,8 +59,8 @@ const splitTheGMetadataByLocale = {
     title: "Split the Gを楽しむ",
     summary: "Guinnessのグラスを使ったPubの遊び「Split the G」を、安全に楽しむためのガイドです。",
     category: "pub-culture",
-    tags: ["split-the-g", "guinness"],
-    publishedAt: "2026-09-05",
+    publishedAt: "2026-09-05T00:00:00.000Z",
+    bodyMarkdown: "地域によって判定方法は異なります。\n\n[Irish Pubを探す →](/)",
   },
   en: {
     slug: "split-the-g",
@@ -68,37 +68,24 @@ const splitTheGMetadataByLocale = {
     title: "How to Enjoy Split the G",
     summary: "A guide to enjoying the pub game Split the G with a Guinness glass, safely and at your own pace.",
     category: "pub-culture",
-    tags: ["split-the-g", "guinness"],
-    publishedAt: "2026-09-05",
+    publishedAt: "2026-09-05T00:00:00.000Z",
+    bodyMarkdown: "How the result is judged varies.\n\n[Find an Irish pub →](/)",
   },
-} satisfies Record<"ja" | "en", GuideMetadata>;
+} satisfies Record<"ja" | "en", GuideContent>;
 
 let locale: "ja" | "en" = "ja";
 
 beforeEach(() => {
   locale = "ja";
   pageMocks.getRequestLocale.mockReset().mockImplementation(() => Promise.resolve(locale));
-  pageMocks.listLegacyGuides
+  pageMocks.listPublishedContent
     .mockReset()
-    .mockImplementation((contentLocale: "ja" | "en") =>
+    .mockImplementation((_kind, contentLocale: "ja" | "en") =>
       Promise.resolve([splitTheGMetadataByLocale[contentLocale], metadataByLocale[contentLocale]]),
     );
-  pageMocks.loadLegacyGuide.mockReset().mockImplementation((slug, contentLocale: "ja" | "en") => {
-    if (slug === "sample") {
-      const GuideContent = () => (
-        <p>{contentLocale === "ja" ? "コンテンツは後日追加予定です。" : "Content will be added later."}</p>
-      );
-      return Promise.resolve({ Component: GuideContent, metadata: metadataByLocale[contentLocale] });
-    }
-    if (slug === "split-the-g") {
-      const GuideContent = () => (
-        <>
-          <p>{contentLocale === "ja" ? "地域によって判定方法は異なります。" : "How the result is judged varies."}</p>
-          <a href="/">{contentLocale === "ja" ? "Irish Pubを探す →" : "Find an Irish pub →"}</a>
-        </>
-      );
-      return Promise.resolve({ Component: GuideContent, metadata: splitTheGMetadataByLocale[contentLocale] });
-    }
+  pageMocks.getPublishedContentBySlug.mockReset().mockImplementation((_kind, slug, contentLocale: "ja" | "en") => {
+    if (slug === "sample") return Promise.resolve(metadataByLocale[contentLocale]);
+    if (slug === "split-the-g") return Promise.resolve(splitTheGMetadataByLocale[contentLocale]);
     return Promise.resolve(null);
   });
   pageMocks.notFound.mockReset().mockImplementation(() => {
@@ -107,7 +94,7 @@ beforeEach(() => {
 });
 
 describe("Discover pages", () => {
-  it("HubでStories placeholderと既存MDX Guide、Quizへの導線を表示する", async () => {
+  it("HubでStories placeholderと公開Editorial Guide、Quizへの導線を表示する", async () => {
     render(await DiscoverPage());
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);

@@ -16,6 +16,7 @@ import type { AdminTag } from "@irishpub-map/shared/admin-tag";
 import type { AdminContent, AdminContentListItem } from "@irishpub-map/shared/admin-content";
 import type { Locale } from "@irishpub-map/shared/locale";
 import type { Pub } from "@irishpub-map/shared/pub";
+import type { ContentKind, PublishedContent, PublishedContentSummary } from "./content/types";
 
 export const E2E_TEST_DATA = {
   content: {
@@ -33,6 +34,50 @@ export const E2E_TEST_DATA = {
 } as const;
 
 const UPDATED_AT = "2026-01-15T12:00:00.000Z";
+const publishedGuideDefinitions: Record<Locale, PublishedContent[]> = {
+  ja: [
+    {
+      kind: "guide",
+      slug: "split-the-g",
+      category: "pub-culture",
+      publishedAt: "2026-09-05T00:00:00.000Z",
+      title: "Split the Gを楽しむ",
+      summary: "Guinnessのグラスを使ったPubの遊び「Split the G」を、安全に楽しむためのガイドです。",
+      bodyMarkdown:
+        "## Split the Gとは\n\n地域や一緒に楽しむ人によって判定方法は異なります。\n\nSplit the Gは、成功や飲む速さ・量を競うものではありません。\n\n[Irish Pubを探す →](/)",
+    },
+    {
+      kind: "guide",
+      slug: "sample",
+      category: "culture",
+      publishedAt: "2026-09-02T00:00:00.000Z",
+      title: "サンプルガイド",
+      summary: "Explore Irelandセクション用のサンプルコンテンツです。",
+      bodyMarkdown: "コンテンツは後日追加予定です。",
+    },
+  ],
+  en: [
+    {
+      kind: "guide",
+      slug: "split-the-g",
+      category: "pub-culture",
+      publishedAt: "2026-09-05T00:00:00.000Z",
+      title: "How to Enjoy Split the G",
+      summary: "A guide to enjoying the pub game Split the G with a Guinness glass, safely and at your own pace.",
+      bodyMarkdown:
+        "## What is Split the G?\n\nHow the result is judged varies between places and groups.\n\nSplit the G is not about drinking quickly or drinking more.\n\n[Find an Irish pub →](/)",
+    },
+    {
+      kind: "guide",
+      slug: "sample",
+      category: "culture",
+      publishedAt: "2026-09-02T00:00:00.000Z",
+      title: "Sample Guide",
+      summary: "Sample content for the Explore Ireland section.",
+      bodyMarkdown: "Content will be added later.",
+    },
+  ],
+};
 const contentDefinitions: AdminContent[] = [
   {
     id: E2E_TEST_DATA.content.draft.id,
@@ -261,6 +306,36 @@ export function getE2EAdminContentList(): AdminContentListItem[] {
  */
 export function getE2EAdminContent(id: string): AdminContent | null {
   return contentDefinitions.find((content) => content.id === id) ?? null;
+}
+
+/**
+ * E2Eで公開Routeへ返すPublished Contentを取得します。
+ * @param {ContentKind} kind - Content種類。
+ * @param {string} slug - Content slug。
+ * @param {Locale} locale - fixtureの表示ロケール。
+ * @returns {PublishedContent | null} 公開fixture、または対象なし。
+ */
+export function getE2EPublishedContentBySlug(kind: ContentKind, slug: string, locale: Locale): PublishedContent | null {
+  return publishedGuideDefinitions[locale].find((content) => content.kind === kind && content.slug === slug) ?? null;
+}
+
+/**
+ * E2Eで公開一覧へ返すPublished Content metadataを取得します。
+ * @param {ContentKind} kind - Content種類。
+ * @param {Locale} locale - fixtureの表示ロケール。
+ * @returns {PublishedContentSummary[]} 公開fixtureの一覧。
+ */
+export function getE2EPublishedContentList(kind: ContentKind, locale: Locale): PublishedContentSummary[] {
+  return publishedGuideDefinitions[locale]
+    .filter((content) => content.kind === kind)
+    .map((content) => ({
+      kind: content.kind,
+      slug: content.slug,
+      category: content.category,
+      publishedAt: content.publishedAt,
+      title: content.title,
+      summary: content.summary,
+    }));
 }
 
 type PubDefinition = (typeof pubDefinitions)[number];

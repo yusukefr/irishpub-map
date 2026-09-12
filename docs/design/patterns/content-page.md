@@ -26,7 +26,7 @@ Heroはページの目的を最初に伝え、短いeyebrow、`font-display`のH
 
 ## ImageとLong-form body
 
-画像は[Visual Language](../visual-language.md#photography)の出典・許諾・alt要件を満たす場合だけ追加します。写真がないContentに架空のthumbnailを置きません。長文では段落、List、Heading、Linkの間隔をTokenで揃え、過度なCard分割や装飾で読書を中断しません。
+画像は[Visual Language](../visual-language.md#photography)の出典・許諾・alt要件を満たす場合だけ追加します。Markdown画像は本文幅を超えない720 × 405の16:9表示寸法を持ち、縦横比を維持して遅延読み込みします。写真がないContentに架空のthumbnailを置きません。長文では段落、List、Heading、Linkの間隔をTokenで揃え、過度なCard分割や装飾で読書を中断しません。
 
 ## Interactive content
 

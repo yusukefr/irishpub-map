@@ -20,6 +20,13 @@ async function expectNoHorizontalOverflow(page: Page): Promise<void> {
 }
 
 test.describe("Discover editorial pages", () => {
+  test("Draftと存在しないGuideは404にする", async ({ page }) => {
+    for (const slug of ["e2e-draft-guide", "not-exist"]) {
+      const response = await page.goto("/discover/guides/" + slug);
+      expect(response?.status()).toBe(404);
+    }
+  });
+
   for (const scenario of [
     { locale: "ja" as const, width: 1440, height: 900 },
     { locale: "en" as const, width: 1280, height: 900 },

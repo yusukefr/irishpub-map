@@ -72,7 +72,7 @@ Vercel の Production / Preview 環境には、用途に応じて次の変数を
 | --- | --- | --- |
 | `IRISHPUB_MAP_API_KEY` | Production は必須、Preview は任意 | `GET /api/pubs` の API key |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Preview の Deployment Protection を使う場合 | サーバー側 fetch 用の Protection Bypass secret |
-| `DATABASE_URL` | 管理画面で永続化する場合 | Neon の接続文字列 |
+| `DATABASE_URL` | 公開Guideを表示する場合、または管理画面で永続化する場合 | Neon の接続文字列 |
 | `ADMIN_USERNAME` | 管理画面を有効にする場合 | 管理者 ID |
 | `ADMIN_PASSWORD_HASH` | 管理画面を有効にする場合 | scrypt パスワードハッシュ |
 | `ADMIN_SESSION_SECRET` | 管理画面を有効にする場合 | セッション Cookie 署名用秘密鍵 |
@@ -183,7 +183,7 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/010_add_edito
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/010_add_editorial_content_verify.sql
 ```
 
-Productionへ適用する場合も同じ順序で実行し、verify SQLの結果を確認するまではContent RepositoryやAdmin Content機能をデプロイしません。010は既存MDXを移行せず、既存の公開画面には影響しません。
+Productionへ適用する場合も同じ順序で実行し、011と[既存GuideのContent Data Migration](../operations/editorial-guide-migration.md)まで適用・検証してから、Neonを公開取得元とするアプリケーションをデプロイします。010だけでは既存MDXを移行しないため、Guide未投入の接続先では公開Guideが0件になります。
 
 マイグレーション008が未適用のブランチでは、先に008を適用します。up SQLは既存店舗が公開条件を満たさない場合、DDL適用前に停止します。
 

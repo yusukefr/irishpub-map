@@ -20,7 +20,7 @@ test("英語選択をcookieへ保存し、同じURLの再読み込み後も維�
   await expect(page.getByRole("button", { name: "Language: English" })).toBeVisible();
 });
 
-test("Split the Gの実MDXを日英表示し、Mapへの導線を維持する", async ({ page }) => {
+test("Split the Gの公開Editorial Markdownを日英表示し、Mapへの導線を維持する", async ({ page }) => {
   await page.goto("/discover/guides/split-the-g");
 
   await expect(page.getByRole("heading", { level: 1, name: "Split the Gを楽しむ" })).toBeVisible();
