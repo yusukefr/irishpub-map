@@ -1,37 +1,20 @@
 # 日本の Irish Pub マップ
 
-日本国内の Irish Pub を地図上で探せる Web アプリです。まずは Web 版として公開し、店舗データや検索体験を固めたあと、同じデータ構造を使ってモバイルアプリへ展開します。
+日本国内の Irish Pub を地図上で探せる Web アプリです。まずWeb版で店舗データと検索体験を整え、将来は同じデータ構造を使ってモバイルアプリへ展開します。
 
-## 公開環境
-
-公開 URL: https://irishpub-map-web.vercel.app
-
-## ドキュメント
-
-設計、開発、運用の詳細は `docs/` 配下に分割しています。
-
-- [プロダクト仕様](docs/specs/product.md)
-- [店舗データ仕様](docs/specs/data.md)
-- [データベース定義](docs/specs/database.md)
-- [外部送信・プライバシー実態整理](docs/operations/privacy-and-external-transmission.md)
-- [API 方針](docs/specs/api.md)
-- [システム構成図](docs/architecture/system-overview.md)
-- [シーケンス図](docs/architecture/sequences.md)
-- [開発環境・セットアップ手順](docs/setup/development.md)
-- [コード規約・開発規約](docs/development/conventions.md)
-- [デプロイ手順](docs/setup/deployment.md)
-- [リポジトリ設定の保守手順](docs/repository-settings/README.md)
+公開URL: https://irishpub-map-web.vercel.app
 
 ## 使用技術
 
+- Node.js 24
+- npm workspaces
 - Next.js 16
 - React
 - TypeScript
 - MapLibre GL JS
 - OpenStreetMap tiles
 - Tailwind CSS + global CSS
-- npm workspaces
-- Node.js 24 系
+- Neon Postgres
 
 ## クイックスタート
 
@@ -41,9 +24,9 @@ npm install
 npm run dev
 ```
 
-Web アプリは `apps/web` の Next.js アプリとして起動します。
+Webアプリは `apps/web` のNext.jsアプリとして起動します。セットアップの詳細は[開発環境・セットアップ手順](docs/setup/development.md)を参照してください。
 
-## 検証コマンド
+## 基本的な開発コマンド
 
 ```bash
 npm test
@@ -52,73 +35,27 @@ npm run typecheck
 npm run lint
 npm run build
 npm run check:sensitive-data
-npm run test:e2e
 ```
 
-依存関係を変更した場合は、追加で `npm audit --omit=dev` を実行します。
-
-## コードとドキュメントの同期
-
-コードとドキュメントは同じ変更単位で保守します。
-
-- コードを変更したときは、仕様、API、データ形式、環境変数、セットアップ・デプロイ手順、構成図・シーケンス図への反映要否を確認します。
-- ドキュメントを変更したときは、記載した仕様、API、画面挙動、運用手順が実装と一致することを確認します。
-- どちらかに差分がある場合は、もう一方も同じ Pull Request で更新します。
-- Pull Request には、コードとドキュメントの同期を確認した結果を記載します。
-
-詳細な実装・レビューの基準は[コード規約・開発規約](docs/development/conventions.md)、AI agent の必須ルールは[AGENTS.md](AGENTS.md)を参照してください。
-
-## Codex Skills
-
-Codex はリポジトリ配下の `.agents/skills` を自動検出します。個人のグローバル設定に依存せず、チームで同じ手順を使えるよう、次の Skills を管理しています。明示的に使う場合は、Codex のプロンプトで `$<skill-name>` を指定してください。
-
-- `gh-fix-ci`: GitHub Actions の失敗ログを調査し、修正方針を作成します。修正は承認後に実施します。
-- `gh-address-comments`: 現在のブランチの Pull Request にあるレビューコメントを確認し、対応対象を選んでから修正します。
-- `vercel-deploy`: Vercel へのデプロイを行います。明示的な依頼がない限りプレビューとしてデプロイし、本番デプロイはユーザーの明示指示が必要です。
-- `web-test-workflow`: このリポジトリの Vitest、Testing Library、MapLibre モックを使ったテスト実装と検証を案内します。
-- `neon`: NeonのProject、Branch、Connectionなど、Neonを利用する開発フローを案内します。
-- `neon-postgres`: Neon上のPostgreSQLのSchema、Migration、Connection、性能設計を案内します。
-- `neon-postgres-branches`: MigrationやテストのためのNeon Branchの選択・作成・運用を案内します。
-
-- `next-best-practices`: App Router、Server/Client境界、Route Handler、データ取得、Next.js 16の実装判断を案内します。
-- `next-cache-components`: Cache Components、キャッシュタグ、無効化、動的・静的レンダリング境界を扱います。Skill導入だけでは`cacheComponents: true`を有効化しません。
-- `vercel-react-best-practices`: MapLibreを含むReact/Next.jsのクライアントUIで、Bundle、Hydration、再レンダリング、データ取得の性能改善を案内します。
-- `agent-browser`: AI Coding Agentが実装後に画面表示や操作を確認するためのブラウザ自動化CLIです。CIのE2Eテストを置き換えません。
-- `web-design-guidelines`: Public UIの視覚階層、アクセシビリティ、レスポンシブ、セマンティックHTMLをレビューします。プロジェクト固有Design Systemより優先しません。
-- `frontend-design`: 意図ある視覚設計を補助します。Modern Irish Explorer、Design Token、既存コンポーネント、参照画面の制約を必ず優先します。
-
-役割分担として、`web-test-workflow`はVitest・Testing Library・Playwrightのテスト実装と検証を、`agent-browser`はAI Coding Agentによる実装後の操作・表示確認を担当します。CIで保証する主要なUser FlowはPlaywrightで維持します。`vercel-deploy`はPreview / Productionデプロイの実行を担当し、今回導入したNext.js・React関連Skillsは設計、実装、性能判断に限定します。
-
-Skills は繰り返し実行する手順を補助するものであり、リポジトリ固有の作業ルール・変更範囲・承認要件は常に [AGENTS.md](AGENTS.md) を優先します。
-
-## バージョン情報の更新
-
-アプリの表示バージョンは `app-version.json` で管理します。GitHub Actions のPR用ワークフローで `npm run update-app-version` が実行され、更新された値がPRブランチとデプロイ成果物へ反映されます。Vercelではコミット済みバージョンを維持し、リリース日だけをJSTで更新します。
-
-- `version`: 公開するアプリのバージョン番号
-- `releaseDate`: 公開日。`YYYY-MM-DD` 形式で記載します。
-
-デフォルトはバグフィックス向けの patch 更新です。機能追加や画面改修では、GitHub Actions のリポジトリVariables `APP_VERSION_BUMP=minor` を設定してください。リリース日は日本時間（JST）で更新されます。
-
-Web アプリの下部には、このファイルの `version` と `releaseDate` が表示されます。更新後は `npm run build` で表示用データを含めてビルドできることを確認してください。
+E2Eや依存関係変更時の確認を含む詳しい検証方針は[コード規約・開発規約](docs/development/conventions.md)を参照してください。
 
 ## リポジトリ構成
 
 ```text
 irishpub-map
-├── .agents/skills
-├── .github
-├── apps/web
-├── data
-├── db/migrations
-├── docs
-├── packages/shared
-├── scripts
-├── tests
-├── package.json
-└── README.md
+├── .agents/skills       # リポジトリ共通のCodex Skills
+├── .github              # GitHub Actions・Issue・PR設定
+├── apps/web             # Next.js Webアプリ
+├── data                 # 市区町村コードのマスタ
+├── db/migrations        # Neon PostgresのMigration
+├── docs                 # 仕様・設計・開発・運用文書
+├── packages/shared      # Web・モバイル共通の型とロジック
+├── scripts              # 開発・運用スクリプト
+└── tests                # リポジトリ横断のテスト
 ```
 
-## AI Agent 向けルール
+## ドキュメント
 
-AI Agent の作業ルールは [AGENTS.md](AGENTS.md) を参照してください。
+タスク別の参照先は [Documentation Router](docs/README.md) にまとめています。すべての文書を最初から読む必要はなく、目的に関係する文書だけを参照してください。
+
+AI Agent向けの必須ルールと入口は [AGENTS.md](AGENTS.md) を参照してください。
