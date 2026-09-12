@@ -183,7 +183,7 @@ psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/010_add_edito
 psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/010_add_editorial_content_verify.sql
 ```
 
-Productionへ適用する場合も同じ順序で実行し、011と[既存GuideのContent Data Migration](../operations/editorial-guide-migration.md)まで適用・検証してから、Neonを公開取得元とするアプリケーションをデプロイします。010だけでは既存MDXを移行しないため、Guide未投入の接続先では公開Guideが0件になります。
+Productionへ適用する場合も同じ順序で010・011を適用・検証してから、Neonを公開取得元とするアプリケーションをデプロイします。公開GuideにRepository内MDX fallbackはないため、デプロイ前に接続先の`content_entries`・`content_translations`へ必要なPublished Guideと翻訳が存在することを管理画面または読み取り専用SQLで確認します。
 
 マイグレーション008が未適用のブランチでは、先に008を適用します。up SQLは既存店舗が公開条件を満たさない場合、DDL適用前に停止します。
 

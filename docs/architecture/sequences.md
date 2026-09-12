@@ -34,6 +34,32 @@ sequenceDiagram
 
 VercelのPreview Deployment Protectionが公開APIのサーバー側fetchをSSOへリダイレクトした場合、公開ページは静的データを複製せず店舗0件で表示します。実データを表示するにはSSO回避用の設定とDATABASE_URLを構成します。WebGLを初期化できないブラウザでは、地図の代わりに店舗一覧を案内します。
 
+## 公開Guideを表示する
+
+```mermaid
+sequenceDiagram
+  actor Visitor as 利用者
+  participant Page as /discover/guides/[slug]
+  participant Repository as content-repository
+  participant Neon as Neon Postgres
+  participant Renderer as 固定Renderer Allow List / Safe Markdown
+
+  Visitor->>Page: Guide URLとlocaleを指定
+  Page->>Repository: getPublishedContentBySlug(guide, slug, locale)
+  alt Published GuideとTranslationが存在
+    Repository->>Neon: kind・slug・localeをパラメータ化して取得
+    Neon-->>Repository: Editorial Content
+    Repository-->>Page: 検証済みPublished Content
+    Page->>Renderer: kindに固定対応したRendererへMarkdownを渡す
+    Renderer-->>Visitor: 許可要素と安全なURLだけを表示
+  else 未登録・Draft・取得不能
+    Repository-->>Page: nullまたは取得エラー
+    Page-->>Visitor: 404または既存Error Boundary
+  end
+```
+
+公開GuideはNeonを唯一のSource of Truthとし、Repository内MDXやStatic Loaderへfallbackしません。Renderer選択はApplication側の固定Allow Listを使用し、DB値からComponent名やmodule pathを解決しません。
+
 ## 管理者が店舗を追加・更新・削除する
 
 ```mermaid

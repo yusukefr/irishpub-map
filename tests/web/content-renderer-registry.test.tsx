@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { getContentRenderer } from "../../apps/web/app/lib/content/registry";
+import { getContentRenderer } from "../../apps/web/app/lib/content/renderer-registry";
 import { SafeMarkdownRenderer } from "../../apps/web/app/lib/content/renderer";
 
 describe("content renderer registry", () => {

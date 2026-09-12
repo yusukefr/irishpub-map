@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getContentRenderer } from "../../../../lib/content/registry";
+import { getContentRenderer } from "../../../../lib/content/renderer-registry";
 import { getPublishedContentBySlug } from "../../../../lib/content/repository";
 import { getTranslation } from "../../../../lib/i18n";
 import { getRequestLocale } from "../../../../lib/i18n/server";
