@@ -4,6 +4,8 @@
 
 `/discover/quiz`は、Repository内の`apps/web/data/ireland/quiz.json`からAsia/Tokyo基準の「今日の1問」を表示します。DB、ユーザー登録、回答履歴、長期スコアは使用しません。
 
+マイグレーション012は後続のNeon移行に使うQuiz Domain Schemaを定義しますが、この段階ではRepositoryや画面の参照元を変更しません。Quizデータの投入はIssue #391、Public QuizのNeon切替はIssue #393で行うため、012適用後も現在の画面挙動とSource of Truthは引き続きこのJSONです。
+
 データは`apps/web/app/lib/quiz/data.ts`で起動時に検証され、`apps/web/app/lib/quiz/queries.ts`が日次選択と採点を担当します。
 
 ## ルート構造

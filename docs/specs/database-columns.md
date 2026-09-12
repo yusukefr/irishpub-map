@@ -6,6 +6,8 @@
 
 Issue #273のマイグレーション008で `is_published` を追加し、Issue #278では日本語店舗名のみの下書きを保存できるよう対象カラムのNULL制約を緩和するマイグレーション009を追加しました。Issue #342ではEditorial Contentの2テーブルを追加するマイグレーション010を追加し、Issue #344のマイグレーション011でContentの下書き用制約を緩和しました。実DBへ必要なMigrationを適用・検証してから対応アプリケーションをデプロイします。確定した保存・公開条件は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
+Issue #389のマイグレーション012はIrish QuizのQuestion・Choiceと各翻訳テーブルを追加します。この4テーブルは012適用後の定義であり、実DBへの適用状況やPublic Quizの参照元とは区別します。
+
 `NULL` 欄の「不可」は `NOT NULL` または主キー制約、「可」はDB制約上NULLを許可することを表します。
 
 ## `pubs`
@@ -145,16 +147,75 @@ Issue #273のマイグレーション008で `is_published` を追加し、Issue 
 
 主キーは `(content_id, locale)` です。親Contentを削除すると翻訳も削除されます。
 
+## `quiz_questions`
+
+| カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
+| --- | --- | --- | --- | --- | --- |
+| `id` | TEXT | 不可 | PK、`correct_choice_id` と複合FK | なし | 空白のみを禁止。既存JSONのQuestion ID |
+| `category` | TEXT | 不可 |  | なし | 空白のみを禁止。Locale非依存のカテゴリID |
+| `special_month` | SMALLINT | 条件付き |  | なし | `special_day` と同時にNULLまたは設定。1〜12 |
+| `special_day` | SMALLINT | 条件付き |  | なし | `special_month` と同時にNULLまたは設定。1〜31 |
+| `correct_choice_id` | TEXT | 不可 | `id` と複合FK → `quiz_choices(question_id, id)` | なし | 空白のみを禁止。同一QuestionのChoiceだけを遅延検査 |
+| `source_url` | TEXT | 不可 |  | なし | 空白のみを禁止。URL形式はアプリケーションでも検証 |
+| `related_content_id` | UUID | 可 | FK → `content_entries.id` ON DELETE SET NULL | なし | 任意の関連Editorial Content |
+| `is_published` | BOOLEAN | 不可 |  | `FALSE` | 下書き・公開状態 |
+| `created_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 作成日時 |
+| `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 更新日時 |
+
+正解の複合外部キーは `DEFERRABLE INITIALLY DEFERRED` とし、Questionを作成してから同じtransaction内でChoiceを追加できます。commit時点で正解Choiceが存在しない場合や別Questionに所属する場合は拒否します。
+
+## `quiz_question_translations`
+
+| カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
+| --- | --- | --- | --- | --- | --- |
+| `question_id` | TEXT | 不可 | PK、FK → `quiz_questions.id` ON DELETE CASCADE | なし | Question ID |
+| `locale` | TEXT | 不可 | PK | なし | `ja` / `en` のみ |
+| `question` | TEXT | 不可 |  | なし | 空白のみを禁止。問題文 |
+| `explanation` | TEXT | 不可 |  | なし | 空白のみを禁止。解説 |
+| `source_label` | TEXT | 不可 |  | なし | 空白のみを禁止。情報源表示名 |
+| `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 翻訳の更新日時 |
+
+主キーは `(question_id, locale)` です。親Questionを削除すると翻訳も削除されます。
+
+## `quiz_choices`
+
+| カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
+| --- | --- | --- | --- | --- | --- |
+| `question_id` | TEXT | 不可 | PK、FK → `quiz_questions.id` ON DELETE CASCADE | なし | Question ID |
+| `id` | TEXT | 不可 | PK | なし | 空白のみを禁止。Question内のChoice ID |
+| `sort_order` | SMALLINT | 不可 | `question_id` と複合UNIQUE | なし | 0以上。Question内の表示順 |
+| `created_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 作成日時 |
+| `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 更新日時 |
+
+主キーは `(question_id, id)`、追加の一意制約は `(question_id, sort_order)` です。1QuestionあたりのChoice件数はDBでは4件に固定しません。
+
+## `quiz_choice_translations`
+
+| カラム | 型 | NULL | キー・参照 | DEFAULT | CHECK・用途 |
+| --- | --- | --- | --- | --- | --- |
+| `question_id` | TEXT | 不可 | PK、`choice_id` と複合FK | なし | Question ID |
+| `choice_id` | TEXT | 不可 | PK、`question_id` と複合FK → `quiz_choices(question_id, id)` ON DELETE CASCADE | なし | Choice ID |
+| `locale` | TEXT | 不可 | PK | なし | `ja` / `en` のみ |
+| `label` | TEXT | 不可 |  | なし | 空白のみを禁止。Choice表示名 |
+| `updated_at` | TIMESTAMPTZ | 不可 |  | `NOW()` | 翻訳の更新日時 |
+
+主キーは `(question_id, choice_id, locale)` です。親Choiceを削除すると翻訳も削除されます。
+
 ## インデックス
 
 主キー・UNIQUE制約によって作成されるインデックスに加え、次のB-treeインデックスを使用します。
 
-| インデックス名               | テーブル   | カラム              | 用途                       |
-| ---------------------------- | ---------- | ------------------- | -------------------------- |
-| `pubs_prefecture_code_idx`   | `pubs`     | `prefecture_code`   | 都道府県による店舗絞り込み |
-| `pubs_municipality_code_idx` | `pubs`     | `municipality_code` | 市区町村コードによる検索   |
-| `pubs_status_code_idx`       | `pubs`     | `status_code`       | 営業状況による店舗絞り込み |
-| `pub_tags_tag_id_idx`        | `pub_tags` | `tag_id`            | タグから店舗関係を逆引き   |
+| インデックス名 | テーブル | カラム | 用途 |
+| --- | --- | --- | --- |
+| `pubs_prefecture_code_idx` | `pubs` | `prefecture_code` | 都道府県による店舗絞り込み |
+| `pubs_municipality_code_idx` | `pubs` | `municipality_code` | 市区町村コードによる検索 |
+| `pubs_status_code_idx` | `pubs` | `status_code` | 営業状況による店舗絞り込み |
+| `pub_tags_tag_id_idx` | `pub_tags` | `tag_id` | タグから店舗関係を逆引き |
+| `quiz_questions_published_idx` | `quiz_questions` | `id`（公開行のみ） | 公開Quiz取得 |
+| `quiz_questions_special_date_idx` | `quiz_questions` | `special_month, special_day, id`（公開・日付設定行のみ） | Special Date検索 |
+| `quiz_questions_category_idx` | `quiz_questions` | `category, id` | Category検索 |
+| `quiz_questions_admin_list_idx` | `quiz_questions` | `updated_at DESC, id` | Admin一覧 |
+| `quiz_questions_related_content_id_idx` | `quiz_questions` | `related_content_id`（NULL以外） | Related Content逆引きと削除時参照処理 |
 
 ## アプリケーション境界
 

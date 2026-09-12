@@ -183,3 +183,42 @@ describe("pubs database migrations", () => {
     expect(verifySql).toContain("editorial_draft_migration_recorded");
   });
 });
+
+describe("quiz database migration", () => {
+  it("defines localized quiz questions, choices, and same-question correct answers", async () => {
+    const upSql = await readMigration("012_add_quiz_domain_up.sql");
+    const verifySql = await readMigration("012_add_quiz_domain_verify.sql");
+
+    expect(upSql).toContain("CREATE TABLE quiz_questions");
+    expect(upSql).toContain("CREATE TABLE quiz_question_translations");
+    expect(upSql).toContain("CREATE TABLE quiz_choices");
+    expect(upSql).toContain("CREATE TABLE quiz_choice_translations");
+    expect(upSql).toContain("PRIMARY KEY (question_id, locale)");
+    expect(upSql).toContain("PRIMARY KEY (question_id, id)");
+    expect(upSql).toContain("PRIMARY KEY (question_id, choice_id, locale)");
+    expect(upSql).toContain("CHECK (locale IN ('ja', 'en'))");
+    expect(upSql).toContain("quiz_questions_special_date_check");
+    expect(upSql).toContain("(special_month IS NULL) = (special_day IS NULL)");
+    expect(upSql).toContain("FOREIGN KEY (id, correct_choice_id)");
+    expect(upSql).toContain("REFERENCES quiz_choices(question_id, id)");
+    expect(upSql).toContain("DEFERRABLE INITIALLY DEFERRED");
+    expect(upSql).toContain("REFERENCES content_entries(id) ON DELETE SET NULL");
+    expect(upSql).toContain("ON DELETE CASCADE");
+    expect(upSql).toContain("quiz_questions_published_idx");
+    expect(upSql).toContain("quiz_questions_special_date_idx");
+    expect(upSql).toContain("quiz_questions_category_idx");
+    expect(upSql).toContain("quiz_questions_admin_list_idx");
+    expect(upSql).toContain("quiz_questions_related_content_id_idx");
+    expect(upSql).toContain("VALUES ('012_add_quiz_domain')");
+
+    expect(verifySql).toContain("quiz_constraints");
+    expect(verifySql).toContain("quiz_indexes");
+    expect(verifySql).toContain("invalid_special_dates");
+    expect(verifySql).toContain("invalid_correct_choices");
+    expect(verifySql).toContain("unsupported_question_translation_locales");
+    expect(verifySql).toContain("unsupported_choice_translation_locales");
+    expect(verifySql).toContain("orphan_quiz_rows");
+    expect(verifySql).toContain("orphan_related_content");
+    expect(verifySql).toContain("quiz_domain_migration_recorded");
+  });
+});
