@@ -2,11 +2,11 @@
 
 ## 概要
 
-公開API、Web、管理画面は `packages/shared/src/pub.ts` の共有 `Pub` 型を使用します。永続化時は、言語に依存しない属性を `pubs`、表示文言を各翻訳テーブル、タグを `tags` と `pub_tags` に分けて保存します。DB構成は[データベース定義書](database.md)、カラムと制約は[テーブル・カラム定義](database-columns.md)を参照してください。
+公開APIとWebは `packages/shared/src/pub.ts` の共有 `Pub` 型を使用します。管理画面と管理APIは `packages/shared/src/admin-pub.ts` のDTOと入力型を使用します。永続化時は、言語に依存しない属性を `pubs`、表示文言を各翻訳テーブル、タグを `tags` と `pub_tags` に分けて保存します。DB構成は[データベース定義書](database.md)、カラムと制約は[テーブル・カラム定義](database-columns.md)を参照してください。
 
 店舗データはNeon Postgresを正とします。`DATABASE_URL` が未設定の環境では公開APIと管理画面は空の店舗一覧を表示し、更新操作は利用できません。
 
-この文書の `Pub` は現行の公開・表示用データ形式です。公開APIは公開状態の店舗だけをこの型で返し、公開状態そのものは含めません。管理一覧は移行段階の形式として `Pub & { isPublished: boolean }` を返します。親Issue #264の後続改修では、未完成の下書きをこの型へ混在させず、公開用 `PublicPub`、NULL許容の管理用 `AdminPub`、作成・更新入力を分離します。確定した後続設計は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+公開用の `Pub` は公開条件を満たす表示データを表し、公開APIは公開状態そのものを含めません。管理一覧は未完成の下書きを表現できる `AdminPubListItem`、管理詳細は日英翻訳とタグIDを含む `AdminPub` を返します。作成・更新は公開状態を含まない `AdminPubWriteInput`、公開状態の変更は `SetAdminPubPublicationInput` を使用します。正確な型定義とValidationは `packages/shared/src/pub.ts` および `packages/shared/src/admin-pub.ts` を正とし、業務ルールは[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 管理画面の選択肢は `packages/shared/src/admin-master.ts` の `PrefectureOption`、`MunicipalityOption`、`TagOption`、`PubStatusOption` を使用します。これらは表示に必要なコード・ID・内部キー・表示名だけを持ち、DBの行や監査用カラムをそのまま公開しません。
 
@@ -75,14 +75,16 @@ DBでは数値の `pubs.status_code` と `pub_statuses.code` で関連付け、�
 
 ## 検証と保存
 
-- 読み出した店舗は `asPubs` で検証します。必須項目の欠落、不正な緯度経度、重複ID、未定義の営業状況を含む値は受け付けません。
-- 新規作成時の `id` はサーバーがUUIDを発行します。更新時はURLに指定した `id` を維持します。
-- 作成・更新では日本語の市区町村名を `municipality_translations` から一意に解決し、`pubs.municipality_code` に保存します。解決できない場合はエラーにします。
-- 店舗名、読み、住所の作成・更新は、日本語の `pub_translations` へ保存します。
-- タグは共有定義で正規化・重複排除し、`tags`、`tag_translations`、`pub_tags` へ保存します。
-- URL項目は省略または `null` にできます。DB制約はHTTP(S) URLだけを許可します。
-- 削除時は、店舗翻訳と店舗・タグ関係が外部キーによってカスケード削除されます。
+- 公開用データの読み出しは `asPubs` で検証します。必須項目の欠落、不正な緯度経度、重複ID、未定義の営業状況を含む値は受け付けません。
+- 管理画面・管理APIの作成・更新入力には `AdminPubWriteInput` を使用します。
+- 新規作成時の `id` はApplication ServiceがUUIDを発行し、更新時はURLで指定された既存IDを維持します。
+- `prefectureCode`、`municipalityCode`、`status`、`tagIds` は保存前にDB上のマスタと照合します。市区町村については指定された都道府県への所属も検証します。
+- 日本語翻訳は必須として `pub_translations` に保存し、英語翻訳は任意で保存します。英語翻訳が `null` の場合は既存の英語翻訳を削除します。
+- タグは既存のタグIDを受け取り、`pub_tags` のrelationとして保存します。`tagIds = []` の場合は店舗のタグrelationをすべて解除します。
+- 店舗本体、翻訳、タグrelationの作成・更新は単一transactionで処理します。
+- URL項目は `null` を許可し、HTTP(S) URLだけを受け付けます。
+- 削除時は店舗を削除し、店舗翻訳と `pub_tags` は外部キーのCASCADEにより削除します。
 
 ## 運用
 
-新規データは管理画面または `scripts/import-pubs.mjs` でNeonへ投入します。どちらも `pubs.is_published` のDB既定値により非公開で作成されます。一括投入は既存UUIDを更新せずスキップします。リポジトリには店舗データのスナップショットを保存しません。
+管理API経由の新規店舗はApplication側で `is_published = FALSE` を明示して非公開で作成します。別系統の運用用インポートとして `scripts/import-pubs.mjs` も利用できます。インポート処理では `is_published` を明示せず、`pubs.is_published` のDB既定値により非公開で作成します。一括投入は既存UUIDを更新せずスキップします。リポジトリには店舗データのスナップショットを保存しません。
