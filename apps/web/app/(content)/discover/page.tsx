@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContentCard } from "../../components/ui/content-card";
-import { listLegacyGuides } from "../../lib/content/legacy-repository";
+import { listPublishedContent } from "../../lib/content/repository";
 import { getTranslation } from "../../lib/i18n";
 import { getRequestLocale } from "../../lib/i18n/server";
 
@@ -9,7 +9,7 @@ function formatPublishedAt(publishedAt: string, locale: "ja" | "en"): string {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeZone: "UTC",
-  }).format(new Date(publishedAt + "T00:00:00Z"));
+  }).format(new Date(publishedAt));
 }
 
 /**
@@ -27,12 +27,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /**
  * Stories、Guide、Quiz、Calendarと地図への入口となるExplore Ireland Hubを表示します。
- * @returns {Promise<JSX.Element>} 既存MDX Guide一覧を含むHub。
+ * @returns {Promise<JSX.Element>} 公開済みEditorial Guide一覧を含むHub。
  */
 export default async function DiscoverPage() {
   const locale = await getRequestLocale();
   const t = getTranslation(locale).discover;
-  const guides = await listLegacyGuides(locale);
+  const guides = await listPublishedContent("guide", locale);
 
   return (
     <section className="content-container discover-page" aria-labelledby="discover-heading">

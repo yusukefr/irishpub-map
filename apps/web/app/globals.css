@@ -3461,6 +3461,15 @@ body {
   margin: 0 0 1.25em;
 }
 
+.content-prose img {
+  display: block;
+  max-inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  margin-block-end: var(--spacing-space-5);
+}
+
 .content-prose h2 {
   margin: 2em 0 0.75em;
   color: var(--color-text-brand);

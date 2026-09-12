@@ -1,5 +1,9 @@
 import { neon } from "@neondatabase/serverless";
+import { CONTENT_SLUG_MAX_LENGTH } from "@irishpub-map/shared/admin-content";
 import { DEFAULT_LOCALE, type Locale } from "@irishpub-map/shared/locale";
+import { getE2EPublishedContentBySlug, getE2EPublishedContentList } from "../e2e-test-fixtures";
+import { isE2ETestMode } from "../e2e-test-mode";
+import { getCachedPublishedContent, getCachedPublishedContentList } from "./cache";
 import { isContentCategory, type ContentKind, type PublishedContent, type PublishedContentSummary } from "./types";
 
 type DbContentSummaryRow = {
@@ -53,8 +57,10 @@ export async function getPublishedContentBySlug(
   slug: string,
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<PublishedContent | null> {
+  if (slug.length > CONTENT_SLUG_MAX_LENGTH) return null;
+  if (isE2ETestMode()) return getE2EPublishedContentBySlug(kind, slug, locale);
   if (!process.env.DATABASE_URL) return null;
-  return getPublishedContentBySlugFromDatabase(kind, slug, locale);
+  return getCachedPublishedContent(kind, slug, locale, () => getPublishedContentBySlugFromDatabase(kind, slug, locale));
 }
 /**
  * kindに属する公開済みContentだけを要求locale優先・日本語フォールバックで取得します。
@@ -66,8 +72,9 @@ export async function listPublishedContent(
   kind: ContentKind,
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<readonly PublishedContentSummary[]> {
+  if (isE2ETestMode()) return getE2EPublishedContentList(kind, locale);
   if (!process.env.DATABASE_URL) return [];
-  return listPublishedContentFromDatabase(kind, locale);
+  return getCachedPublishedContentList(kind, locale, () => listPublishedContentFromDatabase(kind, locale));
 }
 async function getPublishedContentBySlugFromDatabase(kind: ContentKind, slug: string, locale: Locale) {
   const rows =

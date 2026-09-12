@@ -2,7 +2,7 @@ import Markdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { isAllowedMarkdownUrl } from "./validation";
 import type { ContentRendererProps } from "./types";
-const headingComponents = {
+const markdownComponents = {
   h1: ({ node, ...props }) => {
     void node;
     return <h2 {...props} />;
@@ -27,6 +27,13 @@ const headingComponents = {
     void node;
     return <p {...props} />;
   },
+  img: ({ node, src, alt, ...props }) => {
+    void node;
+    if (!src) return null;
+    // Markdownは外部画像も許可するため、hostと寸法の事前指定が必要なnext/imageではなく安全確認済みURLを使用します。
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img {...props} src={src} alt={alt ?? ""} width={720} height={405} loading="lazy" decoding="async" />;
+  },
 } satisfies Components;
 const allowedElements = [
   "a",
@@ -42,6 +49,7 @@ const allowedElements = [
   "h5",
   "h6",
   "hr",
+  "img",
   "li",
   "ol",
   "p",
@@ -73,7 +81,7 @@ export function sanitizeMarkdownUrl(value: string): string | undefined {
 export function SafeMarkdownRenderer({ markdown }: ContentRendererProps) {
   return (
     <Markdown
-      components={headingComponents}
+      components={markdownComponents}
       allowedElements={allowedElements}
       remarkPlugins={[remarkGfm]}
       skipHtml

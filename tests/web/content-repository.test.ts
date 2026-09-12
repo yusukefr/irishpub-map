@@ -4,6 +4,10 @@ const databaseMock = vi.hoisted(() => ({
   rows: [] as Array<Record<string, unknown>>,
   queries: [] as Array<{ text: string; values: unknown[] }>,
 }));
+vi.mock("next/cache", () => ({
+  unstable_cache: (query: () => Promise<unknown>) => () => query(),
+  revalidateTag: vi.fn(),
+}));
 vi.mock("@neondatabase/serverless", () => ({
   neon:
     () =>
@@ -19,6 +23,7 @@ import {
 } from "../../apps/web/app/lib/content/repository";
 
 const originalUrl = process.env.DATABASE_URL;
+const originalE2ETestMode = process.env.E2E_TEST_MODE;
 const row = {
   kind: "guide",
   slug: "sample",
@@ -36,6 +41,8 @@ beforeEach(() => {
 afterEach(() => {
   if (originalUrl === undefined) delete process.env.DATABASE_URL;
   else process.env.DATABASE_URL = originalUrl;
+  if (originalE2ETestMode === undefined) delete process.env.E2E_TEST_MODE;
+  else process.env.E2E_TEST_MODE = originalE2ETestMode;
 });
 
 describe("editorial content repository", () => {
@@ -63,6 +70,22 @@ describe("editorial content repository", () => {
     delete process.env.DATABASE_URL;
     await expect(getPublishedContentBySlug("guide", "sample")).resolves.toBeNull();
     await expect(listPublishedContent("guide")).resolves.toEqual([]);
+    expect(databaseMock.queries).toEqual([]);
+  });
+  it("保存できない長さのslugはキャッシュやDBへ渡さず公開しない", async () => {
+    await expect(getPublishedContentBySlug("guide", "a".repeat(101), "ja")).resolves.toBeNull();
+    expect(databaseMock.queries).toEqual([]);
+  });
+  it("E2E専用fixtureでは公開Guideだけを返し、Draft slugを公開しない", async () => {
+    process.env.E2E_TEST_MODE = "1";
+    delete process.env.DATABASE_URL;
+
+    await expect(getPublishedContentBySlug("guide", "split-the-g", "en")).resolves.toMatchObject({
+      slug: "split-the-g",
+      title: "How to Enjoy Split the G",
+    });
+    await expect(getPublishedContentBySlug("guide", "e2e-draft-guide", "ja")).resolves.toBeNull();
+    await expect(listPublishedContent("guide", "ja")).resolves.toHaveLength(2);
     expect(databaseMock.queries).toEqual([]);
   });
   it("Allow List外のDB値を拒否する", () => {

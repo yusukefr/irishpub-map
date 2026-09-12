@@ -1,6 +1,6 @@
 # 既存GuideのContent Data Migration
 
-Issue #380の専用CLIで、[棚卸し](../specs/editorial-guide-migration-inventory.md)済みの`sample` / `split-the-g`を日英まとめてNeonへ投入します。スキーマMigration 010 / 011の適用が前提です。公開Routeは引き続き既存MDXを使用し、取得元切替はIssue #381で実施します。
+Issue #380の専用CLIで、[棚卸し](../specs/editorial-guide-migration-inventory.md)済みの`sample` / `split-the-g`を日英まとめてNeonへ投入します。スキーマMigration 010 / 011の適用が前提です。Issue #381以降、公開一覧・詳細RouteとMetadataの取得元はNeonの公開Content Repositoryです。
 
 ## 入力と変換
 
@@ -63,4 +63,4 @@ npm exec -- vitest run tests/web/editorial-guide-migration-renderer.test.tsx
 
 Branchでのdry-run / apply / verify / 再実行 / rollback / Repository・Renderer確認が成功した記録と、追加予定件数、既存値との差分を確認してから別途Production適用を判断します。このIssueでProductionデータ投入は行いません。将来の適用直前にも最新MDXを検証し、Production接続に対してdry-runで競合がないことを確認してください。
 
-既存MDXと固定loaderはRollback Sourceとして残します。公開取得元の切替やMDX削除は後続Issueに分離します。
+既存MDXと固定loaderはRollback Sourceとして残しますが、公開経路からは参照しません。削除はIssue #382に分離します。

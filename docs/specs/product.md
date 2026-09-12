@@ -80,12 +80,12 @@ Issue #273で公開状態のDB保持、公開APIの絞り込み、管理取得�
 
 公開画面はRoot Layoutを共通のApplication責務として維持し、Mapは`app/(map)/layout.tsx`のViewport Shell、Story / Guide / Quizは`app/(content)/layout.tsx`の通常Document Flowへ配置するNested Layout構成を採用します。Route GroupはURLへ含まれず、既存の`/`、`/privacy`、`/admin`、`/api`のURLと責務は維持します。MapとContentの両Headerから`/discover`へ移動でき、ブランドLinkからMapへ戻れます。
 
-既存の公開Content記事は、Issue #346でNeonへ移行するまでRepository内のTrusted MDXを対象とし、`apps/web/app/lib/content/`の明示的RegistryとRepository APIからのみ取得します。記事は`story` / `guide`のkind、独立したcategory、Locale非依存のStable Tag ID、日英両方のLoaderを持つ共通Metadataモデルで扱います。未登録slugはRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。Editorial Contentの管理データはNeonの`content_entries`・`content_translations`へ保存し、管理画面でのみDraftを取得します。
+公開GuideはNeonの`content_entries`・`content_translations`をSource of Truthとし、公開Content Repositoryから`status = published`の行だけを取得します。記事は`story` / `guide`のkindと独立したcategoryを持ち、要求localeのTranslationがない場合は既定localeへフォールバックします。未登録slug、Draft、対象kind以外はRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。管理画面だけがDraftを取得します。
 
-Explore Ireland Hubは`/discover`でStories placeholder、Registry由来のGuide一覧、Today's Ireland Quiz導線、Irish Calendar導線を表示します。Guideは`/discover/guides/[slug]`でLocale別MDXを読み込み、未登録slugは404とします。
+Explore Ireland Hubは`/discover`でStories placeholder、Neon由来の公開Guide一覧、Today's Ireland Quiz導線、Irish Calendar導線を表示します。Guideは`/discover/guides/[slug]`でLocale別の安全なMarkdownを表示し、未登録・Draftのslugは404とします。
 
 Today's Ireland Quizは`/discover/quiz`で、Asia/Tokyo基準の日付から決定した4択問題を日英表示します。同じ日と問題データではLocaleや端末によらず同じ問題を選び、記念日指定がある問題を通常ローテーションより優先します。回答はServer Actionで採点し、回答後に正解・解説・公式情報源と任意の関連Guideを表示します。問題データと追加方法は[Today's Ireland Quiz データ仕様](quiz.md)に従います。回答履歴や長期スコアは保持しません。
 
 Irish Calendarは`/discover/calendar`で、Asia/Tokyo基準の当日と選択月に該当するアイルランド共和国の祝日・文化イベントを日英表示します。月別一覧は`?year=<年>&month=<月>`で当月の前後12か月を移動でき、範囲端ではそれ以上の移動を無効にします。不正または範囲外の年月は当月へ戻し、「今日のアイルランド」は選択月にかかわらず実際の当日を表示します。イベント内容は`apps/web/data/ireland/calendar.json`を唯一のデータソースとし、Calendar domain layerが起動時検証、暦日計算、当日・月別検索を担当します。開催日が年ごとに公式発表されるイベントは通常月の月別一覧に未確定と明示し、具体日を推測しません。Content Registry、API、DBには接続しません。
 
-MDXのRaw HTML、Remote Compile、ユーザー投稿、Frontmatter Parserは導入しません。Sample Guideは`apps/web/content/discover/guides/sample/{ja,en}.mdx`で管理します。本番Guideも既存移行が完了するまでは同じContent Registry / Trusted MDXの仕組みで提供します。管理画面のMarkdown PreviewはRaw HTML・MDX・JavaScriptを実行せず、許可済み要素とURLだけを描画します。本番Story、関連記事、既存GuideのNeon移行は後続Issueで追加します。既存MDX Guideの対象、依存表、移行難易度、DB対応は[既存MDX Guide移行棚卸し](editorial-guide-migration-inventory.md)を参照してください。
+公開本文と管理画面のMarkdown PreviewはRaw HTML・MDX・JavaScriptを実行せず、許可済み要素と安全なURLだけを描画します。旧MDXはIssue #382までRollback Sourceとして保持しますが、公開経路にDB → MDX fallbackは設けません。既存MDX Guideの対象、依存表、移行難易度、DB対応は[既存MDX Guide移行棚卸し](editorial-guide-migration-inventory.md)を参照してください。
