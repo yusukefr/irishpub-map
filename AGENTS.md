@@ -29,7 +29,7 @@ Framework、Library、Vercelの仕様は、使用中のVersionに対応する公
 - 変更前に `git status --short --branch` を確認し、ユーザーや他Agentの未コミット変更を勝手に戻したり上書きしたりしません。
 - `main` へ直接commitしません。Issueと関連するIssue / PR / 実装を確認し、`origin/main` 起点の `ai/<short-description>` ブランチで作業します。
 - Issue対応では実装前に設計・影響範囲・検証方針を `scripts/comment-issue-design.sh --issue <number> --body-file <file>` でコメントします。
-- ファイル削除、上書き、大量変更の前は確認を取り、変更は小さく分けます。
+- ファイル削除、既存ファイル全体の置換、大量変更など、破壊的または復元コストの高い変更の前は確認を取り、変更は小さく分けます。
 - 個人情報、アカウント名、Preview URL、credential、秘密鍵などをコード、文書、出力へ記録しません。
 - コードと文書を変更したら同期要否を確認し、仕様やBehaviorに差分があれば同じ作業で更新します。
 - Public UI変更前は [Design System](docs/design/README.md) を確認し、既存Token、Component、Pattern、Reference Screenを優先します。

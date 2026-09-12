@@ -31,7 +31,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Public API | [API specification](specs/api.md) | Current。Route Handlerとテストを優先 |
 | Pub data contract | [Data specification](specs/data.md) | Current。共有型、Validation、DBを優先 |
 | Database | [Database specification](specs/database.md)、[Normalization](specs/database-normalization.md) | Current。Neonの現行Schemaを優先 |
-| Database columns | [Database columns](specs/database-columns.md) | Generated。Migrationと現行Schemaを優先 |
+| Database columns | [Database columns](specs/database-columns.md) | Current。Neonの現行Schemaを優先 |
 | Pub draft / publish | [Admin pub lifecycle](specs/admin-pub-lifecycle.md) | Current。管理APIとテストを優先 |
 | Status management | [Status management](specs/status-management.md) | Current。実装・テストを優先 |
 | Tag management / normalization | [Tag management](specs/tag-management.md)、[Tag normalization](specs/tag-normalization.md) | Current。共有型、DB、実装を優先 |
