@@ -1,20 +1,10 @@
-# デプロイ手順
+# 通常デプロイ
 
-## 方針
+Irish Pub MapはVercelへデプロイします。`main`がProduction Branchであり、`main`へmergeされた変更がProduction Deploymentになります。この文書は通常のPreview / Productionフローだけを扱います。障害対応や管理操作は[Runbooks](../README.md#documentation-router)を参照してください。
 
-Web アプリは Vercel にデプロイします。`main` ブランチを Production Branch とし、`main` に merge された変更が本番デプロイされる構成にします。
+## Vercelプロジェクト設定
 
-このリポジトリは npm workspaces 構成で、Next.js アプリは `apps/web` にあります。Vercel ではリポジトリ root をプロジェクト root として扱い、root の `vercel.json` から install / build / output を制御します。
-
-## 公開 URL
-
-公開 URL は README に記載します。Production URL とカスタムドメインの設定変更は Vercel の Project Settings で管理してください。
-
-## Vercel プロジェクト設定
-
-Vercel で対象の GitHub リポジトリを Import します。
-
-推奨設定:
+Next.jsアプリは`apps/web`にありますが、VercelのRoot Directoryはリポジトリroot（`.`）です。設定はrootの`vercel.json`と一致させます。
 
 | 項目              | 値                                                                                              |
 | ----------------- | ----------------------------------------------------------------------------------------------- |
@@ -26,128 +16,34 @@ Vercel で対象の GitHub リポジトリを Import します。
 | Production Branch | `main`                                                                                          |
 | Node.js Version   | 24.x                                                                                            |
 
-`vercel.json` でも同じ build 設定を管理します。
-
-### Vercel Toolbar / Preview Comments
-
-Production Deploymentの出力は不変な静的成果物として扱われるため、ProductionのPreview Commentsは **OFF** にします。Previewでコメントを使う場合はPreview環境だけを必要に応じて有効化します。設定はVercel Projectの **Settings → General → Vercel Toolbar** で環境ごとに管理し、vercel.jsonでは管理しません。
-
-Productionのデプロイがビルド完了後の `Deploying outputs...` で失敗し、Deployment APIのエラーコードが `IMMUTABLE_STATIC_PATCH_PREVIEW_COMMENTS` の場合は、ProductionのToolbar／Feedback設定をOFFにしてから再デプロイします。設定変更後は次の項目を確認します。
-
-- Production FeedbackがOFFになっている
-- Previewの設定は必要な運用に合わせている
-- VercelのDeploymentがReadyになり、Production aliasが割り当てられている
-- アプリのビルドログに同じエラーコードが再発していない
-
-### デプロイ時のバージョン更新
-
-GitHub Actions のPR用ワークフローで `npm run update-app-version` が実行され、PRブランチの `app-version.json`、ルート `package.json`、ルート `package-lock.json` のバージョンと `app-version.json` のリリース日を同期してコミットします。Vercelでは `npm run update-app-version -- --date-only` により、コミット済みバージョンを維持したまま `app-version.json` のリリース日だけを日本時間（JST）の当日に更新します。
-
-機能追加や画面改修をデプロイする場合は、GitHub Actions のリポジトリVariables `APP_VERSION_BUMP` に `minor` を設定してください。未設定または `patch` の場合は patch バージョンが更新されます。`major` はこの運用では自動更新しません。
-
-### Production Domain / Alias の確認項目
-
-- Domains に承認済みの Production Domain が登録されている
-- `main` ブランチの Production Deployment が Production Domain に紐づいている
-- Preview Deployment の URL と Production URL を混同しない
-
-## Web Analytics と Speed Insights
-
-Web Analytics と Speed Insights を利用します。アプリのルートレイアウトで計測コンポーネントを読み込むため、Vercel上の本番環境ではページビューと Core Web Vitals などの計測情報が送信されます。利用前にVercel Dashboardで両機能を有効にしてください。開発環境では各パッケージは計測しません。
-
-再開する場合は、次の条件をすべて満たした変更を Pull Request でレビューしてください。
-
-1. 公開するプライバシー・外部送信表示に、送信情報、送信先、目的、保持期間、停止方法を反映する。
-2. 利用中の Vercel プラン、DPA の適用状況、Dashboard の保持期間と設定を確認する。
-3. 同意取得の要否を対象地域と利用目的に照らして再確認する。
-4. 計測パッケージとコンポーネントを追加し、ブラウザの通信内容を検証する。
-
-現在の整理内容と再確認項目は[外部送信・プライバシー実態整理](../operations/privacy-and-external-transmission.md)を参照してください。過去に収集済みのデータは、Vercel のプラン別保持期間に従って Dashboard に残る可能性があります。
+Production URLとカスタムDomainはVercel Project Settingsで管理します。Preview URLを文書、Issue、PRへ記録しません。
 
 ## 環境変数
 
-Vercel の Production / Preview 環境には、用途に応じて次の変数を設定します。秘密値はリポジトリにコミットしません。
+Production / Previewの対象を明示して、Vercel ProjectのEnvironment Variablesに登録します。値はリポジトリへコミットせず、表示・ログ出力もしません。
 
-| 変数 | 必要な場面 | 用途 |
-| --- | --- | --- |
-| `IRISHPUB_MAP_API_KEY` | Production は必須、Preview は任意 | `GET /api/pubs` の API key |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | Preview の Deployment Protection を使う場合 | サーバー側 fetch 用の Protection Bypass secret |
-| `DATABASE_URL` | 公開Guideを表示する場合、または管理画面で永続化する場合 | Neon の接続文字列 |
-| `ADMIN_USERNAME` | 管理画面を有効にする場合 | 管理者 ID |
-| `ADMIN_PASSWORD_HASH` | 管理画面を有効にする場合 | scrypt パスワードハッシュ |
-| `ADMIN_SESSION_SECRET` | 管理画面を有効にする場合 | セッション Cookie 署名用秘密鍵 |
+| 変数                              | Production | Preview          | 用途                         |
+| --------------------------------- | ---------- | ---------------- | ---------------------------- |
+| `IRISHPUB_MAP_API_KEY`            | 必須       | 任意             | `GET /api/pubs`のAPI key     |
+| `DATABASE_URL`                    | 必要時     | 必要時           | Neon Postgres接続文字列      |
+| `ADMIN_USERNAME`                  | 必要時     | 必要時           | 管理者ID                     |
+| `ADMIN_PASSWORD_HASH`             | 必要時     | 必要時           | scrypt password hash         |
+| `ADMIN_SESSION_SECRET`            | 必要時     | 必要時           | セッションCookie署名用秘密値 |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | 不要       | Protection使用時 | Previewのserver-side fetch用 |
 
-`IRISHPUB_MAP_API_KEY` はサーバー側で `/api/pubs` へ渡され、ブラウザには露出しません。Production では未設定のままデプロイできないため、Vercel の Environment Variables で **Production** 対象に登録してください。値を設定した Preview やローカル環境でも、API に直接アクセスする外部クライアントは `x-api-key` ヘッダーが必要になります。
+Productionで`IRISHPUB_MAP_API_KEY`が未設定の場合、buildは失敗します。`DATABASE_URL`未設定時は店舗・公開Guideを0件として扱い、書き込みは行いません。Preview DBは[Neon Preview DB運用](../runbooks/neon-preview-branch.md)に従います。
 
-`vercel.json` の build command は最初に `npm run validate:production-env` を実行します。Vercel の `VERCEL_ENV` が `production` の場合に `IRISHPUB_MAP_API_KEY` が未設定または空文字なら、API キーの実値を表示せずデプロイを失敗させます。実行時にも同じ設定不備を `503` として検出します。
+## 通常フロー
 
-### API キーの生成
+1. 作業ブランチで必要な検証を実行し、Pull Requestを作成する。
+2. VercelのPreview DeploymentとGitHub ActionsのCIを確認する。
+3. review後にPRを`main`へmergeする。
+4. VercelのProduction DeploymentがReadyになり、Production Domainへ反映されたことを確認する。
+5. 必要に応じて主要画面と公開APIを確認する。Productionの秘密値、Preview URL、管理者情報を出力しない。
 
-API キーは、リポジトリへ値を保存せず、ローカルでファイルへ生成します。引数なしではカレントディレクトリの `api-keys.txt` に5個のキーを1行ずつ保存します。成功時にキーをコンソールへ出力しません。
+## デプロイ前後の基本確認
 
-```bash
-node scripts/generate-api-keys.mjs
-```
-
-生成数を指定する場合は、1〜100個の範囲で指定します。
-
-```bash
-node scripts/generate-api-keys.mjs 10 /secure/path/api-keys.txt
-```
-
-生成ファイルは所有者だけが読める権限（`0600`）で保存されます。生成されたキーは秘密情報として扱い、必要なものだけを Vercel の `IRISHPUB_MAP_API_KEY` に登録してください。生成ファイルを Issue、Pull Request、リポジトリ、CI ログへ保存・貼り付けないでください。
-
-Preview Deployment Protection を有効にしている場合、サーバー側から同じ Preview URL の `/api/pubs` を fetch すると Vercel SSO へリダイレクトされることがあります。その場合は Vercel の Protection Bypass for Automation secret を `VERCEL_AUTOMATION_BYPASS_SECRET` として Preview 環境にも設定してください。アプリはこの値を `x-vercel-protection-bypass` ヘッダーとして送信します。未設定でもSSOリダイレクト時は静的データを複製せず店舗0件で表示し、ページ全体がserver errorにならないようにしています。実データを表示するには、SSO回避用の設定とDATABASE_URLを構成してください。
-
-管理画面のログインには `ADMIN_USERNAME`、`ADMIN_PASSWORD_HASH`、`ADMIN_SESSION_SECRET` のすべてが必要です。更新操作には、さらに `DATABASE_URL` が必要です。
-
-## Neon Preview ブランチ上限対策
-
-Vercel の Neon 連携で `Create database branch for deployment` の Preview 設定を有効にすると、Preview デプロイごとに Neon のブランチが作成されます。Neon Free のブランチ上限に達すると、アプリのビルドが始まる前に `Provisioning integrations failed`、`Branch limit reached` でデプロイが失敗します。
-
-このリポジトリでは、無料枠を安定して使うため、Preview は専用の固定 Neon ブランチを共有します。Production の Neon ブランチは Preview と共有しません。
-
-### 初回または上限到達時の設定
-
-1. Neon Console の対象プロジェクトで、未使用の `preview/*` ブランチを確認し、不要なものだけ削除します。Production で使用しているブランチと、現在利用中の Preview ブランチは削除しません。
-2. Neon Console で専用の Preview ブランチを1つ作成し、その接続文字列を取得します。接続文字列は秘密情報として扱い、リポジトリへ記録しません。
-3. Vercel Project の **Storage → neon-irishpub-map** の連携設定を開き、**Create database branch for deployment → Preview** を無効にします。これが有効なままだと、Preview ごとのブランチ作成が続きます。
-4. Vercel Project の **Settings → Environment Variables** で、専用 Preview ブランチの接続文字列を `DATABASE_URL` の **Preview** 環境へ登録または更新します。Production 環境の `DATABASE_URL` は変更しません。
-5. 失敗したデプロイを **Redeploy** するか、作業ブランチへ新しいコミットを push します。
-
-Vercel CLIで環境変数を登録する場合も、値をコマンドラインやシェル履歴へ残さないよう標準入力から渡します。
-
-```bash
-printf '%s' "$NEON_PREVIEW_DATABASE_URL" | vercel env add DATABASE_URL preview
-```
-
-`NEON_PREVIEW_DATABASE_URL` はシェルへ安全に読み込んだ一時的な値を想定し、`.env` やリポジトリへ追加しません。設定後は Vercel の次の Preview Deployment で、Provisioning Integrations のブランチ作成が実行されず、通常の Build ログが開始することを確認します。
-
-この連携アクションの有効・無効は Vercel Dashboard 側の設定であり、`vercel.json` では管理できません。Neon のブランチ分離が必要になった場合は、ブランチ上限と削除運用を確認したうえで Preview の自動作成を再度有効にしてください。
-
-## GitHub Actions の設定
-
-CI の Slack 通知は Vercel の環境変数ではなく GitHub の Actions 設定を参照します。通知を有効にする場合は、リポジトリの **Settings → Secrets and variables → Actions** で次を設定します。
-
-| 種別     | 名前                     | 用途                       |
-| -------- | ------------------------ | -------------------------- |
-| Variable | `SLACK_CICD_CHANNEL`     | 任意。通知先チャンネル     |
-| Secret   | `SLACK_CICD_WEBHOOK_URL` | Slack Incoming Webhook URL |
-
-CIはブランチpush・Pull Request更新・`workflow_dispatch`で実行します。PR用のバージョン自動更新Workflowがバージョンcommitをpushした場合は、`GITHUB_TOKEN`でCIを明示起動し、更新後のPRブランチHEADを検証します。バージョンcommitがない場合は追加起動しません。`main`のRulesetではCIの`Lint, Test, Build` JobをRequired Status Checkとして扱います。
-
-## デプロイの流れ
-
-1. GitHub と Vercel を連携し、このリポジトリを Vercel Project として Import します。
-2. Root Directory が `.`、Production Branch が `main` になっていることを確認します。
-3. Node.js Version を 24.x に設定します。
-4. 必要な Vercel 環境変数、Neon Preview の固定ブランチ設定、必要に応じて GitHub Actions の Slack 通知設定を追加します。
-5. `main` ブランチへ PR を merge します。
-6. Vercel の Deployments で Production Deployment が成功していることを確認します。
-
-## ローカルでの事前確認
-
-PR を merge する前に、少なくとも以下を確認します。
+merge前に少なくとも次を実行します。
 
 ```bash
 nvm use
@@ -160,72 +56,19 @@ npm run build
 npm run check:sensitive-data
 ```
 
-依存関係を変更した場合は、追加で `npm audit --omit=dev` を実行します。
+依存関係を変更した場合は、追加で`npm audit --omit=dev`を実行します。データ構造を変更する場合は、アプリをデプロイする前に[Neon migration Runbook](../runbooks/neon-migrations.md)で対象Branchのmigrationと検証を完了します。
 
-## 参考
+## 詳細Runbook
 
-- Vercel Project Configuration: https://vercel.com/docs/project-configuration
-- Vercel Monorepos: https://vercel.com/docs/monorepos
-- Next.js on Vercel: https://vercel.com/docs/frameworks/full-stack/nextjs
+- [Neon migrationを適用する](../runbooks/neon-migrations.md)
+- [Neon Preview DBを運用する](../runbooks/neon-preview-branch.md)
+- [Vercel Preview Protectionを設定・復旧する](../runbooks/vercel-preview-protection.md)
+- [リリース・CI運用を行う](../runbooks/release-operations.md)
+- [Repository設定を確認・復元する](../runbooks/repository-settings.md)
 
-## 管理画面と Neon Postgres
+## 関連資料
 
-管理画面は `/admin` です。Vercel Marketplace から Neon を追加し、Production 環境には本番ブランチ、Preview 環境には[Neon Preview ブランチ上限対策](#neon-preview-ブランチ上限対策)で作成した固定ブランチの `DATABASE_URL` を設定してください。店舗データは管理画面または[開発環境・セットアップ手順の一括インポート](development.md#店舗データの一括インポート)で明示的に投入します。
-
-`pub-repository` と一括インポート処理は、テーブルや参照データを作成しません。店舗データを投入する前に、[データベース定義](../specs/database.md)に記載した現行スキーマと、都道府県・営業状況・市区町村の参照データが構築済みであることを確認してください。空DBから現行スキーマを構築する正式な手順は、このリポジトリでは提供していません。`municipality_codes` が存在しない、または空の場合、`pub-repository` は読み出しを停止します。`DATABASE_URL` が未設定の場合、管理画面は店舗0件を表示できますが書き込みはできません。
-
-Vercelへのデプロイでは `db/migrations` を自動適用しません。Issue #278以降のアプリケーションをデプロイする前に、接続先の各Neonブランチへ必要なマイグレーションを手動適用し、検証SQLを実行します。接続文字列はシェルの一時変数で渡し、リポジトリへ保存しません。
-
-Editorial Content基盤（マイグレーション010）は、Productionへ直接適用しません。まずProduction相当のデータを確認する必要がある場合は期限付き通常Neon Branch、データを複製できない場合はSchema-only Branchを作成し、Direct / Unpooled Connection Stringを一時的に `MIGRATION_DATABASE_URL` へ設定して検証します。Migration実行後はverify SQLのテーブル・制約・許可Locale・外部キー・適用履歴を確認し、関連するアプリケーション・テストが成功した場合だけProductionへの適用を判断します。
-
-```bash
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/010_add_editorial_content_up.sql
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/010_add_editorial_content_verify.sql
-```
-
-Productionへ適用する場合も同じ順序で010・011を適用・検証してから、Neonを公開取得元とするアプリケーションをデプロイします。公開GuideにRepository内MDX fallbackはないため、デプロイ前に接続先の`content_entries`・`content_translations`へ必要なPublished Guideと翻訳が存在することを管理画面または読み取り専用SQLで確認します。
-
-Irish Quiz基盤（マイグレーション012）は `content_entries` を参照するため、010適用済みの期限付き通常Neon Branchで検証します。Productionへ直接適用せず、Direct / Unpooled Connectionでup SQLとverify SQLを順に実行し、4テーブル・複合外部キー・Special Date・Locale・Index・適用履歴を確認します。012はSchemaのみを追加し、Quizデータ投入やPublic Quizの参照元切替は行いません。
-
-```bash
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/012_add_quiz_domain_up.sql
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/012_add_quiz_domain_verify.sql
-```
-
-Draft QuestionはCategory・正解・Source、翻訳、Choiceが未完成でも保存できます。正解を設定する場合はQuestionとChoiceを同一transactionで登録し、Questionの後にChoiceを追加してcommitします。`quiz_questions_correct_choice_fkey` はcommit時に検査されるため、指定済みの正解Choiceが存在しない場合や別Questionに所属する場合はtransaction全体が失敗します。Publishedへの変更時は管理APIで必須項目を検証します。
-
-マイグレーション008が未適用のブランチでは、先に008を適用します。up SQLは既存店舗が公開条件を満たさない場合、DDL適用前に停止します。
-
-```bash
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/008_add_pub_publication_state_up.sql
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/008_add_pub_publication_state_verify.sql
-```
-
-下書き保存APIを含むアプリケーションはNULL許容変更を前提にするため、Productionでは次の順序を守ります。
-
-1. Production Neonブランチを指す `MIGRATION_DATABASE_URL` でマイグレーション009を適用する。
-2. 続けて検証SQLを実行し、制約と公開中店舗の完全性に関する全行が期待値を満たすことを確認する。
-3. 検証成功後に限り、Issue #278以降のアプリケーションをProductionへデプロイする。
-
-```bash
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/009_allow_pub_drafts_up.sql
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/009_allow_pub_drafts_verify.sql
-```
-
-Previewで下書き保存を確認する場合も、固定Preview Neonブランチへ同じ順序で009を適用してからPreview Deploymentを操作します。検証SQLが失敗した場合はアプリケーションをデプロイせず、対象ブランチと適用結果を確認します。
-
-マイグレーション適用後の新規店舗と一括インポート店舗は非公開で作成されます。アプリケーションだけをロールバックする場合、公開状態と下書きを失わないよう変更した制約・追加したカラムは戻さず残します。
-
-パスワードハッシュは、ローカルで生成して Vercel の環境変数にだけ登録します。例:
-
-```bash
-node -e 'const { randomBytes, scryptSync } = require("crypto"); const password = process.argv[1]; const salt = randomBytes(16).toString("base64"); console.log(salt + ":" + scryptSync(password, salt, 64).toString("base64"))' '設定したいパスワード'
-```
-
-Neon Free は小規模な管理用途から開始できますが、使用量と上限は Neon のダッシュボードで監視してください。
-
-店舗データを一括追加する場合は、[開発環境・セットアップ手順の一括インポート](development.md#店舗データの一括インポート)を使用してください。ProductionとPreviewの接続先が分かれている場合は、両方へ個別に実行します。
-
-参考: [Neon の Vercel Native Integration](https://neon.com/blog/neon-vercel-native-integration)、[Vercel の Deployment integration actions](https://vercel.com/docs/integrations/create-integration/deployment-integration-action)
-
-API の認証・更新条件は[API 方針](../specs/api.md)、全体構成は[システム構成](../architecture/system-overview.md)を参照してください。
+- [Deployment](https://vercel.com/docs/deployments/overview)
+- [Vercel project configuration](https://vercel.com/docs/project-configuration)
+- [API specification](../specs/api.md)
+- [System overview](../architecture/system-overview.md)

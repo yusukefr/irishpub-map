@@ -24,7 +24,7 @@ npm install
 npm run dev
 ```
 
-Webアプリは `apps/web` のNext.jsアプリとして起動します。セットアップの詳細は[開発環境・セットアップ手順](docs/setup/development.md)を参照してください。
+Webアプリは `apps/web` のNext.jsアプリとして起動します。セットアップの詳細は[ローカル開発の開始](docs/setup/development.md)を参照してください。
 
 ## 基本的な開発コマンド
 

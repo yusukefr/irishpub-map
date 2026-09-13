@@ -1,22 +1,38 @@
-# 開発環境・セットアップ手順
+# ローカル開発の開始
+
+この文書は、Irish Pub Mapのローカル開発を開始するための最短手順です。Pub Import、Visual Regressionの基準画像更新、管理者初期設定などの低頻度な作業は[Runbooks](../README.md#documentation-router)を参照してください。
 
 ## 必要環境
 
-- Node.js 24 系
+- Node.js 24系（`.nvmrc`に従う）
 - npm
-- nvm 推奨
-
-Node.js バージョンは `.nvmrc` に合わせます。
+- nvm（推奨）
 
 ```bash
 nvm use
-```
-
-## セットアップ
-
-```bash
 npm install
 ```
+
+`nvm`を利用しない環境では、`.nvmrc`と同じNode.js major versionを選択します。
+
+## ローカル環境変数
+
+`.env.example`をコピーして`.env.local`を作成します。実値をGit、Issue、PR、スクリーンショットへ記録しません。
+
+```bash
+cp .env.example .env.local
+```
+
+| 変数                              | 必要な場面                      | 用途                                    |
+| --------------------------------- | ------------------------------- | --------------------------------------- |
+| `IRISHPUB_MAP_API_KEY`            | 任意                            | `GET /api/pubs`のAPI key                |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | Preview Protectionを使う場合    | Previewのサーバー側fetch用bypass secret |
+| `DATABASE_URL`                    | 公開Guideまたは永続化を使う場合 | Neon Postgres接続文字列                 |
+| `ADMIN_USERNAME`                  | 管理画面を有効にする場合        | 管理者ID                                |
+| `ADMIN_PASSWORD_HASH`             | 管理画面を有効にする場合        | scrypt password hash                    |
+| `ADMIN_SESSION_SECRET`            | 管理画面を有効にする場合        | セッションCookie署名用のランダム値      |
+
+`DATABASE_URL`未設定時は店舗と公開Guideを0件として扱います。3つの`ADMIN_*`変数がすべてそろうと管理画面のログインが有効になり、更新にはさらに`DATABASE_URL`が必要です。
 
 ## 起動
 
@@ -24,216 +40,11 @@ npm install
 npm run dev
 ```
 
-Web アプリは `apps/web` の Next.js アプリとして起動します。
+Next.jsアプリは`apps/web`で起動します。
 
-## Storybook
+## 基本検証
 
-共通UI ComponentはStorybookでアプリ本体から独立して確認します。Storyはアプリの`globals.css`と同じDesign Tokenを共有し、Storybook専用のStyleを追加しません。
-
-```bash
-npm run storybook
-```
-
-静的成果物を確認する場合は次を実行します。生成先の`storybook-static/`は追跡しません。
-
-```bash
-npm run build-storybook
-```
-
-## agent-browserによるブラウザ確認
-
-ブラウザから公開画面を確認する場合は、プロジェクトに追加した`agent-browser`を使用します。`agent-browser`のバージョンは`package-lock.json`で固定され、Chrome本体はリポジトリへ含めません。
-
-初回のみ、Chrome for Testingを取得します。
-
-```bash
-npx agent-browser install
-```
-
-Linuxでブラウザのシステム依存ライブラリも必要な場合は、環境のパッケージ管理者権限を確認したうえで次を実行します。
-
-```bash
-npx agent-browser install --with-deps
-```
-
-別のターミナルで開発サーバーを起動し、トップページを開いて読み込みを待ちます。
-
-```bash
-npm run dev
-
-npx agent-browser open http://localhost:3000
-npx agent-browser wait --load networkidle
-npx agent-browser snapshot -i
-```
-
-`snapshot -i`で表示された`@eN`形式の参照を使って、検索やチェックボックスなどの主要操作を確認します。画面が変わった後は参照が無効になるため、操作のたびにスナップショットを取り直します。
-
-```bash
-npx agent-browser fill @e1 "東京"
-npx agent-browser press Enter
-npx agent-browser snapshot -i
-
-# スナップショットで確認した参照番号に置き換えます
-npx agent-browser click @e2
-npx agent-browser snapshot -i
-```
-
-画面サイズを指定してスクリーンショットを取得できます。デスクトップ幅と、モバイル幅の目安である390px幅を確認します。
-
-```bash
-npx agent-browser set viewport 1280 900
-npx agent-browser screenshot /tmp/irishpub-map-desktop.png
-
-npx agent-browser set viewport 390 844
-npx agent-browser screenshot /tmp/irishpub-map-mobile.png
-```
-
-確認が終わったらブラウザセッションを終了します。
-
-```bash
-npx agent-browser close
-```
-
-Chromeをダウンロードできない環境では、既にインストール済みのChromeを自動検出させるか、`AGENT_BROWSER_EXECUTABLE_PATH`で実行ファイルのパスを指定できます。認証情報やトークンはコマンド、スクリーンショット、リポジトリへ保存しません。
-
-## 環境変数
-
-`.env.example` を参考に `.env.local` を作成できます。
-
-```bash
-cp .env.example .env.local
-```
-
-| 変数 | 必要な場面 | 用途 |
-| --- | --- | --- |
-| `IRISHPUB_MAP_API_KEY` | 任意 | `GET /api/pubs` の API key。設定時は直接アクセスに `x-api-key` が必要 |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | Preview の Deployment Protection を使う場合 | サーバー側の公開 API fetch で送る bypass ヘッダー |
-| `DATABASE_URL` | 公開Guideを表示する場合、または管理画面で永続化する場合 | Neon Postgres の接続文字列 |
-| `ADMIN_USERNAME` | 管理画面を有効にする場合 | 管理者 ID |
-| `ADMIN_PASSWORD_HASH` | 管理画面を有効にする場合 | `salt:base64-hash` 形式の scrypt パスワードハッシュ |
-| `ADMIN_SESSION_SECRET` | 管理画面を有効にする場合 | セッション Cookie 署名用の十分に長いランダム値 |
-
-`IRISHPUB_MAP_API_KEY` が未設定または空の場合、ローカル開発では API key チェックは無効です。値を設定した場合、Web アプリのトップページはサーバー側で同じ値を付与して API を呼び出します。
-
-管理画面の表示とログインは、3 つの `ADMIN_*` 変数がすべて設定されている場合に有効です。公開Guideの表示と店舗の追加・編集・削除には、さらに `DATABASE_URL` が必要です。DB未設定時は公開Guideが0件となり、`/admin` で店舗0件の状態を表示できますが、更新操作は失敗します。
-
-## 店舗データの一括インポート
-
-`scripts/import-pubs.mjs` は、[データベース定義](../specs/database.md)に記載した現行スキーマと、都道府県・営業状況・市区町村の参照データが構築済みのDBを対象とします。テーブルや参照データは作成しません。空DBから現行スキーマを構築する正式な手順は、このリポジトリでは提供していません。
-
-`scripts/import-pubs.mjs` は、JSON形式の店舗データをNeonへ追加します。`id` が既に存在する店舗は更新せずにスキップするため、同じファイルを再実行しても安全です。入力は `packages/shared` の `Pub` 型と同じ形式の配列です。リポジトリには店舗JSONを同梱していません。引数を省略した場合だけ、リポジトリルートの `pubs.json` を読み込みます。
-
-Neonの接続文字列は、ローカルのシェル環境変数として一時的に設定して実行します。接続文字列は出力・コミットしません。ProductionとPreviewの接続先が異なる場合は、それぞれ実行します。
-
-```bash
-DATABASE_URL="$NEON_PRODUCTION_DATABASE_URL" npm run import-pubs -- pubs.json
-
-DATABASE_URL="$NEON_PREVIEW_DATABASE_URL" npm run import-pubs -- pubs.json
-```
-
-`NEON_PRODUCTION_DATABASE_URL` と `NEON_PREVIEW_DATABASE_URL` は、Neon ConsoleまたはVercel Projectの環境変数から安全に取得した接続文字列をシェルへ設定した一時的な変数名です。実際の値を `.env`、シェル履歴、リポジトリへ残さないでください。別の入力ファイルを使う場合は、末尾のパスを置き換えます。
-
-```bash
-DATABASE_URL="$NEON_PRODUCTION_DATABASE_URL" npm run import-pubs -- path/to/pubs.json
-```
-
-実行結果は `Imported <追加件数>, skipped <既存ID件数>, total <入力件数>` の形式で表示されます。無効な形式や入力内で重複する `id` がある場合は、DBへの書き込み前にエラーで停止します。
-
-マイグレーション008適用後に一括投入した店舗は、DB既定値により非公開になります。公開切替機能が導入されるまでは公開APIへ表示されません。
-
-パスワードハッシュはローカルで生成し、値をリポジトリに保存しません。
-
-```bash
-node -e 'const { randomBytes, scryptSync } = require("crypto"); const password = process.argv[1]; const salt = randomBytes(16).toString("base64"); console.log(salt + ":" + scryptSync(password, salt, 64).toString("base64"))' '設定したいパスワード'
-```
-
-## テスト
-
-単体テストは Vitest で実行します。coverage threshold は 90% 以上です。
-
-```bash
-npm test
-```
-
-watch モード:
-
-```bash
-npm run test:watch
-```
-
-### E2Eテスト
-
-Playwright TestによるE2Eスモークテストは、Chromiumのproduction buildで実行します。初回のみブラウザをインストールしてください。
-
-```bash
-npx playwright install chromium
-npm run test:e2e
-```
-
-### Visual Regressionとアクセシビリティ
-
-`e2e/visual-regression.spec.ts`は主要なPublic UIをスクリーンショット比較します。意図したUI変更をレビューした場合だけ、次のコマンドで基準画像を更新します。
-
-```bash
-docker run --rm --ipc=host --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
-  mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e \
-  bash -lc 'npm ci && npx playwright test e2e/visual-regression.spec.ts --update-snapshots'
-```
-
-`e2e/accessibility.spec.ts`は`@axe-core/playwright`でcritical/seriousな自動検出可能違反を検査します。Visualとアクセシビリティを含むE2E全体は次で実行します。
-
-```bash
-npm run test:e2e
-```
-
-axeの結果だけでアクセシビリティを保証しません。キーボード操作、visible focus、操作領域、色以外の状態表現、日英表示はブラウザ確認でも検証します。
-
-`test:e2e` はPlaywrightの `webServer` でbuildと `next start` を自動実行します。手動で開発サーバーを起動する必要はありません。対話UIで実行する場合は `npm run test:e2e:ui` を使用します。
-
-E2Eでは `DATABASE_URL` を使用せず、Playwright設定からサーバー専用の `E2E_TEST_MODE=1` と公開店舗・公開Editorial Contentを含む固定fixtureを設定します。このモードはVercel Productionでの有効化を拒否し、fixtureに対する作成・更新・削除も拒否します。管理画面は認証を迂回せず、テスト専用の固定資格情報でログインします。
-
-失敗時のHTML reportは `playwright-report/`、traceとscreenshotは `test-results/` に出力されます。CIでは通常のLint・Test・Build・Storybook build完了後に独立したE2E jobを実行し、失敗時のみ両ディレクトリをartifactとして10日間保存します。
-
-## 型チェック
-
-```bash
-npm run typecheck
-```
-
-## Lint
-
-```bash
-npm run lint
-```
-
-## Format
-
-コードの書式にはPrettierを使用します。整形を実行する場合は `format`、書式を確認するだけの場合は `format:check` を実行します。
-
-```bash
-npm run format
-npm run format:check
-```
-
-CIでは `format:check` が実行されるため、Pull Requestを作成する前にローカルでも確認してください。
-
-## Build
-
-```bash
-npm run build
-```
-
-## Audit
-
-依存関係を変更した場合に実行します。
-
-```bash
-npm audit --omit=dev
-```
-
-## 推奨検証セット
-
-アプリ本体を変更した場合は、原則として以下を実行します。
+変更内容に応じて次を実行します。
 
 ```bash
 npm test
@@ -244,10 +55,19 @@ npm run build
 npm run check:sensitive-data
 ```
 
-依存関係を変更した場合は、追加で `npm audit --omit=dev` を実行します。
+依存関係を変更した場合は、追加で`npm audit --omit=dev`を実行します。E2Eの通常実行は`npm run test:e2e`です。
+
+## 詳細Runbook
+
+- [Pubを一括Importする](../runbooks/import-pubs.md)
+- [Visual Regressionを更新する](../runbooks/visual-regression.md)
+- [ブラウザで画面を確認する](../runbooks/browser-check.md)
+- [Neon migrationを適用する](../runbooks/neon-migrations.md)
+- [管理者アクセスを初期設定する](../runbooks/admin-access.md)
+- [リリース・CI運用を行う](../runbooks/release-operations.md)
 
 ## 関連資料
 
 - [コード規約・開発規約](../development/conventions.md)
-- [API 方針](../specs/api.md)
-- [システム構成](../architecture/system-overview.md)
+- [API specification](../specs/api.md)
+- [System overview](../architecture/system-overview.md)
