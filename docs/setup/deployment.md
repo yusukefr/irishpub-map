@@ -41,6 +41,22 @@ Productionで`IRISHPUB_MAP_API_KEY`が未設定の場合、buildは失敗しま�
 4. VercelのProduction DeploymentがReadyになり、Production Domainへ反映されたことを確認する。
 5. 必要に応じて主要画面と公開APIを確認する。Productionの秘密値、Preview URL、管理者情報を出力しない。
 
+## Quiz Data Migration（Issue #391）
+
+Quiz DomainのSchema Migrationとは別に、`apps/web/data/ireland/quiz.json`をNeonへ投入します。Migration元はこの固定JSONだけで、任意の入力ファイルや強制上書きオプションはありません。`quiz.json`はPublic切替とテスト・Cleanupが完了するまで削除しません。
+
+Productionへ適用する前に、必ずProduction相当のデータを複製しない検証用Neon Branchで、同じcommitとJSONを使って次の順序を実行します。`DATABASE_URL`は接続先のSecretとして実行環境へ設定し、値を文書・ログ・Issue・PRへ出力しません。
+
+```bash
+npm run migrate:quiz-data
+npm run migrate:quiz-data -- --apply
+npm run migrate:quiz-data
+```
+
+最初の実行はValidationとRelated Guide解決を含むDry Runで、DBへ書き込みません。`--apply`を付けた実行だけが、Quiz全テーブルをロックして空状態を同じtransaction内で確認したうえでINSERTします。確認後に別処理がQuiz行を追加した場合も、INSERT全体がrollbackされます。最後のDry Runで`already migrated`になり、件数・ID・翻訳・Choice順・正解・Source・Special Date・Related Contentが一致することを確認します。すでに完全一致する状態は変更せず、不完全・差分・余分なQuizがある状態では中止します。
+
+Branchでの検証とQuiz Repositoryの取得確認が完了した後、同じcommit・同じJSONでProductionに対してDry Run、Apply、再度Dry Runを実行します。失敗時に`--force`や既存値の上書きで続行せず、原因を修正してから再実行します。
+
 ## デプロイ前後の基本確認
 
 merge前に少なくとも次を実行します。

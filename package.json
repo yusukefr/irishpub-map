@@ -28,7 +28,8 @@
     "prepare": "node scripts/install-git-hooks.mjs",
     "check:sensitive-data": "node scripts/check-sensitive-data.mjs --tracked",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "migrate:quiz-data": "node scripts/migrate-quiz-data.mjs"
   },
   "overrides": {
     "postcss": "8.5.28"
