@@ -4,7 +4,7 @@
 
 Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定された環境では、`apps/web/app/lib/pub-repository.ts` が正規化済みの店舗・マスタ・翻訳・タグ関係テーブルを読み書きします。未設定時は公開APIと管理画面が空の店舗一覧を返し、更新操作は利用できません。
 
-現行の物理スキーマは、Neon PostgreSQLのカタログを読み取り専用で照会して生成する[生成済みスキーマ](../generated/database-schema.md)を基準とします。`npm run generate:database-schema` はテーブル、カラム、制約、外部キー、インデックスを安定した順序で再生成します。生成ファイルは手動編集せず、`DATABASE_URL` やデータ値を出力しません。Schema変更の履歴と適用手順は `db/migrations/` と[デプロイ手順](../setup/deployment.md#管理画面と-neon-postgres)を参照し、現行スキーマの根拠にはしません。
+現行の物理スキーマは、Neon PostgreSQLのカタログを読み取り専用で照会して生成する[生成済みスキーマ](../generated/database-schema.md)を基準とします。`npm run generate:database-schema` はテーブル、カラム、制約、外部キー、インデックスを安定した順序で再生成します。生成ファイルは手動編集せず、`DATABASE_URL` やデータ値を出力しません。Schema変更の履歴と適用手順は `db/migrations/` と[Neon migration Runbook](../runbooks/neon-migrations.md)を参照し、現行スキーマの根拠にはしません。
 
 ## 概念モデル
 

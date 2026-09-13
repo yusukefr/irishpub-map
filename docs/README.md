@@ -38,11 +38,23 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Editorial content cache | [Editorial content cache](specs/editorial-content-cache.md) | Current。実装・テストを優先 |
 | Public UI | [Irish Pub Map Design System](design/README.md) | Current。Token、Component、Pattern、Reference Screenの入口 |
 | Development rules / GitHub / JSDoc | [Development conventions](development/conventions.md) | Current。root `AGENTS.md` のMandatory Rulesを優先 |
-| Local setup | [Development setup](setup/development.md) | Current。Repository設定とScriptsを優先 |
-| Deployment | [Deployment](setup/deployment.md) | Current。Vercelの現行設定と公式Documentationを優先 |
+| Local development | [ローカル開発の開始](setup/development.md) | Current。最短の開発開始手順。低頻度作業はRunbookへ |
+| Standard deployment | [通常デプロイ](setup/deployment.md) | Current。Preview / Productionの通常フロー。障害対応はRunbookへ |
+| Import pubs | [Pub Import](runbooks/import-pubs.md) | Current。import scriptと対象DBを優先 |
+| Update visual snapshots | [Visual Regression](runbooks/visual-regression.md) | Current。E2E設定とReference Screensを優先 |
+| Browser UI check | [Browser check](runbooks/browser-check.md) | Current。Public UIの実装とDesign Systemを優先 |
+| Neon migration | [Neon migrations](runbooks/neon-migrations.md) | Current。migration SQLと現行Neon schemaを優先 |
+| Neon Preview DB | [Neon Preview DB](runbooks/neon-preview-branch.md) | Current。Vercel / Neonの現行設定を優先 |
+| Vercel Preview protection | [Vercel Preview Protection](runbooks/vercel-preview-protection.md) | Current。Vercelの現行設定を優先 |
+| Admin access setup | [Admin access](runbooks/admin-access.md) | Current。認証実装と環境変数を優先 |
+| Release and CI operations | [Release and CI](runbooks/release-operations.md) | Current。GitHub ActionsとVercel設定を優先 |
 | Privacy / Analytics | [Privacy and external transmission](operations/privacy-and-external-transmission.md) | Current。実装とProduction設定を優先 |
 | Map provider | [OpenStreetMap tile usage](operations/openstreetmap-tile-usage.md) | Current。Providerの現行Policyを優先 |
-| Repository settings | [Repository settings](repository-settings/README.md) | Current。GitHubの現行設定を優先 |
+| Repository settings | [Repository settings](runbooks/repository-settings.md) | Current。GitHubの現行設定を優先 |
+
+## Setup and Runbooks
+
+通常フローではSetupを読み、特定作業・管理操作・障害対応が必要なときだけ該当Runbookを読みます。Runbookの手順は、実行前に対象環境とSecretの取り扱いを確認します。
 
 ## Read When
 
