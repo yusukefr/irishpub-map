@@ -1,8 +1,14 @@
 import { neon, type NeonQueryFunctionInTransaction } from "@neondatabase/serverless";
 import { DEFAULT_LOCALE, isSupportedLocale, type Locale } from "@irishpub-map/shared/locale";
 import { getPublishedContentById } from "../content/repository";
-import { getE2EAdminQuiz, getE2EAdminQuizList } from "../e2e-test-fixtures";
+import {
+  getE2EAdminQuiz,
+  getE2EAdminQuizList,
+  getE2EPublishedQuizQuestions,
+  gradeE2EPublishedQuizAnswer,
+} from "../e2e-test-fixtures";
 import { isE2ETestMode, rejectE2ETestMutation } from "../e2e-test-mode";
+import { getCachedPublishedQuizQuestions, invalidatePublicQuizCache } from "./cache";
 import { getQuizDateInTokyo, selectDailyQuiz } from "./queries";
 import {
   QUIZ_CATEGORIES,
@@ -43,7 +49,12 @@ export async function listPublishedQuizQuestions(
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<readonly PublicQuizQuestion[]> {
   requireLocale(locale);
+  if (isE2ETestMode()) return getE2EPublishedQuizQuestions(locale);
   if (!process.env.DATABASE_URL) return [];
+  return getCachedPublishedQuizQuestions(locale, () => listPublishedQuizQuestionsFromDatabase(locale));
+}
+
+async function listPublishedQuizQuestionsFromDatabase(locale: Locale): Promise<readonly PublicQuizQuestion[]> {
   const rows = (await getRequiredSql()`
     WITH locale_preference AS (
       SELECT ${locale}::text AS locale, 0 AS priority
@@ -106,6 +117,7 @@ export async function gradePublishedQuizAnswer(
   requireLocale(locale);
   requiredNonEmptyString(questionId);
   requiredNonEmptyString(choiceId);
+  if (isE2ETestMode()) return gradeE2EPublishedQuizAnswer(questionId, choiceId, locale);
   const rows = (await getRequiredSql()`
     WITH locale_preference AS (
       SELECT ${locale}::text AS locale, 0 AS priority
@@ -291,7 +303,10 @@ export async function replaceAdminQuizQuestion(id: string, input: AdminQuizWrite
     { isolationLevel: "ReadCommitted" },
   )) as DbRow[][];
   if (results[0].length === 0) return "not_found";
-  return results[1].length === 0 ? "publication_blocked" : "updated";
+  const wasPublished = requiredBoolean(results[0][0].is_published);
+  if (results[1].length === 0) return "publication_blocked";
+  if (wasPublished) invalidatePublicQuizCache();
+  return "updated";
 }
 
 /**
@@ -363,7 +378,9 @@ AND LOWER(question.source_url) LIKE 'https://%'
   const current = requiredBoolean(lockedRows[0].is_published);
   if (current === isPublished) return { id, isPublished, unchanged: true };
   if (updatedRows.length === 0) return { id, isPublished: current, unchanged: true };
-  return { id, isPublished: requiredBoolean(updatedRows[0].is_published), unchanged: false };
+  const result = { id, isPublished: requiredBoolean(updatedRows[0].is_published), unchanged: false };
+  invalidatePublicQuizCache();
+  return result;
 }
 
 /**

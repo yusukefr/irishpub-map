@@ -2,15 +2,15 @@
 
 ## 概要
 
-`/discover/quiz`は、移行完了まではRepository内の`apps/web/data/ireland/quiz.json`からAsia/Tokyo基準の「今日の1問」を表示します。ユーザー登録、回答履歴、長期スコアは使用しません。
+`/discover/quiz`は、Quiz Repository経由でNeonのPublished QuestionからAsia/Tokyo基準の「今日の1問」を表示します。ユーザー登録、回答履歴、長期スコアは使用しません。`DATABASE_URL`未設定時は利用不可状態として表示します。
 
-マイグレーション012はQuiz Domain Schemaを定義し、Issue #390はNeonアクセスをQuiz Repositoryへ集約します。Quizデータの投入はIssue #391、Public QuizのNeon切替はIssue #393で行うため、Repository追加後も現在の画面挙動とSource of Truthは引き続きこのJSONです。
+マイグレーション012はQuiz Domain Schemaを定義し、Issue #390はNeonアクセスをQuiz Repositoryへ集約します。Quizデータの投入はIssue #391、Public QuizのNeon切替はIssue #393で行い、Published QuestionのSource of TruthはNeonです。`quiz.json`はカテゴリ表示定義の移行期間だけ参照します。
 
 マイグレーション012のDB Schemaは入力途中のDraftを許容します。Category・正解・SourceはNULL、翻訳は未作成または空文字、Choiceは0件から保存できます。Publishedへの変更時はIssue #390のRepositoryがこのJSON仕様と同等の必須項目をDB内で再検証し、Issue #392の管理APIは入力Validationと認可を担当します。
 
 Issue #392では `/admin/quiz`、`/admin/quiz/new`、`/admin/quiz/:id` からDraftとPublishedを管理します。Question IDは小文字英数字と単語間ハイフンのkebab-caseで、作成後は変更できません。通常のテキストはTrimして保存し、Choiceは配列順から保存順を生成します。関連ContentはGuideだけを選択でき、公開状態変更は管理APIの公開条件検証を通します。
 
-データは`apps/web/app/lib/quiz/data.ts`で起動時に検証され、`apps/web/app/lib/quiz/queries.ts`が日次選択と採点を担当します。
+DBから取得した公開Questionは`apps/web/app/lib/quiz/repository.ts`が回答前DTOへ変換し、既存の`getQuizDateInTokyo()`と`selectDailyQuiz()`が日次選択を担当します。採点も同RepositoryでPublished状態とChoice所属を検証して行います。
 
 ## Quiz Repository
 
@@ -20,7 +20,7 @@ Issue #392では `/admin/quiz`、`/admin/quiz/new`、`/admin/quiz/:id` からDra
 
 Admin取得はDraftとPublishedの両方を返します。作成・全体更新はQuestion本体、日英翻訳、Choiceと各翻訳を単一transactionで保存し、公開操作は行ロック後にCategory・正解・Source・日英翻訳・4 ChoicesをDB内で再検証します。DB行はCategory、日付、URL、UUID、Choice件数・順序を検証し、不正値をSilentにDomain Modelへ変換しません。
 
-`DATABASE_URL`未設定時は一覧を空、ID指定取得を`null`とし、更新と採点は設定エラーにします。静的JSONへのfallbackは行いません。既存画面とServer ActionのRepository切替はIssue #393で行います。
+`DATABASE_URL`未設定時はPublic Quizを利用不可状態、Published Questionが0件の場合は空状態として表示します。DB障害時も静的JSONへfallbackせず、利用者には一般化したエラーだけを表示します。Published一覧だけをLocale単位で`unstable_cache`により5分キャッシュし、日付決定はCache外で行います。AdminのPublished Question更新、Publish、UnpublishがDB更新に成功した場合だけ`public-quiz` Tagを失効させ、Draft作成やDraft更新、状態変更なし、更新失敗では失効させません。
 
 ## ルート構造
 

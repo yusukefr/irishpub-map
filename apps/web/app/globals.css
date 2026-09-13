@@ -3165,6 +3165,25 @@ body {
   background: var(--color-surface-primary);
 }
 
+.quiz-state {
+  text-align: center;
+}
+
+.quiz-state h2 {
+  margin: 0;
+  color: var(--color-text-brand);
+  font-family: var(--font-display);
+  font-size: var(--text-heading-lg);
+  line-height: var(--text-heading-lg--line-height);
+}
+
+.quiz-state p {
+  max-width: 48rem;
+  margin: var(--spacing-space-4) auto 0;
+  color: var(--color-text-secondary);
+  line-height: var(--text-body-lg--line-height);
+}
+
 .quiz-category {
   display: inline-flex;
   gap: var(--spacing-space-2);

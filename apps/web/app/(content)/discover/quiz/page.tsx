@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslation } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
+import { isDataSourceConfigured } from "../../../lib/e2e-test-mode";
 import { quizData } from "../../../lib/quiz/data";
-import { getQuizDateInTokyo, selectDailyQuiz } from "../../../lib/quiz/queries";
+import { getDailyPublishedQuiz } from "../../../lib/quiz/repository";
 import { DiscoverBreadcrumbs, RelatedContent } from "../components";
 import { QuizCard } from "./quiz-card";
 
@@ -26,8 +27,16 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function QuizPage() {
   const locale = await getRequestLocale();
   const t = getTranslation(locale).discover;
-  const question = selectDailyQuiz(getQuizDateInTokyo());
-  const category = quizData.categories[question.category];
+  let question = null;
+  let quizUnavailable = !isDataSourceConfigured();
+  if (!quizUnavailable) {
+    try {
+      question = await getDailyPublishedQuiz(locale);
+    } catch {
+      console.error("Public Quiz could not be loaded.");
+      quizUnavailable = true;
+    }
+  }
 
   return (
     <article className="content-container quiz-page" aria-labelledby="quiz-heading">
@@ -43,18 +52,27 @@ export default async function QuizPage() {
       </header>
 
       <div className="quiz-column">
-        <QuizCard
-          question={{
-            id: question.id,
-            category: {
-              icon: category.icon,
-              label: category.label[locale],
-            },
-            question: question.question[locale],
-            choices: question.choices.map((choice) => ({ id: choice.id, label: choice.label[locale] })),
-          }}
-          labels={t.quizContent}
-        />
+        {question ? (
+          <QuizCard
+            question={{
+              id: question.id,
+              category: {
+                icon: quizData.categories[question.category].icon,
+                label: quizData.categories[question.category].label[locale],
+              },
+              question: question.question,
+              choices: question.choices,
+            }}
+            labels={t.quizContent}
+          />
+        ) : (
+          <section className="quiz-card quiz-state" aria-labelledby="quiz-state-heading">
+            <h2 id="quiz-state-heading">
+              {quizUnavailable ? t.quizContent.unavailableHeading : t.quizContent.emptyHeading}
+            </h2>
+            <p>{quizUnavailable ? t.quizContent.unavailableDescription : t.quizContent.emptyDescription}</p>
+          </section>
+        )}
       </div>
 
       <RelatedContent
