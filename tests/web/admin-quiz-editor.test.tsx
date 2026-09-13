@@ -192,4 +192,27 @@ describe("AdminQuizEditor", () => {
       expect.objectContaining({ method: "PUT" }),
     );
   });
+
+  it("offers the correct number of days and resets an invalid day when the month changes", () => {
+    render(<AdminQuizEditor initialQuestion={question} relatedGuides={guides} databaseConfigured locale="ja" />);
+    const dateSelects = screen.getAllByRole("combobox");
+    fireEvent.change(dateSelects[3], { target: { value: "31" } });
+    fireEvent.change(dateSelects[2], { target: { value: "2" } });
+    expect(dateSelects[3]).toHaveValue("29");
+    expect(within(dateSelects[3]).getByRole("option", { name: "29" })).toBeInTheDocument();
+    fireEvent.change(dateSelects[2], { target: { value: "4" } });
+    expect(within(dateSelects[3]).getByRole("option", { name: "30" })).toBeInTheDocument();
+    expect(within(dateSelects[3]).queryByRole("option", { name: "31" })).not.toBeInTheDocument();
+    fireEvent.change(dateSelects[2], { target: { value: "10" } });
+    expect(within(dateSelects[3]).getByRole("option", { name: "31" })).toBeInTheDocument();
+  });
+
+  it("generates an unused choice ID after a choice is deleted", () => {
+    render(<AdminQuizEditor initialQuestion={question} relatedGuides={guides} databaseConfigured locale="ja" />);
+    const choices = screen.getByRole("group", { name: "選択肢" });
+    fireEvent.click(within(choices).getAllByRole("button", { name: "選択肢を削除" })[1]);
+    fireEvent.click(within(choices).getByRole("button", { name: "選択肢を追加" }));
+    expect(within(choices).getAllByLabelText("Choice ID")).toHaveLength(4);
+    expect(within(choices).getAllByLabelText("Choice ID")[3]).toHaveValue("choice-2");
+  });
 });

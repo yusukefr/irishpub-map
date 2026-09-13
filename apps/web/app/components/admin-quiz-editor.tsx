@@ -13,6 +13,7 @@ import {
 import { getAdminQuizApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
+import { getQuizPublicationMissingFields } from "../lib/quiz/publication";
 type Props = {
   initialQuestion: AdminQuizQuestion | null;
   databaseConfigured: boolean;
@@ -103,7 +104,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
   const [serverMissingFields, setServerMissingFields] = useState<string[]>([]);
   const isDirty = savedSnapshot !== serialize(questionId, values);
   const busy = saving || publishing;
-  const missingFields = useMemo(() => getMissingFields(values), [values]);
+  const missingFields = useMemo(() => getQuizPublicationMissingFields(values), [values]);
   useUnsavedChangesWarning({ isDirty, message: t.unsavedChanges });
   function setRoot(key: "category" | "sourceUrl" | "relatedContentId" | "correctChoiceId", value: string | null) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -120,7 +121,14 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
     const number = value ? Number(value) : null;
     setValues((current) => ({
       ...current,
-      specialDate: number === null ? null : { ...(current.specialDate ?? { month: 1, day: 1 }), [key]: number },
+      specialDate:
+        number === null
+          ? null
+          : {
+              ...(current.specialDate ?? { month: 1, day: 1 }),
+              [key]: number,
+              ...(key === "month" ? { day: Math.min(current.specialDate?.day ?? 1, getDaysInMonth(number)) } : {}),
+            },
     }));
     clearError("specialDate");
   }
@@ -144,7 +152,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
       choices: [
         ...current.choices,
         {
-          id: "choice-" + (current.choices.length + 1),
+          id: getNextChoiceId(current.choices),
           sortOrder: current.choices.length,
           translations: { ja: "", en: "" },
         },
@@ -356,11 +364,14 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
                 onChange={(event) => setSpecialDatePart("day", event.target.value)}
               >
                 <option value="">{q.noSpecialDate}</option>
-                {Array.from({ length: 29 }, (_, index) => (
-                  <option key={index + 1} value={index + 1}>
-                    {index + 1}
-                  </option>
-                ))}
+                {Array.from(
+                  { length: values.specialDate ? getDaysInMonth(values.specialDate.month) : 31 },
+                  (_, index) => (
+                    <option key={index + 1} value={index + 1}>
+                      {index + 1}
+                    </option>
+                  ),
+                )}
               </select>
             </label>
           </div>
@@ -521,17 +532,12 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
     </section>
   );
 }
-function getMissingFields(values: AdminQuizWriteInput) {
-  const missing: string[] = [];
-  if (!values.category) missing.push("category");
-  for (const language of ["ja", "en"] as const) {
-    if (!values.translations[language].question.trim()) missing.push("translations." + language + ".question");
-    if (!values.translations[language].explanation.trim()) missing.push("translations." + language + ".explanation");
-    if (!values.translations[language].sourceLabel.trim()) missing.push("translations." + language + ".sourceLabel");
-  }
-  if (!values.sourceUrl) missing.push("sourceUrl");
-  if (values.choices.length !== 4) missing.push("choices");
-  if (!values.correctChoiceId || !values.choices.some((choice) => choice.id === values.correctChoiceId))
-    missing.push("correctChoiceId");
-  return missing;
+function getDaysInMonth(month: number) {
+  return new Date(Date.UTC(2000, month, 0)).getUTCDate();
+}
+function getNextChoiceId(choices: readonly { id: string }[]) {
+  const ids = new Set(choices.map((choice) => choice.id));
+  let number = 1;
+  while (ids.has("choice-" + number)) number += 1;
+  return "choice-" + number;
 }

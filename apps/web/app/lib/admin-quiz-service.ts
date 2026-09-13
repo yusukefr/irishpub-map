@@ -1,5 +1,6 @@
 import type { AdminFieldErrorCode } from "@irishpub-map/shared/admin-api-error";
 import { getAdminContent } from "./admin-content-repository";
+import { getQuizPublicationMissingFields } from "./quiz/publication";
 import {
   getAdminQuizQuestion,
   insertAdminQuizQuestion,
@@ -19,6 +20,7 @@ import {
   type AdminQuizWriteInput,
   type QuizSpecialDate,
 } from "./quiz/types";
+export { getQuizPublicationMissingFields } from "./quiz/publication";
 type FieldErrors = Partial<Record<string, AdminFieldErrorCode>>;
 type RecordValue = Record<string, unknown>;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -118,31 +120,6 @@ export async function changeAdminQuizPublication(
     throw new AdminQuizServiceError("publication_requirements_not_met", {}, getQuizPublicationMissingFields(latest));
   }
   return result;
-}
-/**
- * 保存済みQuestionの公開不足フィールドを返します。
- * @param input
- * @returns {string[]} 公開に不足するフィールド。
- */
-export function getQuizPublicationMissingFields(input: AdminQuizQuestion | AdminQuizWriteInput): string[] {
-  const missing: string[] = [];
-  if (!input.category) missing.push("category");
-  for (const locale of ["ja", "en"] as const) {
-    const translation = input.translations[locale];
-    if (!translation.question.trim()) missing.push(`translations.${locale}.question`);
-    if (!translation.explanation.trim()) missing.push(`translations.${locale}.explanation`);
-    if (!translation.sourceLabel.trim()) missing.push(`translations.${locale}.sourceLabel`);
-  }
-  if (!input.sourceUrl) missing.push("sourceUrl");
-  if (input.choices.length !== 4) missing.push("choices");
-  input.choices.forEach((choice, index) => {
-    if (!choice.id.trim()) missing.push(`choices.${index}.id`);
-    if (!choice.translations.ja.trim()) missing.push(`choices.${index}.translations.ja`);
-    if (!choice.translations.en.trim()) missing.push(`choices.${index}.translations.en`);
-  });
-  if (!input.correctChoiceId || !input.choices.some((choice) => choice.id === input.correctChoiceId))
-    missing.push("correctChoiceId");
-  return missing;
 }
 async function parseWriteInput(
   value: unknown,
