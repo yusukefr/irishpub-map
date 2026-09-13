@@ -1,10 +1,10 @@
-# Discover Editorial Pattern
+# Discover Pattern
 
 Discover は Irish Pub Map の文化・旅・物語を扱う編集コンテンツ領域です。Map と同じ意味的 Design Token と Header を使い、Warm Cream のページ、Deep Irish Green の見出し、Brass Gold の限定的な強調で同じブランドとして見せます。
 
 ## 情報構造
 
-Discover トップは導入と Map CTA、Calendar / Quiz、Guides、Stories の順に配置します。Calendar は年間の文化をたどる主要導線、Quiz は短時間で参加できる導線です。Guide は記事ごとの ContentCard に分け、タイトル、概要、公開日、操作を一覧で比較できます。Stories は公開コンテンツがない間だけ compact な準備中表示にします。
+Discover トップは導入と Map CTA、Calendar / Quiz、Guides、Stories の順に配置します。Calendar は年間の文化をたどる主要導線、Quiz は短時間で参加できる導線です。Guide は記事ごとの ContentCard に分け、タイトル、概要、公開日、操作を一覧で比較できます。Stories は公開コンテンツがない間だけ `text-only` variant の準備中表示にします。
 
 Calendar、Quiz、Guide は現在位置を示すパンくずを持ちます。本文の後には3件の関連コンテンツを置き、閲覧中のページを除いた Discover コンテンツと Map へ移動できるようにします。
 
@@ -16,7 +16,7 @@ Calendar、Quiz、Guide は現在位置を示すパンくずを持ちます。�
 
 ## ContentCard
 
-Discover では共通 ContentCard の `default`、`feature`、`compact` を使います。セクション内のカードは `headingLevel={3}` を指定し、セクション見出しとの階層を保ちます。`feature` の Gold 罫線は主要導線だけに使います。写真のないカードへ装飾画像や架空のサムネイルを追加しません。
+Discover では共通 ContentCard の `default`、`feature`、`compact`、`text-only` を用途に応じて使います。Calendar は `feature`、Quiz は `default`、Guide は `compact`、Stories は `text-only` です。セクション内のカードは `headingLevel={3}` を指定し、セクション見出しとの階層を保ちます。`feature` の Gold 罫線は主要導線だけに使います。写真のないカードへ装飾画像や架空のサムネイルを追加しません。
 
 写真を追加する場合は、次をすべて満たす素材だけを `media` slot に渡します。
 
