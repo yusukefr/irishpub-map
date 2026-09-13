@@ -17,6 +17,7 @@ export function AdminNavigation({ locale }: { locale: Locale }) {
   const items = [
     { href: "/admin/pubs", label: t.navPubs },
     { href: "/admin/content", label: t.navContent },
+    { href: "/admin/quiz", label: t.navQuiz },
     { href: "/admin/tags", label: t.navTags },
     { href: "/admin/statuses", label: t.navStatuses },
   ];

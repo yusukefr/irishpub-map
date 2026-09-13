@@ -8,6 +8,8 @@
 
 マイグレーション012のDB Schemaは入力途中のDraftを許容します。Category・正解・SourceはNULL、翻訳は未作成または空文字、Choiceは0件から保存できます。Publishedへの変更時はIssue #390のRepositoryがこのJSON仕様と同等の必須項目をDB内で再検証し、Issue #392の管理APIは入力Validationと認可を担当します。
 
+Issue #392では `/admin/quiz`、`/admin/quiz/new`、`/admin/quiz/:id` からDraftとPublishedを管理します。Question IDは小文字英数字と単語間ハイフンのkebab-caseで、作成後は変更できません。通常のテキストはTrimして保存し、Choiceは配列順から保存順を生成します。関連ContentはGuideだけを選択でき、公開状態変更は管理APIの公開条件検証を通します。
+
 データは`apps/web/app/lib/quiz/data.ts`で起動時に検証され、`apps/web/app/lib/quiz/queries.ts`が日次選択と採点を担当します。
 
 ## Quiz Repository

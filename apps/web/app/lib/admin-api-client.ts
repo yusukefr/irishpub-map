@@ -28,7 +28,7 @@ export type AdminApiClientError = {
  */
 export function getAdminApiErrorMessage(locale: Locale, value: unknown) {
   const errorCode = getErrorCode(value);
-  return getTranslation(locale).admin.errors[errorCode];
+  return (getTranslation(locale).admin.errors as Record<AdminApiErrorCode, string>)[errorCode];
 }
 
 /**
@@ -44,6 +44,17 @@ export function getAdminContentApiErrorMessage(locale: Locale, value: unknown) {
   return getAdminApiErrorMessage(locale, value);
 }
 
+/**
+ * Quiz公開条件エラーをQuiz向け文言へ変換します。
+ * @param locale
+ * @param value
+ * @returns {string} Quiz向けエラー文言、または共通管理APIエラー文言。
+ */
+export function getAdminQuizApiErrorMessage(locale: Locale, value: unknown) {
+  if (getErrorCode(value) === "publication_requirements_not_met")
+    return getTranslation(locale).admin.quiz.publicationError;
+  return getAdminApiErrorMessage(locale, value);
+}
 /**
  * タグAPIのフィールド別Validationを優先し、現在のlocaleの文言へ変換します。
  * @param {Locale} locale - 現在の画面表示言語。
