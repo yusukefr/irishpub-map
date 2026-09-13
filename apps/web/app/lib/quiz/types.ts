@@ -12,6 +12,11 @@ export const QUIZ_CATEGORIES = [
   "history",
 ] as const;
 
+/** 管理画面で入力できるQuestion IDの最大文字数です。 */
+export const QUIZ_ID_MAX_LENGTH = 100;
+/** 管理画面で入力できるChoice IDの最大文字数です。 */
+export const QUIZ_CHOICE_ID_MAX_LENGTH = 60;
+
 /** クイズで利用できるLocale非依存のカテゴリIDです。 */
 export type QuizCategory = (typeof QUIZ_CATEGORIES)[number];
 
@@ -128,4 +133,14 @@ export type AdminQuizWriteInput = Pick<
  */
 export function isQuizCategory(value: string): value is QuizCategory {
   return QUIZ_CATEGORIES.includes(value as QuizCategory);
+}
+
+/**
+ * Question・Choiceで利用できるkebab-case IDか判定します。
+ * @param value
+ * @param maxLength
+ * @returns {boolean} 許可形式の場合はtrue。
+ */
+export function isQuizId(value: string, maxLength = QUIZ_ID_MAX_LENGTH) {
+  return value.length <= maxLength && /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(value);
 }

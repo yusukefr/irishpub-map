@@ -1,7 +1,8 @@
 import { neon, type NeonQueryFunctionInTransaction } from "@neondatabase/serverless";
 import { DEFAULT_LOCALE, isSupportedLocale, type Locale } from "@irishpub-map/shared/locale";
 import { getPublishedContentById } from "../content/repository";
-import { rejectE2ETestMutation } from "../e2e-test-mode";
+import { getE2EAdminQuiz, getE2EAdminQuizList } from "../e2e-test-fixtures";
+import { isE2ETestMode, rejectE2ETestMutation } from "../e2e-test-mode";
 import { getQuizDateInTokyo, selectDailyQuiz } from "./queries";
 import {
   QUIZ_CATEGORIES,
@@ -164,6 +165,7 @@ export async function gradePublishedQuizAnswer(
  * @returns {Promise<readonly AdminQuizListItem[]>} DB未設定時は空配列。
  */
 export async function listAdminQuizQuestions(): Promise<readonly AdminQuizListItem[]> {
+  if (isE2ETestMode()) return getE2EAdminQuizList();
   if (!process.env.DATABASE_URL) return [];
   const rows = (await getRequiredSql()`
     SELECT question.id, question.category, question.special_month, question.special_day,
@@ -191,6 +193,7 @@ export async function listAdminQuizQuestions(): Promise<readonly AdminQuizListIt
  */
 export async function getAdminQuizQuestion(id: string): Promise<AdminQuizQuestion | null> {
   requiredNonEmptyString(id);
+  if (isE2ETestMode()) return getE2EAdminQuiz(id);
   if (!process.env.DATABASE_URL) return null;
   const rows = (await getRequiredSql()`
     SELECT question.id, question.category, question.special_month, question.special_day,
@@ -681,6 +684,14 @@ function nullableUuid(value: unknown) {
 
 function invalidDatabaseQuiz() {
   return new Error("Invalid quiz data returned from database.");
+}
+
+/**
+ * DATABASE_URLが設定されているかを返します。
+ * @returns {boolean} Database設定済みの場合はtrue。
+ */
+export function isQuizDatabaseConfigured() {
+  return Boolean(process.env.DATABASE_URL);
 }
 
 function getRequiredSql() {

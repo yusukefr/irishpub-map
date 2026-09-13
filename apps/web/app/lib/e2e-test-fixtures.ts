@@ -17,6 +17,7 @@ import type { AdminContent, AdminContentListItem } from "@irishpub-map/shared/ad
 import type { Locale } from "@irishpub-map/shared/locale";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { ContentKind, PublishedContent, PublishedContentSummary } from "./content/types";
+import type { AdminQuizListItem, AdminQuizQuestion } from "./quiz/types";
 
 export const E2E_TEST_DATA = {
   content: {
@@ -124,6 +125,45 @@ const contentDefinitions: AdminContent[] = [
     updatedAt: UPDATED_AT,
   },
 ];
+const quizDefinitions: AdminQuizQuestion[] = [
+  {
+    id: "e2e-draft-question",
+    category: null,
+    specialDate: null,
+    correctChoiceId: null,
+    sourceUrl: null,
+    relatedContentId: null,
+    isPublished: false,
+    translations: {
+      ja: { question: "E2E 下書きQuiz", explanation: "", sourceLabel: "" },
+      en: { question: "E2E Draft Quiz", explanation: "", sourceLabel: "" },
+    },
+    choices: [],
+    createdAt: UPDATED_AT,
+    updatedAt: UPDATED_AT,
+  },
+  {
+    id: "e2e-published-question",
+    category: "history",
+    specialDate: { month: 3, day: 17 },
+    correctChoiceId: "choice-1",
+    sourceUrl: "https://example.com/e2e-quiz",
+    relatedContentId: E2E_TEST_DATA.content.published.id,
+    isPublished: true,
+    translations: {
+      ja: { question: "E2E 公開Quiz", explanation: "E2E用の解説です。", sourceLabel: "E2E Source" },
+      en: { question: "E2E Published Quiz", explanation: "An explanation for E2E.", sourceLabel: "E2E Source" },
+    },
+    choices: [1, 2, 3, 4].map((number, index) => ({
+      id: "choice-" + number,
+      sortOrder: index,
+      translations: { ja: "選択肢" + number, en: "Choice " + number },
+    })),
+    createdAt: UPDATED_AT,
+    updatedAt: UPDATED_AT,
+  },
+];
+
 const statusDefinitions = [
   { code: 1, key: "open", ja: "営業中", en: "Open" },
   { code: 3, key: "closed", ja: "閉店", en: "Closed" },
@@ -306,6 +346,28 @@ export function getE2EAdminContentList(): AdminContentListItem[] {
  */
 export function getE2EAdminContent(id: string): AdminContent | null {
   return contentDefinitions.find((content) => content.id === id) ?? null;
+}
+
+/**
+ * E2EでQuiz管理一覧へ返す固定データを取得します。
+ * @returns {AdminQuizListItem[]} 固定Quiz一覧。
+ */
+export function getE2EAdminQuizList(): AdminQuizListItem[] {
+  return quizDefinitions.map(({ translations, choices, ...question }) => ({
+    ...question,
+    questionJa: translations.ja.question,
+    questionEn: translations.en.question,
+    choiceCount: choices.length,
+  }));
+}
+
+/**
+ * E2EでQuiz編集画面へ返す固定詳細を取得します。
+ * @param id
+ * @returns {AdminQuizQuestion \| null} 固定Quiz詳細、または対象なし。
+ */
+export function getE2EAdminQuiz(id: string): AdminQuizQuestion | null {
+  return quizDefinitions.find((question) => question.id === id) ?? null;
 }
 
 /**
