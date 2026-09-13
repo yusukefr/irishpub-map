@@ -65,7 +65,7 @@ npm run build
 
 Schema変更はProduction Branchへ直接適用せず、Branch-firstで検証します。具体的なMigrationの適用、Schema確認、接続先の切替、復旧手順は[Neon Migration Runbook](../runbooks/neon-migrations.md)を参照してください。
 
-### Neon Branch
+### Neon Branchの利用方針
 
 Neon BranchはSchema変更やMigrationの検証に必要な場合だけ作成し、通常のApplication、UI、ドキュメント変更では作成しません。Preview環境の固定Branch運用と上限対策は[Neon Preview DB Runbook](../runbooks/neon-preview-branch.md)を参照してください。
 
@@ -79,8 +79,9 @@ Neon BranchはSchema変更やMigrationの検証に必要な場合だけ作成し
 ### Git と GitHub
 
 - `main`へ直接コミットせず、`origin/main`から作成した作業ブランチで変更します。
+- GitHub Issueのタイトルは原則として日本語で作成し、`[AI Task]` や `[Bug]` などの接頭辞は英語のまま使用できます。
 - Issue対応では、実装前に設計コメントを投稿し、PRには関連Issue、検証結果、省略理由、コードと文書の同期確認を記載します。
-- IssueコメントとPR本文はTemplateおよびリポジトリのスクリプトを使います。具体的な設計コメント、PR作成、CI確認の手順は[Release and CI Runbook](../runbooks/release-operations.md)とrootの[AGENTS.md](../../AGENTS.md)を参照してください。
+- IssueコメントとPR本文はTemplateおよびリポジトリのスクリプトを使います。AI AgentのGitHub操作に関する必須ルールと具体的な手順はrootの[AGENTS.md](../../AGENTS.md)を参照し、CI確認は[Release and CI Runbook](../runbooks/release-operations.md)を参照してください。
 
 ### ESLint と JSDoc
 

@@ -31,7 +31,9 @@
 
 Repositoryは取得時に `pub_tags`、`tags`、`tag_translations` を結合し、内部キーの配列と表示名の対応表を生成します。要求ロケールの翻訳がない場合は日本語（`ja`）へフォールバックします。
 
-作成・更新時は、正規化した内部キーを `tags.key` へUPSERTし、日本語の標準表示名を `tag_translations` へUPSERTした後、`pub_tags` に店舗との関係を保存します。店舗から外されたタグとの関係は削除しますが、タグの親レコードと翻訳は自動削除しません。
+通常のAdmin Pub作成・更新では、登録済みタグのIDを `AdminPubWriteInput.tagIds` で受け取り、`pub_tags` に店舗との関係を保存します。店舗から外されたタグとの関係は削除しますが、店舗編集経路で未知のタグを自動生成しません。
+
+Importでは、`scripts/import-pubs.mjs` が入力タグを正規化し、正規化した内部キーを `tags.key` へUPSERTします。その後、日本語の標準表示名を `tag_translations` へUPSERTし、`pub_tags` に店舗との関係を保存します。
 
 検索フィルターも共有の正規化処理を通すため、入力表記が異なっても同じ内部キーで照合します。利用店舗数はNeonの `pub_tags` を集計して確認します。
 
@@ -39,4 +41,4 @@ Repositoryは取得時に `pub_tags`、`tags`、`tag_translations` を結合し�
 
 `/admin/tags` では内部キーと日英表示名を分離して登録・編集し、`pub_tags` から使用店舗数を表示します。管理入力の契約、transaction、削除拒否は[管理タグ仕様](tag-management.md)を参照してください。
 
-使用中タグはUIとAPIの両方で削除を拒否します。DBのCASCADEだけに依存せず、タグ行をロックして店舗関連がない場合だけ条件付きDELETEします。現在の店舗フォームではカンマ区切り入力をRepositoryで正規化してタグを自動生成します。タグ選択UIは未導入です。
+使用中タグはUIとAPIの両方で削除を拒否します。DBのCASCADEだけに依存せず、タグ行をロックして店舗関連がない場合だけ条件付きDELETEします。店舗編集画面では登録済みタグを検索・選択し、`tagIds`として保存します。新しいタグの登録・編集は`/admin/tags`で行います。
