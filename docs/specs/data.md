@@ -10,6 +10,8 @@
 
 管理画面の選択肢は `packages/shared/src/admin-master.ts` の `PrefectureOption`、`MunicipalityOption`、`TagOption`、`PubStatusOption` を使用します。これらは表示に必要なコード・ID・内部キー・表示名だけを持ち、DBの行や監査用カラムをそのまま公開しません。
 
+既知のタグキーと標準表示名は [`packages/shared/src/tag-definitions.json`](../../packages/shared/src/tag-definitions.json) をSource of Truthとし、一覧を仕様書へ複製しません。
+
 ## APIデータ形式
 
 ```json

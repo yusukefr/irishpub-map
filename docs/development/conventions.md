@@ -61,22 +61,13 @@ npm run build
 
 依存関係を変更した場合は、追加で `npm audit --omit=dev` を実行します。
 
-### Neon Migration の検証
+### Neon Migration
 
-Neon の Schema 変更は、Production Branchへ直接適用せず、Branch-firstで検証します。Migrationを作成したら、次の順序で確認してからProductionへの適用を判断します。
+Schema変更はProduction Branchへ直接適用せず、Branch-firstで検証します。具体的なMigrationの適用、Schema確認、接続先の切替、復旧手順は[Neon Migration Runbook](../runbooks/neon-migrations.md)を参照してください。
 
-1. MigrationをNeon Branchへ適用する。
-2. Branch上で変更後のSchema、Constraint、Indexを確認する。
-3. Branchを接続先としてApplicationと関連テストを確認する。
-4. 検証結果に問題がないことを確認してから、Production Branchへ適用する。
+### Neon Branch
 
-### Neon Branchの利用方針
-
-Neon Branchを新規作成するのは、原則としてSchema変更やMigrationなど、DB変更の検証が必要な作業に限定します。通常のApplication変更、UI変更、ドキュメント変更だけを理由にNeon Branchを作成しません。Vercel Preview環境では、既存の固定Preview Branch運用を維持し、Preview DeploymentごとにNeon Branchを自動作成しません。Migration検証用に作成したBranchは、検証完了後に削除するか、必要に応じて有効期限を設定します。
-
-Branchの用途に応じて、Production相当のデータで挙動を確認する場合は通常のBranchを、機密データを複製せずSchemaだけを確認する場合はSchema-only Branchを選択します。接続文字列やCredentialはRepositoryへ保存せず、実行環境から安全に提供してください。
-
-Migrationの実行にはPooled ConnectionではなくDirect / Unpooled Connectionを使用します。`MIGRATION_DATABASE_URL`にはNeonのDirect Connection Stringを設定し、Application Runtimeで利用するPooled `DATABASE_URL`はMigration用途に使用しません。
+Neon BranchはSchema変更やMigrationの検証に必要な場合だけ作成し、通常のApplication、UI、ドキュメント変更では作成しません。Preview環境の固定Branch運用と上限対策は[Neon Preview DB Runbook](../runbooks/neon-preview-branch.md)を参照してください。
 
 ### ドキュメント
 
@@ -87,20 +78,9 @@ Migrationの実行にはPooled ConnectionではなくDirect / Unpooled Connectio
 
 ### Git と GitHub
 
-- `main` へ直接コミットせず、`origin/main` から作成した作業ブランチで変更します。
-- GitHub Issue のタイトルは日本語で作成します。`[AI Task]` や `[Bug]` など `[]` 内の接頭辞は英語のままで構いません。
-- Issue 対応では、実装前に `scripts/comment-issue-design.sh --issue <number> --body-file <file>` で設計方針を投稿します。
-- 複数行の Issue コメントは `--body-file` を使い、PR 本文は `.github/pull_request_template.md` をベースにした本文ファイルを `--body-file` で渡します。`--body` はPR作成に使用しません。
-- PR は `scripts/create-pr.sh` で作成し、関連 Issue、検証結果、必要な reviewer / assignee を設定します。
-
-GitHub 操作スクリプトの `PR_REVIEWER` と `PR_ASSIGNEE` は実行環境の変数を参照します。ローカル `.env` を使う場合は、実行前にシェルへ export してください。
-
-```bash
-set -a
-source .env
-set +a
-scripts/create-pr.sh --issue <number> --title "<title>" --body-file pr-body.md
-```
+- `main`へ直接コミットせず、`origin/main`から作成した作業ブランチで変更します。
+- Issue対応では、実装前に設計コメントを投稿し、PRには関連Issue、検証結果、省略理由、コードと文書の同期確認を記載します。
+- IssueコメントとPR本文はTemplateおよびリポジトリのスクリプトを使います。具体的な設計コメント、PR作成、CI確認の手順は[Release and CI Runbook](../runbooks/release-operations.md)とrootの[AGENTS.md](../../AGENTS.md)を参照してください。
 
 ### ESLint と JSDoc
 
