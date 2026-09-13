@@ -49,7 +49,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Admin access setup | [Admin access](runbooks/admin-access.md) | Current。認証実装と環境変数を優先 |
 | Release and CI operations | [Release and CI](runbooks/release-operations.md) | Current。GitHub ActionsとVercel設定を優先 |
 | Privacy / Analytics | [Privacy and external transmission](operations/privacy-and-external-transmission.md) | Current。実装とProduction設定を優先 |
-| Map provider | [OpenStreetMap tile usage](operations/openstreetmap-tile-usage.md) | Current。Providerの現行Policyを優先 |
+| Map provider | [Map provider](operations/map-provider.md) | Current。OpenFreeMapの現行Policyを優先 |
 | Repository settings | [Repository settings](runbooks/repository-settings.md) | Current。GitHubの現行設定を優先 |
 
 ## Setup and Runbooks

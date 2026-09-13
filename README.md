@@ -11,8 +11,7 @@
 - Next.js 16
 - React
 - TypeScript
-- MapLibre GL JS
-- OpenStreetMap tiles
+- MapLibre GL JS + OpenFreeMap（OpenMapTilesスキーマ / OpenStreetMapデータ）
 - Tailwind CSS + global CSS
 - Neon Postgres
 

@@ -6,7 +6,7 @@
 
 Irish Pub Map は、日本国内の Irish Pub を地図上で探せる Web アプリです。店舗データは Neon Postgres で管理し、Web と将来のモバイルアプリで共有する型やロジックは `packages/shared` に置きます。`DATABASE_URL` 未設定時は店舗0件として扱います。
 
-主要技術は Node.js 24、npm workspaces、Next.js 16、React、TypeScript、MapLibre GL JS、OpenStreetMap tiles、Tailwind CSSです。
+主要技術は Node.js 24、npm workspaces、Next.js 16、React、TypeScript、MapLibre GL JS + OpenFreeMap（OpenMapTilesスキーマ / OpenStreetMapデータ）、Tailwind CSSです。
 
 ## Source of Truth
 
