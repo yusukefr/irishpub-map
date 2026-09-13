@@ -15,7 +15,7 @@ GitHub Repositoryの基本設定、Actions権限、`main` branch protection、ru
 
 - Node.jsと認証済みの`gh` CLIを用意する。
 - 出力先として、Repository外の安全な一時pathを明示する。
-- Secrets、Variables、token、account情報を出力・共有しない。
+- Secrets、Variables、tokenは取得対象に含めない。出力にはGitHub account情報やURLが含まれる可能性があるため、共有・commitしない。
 
 ## Procedure
 
@@ -45,7 +45,7 @@ GH_REPO=owner/repository scripts/export-repository-settings.sh --output /tmp/rep
 ## Security notes
 
 - このscriptはSecrets、Variables、tokenを取得対象に含めない。
-- 出力にはaccount情報やURLが含まれる可能性がある。Repositoryへcommitせず、安全な場所に保管する。
+- 出力にはGitHub account情報やURLが含まれる可能性があるため、Repositoryへcommit・共有せず、安全な場所に保管する。
 
 ## Related docs
 

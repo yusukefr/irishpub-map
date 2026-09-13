@@ -20,8 +20,16 @@
 ## Procedure
 
 1. `ADMIN_USERNAME`、`ADMIN_PASSWORD_HASH`、`ADMIN_SESSION_SECRET`を同じ対象Environmentへ設定する。
-2. password hashはローカルの安全な手段でscrypt形式として生成する。平文passwordをコマンドライン引数、shell history、Issue、PR、Repositoryへ残さない。
-3. `ADMIN_SESSION_SECRET`には十分に長いランダム値を使い、password hashとは別に保管する。
+2. ローカルの対話TTYで、平文passwordをargvやshell historyへ渡さずに生成する。
+
+```bash
+umask 077
+node scripts/generate-admin-secrets.mjs /secure/path/admin-secrets.env
+```
+
+このscriptはpasswordを非表示入力で2回受け取り、`ADMIN_PASSWORD_HASH`を`<salt>:<base64 encoded 64-byte scrypt hash>`形式で、`ADMIN_SESSION_SECRET`をランダムなbase64url値で生成します。指定したファイルは新規作成され、mode `0600`で保存されます。既存ファイルは上書きしません。
+
+3. 生成された2つの値を、対象Environmentの`ADMIN_PASSWORD_HASH`と`ADMIN_SESSION_SECRET`へ安全に登録する。生成ファイルをIssue、PR、Repository、CI logへ保存しない。
 4. 永続化を行うEnvironmentでは、同じ対象に`DATABASE_URL`も設定する。
 5. 設定後に管理画面のログインと、権限を必要とする更新操作を確認する。
 
@@ -41,6 +49,7 @@
 ## Security notes
 
 - password、password hash、session secret、`DATABASE_URL`を出力・共有・commitしない。
+- scriptは対話TTY以外では実行できず、既存の出力ファイルを上書きしない。生成後のファイルは組織のSecret管理手順に従って安全に保管・削除する。
 - Production / Preview / Localの値を混用しない。
 
 ## Related docs
