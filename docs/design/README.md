@@ -13,6 +13,23 @@
 
 Requirementと古いReference Screenが異なる場合はRequirementを優先し、Reference Screenを更新します。技術仕様は使用中バージョンの公式Documentationを優先します。現行の画面BehaviorをDesign変更だけで暗黙に変えません。
 
+### Source of Truthの使い分け
+
+新しいDesign Requirementを実装するときは、現在の実装に過度に引っ張られないよう、次の順序で確認します。
+
+1. Current Product Requirement / GitHub Issue
+2. Design Documentation
+3. Existing Design Tokens / Components / Patterns
+4. Current implementation / Storybook / Playwright
+
+現在の画面Behaviorを確認するときは、次の順序で確認します。
+
+1. Current Product Requirement
+2. Current implementation / Storybook / Playwright / E2E
+3. Design Documentation
+
+Design Documentationと実装が一致しない場合は、意図されたDesign Requirementが未実装なのか、文書が古いのかを確認します。どちらかへ暗黙に合わせず、必要なら実装または文書を別の変更として更新します。
+
 ## Documentation map
 
 | 目的                                    | 読む文書                                     |

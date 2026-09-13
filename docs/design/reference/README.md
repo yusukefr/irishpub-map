@@ -2,14 +2,19 @@
 
 Playwright E2E visual regression snapshotを、Public UIの構成、密度、情報階層、ブランド表現を確認するReference Screenshotの唯一のSource of Truthとします。Pixel単位で古い画像へ実装を戻すためのものではありません。
 
-| Route / viewport | Source snapshot |
-| --- | --- |
-| Map、日本語、1440×900 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/map-desktop-ja-chromium-linux.png) |
-| Map、日本語、390×844 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/map-mobile-ja-chromium-linux.png) |
-| Discover、日本語、1440×900 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/discover-desktop-ja-chromium-linux.png) |
-| Discover、日本語、390×844 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/discover-mobile-ja-chromium-linux.png) |
+| Route / viewport | Locale | Source snapshot |
+| --- | --- | --- |
+| Map、1440×900 | 日本語 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/map-desktop-ja-chromium-linux.png) |
+| Map、1440×900 | English | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/map-desktop-en-chromium-linux.png) |
+| Map、390×844 | 日本語 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/map-mobile-ja-chromium-linux.png) |
+| Discover、1440×900 | 日本語 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/discover-desktop-ja-chromium-linux.png) |
+| Discover、1280×900 | English | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/discover-desktop-en-chromium-linux.png) |
+| Discover、390×844 | 日本語 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/discover-mobile-ja-chromium-linux.png) |
+| Discover、360×800 | English | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/discover-mobile-en-chromium-linux.png) |
 
 外部Map tileは変動を避けるため、Visual Regressionと同じmock styleを使っています。表示する店舗はE2E専用の公開可能なfixtureであり、本番DBの内容やPreview URLを含みません。
+
+Map Mobile英語はVisual RegressionのReference snapshotを持たず、`e2e/mobile-map.spec.ts` の挙動・画面比較で確認します。
 
 ## Priority
 
