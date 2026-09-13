@@ -21,6 +21,12 @@ vi.mock("@neondatabase/serverless", () => ({
     return query;
   },
 }));
+const cacheMocks = vi.hoisted(() => ({ unstableCache: vi.fn(), revalidateTag: vi.fn() }));
+cacheMocks.unstableCache.mockImplementation((query: () => Promise<unknown>) => query);
+vi.mock("next/cache", () => ({
+  unstable_cache: cacheMocks.unstableCache,
+  revalidateTag: cacheMocks.revalidateTag,
+}));
 vi.mock("../../apps/web/app/lib/content/repository", () => ({
   getPublishedContentById: mocks.getPublishedContentById,
 }));
@@ -109,6 +115,7 @@ beforeEach(() => {
   mocks.responses = [];
   mocks.transactionCount = 0;
   mocks.getPublishedContentById.mockReset();
+  cacheMocks.revalidateTag.mockReset();
 });
 
 afterEach(() => {
@@ -119,6 +126,19 @@ afterEach(() => {
 });
 
 describe("public quiz repository", () => {
+  it("E2E Test ModeではPublished Question一覧と採点をfixtureから返す", async () => {
+    process.env.E2E_TEST_MODE = "1";
+    delete process.env.DATABASE_URL;
+
+    const questions = await listPublishedQuizQuestions("en");
+    expect(questions).toHaveLength(1);
+    expect(questions[0]).not.toHaveProperty("correctChoiceId");
+    await expect(gradePublishedQuizAnswer(questions[0].id, questions[0].choices[0].id, "en")).resolves.toMatchObject({
+      status: "correct",
+      explanation: "An explanation for E2E.",
+      relatedGuide: { slug: "e2e-published-guide" },
+    });
+  });
   it("公開済みだけをLocale fallback付きで取得し、回答情報をSQLとDTOへ含めない", async () => {
     mocks.responses = [publicRows()];
 
@@ -203,6 +223,31 @@ describe("public quiz repository", () => {
       "question was not found",
     );
     await expect(gradePublishedQuizAnswer("question-1", "missing", "en")).rejects.toThrow("choice was not found");
+  });
+
+  it("Published更新成功後だけPublic Quiz Cacheを失効させる", async () => {
+    mocks.responses = [[{ id: "question-1", is_published: true }], [{ id: "question-1" }]];
+
+    await expect(replaceAdminQuizQuestion("question-1", writeInput)).resolves.toBe("updated");
+    expect(cacheMocks.revalidateTag).toHaveBeenCalledWith("public-quiz", { expire: 0 });
+  });
+
+  it("Draft更新ではPublic Quiz Cacheを失効させない", async () => {
+    mocks.responses = [[{ id: "question-1", is_published: false }], [{ id: "question-1" }]];
+
+    await expect(replaceAdminQuizQuestion("question-1", writeInput)).resolves.toBe("updated");
+    expect(cacheMocks.revalidateTag).not.toHaveBeenCalled();
+  });
+
+  it("PublishとUnpublishの実際の状態変更後だけPublic Quiz Cacheを失効させる", async () => {
+    mocks.responses = [[{ id: "question-1", is_published: false }], [{ id: "question-1", is_published: true }]];
+    await expect(setAdminQuizPublication("question-1", true)).resolves.toMatchObject({ unchanged: false });
+    expect(cacheMocks.revalidateTag).toHaveBeenCalledTimes(1);
+
+    cacheMocks.revalidateTag.mockReset();
+    mocks.responses = [[{ id: "question-1", is_published: true }], [{ id: "question-1", is_published: false }]];
+    await expect(setAdminQuizPublication("question-1", false)).resolves.toMatchObject({ unchanged: false });
+    expect(cacheMocks.revalidateTag).toHaveBeenCalledTimes(1);
   });
 
   it("Related Content取得失敗時も採点結果を返す", async () => {

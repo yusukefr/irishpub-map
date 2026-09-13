@@ -17,7 +17,7 @@ import type { AdminContent, AdminContentListItem } from "@irishpub-map/shared/ad
 import type { Locale } from "@irishpub-map/shared/locale";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { ContentKind, PublishedContent, PublishedContentSummary } from "./content/types";
-import type { AdminQuizListItem, AdminQuizQuestion } from "./quiz/types";
+import type { AdminQuizListItem, AdminQuizQuestion, PublicQuizQuestion, QuizAnswerResult } from "./quiz/types";
 
 export const E2E_TEST_DATA = {
   content: {
@@ -368,6 +368,68 @@ export function getE2EAdminQuizList(): AdminQuizListItem[] {
  */
 export function getE2EAdminQuiz(id: string): AdminQuizQuestion | null {
   return quizDefinitions.find((question) => question.id === id) ?? null;
+}
+
+/**
+ * E2EでPublic Quizへ返すPublished QuestionをLocale別に生成します。
+ * @param {Locale} locale - fixtureの表示ロケール。
+ * @returns {readonly PublicQuizQuestion[]} 回答前に公開できる固定Question。
+ */
+export function getE2EPublishedQuizQuestions(locale: Locale): readonly PublicQuizQuestion[] {
+  return quizDefinitions
+    .filter((question) => question.isPublished)
+    .map((question) => ({
+      id: question.id,
+      category: question.category!,
+      question: question.translations[locale].question || question.translations.ja.question,
+      choices: question.choices.map((choice) => ({
+        id: choice.id,
+        label: choice.translations[locale] || choice.translations.ja,
+      })),
+      ...(question.specialDate ? { specialDate: question.specialDate } : {}),
+    }));
+}
+
+/**
+ * E2EでPublished Questionをサーバー側fixtureとして採点します。
+ * @param {string} questionId - 表示中のQuestion ID。
+ * @param {string} choiceId - 利用者が選択したChoice ID。
+ * @param {Locale} locale - 結果の表示ロケール。
+ * @returns {QuizAnswerResult} 回答後に公開できる固定採点結果。
+ */
+export function gradeE2EPublishedQuizAnswer(questionId: string, choiceId: string, locale: Locale): QuizAnswerResult {
+  const question = quizDefinitions.find((candidate) => candidate.id === questionId && candidate.isPublished);
+  if (!question) throw new Error("Quiz question was not found");
+  if (!question.choices.some((choice) => choice.id === choiceId)) throw new Error("Quiz choice was not found");
+  const correctChoice = question.choices.find((choice) => choice.id === question.correctChoiceId);
+  if (!correctChoice || !question.sourceUrl) throw new Error("Invalid E2E quiz fixture.");
+
+  const result: QuizAnswerResult = {
+    status: choiceId === correctChoice.id ? "correct" : "incorrect",
+    correctChoiceId: correctChoice.id,
+    correctChoiceLabel: correctChoice.translations[locale] || correctChoice.translations.ja,
+    explanation: question.translations[locale].explanation || question.translations.ja.explanation,
+    source: {
+      label: question.translations[locale].sourceLabel || question.translations.ja.sourceLabel,
+      url: question.sourceUrl,
+    },
+  };
+  if (question.relatedContentId) {
+    const relatedGuide = contentDefinitions.find(
+      (content) =>
+        content.id === question.relatedContentId && content.kind === "guide" && content.status === "published",
+    );
+    if (relatedGuide) {
+      return {
+        ...result,
+        relatedGuide: {
+          slug: relatedGuide.slug ?? "",
+          label: relatedGuide.translations[locale].title ?? relatedGuide.translations.ja.title ?? "",
+        },
+      };
+    }
+  }
+  return result;
 }
 
 /**

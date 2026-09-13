@@ -53,7 +53,11 @@
       "correctAnswer": "Correct answer",
       "explanationHeading": "Explanation",
       "source": "Source",
-      "answerError": "We couldn't check your answer. Please try again in a moment."
+      "answerError": "We couldn't check your answer. Please try again in a moment.",
+      "unavailableHeading": "Today's quiz is unavailable",
+      "unavailableDescription": "The quiz is temporarily unavailable. Please try again later.",
+      "emptyHeading": "No quiz is available today",
+      "emptyDescription": "There are no published questions available right now. Please check back later."
     },
     "calendar": {
       "kicker": "Irish Calendar",

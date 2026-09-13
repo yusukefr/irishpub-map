@@ -53,7 +53,11 @@
       "correctAnswer": "正解",
       "explanationHeading": "解説",
       "source": "情報源",
-      "answerError": "回答を採点できませんでした。時間をおいてもう一度お試しください。"
+      "answerError": "回答を採点できませんでした。時間をおいてもう一度お試しください。",
+      "unavailableHeading": "今日のクイズを利用できません",
+      "unavailableDescription": "クイズを現在利用できません。時間をおいてもう一度お試しください。",
+      "emptyHeading": "今日のクイズはありません",
+      "emptyDescription": "現在公開されている問題がありません。しばらくしてからもう一度ご確認ください。"
     },
     "calendar": {
       "kicker": "Irish Calendar",

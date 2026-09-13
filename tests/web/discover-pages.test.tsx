@@ -14,6 +14,8 @@ const pageMocks = vi.hoisted(() => ({
   getRequestLocale: vi.fn(),
   listPublishedContent: vi.fn(),
   getPublishedContentBySlug: vi.fn(),
+  getDailyPublishedQuiz: vi.fn(),
+  isDataSourceConfigured: vi.fn(),
   notFound: vi.fn(),
 }));
 
@@ -21,6 +23,12 @@ vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: pageMoc
 vi.mock("../../apps/web/app/lib/content/repository", () => ({
   listPublishedContent: pageMocks.listPublishedContent,
   getPublishedContentBySlug: pageMocks.getPublishedContentBySlug,
+}));
+vi.mock("../../apps/web/app/lib/e2e-test-mode", () => ({
+  isDataSourceConfigured: pageMocks.isDataSourceConfigured,
+}));
+vi.mock("../../apps/web/app/lib/quiz/repository", () => ({
+  getDailyPublishedQuiz: pageMocks.getDailyPublishedQuiz,
 }));
 vi.mock("next/navigation", () => ({ notFound: pageMocks.notFound }));
 
@@ -90,6 +98,13 @@ beforeEach(() => {
   });
   pageMocks.notFound.mockReset().mockImplementation(() => {
     throw new Error("not-found");
+  });
+  pageMocks.isDataSourceConfigured.mockReset().mockReturnValue(true);
+  pageMocks.getDailyPublishedQuiz.mockReset().mockResolvedValue({
+    id: "e2e-published-question",
+    category: "history",
+    question: "Today's question",
+    choices: ["one", "two", "three", "four"].map((id) => ({ id, label: id })),
   });
 });
 
@@ -175,6 +190,38 @@ describe("Discover pages", () => {
     expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Explore Ireland" })).toHaveAttribute("href", "/discover");
     expect(screen.getByRole("link", { name: "View: Irish Pub Map" })).toHaveAttribute("href", "/");
+  });
+
+  it("DB未設定時は一般化した利用不可状態を表示する", async () => {
+    pageMocks.isDataSourceConfigured.mockReturnValue(false);
+
+    render(await QuizPage());
+
+    expect(screen.getByRole("heading", { level: 2, name: "今日のクイズを利用できません" })).toBeInTheDocument();
+    expect(screen.getByText("クイズを現在利用できません。時間をおいてもう一度お試しください。")).toBeInTheDocument();
+    expect(pageMocks.getDailyPublishedQuiz).not.toHaveBeenCalled();
+  });
+
+  it("Published Questionが0件の場合は空状態を表示する", async () => {
+    pageMocks.getDailyPublishedQuiz.mockResolvedValue(null);
+
+    render(await QuizPage());
+
+    expect(screen.getByRole("heading", { level: 2, name: "今日のクイズはありません" })).toBeInTheDocument();
+    expect(
+      screen.getByText("現在公開されている問題がありません。しばらくしてからもう一度ご確認ください。"),
+    ).toBeInTheDocument();
+  });
+
+  it("DB取得失敗時は一般化した利用不可状態を表示する", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    pageMocks.getDailyPublishedQuiz.mockRejectedValue(new Error("database details"));
+
+    render(await QuizPage());
+
+    expect(screen.getByRole("heading", { level: 2, name: "今日のクイズを利用できません" })).toBeInTheDocument();
+    expect(screen.queryByText("database details")).not.toBeInTheDocument();
+    errorSpy.mockRestore();
   });
 
   it("各ページのMetadataをLocaleとGuide metadataから生成する", async () => {
