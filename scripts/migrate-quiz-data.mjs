@@ -405,6 +405,40 @@ export function buildInsertQueries(transaction, snapshot) {
   return queries;
 }
 
+/**
+ * Quiz全テーブルの空状態検査とINSERTを同一transactionで実行するQuery列を作成します。
+ * テーブルロックにより、Preflight後に別処理がQuiz行を追加する競合も検出して全体をrollbackします。
+ * @param {Function} transaction Neon transaction tagged template関数。
+ * @param {object} snapshot INSERT対象Snapshot。
+ * @returns {Array<Promise<unknown>>} 実行するQuery列。
+ */
+export function buildApplyQueries(transaction, snapshot) {
+  return [
+    transaction`
+      LOCK TABLE
+        quiz_questions,
+        quiz_question_translations,
+        quiz_choices,
+        quiz_choice_translations
+      IN SHARE ROW EXCLUSIVE MODE
+    `,
+    transaction`
+      DO $$
+      BEGIN
+        IF EXISTS (SELECT 1 FROM quiz_questions)
+          OR EXISTS (SELECT 1 FROM quiz_question_translations)
+          OR EXISTS (SELECT 1 FROM quiz_choices)
+          OR EXISTS (SELECT 1 FROM quiz_choice_translations)
+        THEN
+          RAISE EXCEPTION 'Quiz tables are not empty; migration aborted.';
+        END IF;
+      END
+      $$
+    `,
+    ...buildInsertQueries(transaction, snapshot),
+  ];
+}
+
 function parseArgs(args) {
   if (args.length === 0) return { apply: false };
   if (args.length === 1 && args[0] === "--apply") return { apply: true };
@@ -414,7 +448,7 @@ function parseArgs(args) {
 export { parseArgs as parseMigrationArgs };
 
 async function applySnapshot(sql, snapshot) {
-  await sql.transaction((transaction) => buildInsertQueries(transaction, snapshot), {
+  await sql.transaction((transaction) => buildApplyQueries(transaction, snapshot), {
     isolationLevel: "ReadCommitted",
   });
 }

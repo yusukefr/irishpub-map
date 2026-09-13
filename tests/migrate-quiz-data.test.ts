@@ -91,6 +91,97 @@ describe("quiz data migration mapping", () => {
   });
 });
 
+function rowsFromSnapshot(snapshot: any) {
+  return {
+    questions: snapshot.questions.map(({ translations, choices, ...question }: any) => question),
+    questionTranslations: snapshot.questions.flatMap((question: any) =>
+      question.translations.map((translation: any) => ({ question_id: question.id, ...translation })),
+    ),
+    choices: snapshot.questions.flatMap((question: any) =>
+      question.choices.map(({ translations, ...choice }: any) => ({ question_id: question.id, ...choice })),
+    ),
+    choiceTranslations: snapshot.questions.flatMap((question: any) =>
+      question.choices.flatMap((choice: any) =>
+        choice.translations.map((translation: any) => ({
+          question_id: question.id,
+          choice_id: choice.id,
+          ...translation,
+        })),
+      ),
+    ),
+  };
+}
+
+function migrationSql(snapshot: any, options: { transactionError?: boolean; postMatch?: boolean } = {}) {
+  const rows = rowsFromSnapshot(snapshot);
+  let applied = false;
+  let transactionCount = 0;
+  const transactionQueries: string[] = [];
+  const sql = ((strings: TemplateStringsArray) => {
+    const query = strings.join("?");
+    if (query.includes("FROM content_entries")) return Promise.resolve([{ id: relatedContentId }]);
+    if (query.includes("FROM quiz_questions"))
+      return Promise.resolve(applied && options.postMatch !== false ? rows.questions : []);
+    if (query.includes("FROM quiz_question_translations"))
+      return Promise.resolve(applied && options.postMatch !== false ? rows.questionTranslations : []);
+    if (query.includes("FROM quiz_choices"))
+      return Promise.resolve(applied && options.postMatch !== false ? rows.choices : []);
+    if (query.includes("FROM quiz_choice_translations"))
+      return Promise.resolve(applied && options.postMatch !== false ? rows.choiceTranslations : []);
+    throw new Error(`Unexpected migration query: ${query}`);
+  }) as any;
+  sql.transaction = async (callback: (transaction: Function) => Promise<unknown>[]) => {
+    transactionCount += 1;
+    if (options.transactionError) throw new Error("transaction failed");
+    const transaction = (strings: TemplateStringsArray) => {
+      transactionQueries.push(strings.join("?"));
+      return Promise.resolve();
+    };
+    await Promise.all(callback(transaction));
+    applied = true;
+  };
+  return {
+    sql,
+    transactionQueries,
+    get transactionCount() {
+      return transactionCount;
+    },
+  };
+}
+
+describe("quiz data migration apply", () => {
+  const expected = buildExpectedSnapshot(parsedSource(), new Map([["split-the-g", relatedContentId]]));
+
+  it("checks the empty state and inserts atomically, then verifies the snapshot", async () => {
+    const fake = migrationSql(expected);
+    await expect(migrateQuizData({ apply: true, sql: fake.sql, data: sourceCopy() })).resolves.toMatchObject({
+      status: "applied",
+      questionCount: 9,
+      choiceCount: 36,
+    });
+    expect(fake.transactionCount).toBe(1);
+    expect(fake.transactionQueries[0]).toContain("LOCK TABLE");
+    expect(fake.transactionQueries[1]).toContain("RAISE EXCEPTION");
+    expect(fake.transactionQueries.filter((query) => query.includes("INSERT INTO"))).toHaveLength(135);
+  });
+
+  it("does not report success when the transaction fails", async () => {
+    const fake = migrationSql(expected, { transactionError: true });
+    await expect(migrateQuizData({ apply: true, sql: fake.sql, data: sourceCopy() })).rejects.toThrow(
+      "transaction failed",
+    );
+    expect(fake.transactionCount).toBe(1);
+  });
+
+  it("rejects when post-migration snapshot validation fails", async () => {
+    const fake = migrationSql(expected, { postMatch: false });
+    await expect(migrateQuizData({ apply: true, sql: fake.sql, data: sourceCopy() })).rejects.toThrow(
+      "Post-migration Quiz snapshot does not match the source.",
+    );
+    expect(fake.transactionCount).toBe(1);
+  });
+});
+
 describe("quiz data migration state", () => {
   it("classifies empty, already migrated, and unsafe partial states", () => {
     const expected = buildExpectedSnapshot(parsedSource(), new Map([["split-the-g", relatedContentId]]));
