@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslation } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
 import { isDataSourceConfigured } from "../../../lib/e2e-test-mode";
-import { quizData } from "../../../lib/quiz/data";
+import { QUIZ_CATEGORY_DEFINITIONS } from "../../../lib/quiz/categories";
 import { getDailyPublishedQuiz } from "../../../lib/quiz/repository";
 import { DiscoverBreadcrumbs, RelatedContent } from "../components";
 import { QuizCard } from "./quiz-card";
@@ -57,8 +57,8 @@ export default async function QuizPage() {
             question={{
               id: question.id,
               category: {
-                icon: quizData.categories[question.category].icon,
-                label: quizData.categories[question.category].label[locale],
+                icon: QUIZ_CATEGORY_DEFINITIONS[question.category].icon,
+                label: QUIZ_CATEGORY_DEFINITIONS[question.category].label[locale],
               },
               question: question.question,
               choices: question.choices,
