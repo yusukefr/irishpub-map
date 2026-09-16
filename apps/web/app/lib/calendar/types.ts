@@ -5,6 +5,9 @@ export type CalendarCategory =
 /** 曜日をJavaScriptの`getUTCDay()`と同じ0（日曜）〜6（土曜）で表します。 */
 export type CalendarWeekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
+/** 永続化・Admin入力で利用する曜日名です。 */
+export type CalendarWeekdayName = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
+
 /** タイムゾーンを持たない暦上の日付です。 */
 export type CalendarDate = Readonly<{ year: number; month: number; day: number }>;
 
@@ -12,6 +15,36 @@ export type CalendarDate = Readonly<{ year: number; month: number; day: number }
 export type CalendarLocalizedText = Readonly<{ ja: string; en: string }>;
 
 type MonthDay = Readonly<{ month: number; day: number }>;
+
+type DefinitionMonthDay = Readonly<{ month: number; day: number }>;
+
+/** 永続化・Admin入力で利用する、曜日名を持つDate Ruleです。 */
+export type CalendarDateRuleDefinition =
+  | Readonly<{ type: "fixed"; month: number; day: number }>
+  | Readonly<{ type: "date_range"; start: DefinitionMonthDay; end: DefinitionMonthDay }>
+  | Readonly<{ type: "nth_weekday"; month: number; weekday: CalendarWeekdayName; nth: number }>
+  | Readonly<{ type: "last_weekday"; month: number; weekday: CalendarWeekdayName }>
+  | Readonly<{ type: "relative_to_easter"; offsetDays: number }>
+  | Readonly<{
+      type: "weekday_on_or_after" | "closest_weekday_to_date";
+      month: number;
+      day: number;
+      weekday: CalendarWeekdayName;
+    }>
+  | Readonly<{
+      type: "rule_set";
+      rules: readonly Readonly<{
+        when:
+          | Readonly<{ type: "fixed_date_weekday"; month: number; day: number; weekday: CalendarWeekdayName }>
+          | Readonly<{ type: "otherwise" }>;
+        use: Exclude<CalendarDateRuleDefinition, Readonly<{ type: "date_range" | "rule_set" | "annual_variable" }>>;
+      }>[];
+    }>
+  | Readonly<{
+      type: "annual_variable";
+      usualMonth: number;
+      requiresOfficialConfirmation: boolean;
+    }>;
 
 /** 毎年同じ月日に発生するルールです。 */
 export type FixedDateRule = Readonly<{ type: "fixed"; month: number; day: number }>;
@@ -89,6 +122,40 @@ export type CalendarEvent = Readonly<{
   aliases?: readonly string[];
   source?: string;
 }>;
+
+/** 入力途中のDraftを保持できる管理用Calendar翻訳です。 */
+export type AdminCalendarTranslation = Readonly<{
+  name: string;
+  description: string;
+}>;
+
+/** 管理画面で編集するCalendar Event全体のスナップショットです。 */
+export type AdminCalendarEvent = Readonly<{
+  id: string;
+  category: CalendarCategory | null;
+  dateRule: CalendarDateRuleDefinition | null;
+  isPublicHoliday: boolean;
+  featured: boolean;
+  aliases: readonly string[];
+  source: string | null;
+  sortOrder: number;
+  isPublished: boolean;
+  translations: Readonly<Record<"ja" | "en", AdminCalendarTranslation>>;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+/** 管理一覧用の軽量なCalendar Eventです。 */
+export type AdminCalendarListItem = Omit<AdminCalendarEvent, "translations"> & {
+  nameJa: string;
+  nameEn: string;
+};
+
+/** 作成・更新で保存する、公開状態と監査日時を除いたCalendar Eventです。 */
+export type AdminCalendarWriteInput = Pick<
+  AdminCalendarEvent,
+  "category" | "dateRule" | "isPublicHoliday" | "featured" | "aliases" | "source" | "translations"
+>;
 
 /** 検証済みのカレンダーデータ全体です。 */
 export type CalendarData = Readonly<{
