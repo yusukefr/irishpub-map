@@ -5,6 +5,70 @@
 
 This document records the physical schema in PostgreSQL `public`: tables, columns, constraints (including foreign keys), and indexes.
 
+## calendar_event_translations
+
+### Columns
+
+| Column        | Type                       | Nullable | Default |
+| ------------- | -------------------------- | -------- | ------- |
+| `event_id`    | `text`                     | no       | —       |
+| `locale`      | `text`                     | no       | —       |
+| `name`        | `text`                     | no       | —       |
+| `description` | `text`                     | no       | —       |
+| `updated_at`  | `timestamp with time zone` | no       | `now()` |
+
+### Constraints
+
+| Name                                        | Type        | Definition                                                                |
+| ------------------------------------------- | ----------- | ------------------------------------------------------------------------- |
+| `calendar_event_translations_event_id_fkey` | FOREIGN KEY | `FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE` |
+| `calendar_event_translations_locale_check`  | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`                    |
+| `calendar_event_translations_pkey`          | PRIMARY KEY | `PRIMARY KEY (event_id, locale)`                                          |
+
+### Indexes
+
+| Name                               | Definition                                                                                                                  |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `calendar_event_translations_pkey` | `CREATE UNIQUE INDEX calendar_event_translations_pkey ON public.calendar_event_translations USING btree (event_id, locale)` |
+
+## calendar_events
+
+### Columns
+
+| Column              | Type                       | Nullable | Default        |
+| ------------------- | -------------------------- | -------- | -------------- |
+| `id`                | `text`                     | no       | —              |
+| `category`          | `text`                     | yes      | —              |
+| `date_rule`         | `jsonb`                    | yes      | —              |
+| `is_public_holiday` | `boolean`                  | no       | `false`        |
+| `featured`          | `boolean`                  | no       | `false`        |
+| `aliases`           | `ARRAY`                    | no       | `'{}'::text[]` |
+| `source`            | `text`                     | yes      | —              |
+| `sort_order`        | `integer`                  | no       | —              |
+| `is_published`      | `boolean`                  | no       | `false`        |
+| `created_at`        | `timestamp with time zone` | no       | `now()`        |
+| `updated_at`        | `timestamp with time zone` | no       | `now()`        |
+
+### Constraints
+
+| Name                               | Type        | Definition                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `calendar_events_category_check`   | CHECK       | `CHECK (category IS NULL OR (category = ANY (ARRAY['public_holiday'::text, 'culture'::text, 'tradition'::text, 'language'::text, 'literature'::text, 'history'::text, 'religion'::text])))`                                                                                                                                                                                                                                           |
+| `calendar_events_date_rule_check`  | CHECK       | `CHECK (date_rule IS NULL OR jsonb_typeof(date_rule) = 'object'::text AND date_rule ? 'type'::text AND jsonb_typeof(date_rule -> 'type'::text) = 'string'::text AND ((date_rule ->> 'type'::text) = ANY (ARRAY['fixed'::text, 'date_range'::text, 'nth_weekday'::text, 'last_weekday'::text, 'relative_to_easter'::text, 'weekday_on_or_after'::text, 'closest_weekday_to_date'::text, 'rule_set'::text, 'annual_variable'::text])))` |
+| `calendar_events_id_check`         | CHECK       | `CHECK (btrim(id) <> ''::text AND id = btrim(id))`                                                                                                                                                                                                                                                                                                                                                                                    |
+| `calendar_events_pkey`             | PRIMARY KEY | `PRIMARY KEY (id)`                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `calendar_events_sort_order_check` | CHECK       | `CHECK (sort_order >= 0)`                                                                                                                                                                                                                                                                                                                                                                                                             |
+
+### Indexes
+
+| Name                             | Definition                                                                                                             |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `calendar_events_admin_list_idx` | `CREATE INDEX calendar_events_admin_list_idx ON public.calendar_events USING btree (updated_at DESC, id)`              |
+| `calendar_events_category_idx`   | `CREATE INDEX calendar_events_category_idx ON public.calendar_events USING btree (category, sort_order, id)`           |
+| `calendar_events_pkey`           | `CREATE UNIQUE INDEX calendar_events_pkey ON public.calendar_events USING btree (id)`                                  |
+| `calendar_events_published_idx`  | `CREATE INDEX calendar_events_published_idx ON public.calendar_events USING btree (sort_order, id) WHERE is_published` |
+| `calendar_events_sort_order_idx` | `CREATE INDEX calendar_events_sort_order_idx ON public.calendar_events USING btree (sort_order, id)`                   |
+
 ## content_entries
 
 ### Columns
