@@ -15,6 +15,7 @@ describe("calendar database migration", () => {
     expect(upSql).toContain("CREATE TABLE calendar_event_translations");
     expect(upSql).toContain("id TEXT PRIMARY KEY CHECK (btrim(id) <> '' AND id = btrim(id))");
     expect(upSql).toContain("date_rule JSONB CHECK");
+    expect(upSql).toContain("jsonb_typeof(date_rule->'type') = 'string'");
     expect(upSql).toContain("aliases TEXT[] NOT NULL DEFAULT '{}'::TEXT[]");
     expect(upSql).toContain("PRIMARY KEY (event_id, locale)");
     expect(upSql).toContain("CHECK (locale IN ('ja', 'en'))");
@@ -31,6 +32,7 @@ describe("calendar database migration", () => {
     expect(verifySql).toContain("calendar_constraints");
     expect(verifySql).toContain("calendar_indexes");
     expect(verifySql).toContain("invalid_calendar_date_rules");
+    expect(verifySql).toContain("jsonb_typeof(date_rule->'type') IS DISTINCT FROM 'string'");
     expect(verifySql).toContain("unsupported_calendar_locales");
     expect(verifySql).toContain("orphan_calendar_translations");
     expect(verifySql).toContain("calendar_domain_migration_recorded");

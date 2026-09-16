@@ -53,6 +53,7 @@ WHERE date_rule IS NOT NULL
   AND (
     jsonb_typeof(date_rule) <> 'object'
     OR NOT (date_rule ? 'type')
+    OR jsonb_typeof(date_rule->'type') IS DISTINCT FROM 'string'
     OR date_rule->>'type' NOT IN (
       'fixed',
       'date_range',

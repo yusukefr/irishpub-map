@@ -35,6 +35,7 @@ CREATE TABLE calendar_events (
     OR (
       jsonb_typeof(date_rule) = 'object'
       AND date_rule ? 'type'
+      AND jsonb_typeof(date_rule->'type') = 'string'
       AND date_rule->>'type' IN (
         'fixed',
         'date_range',

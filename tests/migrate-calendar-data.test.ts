@@ -93,7 +93,8 @@ describe("calendar data migration mapping", () => {
     buildInsertQueries(transaction, expected);
     expect(queries).toHaveLength(75);
     expect(queries.every((query) => query.text.includes("INSERT INTO"))).toBe(true);
-    expect(queries.join("\n")).not.toMatch(/ON CONFLICT|DELETE|TRUNCATE|UPDATE/u);
+    const sqlText = queries.map((query) => query.text).join("\n");
+    expect(sqlText).not.toMatch(/ON CONFLICT|DELETE|TRUNCATE|UPDATE/u);
     expect(queries.some((query) => query.values.includes("new-years-day") && query.values.includes(true))).toBe(true);
   });
 });
