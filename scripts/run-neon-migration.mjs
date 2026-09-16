@@ -3,6 +3,10 @@ import { resolve } from "node:path";
 import process from "node:process";
 import { Client } from "@neondatabase/serverless";
 
+export function prepareMigrationSql(sql) {
+  return sql.replace(/^\\set ON_ERROR_STOP on\s*$/m, "");
+}
+
 /**
  * Neon ClientでSQLマイグレーションファイルを実行します。
  * 接続文字列はログへ出力せず、MIGRATION_DATABASE_URLからのみ取得します。
@@ -18,7 +22,7 @@ async function main() {
     throw new Error("MIGRATION_DATABASE_URL is required.");
   }
 
-  const sql = await readFile(resolve(process.cwd(), migrationPath), "utf8");
+  const sql = prepareMigrationSql(await readFile(resolve(process.cwd(), migrationPath), "utf8"));
   const client = new Client(connectionString);
 
   await client.connect();
@@ -35,7 +39,8 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+if (process.argv[1]?.endsWith("run-neon-migration.mjs"))
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
