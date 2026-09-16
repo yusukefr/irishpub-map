@@ -47,6 +47,22 @@ Quiz Data MigrationはIssue #391で完了済みです。旧JSONからNeonへの�
 
 Issue #394では、SchemaやProductionデータを変更せず、Preview・Production双方に対するRead-only Dry Runで9 Questions / 36 Choicesの完全移行済みを確認したうえで、旧JSON、Migration Script、Migration専用Test、npm scriptを削除しました。今後QuizのSchema変更が必要な場合は、通常の[Neon migration Runbook](../runbooks/neon-migrations.md)で別途扱います。
 
+## Calendar Data Migration（Issue #411）
+
+Calendar Schema Migrationとは別に、`apps/web/data/ireland/calendar.json`をNeonへ投入します。Migration元はこの固定JSONだけで、通常実行はDry Run、`--apply`を付けた実行だけが書き込みを行います。`calendar.json`はPublic CalendarのDB切替と検証が完了するまで削除しません。
+
+Productionへ適用する前に、同じcommitとJSONを使って検証用Neon Branchで次を順に実行します。接続文字列は実行環境のSecretとして扱い、文書・ログ・Issue・PRへ出力しません。
+
+```bash
+npm run migrate:calendar-data
+npm run migrate:calendar-data -- --apply
+npm run migrate:calendar-data
+```
+
+`--apply`時はCalendar両テーブルをロックし、空状態の再確認と全Event・TranslationのINSERTを同じtransactionで行います。競合やエラー時はINSERT全体がrollbackされます。最後のDry Runで25 Events / 50 Translationsの`already migrated`を確認し、ID、日英翻訳、Date Rule、aliases、source、JSON記載順、公開状態が一致することを確認します。完全一致済み状態は変更せず、Partial・Different・Extra Dataは自動修復せず中止します。
+
+検証用BranchでSchema verify、Dry Run、Apply、再Dry Runを完了した後、同じ順序でProductionへ適用します。失敗時に`--force`や既存値の上書きで続行せず、原因を修正してから再実行します。
+
 ## デプロイ前後の基本確認
 
 merge前に少なくとも次を実行します。

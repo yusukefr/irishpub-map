@@ -8,17 +8,17 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 ## 概念モデル
 
-アプリケーションは、店舗・地域・営業状況・タグ・Editorial Content・Quizを扱います。各概念の物理テーブル名、カラム、制約、インデックスは、現行Neonから生成した[生成済みスキーマ](../generated/database-schema.md)を参照してください。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理し、アプリケーション用の認証テーブルは持ちません。
+アプリケーションは、店舗・地域・営業状況・タグ・Editorial Content・Quiz・Irish Calendarを扱います。各概念の物理テーブル名、カラム、制約、インデックスは、現行Neonから生成した[生成済みスキーマ](../generated/database-schema.md)を参照してください。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理し、アプリケーション用の認証テーブルは持ちません。
 
 ## 関係
 
-店舗は都道府県・市区町村・営業状況に分類され、各概念はロケール別の翻訳を持ちます。店舗とタグは多対多で関連付けます。Editorial Contentは翻訳を持ち、Quizは任意の関連Contentを参照し、問題・Choice・各翻訳を親子関係で管理します。
+店舗は都道府県・市区町村・営業状況に分類され、各概念はロケール別の翻訳を持ちます。店舗とタグは多対多で関連付けます。Editorial Contentは翻訳を持ち、Quizは任意の関連Contentを参照し、問題・Choice・各翻訳を親子関係で管理します。Irish Calendarはイベント本体と日英翻訳を親子関係で管理し、JSONの記載順を`sort_order`へ保存します。
 
 この関係はアプリケーションの概念モデルです。物理カラム、NULL許容、外部キー、削除規則は生成済みスキーマを正とします。
 
 ## 翻訳の選択
 
-Repositoryは要求ロケールの翻訳を優先し、存在しない場合は共通locale定義の既定localeへフォールバックします。対象は店舗、都道府県、市区町村、営業状況、タグ、Editorial Content、Quizです。店舗の緯度経度、URL、コード、タグ関係やQuizのCategory、Special Date、正解など言語に依存しない値は親テーブルに保持します。
+Repositoryは要求ロケールの翻訳を優先し、存在しない場合は共通locale定義の既定localeへフォールバックします。対象は店舗、都道府県、市区町村、営業状況、タグ、Editorial Content、Quiz、Irish Calendarです。店舗の緯度経度、URL、コード、タグ関係やQuizのCategory、Special Date、正解、CalendarのDate Rule・Category・公開状態など言語に依存しない値は親テーブルに保持します。
 
 ## 正規化とアプリケーション境界
 
