@@ -315,7 +315,8 @@ function translationQueries(
     return transactionQuery(
       transaction,
       "INSERT INTO calendar_event_translations (event_id, locale, name, description) " +
-        "SELECT $1, $2, $3, $4 WHERE $5 = TRUE " +
+        "SELECT $1, $2, $3, $4 WHERE $5 = TRUE OR EXISTS " +
+        "(SELECT 1 FROM calendar_events AS event WHERE event.id = $1 AND event.is_published = FALSE) " +
         "ON CONFLICT (event_id, locale) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description, updated_at = NOW()",
       [id, locale, translation.name, translation.description, publishReady],
     );

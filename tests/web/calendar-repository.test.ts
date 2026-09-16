@@ -169,6 +169,16 @@ describe("calendar admin repository", () => {
     expect(mocks.transactionCount).toBe(1);
   });
 
+  it("Draft Eventは公開要件未充足でも本体と翻訳を更新する", async () => {
+    mocks.responses = [[{ id: "event-one", is_published: false }], [{ id: "event-one" }], [], []];
+
+    await expect(updateCalendarEvent("event-one", { ...writeInput, category: null, dateRule: null })).resolves.toBe(
+      "updated",
+    );
+    expect(mocks.queries[2].text).toContain("event.is_published = FALSE");
+    expect(mocks.queries[2].values).toContain(false);
+  });
+
   it("公開状態変更、削除、E2E mutation拒否を行う", async () => {
     mocks.responses = [[{ id: "event-one", is_published: false }], [{ id: "event-one", is_published: true }]];
     await expect(setCalendarEventPublication("event-one", true)).resolves.toEqual({
