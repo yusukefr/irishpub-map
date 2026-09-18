@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { calendarData } from "../../../lib/calendar/data";
+import { getPublishedCalendarData } from "../../../lib/calendar/public-data";
 import { getEventsForDate, getEventsForMonth, getTodayInTokyo } from "../../../lib/calendar/queries";
-import type { CalendarDate, CalendarEventOccurrence } from "../../../lib/calendar/types";
+import type { CalendarCategory, CalendarDate, CalendarEventOccurrence } from "../../../lib/calendar/types";
 import { formatMessage, getTranslation, type Locale } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
 import { DiscoverBreadcrumbs, RelatedContent } from "../components";
@@ -94,7 +94,15 @@ function formatOccurrenceDate(occurrence: CalendarEventOccurrence, locale: Local
     : `${start} – ${formatDate(occurrence.date.end, locale)}`;
 }
 
-function EventList({ events, locale }: { events: readonly CalendarEventOccurrence[]; locale: Locale }) {
+function EventList({
+  events,
+  locale,
+  categoryLabels,
+}: {
+  events: readonly CalendarEventOccurrence[];
+  locale: Locale;
+  categoryLabels: Readonly<Record<CalendarCategory, string>>;
+}) {
   return (
     <ul className="calendar-event-list">
       {events.map((occurrence) => (
@@ -105,7 +113,7 @@ function EventList({ events, locale }: { events: readonly CalendarEventOccurrenc
         >
           <div className="calendar-event-meta">
             <time>{formatOccurrenceDate(occurrence, locale)}</time>
-            <span>{calendarData.categories[occurrence.event.category][locale]}</span>
+            <span>{categoryLabels[occurrence.event.category]}</span>
           </div>
           <div className="calendar-event-copy">
             <h3>{occurrence.event.name[locale]}</h3>
@@ -132,7 +140,11 @@ export async function generateMetadata(): Promise<Metadata> {
  * @returns {Promise<JSX.Element>} 日英ローカライズ済みのカレンダーページ。
  */
 export default async function CalendarPage({ searchParams }: CalendarPageProps) {
-  const [locale, resolvedSearchParams] = await Promise.all([getRequestLocale(), searchParams]);
+  const [locale, resolvedSearchParams, events] = await Promise.all([
+    getRequestLocale(),
+    searchParams,
+    getPublishedCalendarData(),
+  ]);
   const discover = getTranslation(locale).discover;
   const t = discover.calendar;
   const today = getTodayInTokyo();
@@ -144,8 +156,8 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     selectedMonthIndex > currentMonthIndex - CALENDAR_MONTH_RANGE ? fromMonthIndex(selectedMonthIndex - 1) : null;
   const nextMonth =
     selectedMonthIndex < currentMonthIndex + CALENDAR_MONTH_RANGE ? fromMonthIndex(selectedMonthIndex + 1) : null;
-  const todaysEvents = getEventsForDate(today);
-  const monthlyEvents = getEventsForMonth(selectedMonth.year, selectedMonth.month);
+  const todaysEvents = getEventsForDate(today, events);
+  const monthlyEvents = getEventsForMonth(selectedMonth.year, selectedMonth.month, events);
 
   return (
     <article className="content-container calendar-page" aria-labelledby="calendar-heading">
@@ -164,7 +176,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
         <section className="calendar-section" aria-labelledby="calendar-today-heading">
           <h2 id="calendar-today-heading">{t.todayHeading}</h2>
           {todaysEvents.length > 0 ? (
-            <EventList events={todaysEvents} locale={locale} />
+            <EventList events={todaysEvents} locale={locale} categoryLabels={t.categories} />
           ) : (
             <p className="calendar-empty">{t.noEventsToday}</p>
           )}
@@ -189,7 +201,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
             )}
           </nav>
           {monthlyEvents.length > 0 ? (
-            <EventList events={monthlyEvents} locale={locale} />
+            <EventList events={monthlyEvents} locale={locale} categoryLabels={t.categories} />
           ) : (
             <p className="calendar-empty">{t.noEventsThisMonth}</p>
           )}

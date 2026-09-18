@@ -71,6 +71,15 @@
       "noEventsToday": "今日に該当するイベントはありません。",
       "noEventsThisMonth": "この月に該当するイベントはありません。",
       "dateToBeConfirmed": "開催日は年ごとに決定",
+      "categories": {
+        "public_holiday": "祝日",
+        "culture": "文化",
+        "tradition": "伝統・民俗",
+        "language": "言語",
+        "literature": "文学",
+        "history": "歴史・追悼",
+        "religion": "宗教行事"
+      },
       "back": "Explore Irelandへ戻る"
     }
   },
