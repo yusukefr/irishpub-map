@@ -158,7 +158,9 @@ describe("calendar queries", () => {
     [11, 1, "samhain"],
     [12, 26, "st-stephens-day"],
   ])("実データの2026-%i-%iに%sを返す", (month, day, id) => {
-    expect(getEventsForDate({ year: 2026, month, day }).map(({ event }) => event.id)).toContain(id);
+    expect(getEventsForDate({ year: 2026, month, day }, calendarData.events).map(({ event }) => event.id)).toContain(
+      id,
+    );
   });
 
   it("月跨ぎ・年跨ぎ期間を両方の月で一度だけ取得する", () => {

@@ -1,8 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { calendarEvents } from "../../apps/web/app/lib/calendar/data";
 
-const pageMocks = vi.hoisted(() => ({ getRequestLocale: vi.fn() }));
+const pageMocks = vi.hoisted(() => ({ getPublishedCalendarData: vi.fn(), getRequestLocale: vi.fn() }));
 vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: pageMocks.getRequestLocale }));
+vi.mock("../../apps/web/app/lib/calendar/public-data", () => ({
+  getPublishedCalendarData: pageMocks.getPublishedCalendarData,
+}));
 
 import CalendarPage, { generateMetadata } from "../../apps/web/app/(content)/discover/calendar/page";
 
@@ -17,6 +21,7 @@ async function renderCalendar(searchParams: CalendarSearchParams = {}) {
 beforeEach(() => {
   locale = "ja";
   pageMocks.getRequestLocale.mockReset().mockImplementation(() => Promise.resolve(locale));
+  pageMocks.getPublishedCalendarData.mockReset().mockResolvedValue(calendarEvents);
   vi.useFakeTimers();
 });
 
@@ -62,6 +67,8 @@ describe("Irish Calendar page", () => {
     const card = heading.closest("li");
     expect(card).toHaveTextContent("Date determined annually");
     expect(card).not.toHaveTextContent("May 1, 2026");
+    expect(screen.getByText("Tradition & folklore")).toBeInTheDocument();
+    expect(screen.getAllByText("History & commemoration").length).toBeGreaterThan(0);
   });
 
   it("クエリで選択した月を表示し、今日の欄は実際の当日のままにする", async () => {
