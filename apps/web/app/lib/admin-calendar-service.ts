@@ -8,6 +8,7 @@ import {
   listAdminCalendarEvents,
   setCalendarEventPublication,
   updateCalendarEvent,
+  type CalendarEventDeleteResult,
 } from "./calendar/repository";
 import {
   type AdminCalendarEvent,
@@ -109,13 +110,15 @@ export async function updateAdminCalendarEvent(id: string, value: unknown): Prom
 /**
  * Calendar Eventを削除します。
  * @param id
- * @returns void。対象がなければ業務エラー。
+ * @returns 削除前の公開状態を含む削除結果。対象がなければ業務エラー。
  */
-export async function removeAdminCalendarEvent(id: string): Promise<void> {
-  if (!(await deleteCalendarEvent(id))) throw new AdminCalendarServiceError("not_found");
+export async function deleteAdminCalendarEvent(id: string): Promise<CalendarEventDeleteResult> {
+  const result = await deleteCalendarEvent(id);
+  if (!result) throw new AdminCalendarServiceError("not_found");
+  return result;
 }
-/** Issue #412のDelete API名です。 */
-export const deleteAdminCalendarEvent = removeAdminCalendarEvent;
+/** Issue #412の後方互換Delete API名です。 */
+export const removeAdminCalendarEvent = deleteAdminCalendarEvent;
 
 /**
  * Calendar Eventを公開またはDraftへ変更します。

@@ -15,7 +15,12 @@ vi.mock("@neondatabase/serverless", () => ({
     };
     const transaction = Object.assign(
       (strings: TemplateStringsArray, ...values: unknown[]) => record(strings, values),
-      {},
+      {
+        query: (text: string, values: unknown[] = []) => {
+          mocks.queries.push({ text, values });
+          return Promise.resolve(mocks.responses.shift() ?? []);
+        },
+      },
     );
     const query = Object.assign((_strings: TemplateStringsArray, ..._values: unknown[]) => Promise.resolve([]), {
       query: (text: string, values: unknown[] = []) => {
@@ -119,6 +124,28 @@ describe("calendar public repository", () => {
       },
     ]);
     expect(mocks.queries[0].text).toContain("is_published = TRUE");
+    expect(mocks.queries[0].text).toContain("LEFT JOIN calendar_event_translations");
+  });
+
+  it.each([
+    ["ja Translationなし", { name_ja: null }],
+    ["en Translationなし", { name_en: null }],
+    ["ja name空", { name_ja: "" }],
+    ["en name空", { name_en: "" }],
+  ])("Published Eventの%sを内部エラーとして扱う", async (_label, overrides) => {
+    mocks.responses = [[publicRow(overrides)]];
+
+    await expect(getPublishedCalendarEvents()).rejects.toThrow("Invalid calendar event returned from database.");
+  });
+
+  it("DB RowのAliasを正規化し、空Aliasと重複Aliasを拒否する", () => {
+    expect(parsePublishedCalendarRow(publicRow({ aliases: [" Alias "] })).aliases).toEqual(["Alias"]);
+    expect(() => parsePublishedCalendarRow(publicRow({ aliases: [""] }))).toThrow(
+      "Invalid calendar event returned from database.",
+    );
+    expect(() => parsePublishedCalendarRow(publicRow({ aliases: ["Alias", " Alias "] }))).toThrow(
+      "Invalid calendar event returned from database.",
+    );
   });
 
   it("不正なDB行や未対応日付ルールを公開DTOへ変換しない", () => {
@@ -157,7 +184,10 @@ describe("calendar admin repository", () => {
       JSON.stringify({ type: "nth_weekday", month: 3, weekday: "monday", nth: 2 }),
     );
     expect(mocks.queries[2].text).toContain("calendar_event_translations");
-    expect(mocks.queries[3].values).toContain("en");
+    expect(mocks.queries[2].text).toContain("$1, $2, $3, $4 WHERE $5 = TRUE");
+    expect(mocks.queries[2].text).toContain("event.id = $1");
+    expect(mocks.queries[2].values).toEqual(["event-one", "ja", "イベント", "説明", true]);
+    expect(mocks.queries[3].values).toEqual(["event-one", "en", "Event", "Description", true]);
   });
 
   it("Published Eventの不完全更新をtransaction内でブロックする", async () => {

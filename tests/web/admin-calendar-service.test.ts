@@ -52,7 +52,7 @@ beforeEach(() => {
     unchanged: false,
   });
   repositoryMocks.updateCalendarEvent.mockResolvedValue("updated");
-  repositoryMocks.deleteCalendarEvent.mockResolvedValue(true);
+  repositoryMocks.deleteCalendarEvent.mockResolvedValue({ id: "event-one", wasPublished: true });
 });
 
 describe("admin calendar service", () => {
@@ -133,5 +133,11 @@ describe("admin calendar service", () => {
     });
     repositoryMocks.deleteCalendarEvent.mockResolvedValue(null);
     await expect(removeAdminCalendarEvent("event-one")).rejects.toBeInstanceOf(AdminCalendarServiceError);
+  });
+
+  it("削除結果のwasPublishedをServiceから返す", async () => {
+    repositoryMocks.deleteCalendarEvent.mockResolvedValue({ id: "event-one", wasPublished: true });
+
+    await expect(removeAdminCalendarEvent("event-one")).resolves.toEqual({ id: "event-one", wasPublished: true });
   });
 });

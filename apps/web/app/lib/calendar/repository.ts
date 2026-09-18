@@ -53,8 +53,8 @@ export async function getPublishedCalendarEvents(): Promise<readonly CalendarEve
     "SELECT event.id, event.category, event.date_rule, event.is_public_holiday, event.featured, event.aliases, event.source, " +
       "ja.name AS name_ja, ja.description AS description_ja, en.name AS name_en, en.description AS description_en " +
       "FROM calendar_events AS event " +
-      "JOIN calendar_event_translations AS ja ON ja.event_id = event.id AND ja.locale = 'ja' " +
-      "JOIN calendar_event_translations AS en ON en.event_id = event.id AND en.locale = 'en' " +
+      "LEFT JOIN calendar_event_translations AS ja ON ja.event_id = event.id AND ja.locale = 'ja' " +
+      "LEFT JOIN calendar_event_translations AS en ON en.event_id = event.id AND en.locale = 'en' " +
       "WHERE event.is_published = TRUE ORDER BY event.sort_order, event.id",
   );
   return parsePublishedCalendarRows(rows);
@@ -393,7 +393,9 @@ function nullableDateRule(value: unknown): CalendarDateRuleDefinition | null {
 
 function parseAliases(value: unknown): string[] {
   if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) throw invalidDatabaseCalendar();
-  return value.map((item) => item);
+  const aliases = value.map((item) => (item as string).trim());
+  if (aliases.some((alias) => !alias) || new Set(aliases).size !== aliases.length) throw invalidDatabaseCalendar();
+  return aliases;
 }
 
 function requiredString(value: unknown): string {
@@ -435,9 +437,7 @@ function transactionQuery(
   text: string,
   params: unknown[],
 ) {
-  const strings = text.split(/\$\d+/u) as unknown as TemplateStringsArray;
-  Object.defineProperty(strings, "raw", { value: strings });
-  return transaction(strings, ...params);
+  return transaction.query(text, params);
 }
 
 /** Issue #412のPublic Repository API名です。 */
