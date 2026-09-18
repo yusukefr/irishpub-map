@@ -1,6 +1,11 @@
 import type { AdminFieldErrorCode } from "@irishpub-map/shared/admin-api-error";
-import { isCalendarEventId, parseCalendarDateRuleDefinition } from "./calendar/validation";
+import {
+  isCalendarEventId,
+  parseCalendarDateRuleDefinition,
+  validateCalendarDateRuleForPublication,
+} from "./calendar/validation";
 import { getCalendarPublicationMissingFields } from "./calendar/publication";
+import { invalidatePublishedCalendarData } from "./calendar/public-data";
 import {
   deleteCalendarEvent,
   getAdminCalendarEvent,
@@ -88,6 +93,9 @@ export async function readAdminCalendarEvent(id: string): Promise<AdminCalendarE
  */
 export async function updateAdminCalendarEvent(id: string, value: unknown): Promise<AdminCalendarEvent> {
   const parsed = parseWriteInput(value, id);
+  const current = await getAdminCalendarEvent(id);
+  if (!current) throw new AdminCalendarServiceError("not_found");
+  if (current.isPublished) validatePublishableDateRule(parsed.input);
   const publishReady = getCalendarPublicationMissingFields(parsed.input).length === 0;
   let result;
   try {
@@ -104,7 +112,9 @@ export async function updateAdminCalendarEvent(id: string, value: unknown): Prom
       getCalendarPublicationMissingFields(parsed.input),
     );
   }
-  return readAdminCalendarEvent(id);
+  const updated = await readAdminCalendarEvent(id);
+  if (updated.isPublished) invalidatePublishedCalendarData();
+  return updated;
 }
 
 /**
@@ -115,6 +125,7 @@ export async function updateAdminCalendarEvent(id: string, value: unknown): Prom
 export async function deleteAdminCalendarEvent(id: string): Promise<CalendarEventDeleteResult> {
   const result = await deleteCalendarEvent(id);
   if (!result) throw new AdminCalendarServiceError("not_found");
+  if (result.wasPublished) invalidatePublishedCalendarData();
   return result;
 }
 /** Issue #412の後方互換Delete API名です。 */
@@ -136,6 +147,7 @@ export async function changeAdminCalendarEventPublication(
     const missingFields = getCalendarPublicationMissingFields(current);
     if (missingFields.length > 0)
       throw new AdminCalendarServiceError("publication_requirements_not_met", {}, missingFields);
+    validatePublishableDateRule(current);
   }
   const result = await setCalendarEventPublication(id, isPublished);
   if (!result) throw new AdminCalendarServiceError("not_found");
@@ -147,6 +159,7 @@ export async function changeAdminCalendarEventPublication(
       getCalendarPublicationMissingFields(latest),
     );
   }
+  if (!result.unchanged) invalidatePublishedCalendarData();
   return result;
 }
 
@@ -224,6 +237,19 @@ function parseDateRule(value: unknown, errors: FieldErrors): CalendarDateRuleDef
   } catch {
     errors.dateRule = "invalid_format";
     return null;
+  }
+}
+
+function validatePublishableDateRule(input: Pick<AdminCalendarEvent | AdminCalendarWriteInput, "dateRule">): void {
+  if (!input.dateRule) {
+    throw new AdminCalendarServiceError("publication_requirements_not_met", { dateRule: "required" }, ["dateRule"]);
+  }
+  try {
+    validateCalendarDateRuleForPublication(input.dateRule);
+  } catch {
+    throw new AdminCalendarServiceError("publication_requirements_not_met", { dateRule: "invalid_format" }, [
+      "dateRule",
+    ]);
   }
 }
 

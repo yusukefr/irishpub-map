@@ -7,6 +7,7 @@ import type {
   ConcreteSingleDateRule,
   RuleSetCondition,
 } from "./types";
+import { resolveDateRule } from "./resolver";
 
 const WEEKDAYS = {
   sunday: 0,
@@ -88,6 +89,25 @@ export function parseCalendarDateRuleDefinition(value: unknown, path: string): C
     }) satisfies AnnualVariableRule;
   }
   return parseConcreteRule(input, path);
+}
+
+/** Published Calendarで安全に解決できるDate Ruleかを400年周期で検証します。
+ * @param value
+ * @throws {Error} いずれかの年で解決できない、またはRule Setの順序が不正な場合。
+ */
+export function validateCalendarDateRuleForPublication(value: CalendarDateRuleDefinition): void {
+  if (value.type === "rule_set") {
+    let otherwiseIndex = -1;
+    value.rules.forEach((rule, index) => {
+      if (rule.when.type !== "otherwise") return;
+      if (otherwiseIndex !== -1 || index !== value.rules.length - 1) {
+        throw new Error("Invalid otherwise order in calendar rule_set.");
+      }
+      otherwiseIndex = index;
+    });
+  }
+  const rule = normalizeCalendarDateRule(value);
+  for (let year = 2000; year < 2400; year += 1) resolveDateRule(rule, year);
 }
 
 /**

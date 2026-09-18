@@ -24,10 +24,18 @@ describe("AdminNavigation", () => {
 
     expect(screen.getByRole("link", { name: "パブ" })).toHaveAttribute("href", "/admin/pubs");
     expect(screen.getByRole("link", { name: "Content" })).toHaveAttribute("href", "/admin/content");
+    expect(screen.getByRole("link", { name: "Calendar" })).toHaveAttribute("href", "/admin/calendar");
     expect(screen.getByRole("link", { name: "タグ" })).toHaveAttribute("href", "/admin/tags");
     expect(screen.getByRole("link", { name: "ステータス" })).toHaveAttribute("href", "/admin/statuses");
     expect(screen.getByRole("link", { name: "パブ" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "タグ" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("marks Calendar child routes as active", () => {
+    navigationMocks.pathname = "/admin/calendar/event-one";
+    render(<AdminNavigation locale="ja" />);
+
+    expect(screen.getByRole("link", { name: "Calendar" })).toHaveAttribute("aria-current", "page");
   });
 
   it("marks nested feature routes and logs out", async () => {

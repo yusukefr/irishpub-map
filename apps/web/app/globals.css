@@ -3745,6 +3745,50 @@ body {
   font-size: 0.84rem;
 }
 
+.admin-calendar-rule-grid {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.admin-calendar-date-rule {
+  grid-column: 1 / -1;
+}
+
+.admin-calendar-rule-set {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 14px;
+}
+
+.admin-calendar-rule-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--color-surface-muted);
+}
+
+.admin-calendar-rule-card h3 {
+  margin: 0;
+  color: var(--accent-strong);
+  font-size: 1rem;
+}
+
+.admin-calendar-rule-actions,
+.admin-calendar-alias-row {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-calendar-alias-row label {
+  flex: 1 1 240px;
+}
+
 @media (max-width: 640px) {
   .admin-navigation ul {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3770,6 +3814,10 @@ body {
 
   .admin-content-table {
     min-width: 0;
+  }
+
+  .admin-calendar-rule-grid {
+    grid-template-columns: 1fr;
   }
 }
 
