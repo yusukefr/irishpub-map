@@ -67,6 +67,8 @@ describe("Irish Calendar page", () => {
     const card = heading.closest("li");
     expect(card).toHaveTextContent("Date determined annually");
     expect(card).not.toHaveTextContent("May 1, 2026");
+    expect(screen.getByText("Tradition & folklore")).toBeInTheDocument();
+    expect(screen.getAllByText("History & commemoration").length).toBeGreaterThan(0);
   });
 
   it("クエリで選択した月を表示し、今日の欄は実際の当日のままにする", async () => {

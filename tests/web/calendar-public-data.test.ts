@@ -3,20 +3,26 @@ import type { CalendarEvent } from "../../apps/web/app/lib/calendar/types";
 
 const mocks = vi.hoisted(() => ({
   getPublishedCalendarEvents: vi.fn(),
+  isCalendarDatabaseConfigured: vi.fn(),
   revalidateTag: vi.fn(),
   unstableCache: vi.fn(),
+  cachedQuery: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
   revalidateTag: mocks.revalidateTag,
   unstable_cache: (query: () => Promise<readonly CalendarEvent[]>, keyParts: string[], options: unknown) => {
     mocks.unstableCache(query, keyParts, options);
-    return () => query();
+    return () => {
+      mocks.cachedQuery();
+      return query();
+    };
   },
 }));
 
 vi.mock("../../apps/web/app/lib/calendar/repository", () => ({
   getPublishedCalendarEvents: mocks.getPublishedCalendarEvents,
+  isCalendarDatabaseConfigured: mocks.isCalendarDatabaseConfigured,
 }));
 
 import {
@@ -39,7 +45,9 @@ const events: readonly CalendarEvent[] = [
 
 beforeEach(() => {
   mocks.getPublishedCalendarEvents.mockClear();
+  mocks.isCalendarDatabaseConfigured.mockReset().mockReturnValue(true);
   mocks.revalidateTag.mockClear();
+  mocks.cachedQuery.mockClear();
   mocks.getPublishedCalendarEvents.mockResolvedValue(events);
 });
 
@@ -52,6 +60,15 @@ describe("calendar public data loader", () => {
       tags: [PUBLIC_CALENDAR_CACHE_TAG],
       revalidate: false,
     });
+  });
+
+  it("DATABASE_URL未設定時は空配列をCacheせず返す", async () => {
+    mocks.isCalendarDatabaseConfigured.mockReturnValue(false);
+
+    await expect(getPublishedCalendarData()).resolves.toEqual([]);
+
+    expect(mocks.cachedQuery).not.toHaveBeenCalled();
+    expect(mocks.getPublishedCalendarEvents).not.toHaveBeenCalled();
   });
 
   it("公開Calendar Cacheを即時失効させる", () => {

@@ -1,5 +1,5 @@
 import { revalidateTag, unstable_cache } from "next/cache";
-import { getPublishedCalendarEvents } from "./repository";
+import { getPublishedCalendarEvents, isCalendarDatabaseConfigured } from "./repository";
 import type { CalendarEvent } from "./types";
 
 /** Public CalendarのPublished Event全体に付与するCache Tagです。 */
@@ -11,9 +11,11 @@ const getCachedPublishedCalendarEvents = unstable_cache(getPublishedCalendarEven
 });
 
 /** Published Calendar Event全体をCache経由で取得します。
+ * DATABASE_URL未設定時はCacheを使わず空配列を返します。
  * @returns {Promise<readonly CalendarEvent[]>} 公開済みCalendar Event一覧。DB未設定時は空配列。
  */
 export function getPublishedCalendarData(): Promise<readonly CalendarEvent[]> {
+  if (!isCalendarDatabaseConfigured()) return Promise.resolve([]);
   return getCachedPublishedCalendarEvents();
 }
 
