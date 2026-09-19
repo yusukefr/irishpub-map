@@ -38,3 +38,39 @@ test("Quiz一覧からDraft保存、Choice操作、Publishを確認する", asyn
   await expect(page.getByRole("button", { name: "公開する" })).toBeDisabled();
   expect(E2E_TEST_DATA.content.draft.id).toBeTruthy();
 });
+
+test("Quiz新規作成ではQuestion IDを入力せずServer生成UUIDへ遷移する", async ({ page }) => {
+  const generatedId = "30000000-0000-4000-8000-000000000303";
+  await loginAsE2EAdmin(page, "/admin/quiz/new");
+  await expect(page.getByRole("heading", { name: "Quizを作成" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: /Question ID/ })).toHaveCount(0);
+  await page.route("**/api/admin/quiz", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    const body = route.request().postDataJSON() as Record<string, unknown>;
+    expect(body).not.toHaveProperty("id");
+    await route.fulfill({
+      contentType: "application/json",
+      status: 201,
+      json: {
+        question: {
+          id: generatedId,
+          category: null,
+          specialDate: null,
+          correctChoiceId: null,
+          sourceUrl: null,
+          relatedContentId: null,
+          isPublished: false,
+          translations: {
+            ja: { question: "", explanation: "", sourceLabel: "" },
+            en: { question: "", explanation: "", sourceLabel: "" },
+          },
+          choices: [],
+          createdAt: "2026-01-15T12:00:00.000Z",
+          updatedAt: "2026-01-15T12:00:00.000Z",
+        },
+      },
+    });
+  });
+  await page.getByRole("button", { name: "下書きを保存" }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/quiz/${generatedId}$`));
+});

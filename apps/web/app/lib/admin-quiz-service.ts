@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { AdminFieldErrorCode } from "@irishpub-map/shared/admin-api-error";
 import { getAdminContent } from "./admin-content-repository";
 import { getQuizPublicationMissingFields } from "./quiz/publication";
@@ -12,6 +13,7 @@ import {
 import {
   isQuizCategory,
   isQuizId,
+  isQuizChoiceId,
   QUIZ_CHOICE_ID_MAX_LENGTH,
   QUIZ_ID_MAX_LENGTH,
   type AdminQuizChoice,
@@ -43,20 +45,20 @@ export async function readAdminQuizList(): Promise<readonly AdminQuizListItem[]>
   return listAdminQuizQuestions();
 }
 /**
- * 未検証入力からQuestion IDを持つDraftを作成します。
+ * 未検証入力からServer生成UUIDを持つDraftを作成します。
  * @param value
  * @returns {Promise<AdminQuizQuestion>} 作成されたQuiz。
  */
 export async function createAdminQuiz(value: unknown): Promise<AdminQuizQuestion> {
-  const parsed = await parseWriteInput(value);
-  if (!parsed.id) throw new AdminQuizServiceError("validation", { id: "required" });
+  const id = randomUUID();
+  const input = await parseWriteInput(value);
   try {
-    await insertAdminQuizQuestion(parsed.id, parsed.input);
+    await insertAdminQuizQuestion(id, input);
   } catch (error) {
     if (isUniqueViolation(error)) throw new AdminQuizServiceError("conflict", { id: "invalid_format" });
     throw error;
   }
-  const question = await getAdminQuizQuestion(parsed.id);
+  const question = await getAdminQuizQuestion(id);
   if (!question) throw new Error("Created admin quiz could not be read.");
   return question;
 }
@@ -66,6 +68,7 @@ export async function createAdminQuiz(value: unknown): Promise<AdminQuizQuestion
  * @returns {Promise<AdminQuizQuestion>} 指定Question。
  */
 export async function readAdminQuiz(id: string): Promise<AdminQuizQuestion> {
+  if (!isQuizId(id, QUIZ_ID_MAX_LENGTH)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
   const question = await getAdminQuizQuestion(id);
   if (!question) throw new AdminQuizServiceError("not_found");
   return question;
@@ -77,21 +80,18 @@ export async function readAdminQuiz(id: string): Promise<AdminQuizQuestion> {
  * @returns {Promise<AdminQuizQuestion>} 更新されたQuiz。
  */
 export async function updateAdminQuiz(id: string, value: unknown): Promise<AdminQuizQuestion> {
-  const parsed = await parseWriteInput(value, id);
+  if (!isQuizId(id, QUIZ_ID_MAX_LENGTH)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
+  const input = await parseWriteInput(value);
   let result;
   try {
-    result = await replaceAdminQuizQuestion(id, parsed.input);
+    result = await replaceAdminQuizQuestion(id, input);
   } catch (error) {
     if (isUniqueViolation(error)) throw new AdminQuizServiceError("conflict", { id: "invalid_format" });
     throw error;
   }
   if (result === "not_found") throw new AdminQuizServiceError("not_found");
   if (result === "publication_blocked")
-    throw new AdminQuizServiceError(
-      "publication_requirements_not_met",
-      {},
-      getQuizPublicationMissingFields(parsed.input),
-    );
+    throw new AdminQuizServiceError("publication_requirements_not_met", {}, getQuizPublicationMissingFields(input));
   const question = await getAdminQuizQuestion(id);
   if (!question) throw new Error("Updated admin quiz could not be read.");
   return question;
@@ -106,6 +106,7 @@ export async function changeAdminQuizPublication(
   id: string,
   isPublished: boolean,
 ): Promise<AdminQuizPublicationResult> {
+  if (!isQuizId(id, QUIZ_ID_MAX_LENGTH)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
   if (typeof isPublished !== "boolean") throw new AdminQuizServiceError("validation");
   const current = await readAdminQuiz(id);
   if (isPublished) {
@@ -121,17 +122,9 @@ export async function changeAdminQuizPublication(
   }
   return result;
 }
-async function parseWriteInput(
-  value: unknown,
-  expectedId?: string,
-): Promise<{ id: string | null; input: AdminQuizWriteInput }> {
+async function parseWriteInput(value: unknown): Promise<AdminQuizWriteInput> {
   const source = asRecord(value);
   const fieldErrors: FieldErrors = {};
-  const id =
-    expectedId !== undefined && source.id === undefined
-      ? expectedId
-      : parseId(source.id, "id", fieldErrors, QUIZ_ID_MAX_LENGTH);
-  if (expectedId !== undefined && source.id !== undefined && id !== expectedId) fieldErrors.id = "immutable";
   const input = {
     category: parseCategory(source.category, fieldErrors),
     specialDate: parseSpecialDate(source.specialDate, fieldErrors),
@@ -149,9 +142,9 @@ async function parseWriteInput(
     if (!content || content.kind !== "guide")
       throw new AdminQuizServiceError("validation", { relatedContentId: "invalid_format" });
   }
-  return { id: expectedId ?? id, input };
+  return input;
 }
-function parseId(value: unknown, field: string, errors: FieldErrors, maxLength: number): string | null {
+function parseChoiceId(value: unknown, field: string, errors: FieldErrors, maxLength: number): string | null {
   if (value === undefined || value === null || value === "") {
     errors[field] = "required";
     return null;
@@ -161,11 +154,11 @@ function parseId(value: unknown, field: string, errors: FieldErrors, maxLength: 
     return null;
   }
   if (value !== value.trim()) errors[field] = "leading_or_trailing_space";
-  else if (!isQuizId(value, maxLength)) errors[field] = "invalid_format";
+  else if (!isQuizChoiceId(value, maxLength)) errors[field] = "invalid_format";
   return value;
 }
 function parseNullableId(value: unknown, field: string, errors: FieldErrors, maxLength: number): string | null {
-  return value === undefined || value === null || value === "" ? null : parseId(value, field, errors, maxLength);
+  return value === undefined || value === null || value === "" ? null : parseChoiceId(value, field, errors, maxLength);
 }
 function parseCategory(value: unknown, errors: FieldErrors) {
   if (value === undefined || value === null || value === "") return null;
@@ -237,7 +230,7 @@ function parseChoices(value: unknown, errors: FieldErrors): AdminQuizChoice[] {
   const ids = new Set<string>();
   return value.slice(0, 4).map((choiceValue, index) => {
     const source = asRecord(choiceValue);
-    const id = parseId(source.id, `choices.${index}.id`, errors, QUIZ_CHOICE_ID_MAX_LENGTH) ?? "";
+    const id = parseChoiceId(source.id, `choices.${index}.id`, errors, QUIZ_CHOICE_ID_MAX_LENGTH) ?? "";
     if (ids.has(id)) errors[`choices.${index}.id`] = "invalid_format";
     ids.add(id);
     if ("sortOrder" in source) errors[`choices.${index}.sortOrder`] = "invalid_format";

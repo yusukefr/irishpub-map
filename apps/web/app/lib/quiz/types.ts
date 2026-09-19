@@ -106,11 +106,21 @@ export function isQuizCategory(value: string): value is QuizCategory {
 }
 
 /**
- * Question・Choiceで利用できるkebab-case IDか判定します。
- * @param value
- * @param maxLength
+ * 移行期間中のQuestion IDであるkebab-caseまたはUUIDか判定します。
+ * @param value 判定対象。
+ * @param maxLength 最大文字数。
  * @returns {boolean} 許可形式の場合はtrue。
  */
 export function isQuizId(value: string, maxLength = QUIZ_ID_MAX_LENGTH) {
   return value.length <= maxLength && /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(value);
+}
+
+/**
+ * Question内で利用するChoice IDのkebab-case形式か判定します。
+ * @param value 判定対象。
+ * @param maxLength 最大文字数。
+ * @returns {boolean} 許可形式の場合はtrue。
+ */
+export function isQuizChoiceId(value: string, maxLength = QUIZ_CHOICE_ID_MAX_LENGTH) {
+  return isQuizId(value, maxLength);
 }

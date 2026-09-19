@@ -282,7 +282,7 @@
       "editHeading": "Edit quiz",
       "editDescription": "Review both languages and choices, then manage publication after saving.",
       "id": "Question ID",
-      "idHelp": "Use lowercase letters, numbers, and single hyphens between words. This cannot be changed after creation.",
+      "idHelp": "The server generates the Question ID as a UUID.",
       "category": "Category",
       "specialDate": "Special date",
       "day": "Day",

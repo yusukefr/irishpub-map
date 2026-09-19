@@ -57,7 +57,7 @@ describe("AdminQuizEditor", () => {
   });
   it("adds, reorders, and removes choices and includes no sortOrder in the save payload", async () => {
     render(<AdminQuizEditor initialQuestion={null} relatedGuides={guides} databaseConfigured locale="ja" />);
-    fireEvent.change(screen.getByRole("textbox", { name: /Question ID/ }), { target: { value: "new-question" } });
+    expect(screen.queryByRole("textbox", { name: /Question ID/ })).not.toBeInTheDocument();
     const choices = screen.getByRole("group", { name: "選択肢" });
     fireEvent.click(within(choices).getByRole("button", { name: "選択肢を追加" }));
     fireEvent.click(within(choices).getByRole("button", { name: "選択肢を追加" }));
@@ -66,7 +66,7 @@ describe("AdminQuizEditor", () => {
     fireEvent.click(within(choices).getAllByRole("button", { name: "選択肢を削除" })[0]);
     const created = {
       ...question,
-      id: "new-question",
+      id: "550e8400-e29b-41d4-a716-446655440015",
       choices: [],
       category: null,
       correctChoiceId: null,
@@ -75,9 +75,11 @@ describe("AdminQuizEditor", () => {
     };
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ question: created }), { status: 201 }));
     fireEvent.submit(screen.getByRole("button", { name: "下書きを保存" }).closest("form")!);
-    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/admin/quiz/new-question"));
+    await waitFor(() =>
+      expect(navigation.push).toHaveBeenCalledWith("/admin/quiz/550e8400-e29b-41d4-a716-446655440015"),
+    );
     const payload = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
-    expect(payload.id).toBe("new-question");
+    expect(payload).not.toHaveProperty("id");
     expect(payload.choices).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ sortOrder: expect.anything() })]),
     );
@@ -105,7 +107,6 @@ describe("AdminQuizEditor", () => {
 
   it("updates root fields, translations, and choice fields", () => {
     render(<AdminQuizEditor initialQuestion={null} relatedGuides={guides} databaseConfigured locale="ja" />);
-    fireEvent.change(screen.getByRole("textbox", { name: /Question ID/ }), { target: { value: "new-question" } });
     const comboboxes = screen.getAllByRole("combobox");
     fireEvent.change(comboboxes[0], { target: { value: "history" } });
     fireEvent.change(comboboxes[1], { target: { value: guides[0].id } });
@@ -127,12 +128,11 @@ describe("AdminQuizEditor", () => {
 
   it("shows server validation feedback and handles a failed request", async () => {
     render(<AdminQuizEditor initialQuestion={null} relatedGuides={guides} databaseConfigured locale="ja" />);
-    fireEvent.change(screen.getByRole("textbox", { name: /Question ID/ }), { target: { value: "new-question" } });
     fetchMock.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
           errorCode: "validation_error",
-          fieldErrors: { id: "invalid_format" },
+          fieldErrors: {},
           missingFields: ["category"],
         }),
         { status: 422 },

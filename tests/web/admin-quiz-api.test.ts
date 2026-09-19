@@ -32,17 +32,24 @@ beforeEach(() => {
   mocks.contentType.mockReturnValue(null);
   mocks.configured.mockReturnValue(true);
   mocks.list.mockResolvedValue([]);
-  mocks.create.mockResolvedValue({ id: "new-question" });
+  mocks.create.mockResolvedValue({ id: "550e8400-e29b-41d4-a716-446655440015" });
   mocks.read.mockResolvedValue({ id: "question-1" });
   mocks.update.mockResolvedValue({ id: "question-1" });
-  mocks.publication.mockResolvedValue({ id: "question-1", isPublished: true, unchanged: false });
+  mocks.publication.mockResolvedValue({
+    id: "question-1",
+    isPublished: true,
+    unchanged: false,
+  });
 });
 describe("admin quiz API", () => {
   it("returns both the list and database configuration state", async () => {
     mocks.list.mockResolvedValue([{ id: "question-1" }]);
     const response = await listGet(request("https://example.test/api/admin/quiz"));
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ questions: [{ id: "question-1" }], databaseConfigured: true });
+    await expect(response.json()).resolves.toEqual({
+      questions: [{ id: "question-1" }],
+      databaseConfigured: true,
+    });
   });
   it("requires authentication before a mutation", async () => {
     mocks.auth.mockReturnValue(Response.json({ errorCode: "unauthorized" }, { status: 401 }));
@@ -100,5 +107,11 @@ describe("admin quiz API", () => {
     );
     expect(response.status).toBe(200);
     expect(mocks.publication).toHaveBeenCalledWith("question-1", true);
+  });
+  it("accepts legacy detail paths during the UUID migration", async () => {
+    const context = { params: Promise.resolve({ id: "legacy-question" }) };
+    const response = await detailGet(request("https://example.test/api/admin/quiz/legacy-question"), context);
+    expect(response.status).toBe(200);
+    expect(mocks.read).toHaveBeenCalledWith("legacy-question");
   });
 });
