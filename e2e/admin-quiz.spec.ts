@@ -72,5 +72,5 @@ test("Quiz新規作成ではQuestion IDを入力せずServer生成UUIDへ遷移�
     });
   });
   await page.getByRole("button", { name: "下書きを保存" }).click();
-  await expect(page).toHaveURL("**/admin/quiz/" + generatedId);
+  await expect(page).toHaveURL(new RegExp(`/admin/quiz/${generatedId}$`));
 });
