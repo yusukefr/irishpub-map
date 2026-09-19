@@ -17,22 +17,28 @@ flowchart TB
   subgraph vercel[Vercel / Next.js アプリ]
     publicPage["公開ページ /"]
     contentPage["公開Content<br/>/discover, /discover/guides/*"]
+    calendarPage["公開Calendar<br/>/discover/calendar"]
     publicApi["公開 API<br/>GET /api/pubs"]
-    adminPage["管理画面<br/>/admin/{pubs,content,tags,statuses}, /admin/login"]
+    adminPage["管理画面<br/>/admin/{pubs,content,calendar,tags,statuses}, /admin/login"]
     adminApi["管理 API<br/>/api/admin/*"]
     auth[admin-auth]
     repository[pub-repository]
     contentRepository[content-repository]
-    quizRepository[quiz-repository<br/>画面切替前]
+    calendarDataLoader[calendar-public-data<br/>Cache]
+    calendarRepository[calendar-repository]
+    adminCalendarService[admin-calendar-service / API]
+    quizRepository[quiz-repository]
     masterRepository[master-repository]
   end
 
-  neon[(Neon Postgres<br/>店舗・Editorial Content・各種マスタテーブル)]
+  neon[(Neon Postgres<br/>店舗・Editorial Content・Quiz・Irish Calendar・各種マスタテーブル)]
 
   visitor --> publicPage
   visitor --> contentPage
   publicPage --> publicApi
   contentPage --> contentRepository
+  calendarPage --> calendarDataLoader
+  calendarDataLoader --> calendarRepository
   publicApi --> repository
   visitor --> maplibre
   maplibre --> mapProvider
@@ -42,14 +48,18 @@ flowchart TB
   adminPage --> auth
   adminPage --> repository
   adminPage --> contentRepository
+  adminPage --> adminCalendarService
   adminApi --> auth
   adminApi --> repository
   adminApi --> contentRepository
+  adminApi --> adminCalendarService
+  adminCalendarService --> calendarRepository
   adminApi --> masterRepository
 
   repository -->|"DATABASE_URL 設定時"| neon
   contentRepository -->|"DATABASE_URL 設定時"| neon
-  quizRepository -.->|"Issue #393で画面接続"| neon
+  calendarRepository -->|"DATABASE_URL 設定時"| neon
+  quizRepository -->|"DATABASE_URL 設定時"| neon
   masterRepository -->|"DATABASE_URL 設定時"| neon
 
   github --> actions
@@ -61,7 +71,8 @@ flowchart TB
 
 - `DATABASE_URL` が設定された環境では、`pub-repository` がNeonの店舗・マスタテーブルを読み書きします。未設定時は公開APIと画面が空の店舗一覧を返します。
 - 公開Guideは`content-repository`がNeonのPublished Contentだけを取得し、安全なMarkdown Rendererへ渡します。Repository内MDX、Static Loader、MDX fallbackは使用しません。
-- `quiz-repository`は公開Quizと管理QuizのNeonアクセス、回答前DTO、採点、日次選択を分離して提供します。Issue #393の画面切替までは既存画面から呼び出さず、静的Quizへのfallbackも行いません。
+- 公開Calendarは`calendar-repository`がNeonのPublished Eventだけを取得し、`calendar-public-data`が取得結果をCacheします。JSON fallbackは使用しません。
+- `quiz-repository`は公開Quizと管理QuizのNeonアクセス、回答前DTO、採点、日次選択を分離して提供します。静的Quizへのfallbackは行いません。
 - 店舗テーブルが空の場合も自動投入は行わず、管理画面またはNeonインポート手順による明示的な投入を必要とします。市区町村コードは `municipality_codes` と結合して解決します。
 - API とリポジトリ層は、共有パッケージの `asPubs` で読み出した店舗データを検証します。型の詳細は[店舗データ仕様](../specs/data.md)を参照してください。
 - 現在地は利用目的を確認した明示操作後にだけ取得し、生の座標はブラウザ内でだけ保持します。アプリのAPIやDBへ送信・保存しません。ただし、現在地周辺を描画するOpenFreeMapへのタイル要求から、おおよその閲覧地域を送信先が推測できる可能性があります。
@@ -69,15 +80,16 @@ flowchart TB
 
 ## 主要な境界
 
-| 境界                 | 責務                                                                    |
-| -------------------- | ----------------------------------------------------------------------- |
-| ブラウザ             | 検索・絞り込み、位置情報の取得、地図描画、管理画面の操作                |
-| Next.js ページ / API | 公開画面のデータ取得、HTTP API、管理画面へのアクセス制御                |
-| `pub-repository`     | Neonの初期化、店舗データの CRUD                                         |
-| `content-repository` | 公開Contentと管理Contentを分離し、日英Markdownと公開状態をNeonで管理    |
-| `quiz-repository`    | 公開前DTO・採点・管理CRUDを分離し、QuizのNeonアクセスを集約             |
-| `master-repository`  | 都道府県、市区町村、タグ、営業ステータスを管理用DTOへ変換して参照       |
-| `admin-auth`         | 認証情報の検証、署名付き管理者セッション Cookie の発行・検証            |
-| GitHub Actions       | 追跡済みファイルの機密情報検査、Lint、テスト、ビルド、任意の Slack 通知 |
+| 境界                  | 責務                                                                              |
+| --------------------- | --------------------------------------------------------------------------------- |
+| ブラウザ              | 検索・絞り込み、位置情報の取得、地図描画、管理画面の操作                          |
+| Next.js ページ / API  | 公開画面のデータ取得、HTTP API、管理画面へのアクセス制御                          |
+| `pub-repository`      | Neonの初期化、店舗データの CRUD                                                   |
+| `content-repository`  | 公開Contentと管理Contentを分離し、日英Markdownと公開状態をNeonで管理              |
+| `calendar-repository` | Published Calendar取得、Admin Calendar CRUD、DB RowからDomain Modelへの変換と検証 |
+| `quiz-repository`     | 公開前DTO・採点・管理CRUDを分離し、QuizのNeonアクセスを集約                       |
+| `master-repository`   | 都道府県、市区町村、タグ、営業ステータスを管理用DTOへ変換して参照                 |
+| `admin-auth`          | 認証情報の検証、署名付き管理者セッション Cookie の発行・検証                      |
+| GitHub Actions        | 追跡済みファイルの機密情報検査、Lint、テスト、ビルド、任意の Slack 通知           |
 
 代表的な処理の時系列は[シーケンス図](sequences.md)を参照してください。

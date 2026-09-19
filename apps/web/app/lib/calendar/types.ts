@@ -94,7 +94,7 @@ export type RuleSetCondition =
     }>
   | Readonly<{ type: "otherwise" }>;
 
-/** JSON記載順で最初に成立した条件のルールを使います。 */
+/** rules配列順で最初に成立した条件のルールを使います。 */
 export type RuleSetDateRule = Readonly<{
   type: "rule_set";
   rules: readonly Readonly<{ when: RuleSetCondition; use: ConcreteSingleDateRule }>[];
@@ -107,7 +107,7 @@ export type AnnualVariableRule = Readonly<{
   requiresOfficialConfirmation: boolean;
 }>;
 
-/** JSONで利用できる全日付ルールです。 */
+/** Calendar Domainで利用する全日付ルールです。 */
 export type CalendarDateRule = ConcreteSingleDateRule | DateRangeRule | RuleSetDateRule | AnnualVariableRule;
 
 /** 検証済みのイベントです。 */
@@ -156,16 +156,6 @@ export type AdminCalendarWriteInput = Pick<
   AdminCalendarEvent,
   "category" | "dateRule" | "isPublicHoliday" | "featured" | "aliases" | "source" | "translations"
 >;
-
-/** 検証済みのカレンダーデータ全体です。 */
-export type CalendarData = Readonly<{
-  schemaVersion: 1;
-  country: "IE";
-  scope: string;
-  categories: Readonly<Record<CalendarCategory, CalendarLocalizedText>>;
-  dateRuleTypes: readonly CalendarDateRule["type"][];
-  events: readonly CalendarEvent[];
-}>;
 
 /** 具体的な開始日と終了日を持つ解決結果です。 */
 export type ResolvedCalendarDate = Readonly<{

@@ -110,6 +110,8 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 | `PUT` | `/api/admin/quiz/:id` | `200` と公開状態を維持した `{ question }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404`、DB未設定は `503` |
 | `PATCH` | `/api/admin/quiz/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
 
+Irish Calendarは公開用APIを新設せず、`/discover/calendar`のServer ComponentがPublic Calendar Data Loader経由でPublished Eventを取得します。管理操作は上記の`/api/admin/calendar`系Routeだけが受け付け、CreateはDraft、`PUT`は公開状態を維持し、Publication変更は専用`PATCH`で行います。Published変更時はPublic Calendar Cacheをinvalidateし、Date RuleはServer-side Validationを通過させます。
+
 Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`translations: { ja, en }` を含む全体スナップショットを受け付けます。各翻訳は `title`、`summary`、`bodyMarkdown` を持ちます。Draftでは言語非依存項目を `null`、翻訳文言を空文字で保存できます。kindは `story` / `guide`、categoryは既知分類、localeは `ja` / `en`、slugは小文字英数字と単語間のハイフンだけを許可します。bodyMarkdownは先頭・末尾の空白を含む原文を保持します。MarkdownはRendererと同じCommonMark・GFM ParserでAST化し、link・image・definitionのURLにはHTTP(S)、ルート相対、ページ内アンカーだけを許可します。
 
 公開状態変更本文は `{ "status": "draft" | "published" }` だけを受け付けます。レスポンスの `publishedAt` はDBで確定した公開日時を返し、Draftでは `null` です。公開時はkind、slug、category、日英すべてのtitle、summary、bodyMarkdownをサーバー側とtransaction内で検証します。Publishedの通常更新にも更新後の公開条件を適用します。本体と日英翻訳は単一transactionで作成・更新し、公開状態を変える操作とPublished更新の成功後に公開Contentの個別・一覧キャッシュタグを失効させます。
