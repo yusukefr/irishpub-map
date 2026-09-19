@@ -122,6 +122,7 @@ function RuleSetEditor({
   onChange: (value: CalendarDateRuleDefinition | null) => void;
 }) {
   const t = getTranslation(locale).admin.calendar;
+  const hasOtherwise = value.rules.some((rule) => rule.when.type === "otherwise");
   function update(index: number, item: RuleSetItem) {
     onChange({
       ...value,
@@ -156,7 +157,9 @@ function RuleSetEditor({
                 }
               >
                 <option value="fixed_date_weekday">{t.conditionDate}</option>
-                <option value="otherwise">{t.otherwise}</option>
+                <option value="otherwise" disabled={hasOtherwise && item.when.type !== "otherwise"}>
+                  {t.otherwise}
+                </option>
               </select>
             </label>
             {item.when.type === "fixed_date_weekday" ? (
@@ -213,7 +216,7 @@ function RuleSetEditor({
               type="button"
               className="admin-secondary-action"
               onClick={() => move(index, -1)}
-              disabled={index === 0}
+              disabled={index === 0 || item.when.type === "otherwise"}
             >
               {t.moveUp}
             </button>
@@ -221,7 +224,7 @@ function RuleSetEditor({
               type="button"
               className="admin-secondary-action"
               onClick={() => move(index, 1)}
-              disabled={index === value.rules.length - 1}
+              disabled={index === value.rules.length - 1 || value.rules[index + 1]?.when.type === "otherwise"}
             >
               {t.moveDown}
             </button>

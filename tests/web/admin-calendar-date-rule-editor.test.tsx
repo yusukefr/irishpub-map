@@ -77,6 +77,10 @@ describe("AdminCalendarDateRuleEditor", () => {
     };
     const ruleSet = renderRule(value);
     expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "上へ" })[1]).toBeDisabled();
+    expect(screen.getAllByRole("button", { name: "下へ" })[0]).toBeDisabled();
+    expect(screen.getAllByRole("option", { name: "その他の場合" })[0]).toBeDisabled();
+    expect(screen.getAllByRole("option", { name: "その他の場合" })[1]).not.toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "ルールを追加" }));
     expect(change).toHaveBeenLastCalledWith({
       type: "rule_set",
@@ -94,6 +98,27 @@ describe("AdminCalendarDateRuleEditor", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "ルールを削除" })[0]);
     expect(change).toHaveBeenCalled();
     ruleSet.unmount();
+
+    const movableRuleSet: CalendarDateRuleDefinition = {
+      type: "rule_set",
+      rules: [
+        {
+          when: { type: "fixed_date_weekday", month: 3, day: 17, weekday: "sunday" },
+          use: { type: "fixed", month: 3, day: 17 },
+        },
+        {
+          when: { type: "fixed_date_weekday", month: 4, day: 1, weekday: "monday" },
+          use: { type: "fixed", month: 4, day: 1 },
+        },
+        { when: { type: "otherwise" }, use: { type: "fixed", month: 5, day: 1 } },
+      ],
+    };
+    const movableView = renderRule(movableRuleSet);
+    fireEvent.change(screen.getAllByRole("spinbutton")[0], { target: { value: "4" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "上へ" })[1]);
+    fireEvent.click(screen.getAllByRole("button", { name: "下へ" })[0]);
+    expect(change).toHaveBeenCalled();
+    movableView.unmount();
 
     const noOtherwise: CalendarDateRuleDefinition = {
       type: "rule_set",
@@ -141,6 +166,23 @@ describe("AdminCalendarDateRuleEditor", () => {
       view.unmount();
     }
 
+    const noOtherwiseRuleSet: CalendarDateRuleDefinition = {
+      type: "rule_set",
+      rules: [
+        {
+          when: { type: "fixed_date_weekday", month: 1, day: 1, weekday: "sunday" },
+          use: { type: "fixed", month: 1, day: 1 },
+        },
+      ],
+    };
+    const noOtherwiseView = renderRule(noOtherwiseRuleSet);
+    fireEvent.change(screen.getAllByRole("combobox")[1], { target: { value: "otherwise" } });
+    expect(change).toHaveBeenLastCalledWith({
+      type: "rule_set",
+      rules: [{ ...noOtherwiseRuleSet.rules[0], when: { type: "otherwise" } }],
+    });
+    noOtherwiseView.unmount();
+
     const ruleSet: CalendarDateRuleDefinition = {
       type: "rule_set",
       rules: [
@@ -153,8 +195,8 @@ describe("AdminCalendarDateRuleEditor", () => {
     };
     const view = renderRule(ruleSet);
     const selects = screen.getAllByRole("combobox");
-    fireEvent.change(selects[1], { target: { value: "otherwise" } });
     fireEvent.change(selects[1], { target: { value: "fixed_date_weekday" } });
+    fireEvent.change(selects[4], { target: { value: "fixed_date_weekday" } });
     fireEvent.change(selects[2], { target: { value: "monday" } });
     for (const type of [
       "fixed",
