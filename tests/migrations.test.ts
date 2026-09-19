@@ -234,20 +234,4 @@ describe("quiz database migration", () => {
     expect(verifySql).toContain("orphan_related_content");
     expect(verifySql).toContain("quiz_domain_migration_recorded");
   });
-
-  it("converts Quiz Question IDs and references to UUIDs", async () => {
-    const upSql = await readMigration("014_convert_quiz_question_ids_to_uuid_up.sql");
-    const verifySql = await readMigration("014_convert_quiz_question_ids_to_uuid_verify.sql");
-
-    expect(upSql).toContain("CREATE TEMP TABLE quiz_question_id_map");
-    expect(upSql).toContain("gen_random_uuid()");
-    expect(upSql).toContain("ALTER TABLE quiz_questions DROP COLUMN id");
-    expect(upSql).toContain("ALTER TABLE quiz_questions RENAME COLUMN id_uuid TO id");
-    expect(upSql).toContain("REFERENCES quiz_choices(question_id, id)");
-    expect(upSql).toContain("DEFERRABLE INITIALLY DEFERRED");
-    expect(upSql).toContain("VALUES ('014_convert_quiz_question_ids_to_uuid')");
-    expect(verifySql).toContain("quiz_question_id_non_uuid_columns");
-    expect(verifySql).toContain("orphan_quiz_rows");
-    expect(verifySql).toContain("quiz_uuid_migration_recorded");
-  });
 });

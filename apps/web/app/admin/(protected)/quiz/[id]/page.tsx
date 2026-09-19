@@ -4,7 +4,7 @@ import { readAdminContentList } from "../../../../lib/admin-content-service";
 import { AdminQuizServiceError, readAdminQuiz } from "../../../../lib/admin-quiz-service";
 import { isE2ETestMode } from "../../../../lib/e2e-test-mode";
 import { isQuizDatabaseConfigured } from "../../../../lib/quiz/repository";
-import { isQuizQuestionId } from "../../../../lib/quiz/types";
+import { isQuizId } from "../../../../lib/quiz/types";
 import { requireAdminSession } from "../../../../lib/admin-server";
 import { getRequestLocale } from "../../../../lib/i18n/server";
 /**
@@ -16,7 +16,7 @@ import { getRequestLocale } from "../../../../lib/i18n/server";
 export default async function EditAdminQuizPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdminSession();
   const { id } = await params;
-  if (!isQuizQuestionId(id)) notFound();
+  if (!isQuizId(id)) notFound();
   const [question, locale, content] = await Promise.all([
     getQuizOrNotFound(id),
     getRequestLocale(),

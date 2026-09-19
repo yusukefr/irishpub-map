@@ -383,6 +383,7 @@
       "publication_requirements_not_met": "この店舗は公開条件を満たしていません。",
       "content_conflict": "同じ種類とslugのContentが存在します。",
       "content_not_found": "Contentが見つかりません。",
+      "quiz_conflict": "同じQuestion IDのQuizが存在します。",
       "quiz_not_found": "Quizが見つかりません。",
       "calendar_conflict": "同じEvent IDのCalendarが存在します。",
       "calendar_not_found": "Calendar Eventが見つかりません。"

@@ -23,6 +23,7 @@ export const ADMIN_API_ERROR_CODES = [
   "publication_requirements_not_met",
   "content_conflict",
   "content_not_found",
+  "quiz_conflict",
   "quiz_not_found",
   "calendar_conflict",
   "calendar_not_found",

@@ -12,9 +12,10 @@ import {
 } from "./quiz/repository";
 import {
   isQuizCategory,
-  isQuizQuestionId,
+  isQuizId,
   isQuizChoiceId,
   QUIZ_CHOICE_ID_MAX_LENGTH,
+  QUIZ_ID_MAX_LENGTH,
   type AdminQuizChoice,
   type AdminQuizListItem,
   type AdminQuizQuestion,
@@ -28,7 +29,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 /** 管理Quiz操作でAPIへ安全に公開できる業務エラーです。 */
 export class AdminQuizServiceError extends Error {
   constructor(
-    readonly code: "validation" | "not_found" | "publication_requirements_not_met",
+    readonly code: "validation" | "conflict" | "not_found" | "publication_requirements_not_met",
     readonly fieldErrors: FieldErrors = {},
     readonly missingFields: string[] = [],
   ) {
@@ -51,7 +52,12 @@ export async function readAdminQuizList(): Promise<readonly AdminQuizListItem[]>
 export async function createAdminQuiz(value: unknown): Promise<AdminQuizQuestion> {
   const id = randomUUID();
   const input = await parseWriteInput(value);
-  await insertAdminQuizQuestion(id, input);
+  try {
+    await insertAdminQuizQuestion(id, input);
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new AdminQuizServiceError("conflict", { id: "invalid_format" });
+    throw error;
+  }
   const question = await getAdminQuizQuestion(id);
   if (!question) throw new Error("Created admin quiz could not be read.");
   return question;
@@ -62,7 +68,7 @@ export async function createAdminQuiz(value: unknown): Promise<AdminQuizQuestion
  * @returns {Promise<AdminQuizQuestion>} 指定Question。
  */
 export async function readAdminQuiz(id: string): Promise<AdminQuizQuestion> {
-  if (!isQuizQuestionId(id)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
+  if (!isQuizId(id, QUIZ_ID_MAX_LENGTH)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
   const question = await getAdminQuizQuestion(id);
   if (!question) throw new AdminQuizServiceError("not_found");
   return question;
@@ -74,9 +80,15 @@ export async function readAdminQuiz(id: string): Promise<AdminQuizQuestion> {
  * @returns {Promise<AdminQuizQuestion>} 更新されたQuiz。
  */
 export async function updateAdminQuiz(id: string, value: unknown): Promise<AdminQuizQuestion> {
-  if (!isQuizQuestionId(id)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
+  if (!isQuizId(id, QUIZ_ID_MAX_LENGTH)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
   const input = await parseWriteInput(value);
-  const result = await replaceAdminQuizQuestion(id, input);
+  let result;
+  try {
+    result = await replaceAdminQuizQuestion(id, input);
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new AdminQuizServiceError("conflict", { id: "invalid_format" });
+    throw error;
+  }
   if (result === "not_found") throw new AdminQuizServiceError("not_found");
   if (result === "publication_blocked")
     throw new AdminQuizServiceError("publication_requirements_not_met", {}, getQuizPublicationMissingFields(input));
@@ -94,8 +106,8 @@ export async function changeAdminQuizPublication(
   id: string,
   isPublished: boolean,
 ): Promise<AdminQuizPublicationResult> {
-  if (!isQuizQuestionId(id) || typeof isPublished !== "boolean")
-    throw new AdminQuizServiceError("validation", { id: "invalid_format" });
+  if (!isQuizId(id, QUIZ_ID_MAX_LENGTH)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
+  if (typeof isPublished !== "boolean") throw new AdminQuizServiceError("validation");
   const current = await readAdminQuiz(id);
   if (isPublished) {
     const missingFields = getQuizPublicationMissingFields(current);
@@ -243,4 +255,7 @@ function parseText(value: unknown, field: string, errors: FieldErrors): string {
 }
 function asRecord(value: unknown): RecordValue {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as RecordValue) : {};
+}
+function isUniqueViolation(error: unknown) {
+  return Boolean(error && typeof error === "object" && "code" in error && error.code === "23505");
 }

@@ -6,7 +6,7 @@ import {
 import { adminQuizServiceErrorResponse } from "../../../../lib/admin-quiz-api";
 import { updateAdminQuiz, readAdminQuiz } from "../../../../lib/admin-quiz-service";
 import { isQuizDatabaseConfigured } from "../../../../lib/quiz/repository";
-import { isQuizQuestionId } from "../../../../lib/quiz/types";
+import { isQuizId } from "../../../../lib/quiz/types";
 type Context = { params: Promise<{ id: string }> };
 /**
  * 指定Quizの管理詳細を返します。
@@ -19,7 +19,7 @@ export async function GET(request: Request, context: Context) {
   if (authorizationError) return authorizationError;
   if (!isQuizDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
   const { id } = await context.params;
-  if (!isQuizQuestionId(id)) return adminApiErrorResponse("invalid_request", 400);
+  if (!isQuizId(id)) return adminApiErrorResponse("invalid_request", 400);
   try {
     return Response.json({ question: await readAdminQuiz(id) });
   } catch (error) {
@@ -39,7 +39,7 @@ export async function PUT(request: Request, context: Context) {
   const contentTypeError = getAdminJsonContentTypeError(request);
   if (contentTypeError) return contentTypeError;
   const { id } = await context.params;
-  if (!isQuizQuestionId(id)) return adminApiErrorResponse("invalid_request", 400);
+  if (!isQuizId(id)) return adminApiErrorResponse("invalid_request", 400);
   let body: unknown;
   try {
     body = await request.json();

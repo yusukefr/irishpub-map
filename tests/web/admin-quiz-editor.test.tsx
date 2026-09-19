@@ -7,7 +7,7 @@ const fetchMock = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => navigation }));
 vi.stubGlobal("fetch", fetchMock);
 const question: AdminQuizQuestion = {
-  id: "550e8400-e29b-41d4-a716-446655440010",
+  id: "history-question-001",
   category: "history",
   specialDate: { month: 3, day: 17 },
   correctChoiceId: "choice-1",
@@ -93,7 +93,7 @@ describe("AdminQuizEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "公開する" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Quizを公開しました。");
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/admin/quiz/550e8400-e29b-41d4-a716-446655440010/publication",
+      "/api/admin/quiz/history-question-001/publication",
       expect.objectContaining({ method: "PATCH" }),
     );
   });
@@ -188,7 +188,7 @@ describe("AdminQuizEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "下書きを保存" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/admin/quiz/550e8400-e29b-41d4-a716-446655440010",
+      "/api/admin/quiz/history-question-001",
       expect.objectContaining({ method: "PUT" }),
     );
   });

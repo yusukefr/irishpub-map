@@ -24,7 +24,7 @@ import {
 } from "../../apps/web/app/lib/admin-quiz-service";
 const guideId = "550e8400-e29b-41d4-a716-446655440001";
 const question: AdminQuizQuestion = {
-  id: "550e8400-e29b-41d4-a716-446655440010",
+  id: "history-question-001",
   category: "history",
   specialDate: { month: 2, day: 29 },
   correctChoiceId: "choice-1",
@@ -132,11 +132,22 @@ describe("admin quiz service", () => {
     await expect(changeAdminQuizPublication(question.id, false)).resolves.toMatchObject({ isPublished: true });
     expect(mocks.setAdminQuizPublication).toHaveBeenCalledWith(question.id, false);
   });
-  it("rejects non-UUID Question IDs for updates", async () => {
-    await expect(updateAdminQuiz("legacy-question", payload)).rejects.toMatchObject({
-      code: "validation",
+  it("maps duplicate Question IDs to a conflict", async () => {
+    mocks.insertAdminQuizQuestion.mockRejectedValue({ code: "23505" });
+    await expect(createAdminQuiz(payload)).rejects.toMatchObject({
+      code: "conflict",
       fieldErrors: { id: "invalid_format" },
     });
-    expect(mocks.replaceAdminQuizQuestion).not.toHaveBeenCalled();
+  });
+  it("keeps legacy Question IDs readable during the UUID migration", async () => {
+    await expect(updateAdminQuiz("legacy-question", payload)).resolves.toEqual(question);
+    expect(mocks.replaceAdminQuizQuestion).toHaveBeenCalledWith("legacy-question", expect.anything());
+  });
+  it("reports invalid publication state without blaming the Question ID", async () => {
+    await expect(changeAdminQuizPublication(question.id, "true" as boolean)).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: {},
+    });
+    expect(mocks.setAdminQuizPublication).not.toHaveBeenCalled();
   });
 });

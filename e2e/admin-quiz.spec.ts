@@ -13,7 +13,7 @@ test("Quiz一覧からDraft保存、Choice操作、Publishを確認する", asyn
   await page.getByRole("group", { name: "日本語" }).getByLabel("問題文").fill("E2E 更新Quiz");
   await page.getByRole("group", { name: "選択肢" }).getByRole("button", { name: "選択肢を追加" }).click();
   const updated = {
-    id: "30000000-0000-4000-8000-000000000301",
+    id: "e2e-draft-question",
     category: null,
     specialDate: null,
     correctChoiceId: null,
@@ -28,7 +28,7 @@ test("Quiz一覧からDraft保存、Choice操作、Publishを確認する", asyn
     createdAt: "2026-01-15T12:00:00.000Z",
     updatedAt: "2026-01-15T12:00:00.000Z",
   };
-  await page.route("**/api/admin/quiz/30000000-0000-4000-8000-000000000301", async (route) => {
+  await page.route("**/api/admin/quiz/e2e-draft-question", async (route) => {
     if (route.request().method() === "PUT")
       await route.fulfill({ contentType: "application/json", json: { question: updated } });
     else await route.continue();
