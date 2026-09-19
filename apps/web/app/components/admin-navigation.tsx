@@ -18,6 +18,7 @@ export function AdminNavigation({ locale }: { locale: Locale }) {
     { href: "/admin/pubs", label: t.navPubs },
     { href: "/admin/content", label: t.navContent },
     { href: "/admin/quiz", label: t.navQuiz },
+    { href: "/admin/calendar", label: t.navCalendar },
     { href: "/admin/tags", label: t.navTags },
     { href: "/admin/statuses", label: t.navStatuses },
   ];

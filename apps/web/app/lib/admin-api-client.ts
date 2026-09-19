@@ -55,6 +55,19 @@ export function getAdminQuizApiErrorMessage(locale: Locale, value: unknown) {
     return getTranslation(locale).admin.quiz.publicationError;
   return getAdminApiErrorMessage(locale, value);
 }
+
+/**
+ * Calendar公開条件エラーをCalendar向け文言へ変換します。
+ * @param {Locale} locale - 現在の画面表示言語。
+ * @param {unknown} value - APIから受け取った未検証JSON。
+ * @returns {string} Calendar向けエラー文言、または共通管理APIエラー文言。
+ */
+export function getAdminCalendarApiErrorMessage(locale: Locale, value: unknown) {
+  if (getErrorCode(value) === "publication_requirements_not_met") {
+    return getTranslation(locale).admin.calendar.publicationError;
+  }
+  return getAdminApiErrorMessage(locale, value);
+}
 /**
  * タグAPIのフィールド別Validationを優先し、現在のlocaleの文言へ変換します。
  * @param {Locale} locale - 現在の画面表示言語。

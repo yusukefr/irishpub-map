@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const repositoryMocks = vi.hoisted(() => ({
   deleteCalendarEvent: vi.fn(),
   getAdminCalendarEvent: vi.fn(),
+  getPublishedCalendarEvents: vi.fn(),
   insertCalendarEvent: vi.fn(),
   listAdminCalendarEvents: vi.fn(),
   setCalendarEventPublication: vi.fn(),
@@ -10,6 +11,8 @@ const repositoryMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../../apps/web/app/lib/calendar/repository", () => repositoryMocks);
+const cacheMocks = vi.hoisted(() => ({ invalidatePublishedCalendarData: vi.fn() }));
+vi.mock("../../apps/web/app/lib/calendar/public-data", () => cacheMocks);
 
 import {
   AdminCalendarServiceError,
@@ -82,6 +85,40 @@ describe("admin calendar service", () => {
     }
   });
 
+  it("Draft保存時もotherwiseの重複と途中配置を拒否する", async () => {
+    const ruleSet = {
+      type: "rule_set",
+      rules: [
+        { when: { type: "otherwise" }, use: { type: "fixed", month: 1, day: 1 } },
+        {
+          when: { type: "fixed_date_weekday", month: 1, day: 1, weekday: "sunday" },
+          use: { type: "fixed", month: 1, day: 2 },
+        },
+      ],
+    };
+    await expect(createAdminCalendarEvent({ ...completeInput, dateRule: ruleSet })).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { dateRule: "invalid_format" },
+    });
+
+    await expect(
+      createAdminCalendarEvent({
+        ...completeInput,
+        dateRule: {
+          type: "rule_set",
+          rules: [
+            {
+              when: { type: "fixed_date_weekday", month: 1, day: 1, weekday: "sunday" },
+              use: { type: "fixed", month: 1, day: 2 },
+            },
+            { when: { type: "otherwise" }, use: { type: "fixed", month: 1, day: 1 } },
+            { when: { type: "otherwise" }, use: { type: "fixed", month: 1, day: 3 } },
+          ],
+        },
+      }),
+    ).rejects.toMatchObject({ code: "validation", fieldErrors: { dateRule: "invalid_format" } });
+  });
+
   it("Draftは公開必須項目が空でも作成でき、型不正は拒否する", async () => {
     await expect(
       createAdminCalendarEvent({
@@ -133,6 +170,34 @@ describe("admin calendar service", () => {
     });
     repositoryMocks.deleteCalendarEvent.mockResolvedValue(null);
     await expect(removeAdminCalendarEvent("event-one")).rejects.toBeInstanceOf(AdminCalendarServiceError);
+  });
+
+  it("Publishedに影響する操作だけPublic Calendar Cacheをinvalidateする", async () => {
+    await changeAdminCalendarEventPublication("event-one", true);
+    expect(cacheMocks.invalidatePublishedCalendarData).toHaveBeenCalledOnce();
+
+    cacheMocks.invalidatePublishedCalendarData.mockClear();
+    repositoryMocks.getAdminCalendarEvent.mockResolvedValue({ ...event, isPublished: true });
+    await updateAdminCalendarEvent("event-one", completeInput);
+    expect(cacheMocks.invalidatePublishedCalendarData).toHaveBeenCalledOnce();
+
+    cacheMocks.invalidatePublishedCalendarData.mockClear();
+    repositoryMocks.deleteCalendarEvent.mockResolvedValue({ id: "event-one", wasPublished: false });
+    await removeAdminCalendarEvent("event-one");
+    expect(cacheMocks.invalidatePublishedCalendarData).not.toHaveBeenCalled();
+  });
+
+  it("公開時に400年周期で解決できないDate Ruleを拒否する", async () => {
+    repositoryMocks.getAdminCalendarEvent.mockResolvedValue({
+      ...event,
+      dateRule: { type: "fixed", month: 2, day: 29 },
+    });
+
+    await expect(changeAdminCalendarEventPublication("event-one", true)).rejects.toMatchObject({
+      code: "publication_requirements_not_met",
+      fieldErrors: { dateRule: "invalid_format" },
+    });
+    expect(repositoryMocks.setCalendarEventPublication).not.toHaveBeenCalled();
   });
 
   it("削除結果のwasPublishedをServiceから返す", async () => {
