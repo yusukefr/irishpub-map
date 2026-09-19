@@ -22,6 +22,7 @@ type PubExplorerProps = {
   pubs: Pub[];
   locale?: Locale;
   dataLoadFailed?: boolean;
+  initialPubId?: string;
 };
 
 const GEOLOCATION_OPTIONS: PositionOptions = {
@@ -51,7 +52,8 @@ function getServerDesktopSnapshot() {
  * @param {PubExplorerProps} props - 検索対象、表示言語、店舗取得失敗の状態。
  * @returns {JSX.Element} 検索・地図・一覧を組み合わせた探索画面。
  */
-export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = false }: PubExplorerProps) {
+export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = false, initialPubId }: PubExplorerProps) {
+  const initialPub = pubs.find((pub) => pub.id === initialPubId && (pub.status === "open" || pub.status === "closed"));
   const t = getTranslation(locale);
   const [query, setQuery] = useState("");
   const [selectedPrefecture, setSelectedPrefecture] = useState("");
@@ -59,17 +61,17 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
   const [currentLocation, setCurrentLocation] = useState<Coordinates | null>(null);
   const [geolocationStatus, setGeolocationStatus] = useState<GeolocationStatus>("idle");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [includeClosed, setIncludeClosed] = useState(false);
+  const [includeClosed, setIncludeClosed] = useState(initialPub?.status === "closed");
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
-  const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
+  const [selectedPubId, setSelectedPubId] = useState<string | null>(initialPub?.id ?? null);
   const isDesktop = useSyncExternalStore(subscribeDesktop, getDesktopSnapshot, getServerDesktopSnapshot);
   // Desktopの開閉とMobileの高さを個別に保持し、幅変更で探索状態を初期化しません。
   const [resultsOpenOverride, setIsResultsOpen] = useState<boolean | null>(null);
-  const [sheetState, setSheetState] = useState<BottomSheetState>("collapsed");
+  const [sheetState, setSheetState] = useState<BottomSheetState>(initialPub ? "expanded" : "collapsed");
   const listSheetState = useRef<BottomSheetState>("medium");
   // Desktopで両方を開いたまま幅を狭めても、MobileのOverlayは重ねません。
   const isResultsOpen = isDesktop ? (resultsOpenOverride ?? true) : sheetState !== "collapsed" && !isFiltersExpanded;
-  const [resultsView, setResultsView] = useState<"list" | "detail">("list");
+  const [resultsView, setResultsView] = useState<"list" | "detail">(initialPub ? "detail" : "list");
   const resultsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const hasSelectedPrefecture = useRef(false);
   const isMounted = useRef(true);

@@ -5,6 +5,8 @@ import { getTagLabel } from "../lib/i18n";
 import type { Locale, Translation } from "../lib/i18n";
 import { getSafeExternalUrl } from "../lib/external-url";
 import { StatusBadge } from "./ui/status-badge";
+import { ShareButton } from "./share-button";
+import { getPubUrl } from "../lib/public-url";
 
 type PubDetailProps = {
   pub: Pub;
@@ -62,6 +64,13 @@ export function PubDetail({ pub, locale, labels }: PubDetailProps) {
         </div>
       </dl>
       <ExternalLinks pub={pub} labels={labels} />
+      <ShareButton
+        key={pub.id}
+        title={pub.name}
+        text={`${pub.name} | Irish Pub Map`}
+        url={getPubUrl(pub.id)}
+        locale={locale}
+      />
     </section>
   );
 }
