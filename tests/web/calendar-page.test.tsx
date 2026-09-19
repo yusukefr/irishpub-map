@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { calendarEvents } from "../../apps/web/app/lib/calendar/data";
+import type { CalendarDateRule, CalendarEvent } from "../../apps/web/app/lib/calendar/types";
 
 const pageMocks = vi.hoisted(() => ({ getPublishedCalendarData: vi.fn(), getRequestLocale: vi.fn() }));
 vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: pageMocks.getRequestLocale }));
@@ -14,6 +14,45 @@ let locale: "ja" | "en" = "ja";
 
 type CalendarSearchParams = Record<string, string | string[] | undefined>;
 
+function pageEvent(
+  id: string,
+  name: { ja: string; en: string },
+  date: CalendarDateRule,
+  category: CalendarEvent["category"],
+): CalendarEvent {
+  return {
+    id,
+    name,
+    date,
+    category,
+    isPublicHoliday: false,
+    featured: false,
+    description: { ja: "", en: "" },
+  };
+}
+
+const pageEvents: readonly CalendarEvent[] = [
+  pageEvent(
+    "language-week",
+    { ja: "アイルランド語週間", en: "Irish Language Week" },
+    { type: "date_range", start: { month: 3, day: 1 }, end: { month: 3, day: 17 } },
+    "language",
+  ),
+  pageEvent(
+    "st-patricks-day",
+    { ja: "聖パトリックの日", en: "St Patricks Day" },
+    { type: "fixed", month: 3, day: 17 },
+    "public_holiday",
+  ),
+  pageEvent(
+    "national-famine-commemoration",
+    { ja: "飢饉追悼記念日", en: "National Famine Commemoration" },
+    { type: "annual_variable", usualMonth: 5, requiresOfficialConfirmation: true },
+    "history",
+  ),
+  pageEvent("bealtaine", { ja: "ベアルタネ", en: "Bealtaine" }, { type: "fixed", month: 5, day: 1 }, "tradition"),
+];
+
 async function renderCalendar(searchParams: CalendarSearchParams = {}) {
   render(await CalendarPage({ searchParams: Promise.resolve(searchParams) }));
 }
@@ -21,7 +60,7 @@ async function renderCalendar(searchParams: CalendarSearchParams = {}) {
 beforeEach(() => {
   locale = "ja";
   pageMocks.getRequestLocale.mockReset().mockImplementation(() => Promise.resolve(locale));
-  pageMocks.getPublishedCalendarData.mockReset().mockResolvedValue(calendarEvents);
+  pageMocks.getPublishedCalendarData.mockReset().mockResolvedValue(pageEvents);
   vi.useFakeTimers();
 });
 
