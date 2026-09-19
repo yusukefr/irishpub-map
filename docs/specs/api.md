@@ -69,7 +69,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 }
 ```
 
-共通コードは `unauthorized`、`forbidden`、`invalid_json`、`invalid_content_type`、`database_unavailable`、`internal_error` です。ログイン、店舗、タグ、マスタ固有のコードには `invalid_credentials`、`auth_not_configured`、`invalid_pub_data`、`pub_not_found`、`publication_requirements_not_met`、`content_conflict`、`content_not_found`、`quiz_conflict`、`quiz_not_found`、`calendar_conflict`、`calendar_not_found`、`tag_conflict`、`tag_not_found`、`tag_in_use`、`invalid_tag_id`、`invalid_prefecture_code` があります。フィールド理由は `required`、`too_long`、`invalid_format`、`invalid_type`、`leading_or_trailing_space`、`immutable` です。未知のコードやJSONでないレスポンスはClientで一般化し、APIは例外文、DB・SQL・接続情報を返しません。HTTPステータスは従来どおり、認証 `401`、権限 `403`、入力 `400` / `415` / `422`、対象なし `404`、競合 `409`、設定不足 `503`、内部エラー `500` を使います。
+共通コードは `unauthorized`、`forbidden`、`invalid_json`、`invalid_content_type`、`database_unavailable`、`internal_error` です。ログイン、店舗、タグ、マスタ固有のコードには `invalid_credentials`、`auth_not_configured`、`invalid_pub_data`、`pub_not_found`、`publication_requirements_not_met`、`content_conflict`、`content_not_found`、`quiz_not_found`、`calendar_conflict`、`calendar_not_found`、`tag_conflict`、`tag_not_found`、`tag_in_use`、`invalid_tag_id`、`invalid_prefecture_code` があります。フィールド理由は `required`、`too_long`、`invalid_format`、`invalid_type`、`leading_or_trailing_space`、`immutable` です。未知のコードやJSONでないレスポンスはClientで一般化し、APIは例外文、DB・SQL・接続情報を返しません。HTTPステータスは従来どおり、認証 `401`、権限 `403`、入力 `400` / `415` / `422`、対象なし `404`、競合 `409`、設定不足 `503`、内部エラー `500` を使います。
 
 営業ステータス管理固有のコードは、不正なURLパラメーターの `invalid_status_code` と、更新対象が存在しない `status_not_found` です。
 
@@ -105,9 +105,9 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 | `PATCH` | `/api/admin/calendar/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
 | `DELETE` | `/api/admin/calendar/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、対象なしは `404`、DB未設定は `503` |
 | `GET` | `/api/admin/quiz` | `200` と `{ questions, databaseConfigured }`。DraftとPublishedを含む | 未認証は `401`、取得失敗は `500` |
-| `POST` | `/api/admin/quiz` | `201` とDraftの `{ question }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、重複は `409`、DB未設定は `503` |
+| `POST` | `/api/admin/quiz` | `201` とServer生成UUIDを持つDraftの `{ question }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、DB未設定は `503` |
 | `GET` | `/api/admin/quiz/:id` | `200` と日英翻訳・Choiceを含む `{ question }` | 未認証は `401`、ID不正は `400`、対象なしは `404`、DB未設定は `503` |
-| `PUT` | `/api/admin/quiz/:id` | `200` と公開状態を維持した `{ question }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404`、DB未設定は `503` |
+| `PUT` | `/api/admin/quiz/:id` | `200` と公開状態を維持した `{ question }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
 | `PATCH` | `/api/admin/quiz/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
 
 Irish Calendarは公開用APIを新設せず、`/discover/calendar`のServer ComponentがPublic Calendar Data Loader経由でPublished Eventを取得します。管理操作は上記の`/api/admin/calendar`系Routeだけが受け付け、CreateはDraft、`PUT`は公開状態を維持し、Publication変更は専用`PATCH`で行います。Published変更時はPublic Calendar Cacheをinvalidateし、Date RuleはServer-side Validationを通過させます。
@@ -126,7 +126,7 @@ Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`tran
 
 営業ステータス管理APIの固定key、日英表示名、transaction更新は[管理ステータス仕様](status-management.md)を参照してください。更新本文は必須の `nameJa` と任意の `nameEn` だけを利用し、余分な `key` は更新対象にしません。
 
-Quiz管理APIの `POST` と `PUT` は、kebab-caseのQuestion ID、カテゴリ、特別日、関連Guide UUID、日英翻訳、0〜4件のChoice、正解、HTTPSの情報源URLを含む全体Snapshotを受け付けます。通常のテキストはTrimして保存し、IDの空白は正規化せず入力エラーにします。関連ContentはGuideだけを選択でき、Publishedの更新は公開条件を満たさない場合に拒否します。`DELETE` とChoice単位のサブAPIは提供しません。公開時はカテゴリ、日英すべての問題文・解説・情報源ラベル、HTTPS情報源URL、4件のChoiceと各日英ラベル、正解、妥当な特別日をサーバー側で検証します。
+Quiz管理APIの `POST` と `PUT` は、カテゴリ、特別日、関連Guide UUID、日英翻訳、0〜4件のChoice、正解、HTTPSの情報源URLを含む全体Snapshotを受け付けます。Question IDは `POST` でServerがUUIDを生成し、Request Bodyでは受け付けません。`PUT` はURLのUUIDを対象にし、Request BodyからIDを変更できません。Choice IDはQuestion内で一意なkebab-caseです。通常のテキストはTrimして保存し、IDの空白は正規化せず入力エラーにします。関連ContentはGuideだけを選択でき、Publishedの更新は公開条件を満たさない場合に拒否します。`DELETE` とChoice単位のサブAPIは提供しません。公開時はカテゴリ、日英すべての問題文・解説・情報源ラベル、HTTPS情報源URL、4件のChoiceと各日英ラベル、正解、妥当な特別日をサーバー側で検証します。
 
 参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスは `{ code, key, name }` です。表示名は日本語を既定とし、日本語へフォールバックします。画面操作で再取得する市区町村APIと管理店舗一覧APIは、言語Cookieを優先し、未指定時は `Accept-Language` から表示ロケールを決定します。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
 

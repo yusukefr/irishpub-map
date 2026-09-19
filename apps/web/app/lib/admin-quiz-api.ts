@@ -8,7 +8,6 @@ import { AdminQuizServiceError } from "./admin-quiz-service";
 export function adminQuizServiceErrorResponse(error: unknown): Response {
   if (!(error instanceof AdminQuizServiceError)) return adminApiErrorResponse("internal_error", 500);
   if (error.code === "not_found") return adminApiErrorResponse("quiz_not_found", 404);
-  if (error.code === "conflict") return adminApiErrorResponse("quiz_conflict", 409, error.fieldErrors);
   if (error.code === "validation") return adminApiErrorResponse("validation_error", 422, error.fieldErrors);
   return Response.json(
     { errorCode: "publication_requirements_not_met", missingFields: error.missingFields },

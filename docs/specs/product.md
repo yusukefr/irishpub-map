@@ -39,7 +39,7 @@
 - Neon が設定されている場合は一覧の「新規登録」または各店舗の「編集」から `/admin/pubs/new`・`/admin/pubs/:id/edit` を開き、基本情報・所在地・日英翻訳・外部リンク・登録済みタグをセクションごとに追加・編集・下書き保存・削除する
 - `/admin/content` でEditorial ContentのDraft / Published一覧を確認し、`/admin/content/new` と `/admin/content/:id` でkind、slug、category、日英のtitle・summary・Markdown本文を編集する
 - ContentのPreviewは認証済み管理画面内で未保存入力を安全なMarkdownとして描画し、Public Routeや公開Content Cacheを経由しない。公開時は日英すべての必須項目を検証し、未保存変更がある間は公開状態を変更しない
-- `/admin/quiz` でIrish QuizのDraft / Published一覧を確認し、`/admin/quiz/new` と `/admin/quiz/:id` でQuestion ID、カテゴリ、特別日、関連Guide、日英の問題文・解説・情報源、最大4件のChoiceと正解を全体Snapshotとして編集する。新規QuizはDraftで作成し、保存後に公開条件をサーバー側で検証して公開・下書き戻しを行う
+- `/admin/quiz` でIrish QuizのDraft / Published一覧を確認し、`/admin/quiz/new` と `/admin/quiz/:id` でカテゴリ、特別日、関連Guide、日英の問題文・解説・情報源、最大4件のChoiceと正解を全体Snapshotとして編集する。Question IDは新規保存時にServerがUUIDを生成し、管理画面では入力しない。新規QuizはDraftで作成し、保存後に公開条件をサーバー側で検証して公開・下書き戻しを行う
 - ContentのDraft保存とPublishは別操作とする。Publishedを編集して保存した場合は既存の公開内容へ即時反映されるため、画面にその動作を明示し、公開前の編集を続ける場合は先にDraftへ戻す
 - 管理APIでは公開・非公開の両方を取得し、新規店舗は非公開で作成する。QuizもDraft・Publishedの両方を取得し、新規QuestionはDraftで作成する
 - 管理者認証または `DATABASE_URL` が未設定の場合、書き込みを拒否して閲覧・設定案内に限定する

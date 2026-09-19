@@ -21,7 +21,7 @@ export type { Locale } from "@irishpub-map/shared/locale";
 
 /** 各言語JSONが持つ翻訳辞書の構造です。 */
 export type Translation = typeof ja;
-const translations = { ja, en } satisfies Record<Locale, Translation>;
+const translations: Record<Locale, Translation> = { ja, en };
 
 /**
  * JSON内のプレースホルダーへ値を補間します。

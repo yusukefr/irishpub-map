@@ -17,7 +17,6 @@ vi.mock("../../apps/web/app/lib/quiz/repository", () => ({
   setAdminQuizPublication: mocks.setAdminQuizPublication,
 }));
 import {
-  AdminQuizServiceError,
   changeAdminQuizPublication,
   createAdminQuiz,
   getQuizPublicationMissingFields,
@@ -25,7 +24,7 @@ import {
 } from "../../apps/web/app/lib/admin-quiz-service";
 const guideId = "550e8400-e29b-41d4-a716-446655440001";
 const question: AdminQuizQuestion = {
-  id: "history-question-001",
+  id: "550e8400-e29b-41d4-a716-446655440010",
   category: "history",
   specialDate: { month: 2, day: 29 },
   correctChoiceId: "choice-1",
@@ -45,7 +44,6 @@ const question: AdminQuizQuestion = {
   updatedAt: "2026-01-01T00:00:00.000Z",
 };
 const payload = {
-  id: question.id,
   category: "history",
   specialDate: { month: 2, day: 29 },
   correctChoiceId: "choice-1",
@@ -70,9 +68,9 @@ beforeEach(() => {
 });
 describe("admin quiz service", () => {
   it("normalizes valid draft input and generates sort order from array order", async () => {
-    await expect(createAdminQuiz(payload)).resolves.toEqual(question);
+    await expect(createAdminQuiz({ ...payload, id: "legacy-question" })).resolves.toEqual(question);
     expect(mocks.insertAdminQuizQuestion).toHaveBeenCalledWith(
-      question.id,
+      expect.stringMatching(/^[0-9a-f-]{36}$/iu),
       expect.objectContaining({
         choices: expect.arrayContaining([expect.objectContaining({ id: "choice-1", sortOrder: 0 })]),
         translations: expect.objectContaining({ ja: { question: "問題", explanation: "解説", sourceLabel: "出典" } }),
@@ -98,7 +96,7 @@ describe("admin quiz service", () => {
     await expect(createAdminQuiz(payload)).rejects.toMatchObject({ code: "validation" });
   });
   it("allows incomplete drafts but returns publication requirements", async () => {
-    const draft = { id: "draft-question", choices: [] };
+    const draft = { choices: [] };
     mocks.getAdminQuizQuestion.mockResolvedValue({
       ...question,
       ...draft,
@@ -111,7 +109,7 @@ describe("admin quiz service", () => {
         en: { question: "", explanation: "", sourceLabel: "" },
       },
     });
-    await expect(createAdminQuiz({ id: draft.id })).resolves.toBeTruthy();
+    await expect(createAdminQuiz(draft)).resolves.toBeTruthy();
     expect(
       getQuizPublicationMissingFields({
         ...question,
@@ -134,9 +132,11 @@ describe("admin quiz service", () => {
     await expect(changeAdminQuizPublication(question.id, false)).resolves.toMatchObject({ isPublished: true });
     expect(mocks.setAdminQuizPublication).toHaveBeenCalledWith(question.id, false);
   });
-  it("maps duplicate question IDs to a conflict", async () => {
-    mocks.insertAdminQuizQuestion.mockRejectedValue({ code: "23505" });
-    await expect(createAdminQuiz(payload)).rejects.toBeInstanceOf(AdminQuizServiceError);
-    await expect(createAdminQuiz(payload)).rejects.toMatchObject({ code: "conflict" });
+  it("rejects non-UUID Question IDs for updates", async () => {
+    await expect(updateAdminQuiz("legacy-question", payload)).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { id: "invalid_format" },
+    });
+    expect(mocks.replaceAdminQuizQuestion).not.toHaveBeenCalled();
   });
 });

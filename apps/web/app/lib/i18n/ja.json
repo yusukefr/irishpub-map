@@ -282,7 +282,7 @@
       "editHeading": "Quizを編集",
       "editDescription": "日英の問題と選択肢を確認し、保存後に公開状態を変更します。",
       "id": "Question ID",
-      "idHelp": "小文字英数字と単語間のハイフンを使用します。作成後は変更できません。",
+      "idHelp": "Question IDはServerがUUIDを生成します。",
       "category": "カテゴリー",
       "specialDate": "特別日",
       "day": "日",
@@ -383,7 +383,6 @@
       "publication_requirements_not_met": "この店舗は公開条件を満たしていません。",
       "content_conflict": "同じ種類とslugのContentが存在します。",
       "content_not_found": "Contentが見つかりません。",
-      "quiz_conflict": "同じQuestion IDのQuizが存在します。",
       "quiz_not_found": "Quizが見つかりません。",
       "calendar_conflict": "同じEvent IDのCalendarが存在します。",
       "calendar_not_found": "Calendar Eventが見つかりません。"

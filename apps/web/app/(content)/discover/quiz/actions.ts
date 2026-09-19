@@ -3,9 +3,9 @@
 import { getRequestLocale } from "../../../lib/i18n/server";
 import { gradePublishedQuizAnswer } from "../../../lib/quiz/repository";
 import {
-  isQuizId,
+  isQuizQuestionId,
+  isQuizChoiceId,
   QUIZ_CHOICE_ID_MAX_LENGTH,
-  QUIZ_ID_MAX_LENGTH,
   type QuizAnswerResult,
 } from "../../../lib/quiz/types";
 
@@ -18,7 +18,7 @@ export async function submitQuizAnswer(questionId: string, choiceId: string): Pr
   if (typeof questionId !== "string" || typeof choiceId !== "string") {
     throw new Error("Question and choice IDs are required");
   }
-  if (!isQuizId(questionId, QUIZ_ID_MAX_LENGTH) || !isQuizId(choiceId, QUIZ_CHOICE_ID_MAX_LENGTH)) {
+  if (!isQuizQuestionId(questionId) || !isQuizChoiceId(choiceId, QUIZ_CHOICE_ID_MAX_LENGTH)) {
     throw new Error("Invalid quiz answer");
   }
   const locale = await getRequestLocale();

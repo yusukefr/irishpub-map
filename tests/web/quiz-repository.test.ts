@@ -47,7 +47,11 @@ const originalDatabaseUrl = process.env.DATABASE_URL;
 const originalE2ETestMode = process.env.E2E_TEST_MODE;
 const relatedContentId = "550e8400-e29b-41d4-a716-446655440001";
 
-function publicRows(id = "question-1", specialMonth: number | null = null, specialDay: number | null = null) {
+function publicRows(
+  id = "550e8400-e29b-41d4-a716-446655440010",
+  specialMonth: number | null = null,
+  specialDay: number | null = null,
+) {
   return [2, 0, 3, 1].map((sortOrder) => ({
     id,
     category: "history",
@@ -62,7 +66,7 @@ function publicRows(id = "question-1", specialMonth: number | null = null, speci
 
 function adminBase(isPublished = false) {
   return {
-    id: "question-1",
+    id: "550e8400-e29b-41d4-a716-446655440010",
     category: isPublished ? "history" : null,
     special_month: null,
     special_day: null,
@@ -144,9 +148,9 @@ describe("public quiz repository", () => {
 
     await expect(listPublishedQuizQuestions("en")).resolves.toEqual([
       {
-        id: "question-1",
+        id: "550e8400-e29b-41d4-a716-446655440010",
         category: "history",
-        question: "Question question-1",
+        question: "Question 550e8400-e29b-41d4-a716-446655440010",
         choices: [0, 1, 2, 3].map((value) => ({ id: `choice-${value}`, label: `Choice ${value}` })),
       },
     ]);
@@ -159,13 +163,16 @@ describe("public quiz repository", () => {
   });
 
   it("Asia/Tokyoの日付でSpecial Dateを優先し、同じ集合から決定的に選択する", async () => {
-    const rows = [...publicRows("regular"), ...publicRows("special", 3, 17)];
+    const rows = [
+      ...publicRows("550e8400-e29b-41d4-a716-446655440012"),
+      ...publicRows("550e8400-e29b-41d4-a716-446655440013", 3, 17),
+    ];
     mocks.responses = [rows, rows];
 
     const first = await getDailyPublishedQuiz("ja", new Date("2026-03-16T15:00:00Z"));
     const second = await getDailyPublishedQuiz("ja", new Date("2026-03-17T01:00:00Z"));
 
-    expect(first?.id).toBe("special");
+    expect(first?.id).toBe("550e8400-e29b-41d4-a716-446655440013");
     expect(second?.id).toBe(first?.id);
   });
 
@@ -173,7 +180,7 @@ describe("public quiz repository", () => {
     mocks.responses = [
       [
         {
-          id: "question-1",
+          id: "550e8400-e29b-41d4-a716-446655440010",
           selected_choice_id: "choice-1",
           correct_choice_id: "choice-0",
           resolved_correct_choice_id: "choice-0",
@@ -187,7 +194,7 @@ describe("public quiz repository", () => {
     ];
     mocks.getPublishedContentById.mockResolvedValue({ kind: "guide", slug: "irish-history", title: "Irish history" });
 
-    await expect(gradePublishedQuizAnswer("question-1", "choice-1", "en")).resolves.toEqual({
+    await expect(gradePublishedQuizAnswer("550e8400-e29b-41d4-a716-446655440010", "choice-1", "en")).resolves.toEqual({
       status: "incorrect",
       correctChoiceId: "choice-0",
       correctChoiceLabel: "Choice 0",
@@ -196,8 +203,10 @@ describe("public quiz repository", () => {
       relatedGuide: { slug: "irish-history", label: "Irish history" },
     });
     expect(mocks.queries[0].text).toContain("question.is_published = TRUE");
-    expect(mocks.queries[0].values).toEqual(expect.arrayContaining(["question-1", "choice-1", "en", "ja"]));
-    expect(mocks.queries[0].text).not.toContain("question-1");
+    expect(mocks.queries[0].values).toEqual(
+      expect.arrayContaining(["550e8400-e29b-41d4-a716-446655440010", "choice-1", "en", "ja"]),
+    );
+    expect(mocks.queries[0].text).not.toContain("550e8400-e29b-41d4-a716-446655440010");
     expect(mocks.getPublishedContentById).toHaveBeenCalledWith(relatedContentId, "en");
   });
 
@@ -206,7 +215,7 @@ describe("public quiz repository", () => {
       [],
       [
         {
-          id: "question-1",
+          id: "550e8400-e29b-41d4-a716-446655440010",
           selected_choice_id: null,
           correct_choice_id: "choice-0",
           resolved_correct_choice_id: "choice-0",
@@ -219,34 +228,52 @@ describe("public quiz repository", () => {
       ],
     ];
 
-    await expect(gradePublishedQuizAnswer("draft-or-missing", "choice-0", "en")).rejects.toThrow(
+    await expect(gradePublishedQuizAnswer("550e8400-e29b-41d4-a716-446655440014", "choice-0", "en")).rejects.toThrow(
       "question was not found",
     );
-    await expect(gradePublishedQuizAnswer("question-1", "missing", "en")).rejects.toThrow("choice was not found");
+    await expect(gradePublishedQuizAnswer("550e8400-e29b-41d4-a716-446655440010", "missing", "en")).rejects.toThrow(
+      "choice was not found",
+    );
   });
 
   it("Published更新成功後だけPublic Quiz Cacheを失効させる", async () => {
-    mocks.responses = [[{ id: "question-1", is_published: true }], [{ id: "question-1" }]];
+    mocks.responses = [
+      [{ id: "550e8400-e29b-41d4-a716-446655440010", is_published: true }],
+      [{ id: "550e8400-e29b-41d4-a716-446655440010" }],
+    ];
 
-    await expect(replaceAdminQuizQuestion("question-1", writeInput)).resolves.toBe("updated");
+    await expect(replaceAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010", writeInput)).resolves.toBe("updated");
     expect(cacheMocks.revalidateTag).toHaveBeenCalledWith("public-quiz", { expire: 0 });
   });
 
   it("Draft更新ではPublic Quiz Cacheを失効させない", async () => {
-    mocks.responses = [[{ id: "question-1", is_published: false }], [{ id: "question-1" }]];
+    mocks.responses = [
+      [{ id: "550e8400-e29b-41d4-a716-446655440010", is_published: false }],
+      [{ id: "550e8400-e29b-41d4-a716-446655440010" }],
+    ];
 
-    await expect(replaceAdminQuizQuestion("question-1", writeInput)).resolves.toBe("updated");
+    await expect(replaceAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010", writeInput)).resolves.toBe("updated");
     expect(cacheMocks.revalidateTag).not.toHaveBeenCalled();
   });
 
   it("PublishとUnpublishの実際の状態変更後だけPublic Quiz Cacheを失効させる", async () => {
-    mocks.responses = [[{ id: "question-1", is_published: false }], [{ id: "question-1", is_published: true }]];
-    await expect(setAdminQuizPublication("question-1", true)).resolves.toMatchObject({ unchanged: false });
+    mocks.responses = [
+      [{ id: "550e8400-e29b-41d4-a716-446655440010", is_published: false }],
+      [{ id: "550e8400-e29b-41d4-a716-446655440010", is_published: true }],
+    ];
+    await expect(setAdminQuizPublication("550e8400-e29b-41d4-a716-446655440010", true)).resolves.toMatchObject({
+      unchanged: false,
+    });
     expect(cacheMocks.revalidateTag).toHaveBeenCalledTimes(1);
 
     cacheMocks.revalidateTag.mockReset();
-    mocks.responses = [[{ id: "question-1", is_published: true }], [{ id: "question-1", is_published: false }]];
-    await expect(setAdminQuizPublication("question-1", false)).resolves.toMatchObject({ unchanged: false });
+    mocks.responses = [
+      [{ id: "550e8400-e29b-41d4-a716-446655440010", is_published: true }],
+      [{ id: "550e8400-e29b-41d4-a716-446655440010", is_published: false }],
+    ];
+    await expect(setAdminQuizPublication("550e8400-e29b-41d4-a716-446655440010", false)).resolves.toMatchObject({
+      unchanged: false,
+    });
     expect(cacheMocks.revalidateTag).toHaveBeenCalledTimes(1);
   });
 
@@ -254,7 +281,7 @@ describe("public quiz repository", () => {
     mocks.responses = [
       [
         {
-          id: "question-1",
+          id: "550e8400-e29b-41d4-a716-446655440010",
           selected_choice_id: "choice-0",
           correct_choice_id: "choice-0",
           resolved_correct_choice_id: "choice-0",
@@ -268,7 +295,9 @@ describe("public quiz repository", () => {
     ];
     mocks.getPublishedContentById.mockRejectedValue(new Error("unavailable"));
 
-    await expect(gradePublishedQuizAnswer("question-1", "choice-0", "ja")).resolves.not.toHaveProperty("relatedGuide");
+    await expect(
+      gradePublishedQuizAnswer("550e8400-e29b-41d4-a716-446655440010", "choice-0", "ja"),
+    ).resolves.not.toHaveProperty("relatedGuide");
   });
 
   it("不正カテゴリや4件未満のChoiceをSilentに変換しない", () => {
@@ -283,13 +312,13 @@ describe("admin quiz repository", () => {
   it("E2E Test Modeでは全MutationをDB接続前に拒否する", async () => {
     process.env.E2E_TEST_MODE = "1";
 
-    await expect(insertAdminQuizQuestion("question-1", writeInput)).rejects.toThrow(
+    await expect(insertAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010", writeInput)).rejects.toThrow(
       "Mutations are disabled in E2E test mode.",
     );
-    await expect(replaceAdminQuizQuestion("question-1", writeInput)).rejects.toThrow(
+    await expect(replaceAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010", writeInput)).rejects.toThrow(
       "Mutations are disabled in E2E test mode.",
     );
-    await expect(setAdminQuizPublication("question-1", true)).rejects.toThrow(
+    await expect(setAdminQuizPublication("550e8400-e29b-41d4-a716-446655440010", true)).rejects.toThrow(
       "Mutations are disabled in E2E test mode.",
     );
     expect(mocks.transactionCount).toBe(0);
@@ -300,7 +329,13 @@ describe("admin quiz repository", () => {
     mocks.responses = [
       [
         { ...adminBase(false), question_ja: "下書き", question_en: "", choice_count: 0 },
-        { ...adminBase(true), id: "question-2", question_ja: "公開問題", question_en: "Published", choice_count: 4 },
+        {
+          ...adminBase(true),
+          id: "550e8400-e29b-41d4-a716-446655440011",
+          question_ja: "公開問題",
+          question_en: "Published",
+          choice_count: 4,
+        },
       ],
     ];
 
@@ -313,9 +348,9 @@ describe("admin quiz repository", () => {
   it("入力途中のDraftとChoiceをsort_order順で取得する", async () => {
     mocks.responses = [adminDetailRows(false)];
 
-    const result = await getAdminQuizQuestion("question-1");
+    const result = await getAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010");
     expect(result).toMatchObject({
-      id: "question-1",
+      id: "550e8400-e29b-41d4-a716-446655440010",
       category: null,
       correctChoiceId: null,
       sourceUrl: null,
@@ -326,20 +361,23 @@ describe("admin quiz repository", () => {
   });
 
   it("Question・翻訳・Choiceをparameterizedな単一transactionで作成する", async () => {
-    await insertAdminQuizQuestion("question-1", writeInput);
+    await insertAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010", writeInput);
 
     expect(mocks.transactionCount).toBe(1);
     expect(mocks.queries).toHaveLength(15);
     expect(mocks.queries.map(({ text }) => text).join("\n")).toContain("INSERT INTO quiz_questions");
     expect(mocks.queries.map(({ text }) => text).join("\n")).toContain("INSERT INTO quiz_choices");
-    expect(mocks.queries[0].values).toContain("question-1");
+    expect(mocks.queries[0].values).toContain("550e8400-e29b-41d4-a716-446655440010");
     expect(mocks.queries.map(({ text }) => text).join("\n")).not.toContain("https://example.com/source");
   });
 
   it("行ロック後にQuestionとChoice全体を更新する", async () => {
-    mocks.responses = [[{ id: "question-1", is_published: false }], [{ id: "question-1" }]];
+    mocks.responses = [
+      [{ id: "550e8400-e29b-41d4-a716-446655440010", is_published: false }],
+      [{ id: "550e8400-e29b-41d4-a716-446655440010" }],
+    ];
 
-    await expect(replaceAdminQuizQuestion("question-1", writeInput)).resolves.toBe("updated");
+    await expect(replaceAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010", writeInput)).resolves.toBe("updated");
     expect(mocks.transactionCount).toBe(1);
     expect(mocks.queries[0].text).toContain("FOR UPDATE");
     expect(mocks.queries.map(({ text }) => text).join("\n")).toContain("DELETE FROM quiz_choices");
@@ -347,9 +385,11 @@ describe("admin quiz repository", () => {
 
   it("公開中Questionの不完全な全体更新では全クエリを無変更にする", async () => {
     const incomplete = { ...writeInput, category: null, correctChoiceId: null, sourceUrl: null };
-    mocks.responses = [[{ id: "question-1", is_published: true }], []];
+    mocks.responses = [[{ id: "550e8400-e29b-41d4-a716-446655440010", is_published: true }], []];
 
-    await expect(replaceAdminQuizQuestion("question-1", incomplete)).resolves.toBe("publication_blocked");
+    await expect(replaceAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010", incomplete)).resolves.toBe(
+      "publication_blocked",
+    );
     const choiceTranslationSql = mocks.queries
       .filter(({ text }) => text.includes("INSERT INTO quiz_choice_translations"))
       .map(({ text }) => text)
@@ -358,10 +398,13 @@ describe("admin quiz repository", () => {
   });
 
   it("公開時に日英翻訳・4 Choices・正解をtransaction内で再検証する", async () => {
-    mocks.responses = [[{ id: "question-1", is_published: false }], [{ id: "question-1", is_published: true }]];
+    mocks.responses = [
+      [{ id: "550e8400-e29b-41d4-a716-446655440010", is_published: false }],
+      [{ id: "550e8400-e29b-41d4-a716-446655440010", is_published: true }],
+    ];
 
-    await expect(setAdminQuizPublication("question-1", true)).resolves.toEqual({
-      id: "question-1",
+    await expect(setAdminQuizPublication("550e8400-e29b-41d4-a716-446655440010", true)).resolves.toEqual({
+      id: "550e8400-e29b-41d4-a716-446655440010",
       isPublished: true,
       unchanged: false,
     });
@@ -375,15 +418,17 @@ describe("admin quiz repository", () => {
 
   it("不完全なPublished行をSilentに返さない", async () => {
     mocks.responses = [adminDetailRows(true).slice(0, 3)];
-    await expect(getAdminQuizQuestion("question-1")).rejects.toThrow("Invalid quiz data");
+    await expect(getAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010")).rejects.toThrow("Invalid quiz data");
   });
 
   it("DB未設定時は読み取りを空にし、静的JSONへfallbackしない", async () => {
     delete process.env.DATABASE_URL;
     await expect(listPublishedQuizQuestions()).resolves.toEqual([]);
     await expect(listAdminQuizQuestions()).resolves.toEqual([]);
-    await expect(getAdminQuizQuestion("question-1")).resolves.toBeNull();
-    await expect(insertAdminQuizQuestion("question-1", writeInput)).rejects.toThrow("Database is not configured");
+    await expect(getAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010")).resolves.toBeNull();
+    await expect(insertAdminQuizQuestion("550e8400-e29b-41d4-a716-446655440010", writeInput)).rejects.toThrow(
+      "Database is not configured",
+    );
     expect(mocks.queries).toEqual([]);
   });
 });

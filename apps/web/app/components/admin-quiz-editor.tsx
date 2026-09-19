@@ -6,7 +6,6 @@ import type { AdminContentListItem } from "@irishpub-map/shared/admin-content";
 import {
   QUIZ_CATEGORIES,
   QUIZ_CHOICE_ID_MAX_LENGTH,
-  QUIZ_ID_MAX_LENGTH,
   type AdminQuizQuestion,
   type AdminQuizWriteInput,
 } from "../lib/quiz/types";
@@ -50,15 +49,14 @@ function toValues(question: AdminQuizQuestion | null): AdminQuizWriteInput {
     choices: question.choices.map((choice) => ({ ...choice, translations: { ...choice.translations } })),
   };
 }
-function toPayload(values: AdminQuizWriteInput, id: string | null, newId: string) {
+function toPayload(values: AdminQuizWriteInput) {
   return {
-    ...(id ? {} : { id: newId }),
     ...values,
     choices: values.choices.map(({ id: choiceId, translations }) => ({ id: choiceId, translations })),
   };
 }
-function serialize(id: string, values: AdminQuizWriteInput) {
-  return JSON.stringify({ id, ...values });
+function serialize(values: AdminQuizWriteInput) {
+  return JSON.stringify(values);
 }
 function asFieldErrors(value: unknown): Record<string, string> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
@@ -89,12 +87,9 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
   const router = useRouter();
   const t = getTranslation(locale).admin;
   const q = t.quiz;
-  const [questionId, setQuestionId] = useState(initialQuestion?.id ?? "");
-  const [contentId, setContentId] = useState(initialQuestion?.id ?? null);
+  const [questionId, setQuestionId] = useState<string | null>(initialQuestion?.id ?? null);
   const [values, setValues] = useState(() => toValues(initialQuestion));
-  const [savedSnapshot, setSavedSnapshot] = useState(() =>
-    serialize(initialQuestion?.id ?? "", toValues(initialQuestion)),
-  );
+  const [savedSnapshot, setSavedSnapshot] = useState(() => serialize(toValues(initialQuestion)));
   const [status, setStatus] = useState<"draft" | "published">(initialQuestion?.isPublished ? "published" : "draft");
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -102,7 +97,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [serverMissingFields, setServerMissingFields] = useState<string[]>([]);
-  const isDirty = savedSnapshot !== serialize(questionId, values);
+  const isDirty = savedSnapshot !== serialize(values);
   const busy = saving || publishing;
   const missingFields = useMemo(() => getQuizPublicationMissingFields(values), [values]);
   useUnsavedChangesWarning({ isDirty, message: t.unsavedChanges });
@@ -199,10 +194,10 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
     resetFeedback();
     setSaving(true);
     try {
-      const response = await fetch(contentId ? "/api/admin/quiz/" + contentId : "/api/admin/quiz", {
-        method: contentId ? "PUT" : "POST",
+      const response = await fetch(questionId ? "/api/admin/quiz/" + questionId : "/api/admin/quiz", {
+        method: questionId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(toPayload(values, contentId, questionId)),
+        body: JSON.stringify(toPayload(values)),
       });
       const body = (await response.json().catch(() => ({}))) as ApiResponse;
       if (!response.ok || !body.question) {
@@ -212,11 +207,10 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
         return;
       }
       const nextValues = toValues(body.question);
-      const created = contentId === null;
+      const created = questionId === null;
       setQuestionId(body.question.id);
-      setContentId(body.question.id);
       setValues(nextValues);
-      setSavedSnapshot(serialize(body.question.id, nextValues));
+      setSavedSnapshot(serialize(nextValues));
       setStatus(body.question.isPublished ? "published" : "draft");
       setMessage(body.question.isPublished ? q.publishedSaved : q.draftSaved);
       if (created) router.push("/admin/quiz/" + body.question.id);
@@ -228,14 +222,14 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
     }
   }
   async function changePublication(nextPublished: boolean) {
-    if (!contentId || busy || !databaseConfigured || (nextPublished && isDirty)) return;
-    const title = values.translations.ja.question || questionId;
+    if (!questionId || busy || !databaseConfigured || (nextPublished && isDirty)) return;
+    const title = values.translations.ja.question || questionId || "";
     const confirmation = formatMessage(nextPublished ? q.confirmPublish : q.confirmDraft, { title });
     if (!window.confirm(confirmation)) return;
     resetFeedback();
     setPublishing(true);
     try {
-      const response = await fetch("/api/admin/quiz/" + contentId + "/publication", {
+      const response = await fetch("/api/admin/quiz/" + questionId + "/publication", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPublished: nextPublished }),
@@ -255,14 +249,14 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
       setPublishing(false);
     }
   }
-  const publishBlocked = !contentId || isDirty || missingFields.length > 0 || busy || !databaseConfigured;
+  const publishBlocked = !questionId || isDirty || missingFields.length > 0 || busy || !databaseConfigured;
   return (
     <section className="admin-panel admin-wide admin-quiz-editor">
       <div className="admin-heading">
         <div>
           <p className="eyebrow">Irish Quiz</p>
-          <h1>{contentId ? q.editHeading : q.addHeading}</h1>
-          <p>{contentId ? q.editDescription : q.addDescription}</p>
+          <h1>{questionId ? q.editHeading : q.addHeading}</h1>
+          <p>{questionId ? q.editDescription : q.addDescription}</p>
         </div>
         <span className={"admin-publication-badge " + (status === "published" ? "is-published" : "is-unpublished")}>
           {status === "published" ? q.statusPublished : q.statusDraft}
@@ -296,20 +290,6 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
       ) : null}
       <form className="admin-form admin-editor-form admin-quiz-form" onSubmit={save} aria-busy={busy}>
         <fieldset disabled={busy || !databaseConfigured}>
-          <legend>{q.id}</legend>
-          <label>
-            {q.id}
-            <input
-              value={questionId}
-              maxLength={QUIZ_ID_MAX_LENGTH}
-              disabled={contentId !== null}
-              onChange={(event) => {
-                setQuestionId(event.target.value);
-                clearError("id");
-              }}
-            />
-            <span className="admin-editor-note">{q.idHelp}</span>
-          </label>
           <div className="admin-editor-grid">
             <label>
               {q.category}
@@ -512,7 +492,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
                   fields: missingFields.map((field) => fieldLabel(field, q.publicationFields)).join(", "),
                 })}
           </p>
-          {isDirty && contentId ? <p className="admin-content-unsaved">{q.saveBeforePublish}</p> : null}
+          {isDirty && questionId ? <p className="admin-content-unsaved">{q.saveBeforePublish}</p> : null}
         </div>
         {status === "published" ? (
           <button

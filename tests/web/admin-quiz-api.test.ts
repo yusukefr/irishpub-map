@@ -32,17 +32,24 @@ beforeEach(() => {
   mocks.contentType.mockReturnValue(null);
   mocks.configured.mockReturnValue(true);
   mocks.list.mockResolvedValue([]);
-  mocks.create.mockResolvedValue({ id: "new-question" });
-  mocks.read.mockResolvedValue({ id: "question-1" });
-  mocks.update.mockResolvedValue({ id: "question-1" });
-  mocks.publication.mockResolvedValue({ id: "question-1", isPublished: true, unchanged: false });
+  mocks.create.mockResolvedValue({ id: "550e8400-e29b-41d4-a716-446655440015" });
+  mocks.read.mockResolvedValue({ id: "550e8400-e29b-41d4-a716-446655440010" });
+  mocks.update.mockResolvedValue({ id: "550e8400-e29b-41d4-a716-446655440010" });
+  mocks.publication.mockResolvedValue({
+    id: "550e8400-e29b-41d4-a716-446655440010",
+    isPublished: true,
+    unchanged: false,
+  });
 });
 describe("admin quiz API", () => {
   it("returns both the list and database configuration state", async () => {
-    mocks.list.mockResolvedValue([{ id: "question-1" }]);
+    mocks.list.mockResolvedValue([{ id: "550e8400-e29b-41d4-a716-446655440010" }]);
     const response = await listGet(request("https://example.test/api/admin/quiz"));
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ questions: [{ id: "question-1" }], databaseConfigured: true });
+    await expect(response.json()).resolves.toEqual({
+      questions: [{ id: "550e8400-e29b-41d4-a716-446655440010" }],
+      databaseConfigured: true,
+    });
   });
   it("requires authentication before a mutation", async () => {
     mocks.auth.mockReturnValue(Response.json({ errorCode: "unauthorized" }, { status: 401 }));
@@ -76,12 +83,15 @@ describe("admin quiz API", () => {
     expect(response.status).toBe(201);
   });
   it("handles detail update and publication routes", async () => {
-    const context = { params: Promise.resolve({ id: "question-1" }) };
-    expect((await detailGet(request("https://example.test/api/admin/quiz/question-1"), context)).status).toBe(200);
+    const context = { params: Promise.resolve({ id: "550e8400-e29b-41d4-a716-446655440010" }) };
+    expect(
+      (await detailGet(request("https://example.test/api/admin/quiz/550e8400-e29b-41d4-a716-446655440010"), context))
+        .status,
+    ).toBe(200);
     expect(
       (
         await PUT(
-          request("https://example.test/api/admin/quiz/question-1", {
+          request("https://example.test/api/admin/quiz/550e8400-e29b-41d4-a716-446655440010", {
             method: "PUT",
             headers: { "Content-Type": "application/json", origin: "https://example.test" },
             body: "{}",
@@ -91,7 +101,7 @@ describe("admin quiz API", () => {
       ).status,
     ).toBe(200);
     const response = await PATCH(
-      request("https://example.test/api/admin/quiz/question-1/publication", {
+      request("https://example.test/api/admin/quiz/550e8400-e29b-41d4-a716-446655440010/publication", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", origin: "https://example.test" },
         body: JSON.stringify({ isPublished: true }),
@@ -99,6 +109,12 @@ describe("admin quiz API", () => {
       context,
     );
     expect(response.status).toBe(200);
-    expect(mocks.publication).toHaveBeenCalledWith("question-1", true);
+    expect(mocks.publication).toHaveBeenCalledWith("550e8400-e29b-41d4-a716-446655440010", true);
+  });
+  it("rejects legacy non-UUID detail paths", async () => {
+    const context = { params: Promise.resolve({ id: "legacy-question" }) };
+    const response = await detailGet(request("https://example.test/api/admin/quiz/legacy-question"), context);
+    expect(response.status).toBe(400);
+    expect(mocks.read).not.toHaveBeenCalled();
   });
 });
