@@ -27,7 +27,7 @@ flowchart TB
     calendarDataLoader[calendar-public-data<br/>Cache]
     calendarRepository[calendar-repository]
     adminCalendarService[admin-calendar-service / API]
-    quizRepository[quiz-repository<br/>画面切替前]
+    quizRepository[quiz-repository]
     masterRepository[master-repository]
   end
 
@@ -48,10 +48,10 @@ flowchart TB
   adminPage --> auth
   adminPage --> repository
   adminPage --> contentRepository
+  adminPage --> adminCalendarService
   adminApi --> auth
   adminApi --> repository
   adminApi --> contentRepository
-  adminApi --> calendarRepository
   adminApi --> adminCalendarService
   adminCalendarService --> calendarRepository
   adminApi --> masterRepository
@@ -59,7 +59,7 @@ flowchart TB
   repository -->|"DATABASE_URL 設定時"| neon
   contentRepository -->|"DATABASE_URL 設定時"| neon
   calendarRepository -->|"DATABASE_URL 設定時"| neon
-  quizRepository -.->|"Issue #393で画面接続"| neon
+  quizRepository -->|"DATABASE_URL 設定時"| neon
   masterRepository -->|"DATABASE_URL 設定時"| neon
 
   github --> actions
@@ -72,7 +72,7 @@ flowchart TB
 - `DATABASE_URL` が設定された環境では、`pub-repository` がNeonの店舗・マスタテーブルを読み書きします。未設定時は公開APIと画面が空の店舗一覧を返します。
 - 公開Guideは`content-repository`がNeonのPublished Contentだけを取得し、安全なMarkdown Rendererへ渡します。Repository内MDX、Static Loader、MDX fallbackは使用しません。
 - 公開Calendarは`calendar-repository`がNeonのPublished Eventだけを取得し、`calendar-public-data`が取得結果をCacheします。JSON fallbackは使用しません。
-- `quiz-repository`は公開Quizと管理QuizのNeonアクセス、回答前DTO、採点、日次選択を分離して提供します。Issue #393の画面切替までは既存画面から呼び出さず、静的Quizへのfallbackも行いません。
+- `quiz-repository`は公開Quizと管理QuizのNeonアクセス、回答前DTO、採点、日次選択を分離して提供します。静的Quizへのfallbackは行いません。
 - 店舗テーブルが空の場合も自動投入は行わず、管理画面またはNeonインポート手順による明示的な投入を必要とします。市区町村コードは `municipality_codes` と結合して解決します。
 - API とリポジトリ層は、共有パッケージの `asPubs` で読み出した店舗データを検証します。型の詳細は[店舗データ仕様](../specs/data.md)を参照してください。
 - 現在地は利用目的を確認した明示操作後にだけ取得し、生の座標はブラウザ内でだけ保持します。アプリのAPIやDBへ送信・保存しません。ただし、現在地周辺を描画するOpenFreeMapへのタイル要求から、おおよその閲覧地域を送信先が推測できる可能性があります。
