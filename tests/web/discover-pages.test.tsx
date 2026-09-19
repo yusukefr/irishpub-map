@@ -231,6 +231,7 @@ describe("Discover pages", () => {
     await expect(generateGuideMetadata({ params: Promise.resolve({ slug: "sample" }) })).resolves.toEqual({
       title: "サンプルガイド | Irish Pub Map",
       description: metadataByLocale.ja.summary,
+      alternates: { canonical: "https://irishpub-map-web.vercel.app/discover/guides/sample" },
     });
 
     locale = "en";

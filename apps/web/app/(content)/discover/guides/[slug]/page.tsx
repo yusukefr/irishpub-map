@@ -5,6 +5,8 @@ import { getPublishedContentBySlug } from "../../../../lib/content/repository";
 import { getTranslation } from "../../../../lib/i18n";
 import { getRequestLocale } from "../../../../lib/i18n/server";
 import { DiscoverBreadcrumbs, RelatedContent } from "../../components";
+import { ShareButton } from "../../../../components/share-button";
+import { getGuideUrl } from "../../../../lib/public-url";
 
 type GuidePageProps = {
   params: Promise<{ slug: string }>;
@@ -25,6 +27,7 @@ export async function generateMetadata({ params }: GuidePageProps): Promise<Meta
   return {
     title: `${content.title} | Irish Pub Map`,
     description: content.summary,
+    alternates: { canonical: getGuideUrl(content.slug) },
   };
 }
 
@@ -62,6 +65,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
         <p className="guide-metadata">
           <time dateTime={content.publishedAt}>{publishedAt}</time>
         </p>
+        <ShareButton title={content.title} url={getGuideUrl(content.slug)} locale={locale} />
       </header>
 
       <div className="content-prose">

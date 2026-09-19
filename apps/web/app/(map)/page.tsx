@@ -56,9 +56,11 @@ async function getPubs(locale: string) {
 
 /**
  * 公開トップページをサーバー描画し、取得済み店舗を探索UIへ渡します。
+ * @param props 共有URLの公開店舗IDを含む検索パラメータ。
+ * @param props.searchParams リクエストの検索パラメータ。
  * @returns {Promise<JSX.Element>} 店舗探索画面。
  */
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams?: Promise<{ pub?: string | string[] }> } = {}) {
   const locale = await getRequestLocale();
   const pubList = await getPubs(locale).catch((error: unknown) => {
     // Next.js内部の描画制御は握り潰さず、取得失敗だけを安全な公開UIへ変換します。
@@ -66,10 +68,19 @@ export default async function Home() {
     return null;
   });
 
+  const requestedPub = (await searchParams)?.pub;
+  const initialPubId = typeof requestedPub === "string" ? requestedPub : undefined;
+
   return (
     <>
       <h1 className="visually-hidden">Irish Pub Map</h1>
-      <PubExplorer pubs={pubList ?? []} locale={locale} dataLoadFailed={pubList === null} />
+      <PubExplorer
+        key={initialPubId}
+        pubs={pubList ?? []}
+        locale={locale}
+        dataLoadFailed={pubList === null}
+        initialPubId={initialPubId}
+      />
     </>
   );
 }

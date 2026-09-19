@@ -30,6 +30,8 @@ Heroはページの目的を最初に伝え、短いeyebrow、`font-display`のH
 
 ## Interactive content
 
+公開GuideのHeader末尾に共通ShareButtonを置き、タイトルとcanonical URLを共有します。共有できない環境ではURLコピーを提供し、状態を日英のテキストで通知します。
+
 Quizなどの状態は正誤の文言と記号を表示し、色だけへ依存しません。Calendarのfeatured itemはGold borderとSurfaceの組み合わせで示します。Actionは現在の段階と結果を日英で伝え、KeyboardとScreen Readerから利用できるようにします。
 
 ## Responsive verification
