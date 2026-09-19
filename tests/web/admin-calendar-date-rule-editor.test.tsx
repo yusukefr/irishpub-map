@@ -78,11 +78,45 @@ describe("AdminCalendarDateRuleEditor", () => {
     const ruleSet = renderRule(value);
     expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(2);
     fireEvent.click(screen.getByRole("button", { name: "ルールを追加" }));
+    expect(change).toHaveBeenLastCalledWith({
+      type: "rule_set",
+      rules: [
+        value.rules[0],
+        {
+          when: { type: "fixed_date_weekday", month: 1, day: 1, weekday: "sunday" },
+          use: { type: "fixed", month: 1, day: 1 },
+        },
+        value.rules[1],
+      ],
+    });
     fireEvent.click(screen.getAllByRole("button", { name: "上へ" })[1]);
     fireEvent.click(screen.getAllByRole("button", { name: "下へ" })[0]);
     fireEvent.click(screen.getAllByRole("button", { name: "ルールを削除" })[0]);
     expect(change).toHaveBeenCalled();
     ruleSet.unmount();
+
+    const noOtherwise: CalendarDateRuleDefinition = {
+      type: "rule_set",
+      rules: [
+        {
+          when: { type: "fixed_date_weekday", month: 3, day: 17, weekday: "sunday" },
+          use: { type: "fixed", month: 3, day: 17 },
+        },
+      ],
+    };
+    const appendRuleSet = renderRule(noOtherwise);
+    fireEvent.click(screen.getByRole("button", { name: "ルールを追加" }));
+    expect(change).toHaveBeenLastCalledWith({
+      type: "rule_set",
+      rules: [
+        noOtherwise.rules[0],
+        {
+          when: { type: "fixed_date_weekday", month: 1, day: 1, weekday: "sunday" },
+          use: { type: "fixed", month: 1, day: 1 },
+        },
+      ],
+    });
+    appendRuleSet.unmount();
 
     const disabledChange = vi.fn();
     render(<AdminCalendarDateRuleEditor value={value} locale="ja" disabled onChange={disabledChange} />);

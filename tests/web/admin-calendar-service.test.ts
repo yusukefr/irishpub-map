@@ -85,6 +85,40 @@ describe("admin calendar service", () => {
     }
   });
 
+  it("Draft保存時もotherwiseの重複と途中配置を拒否する", async () => {
+    const ruleSet = {
+      type: "rule_set",
+      rules: [
+        { when: { type: "otherwise" }, use: { type: "fixed", month: 1, day: 1 } },
+        {
+          when: { type: "fixed_date_weekday", month: 1, day: 1, weekday: "sunday" },
+          use: { type: "fixed", month: 1, day: 2 },
+        },
+      ],
+    };
+    await expect(createAdminCalendarEvent({ ...completeInput, dateRule: ruleSet })).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { dateRule: "invalid_format" },
+    });
+
+    await expect(
+      createAdminCalendarEvent({
+        ...completeInput,
+        dateRule: {
+          type: "rule_set",
+          rules: [
+            {
+              when: { type: "fixed_date_weekday", month: 1, day: 1, weekday: "sunday" },
+              use: { type: "fixed", month: 1, day: 2 },
+            },
+            { when: { type: "otherwise" }, use: { type: "fixed", month: 1, day: 1 } },
+            { when: { type: "otherwise" }, use: { type: "fixed", month: 1, day: 3 } },
+          ],
+        },
+      }),
+    ).rejects.toMatchObject({ code: "validation", fieldErrors: { dateRule: "invalid_format" } });
+  });
+
   it("Draftは公開必須項目が空でも作成でき、型不正は拒否する", async () => {
     await expect(
       createAdminCalendarEvent({

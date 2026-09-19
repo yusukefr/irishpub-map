@@ -68,17 +68,17 @@ export function parseCalendarDateRuleDefinition(value: unknown, path: string): C
   }
   if (type === "rule_set") {
     if (!Array.isArray(input.rules) || input.rules.length === 0) fail(path + ".rules", "must be a non-empty array");
+    const rules = input.rules.map((rule, index) => {
+      const item = record(rule, path + ".rules[" + index + "]");
+      return Object.freeze({
+        when: parseCondition(item.when, path + ".rules[" + index + "].when"),
+        use: parseConcreteRule(item.use, path + ".rules[" + index + "].use"),
+      });
+    });
+    validateRuleSetStructure(rules, path + ".rules");
     return Object.freeze({
       type,
-      rules: Object.freeze(
-        input.rules.map((rule, index) => {
-          const item = record(rule, path + ".rules[" + index + "]");
-          return Object.freeze({
-            when: parseCondition(item.when, path + ".rules[" + index + "].when"),
-            use: parseConcreteRule(item.use, path + ".rules[" + index + "].use"),
-          });
-        }),
-      ),
+      rules: Object.freeze(rules),
     });
   }
   if (type === "annual_variable") {
@@ -97,14 +97,7 @@ export function parseCalendarDateRuleDefinition(value: unknown, path: string): C
  */
 export function validateCalendarDateRuleForPublication(value: CalendarDateRuleDefinition): void {
   if (value.type === "rule_set") {
-    let otherwiseIndex = -1;
-    value.rules.forEach((rule, index) => {
-      if (rule.when.type !== "otherwise") return;
-      if (otherwiseIndex !== -1 || index !== value.rules.length - 1) {
-        throw new Error("Invalid otherwise order in calendar rule_set.");
-      }
-      otherwiseIndex = index;
-    });
+    validateRuleSetStructure(value.rules, "dateRule.rules");
   }
   const rule = normalizeCalendarDateRule(value);
   for (let year = 2000; year < 2400; year += 1) resolveDateRule(rule, year);
@@ -183,6 +176,18 @@ function parseCondition(value: unknown, path: string): DefinitionRuleSetConditio
     });
   }
   return fail(path + ".type", 'unsupported rule-set condition "' + type + '"');
+}
+
+function validateRuleSetStructure(
+  rules: readonly Readonly<{ when: DefinitionRuleSetCondition }>[],
+  path: string,
+): void {
+  const otherwiseIndexes = rules.flatMap((rule, index) => (rule.when.type === "otherwise" ? [index] : []));
+  if (otherwiseIndexes.length > 1) fail(path, "must contain at most one otherwise condition");
+  const otherwiseIndex = otherwiseIndexes[0];
+  if (otherwiseIndex !== undefined && otherwiseIndex !== rules.length - 1) {
+    fail(path + "[" + otherwiseIndex + "].when", "otherwise must be the last condition");
+  }
 }
 
 function normalizeConcreteRule(

@@ -241,18 +241,18 @@ function RuleSetEditor({
       <button
         type="button"
         className="admin-secondary-action"
-        onClick={() =>
-          onChange({
-            ...value,
-            rules: [
-              ...value.rules,
-              {
-                when: { type: "fixed_date_weekday", month: 1, day: 1, weekday: "sunday" },
-                use: createConcreteRule("fixed"),
-              },
-            ],
-          })
-        }
+        onClick={() => {
+          const newRule: RuleSetItem = {
+            when: { type: "fixed_date_weekday", month: 1, day: 1, weekday: "sunday" },
+            use: createConcreteRule("fixed"),
+          };
+          const otherwiseIndex = value.rules.findIndex((rule) => rule.when.type === "otherwise");
+          const rules =
+            otherwiseIndex === -1
+              ? [...value.rules, newRule]
+              : [...value.rules.slice(0, otherwiseIndex), newRule, ...value.rules.slice(otherwiseIndex)];
+          onChange({ ...value, rules });
+        }}
       >
         {t.addRule}
       </button>

@@ -35,7 +35,13 @@ export function formatCalendarDateRuleSummary(rule: CalendarDateRuleDefinition |
     });
   }
   if (rule.type === "relative_to_easter") {
-    return formatMessage(t.dateRuleSummary.relativeToEaster, { offsetDays: rule.offsetDays });
+    const offsetDays = Math.abs(rule.offsetDays);
+    const dayUnit = offsetDays === 1 ? t.dateRuleSummary.daySingular : t.dateRuleSummary.dayPlural;
+    if (rule.offsetDays < 0) {
+      return formatMessage(t.dateRuleSummary.relativeToEasterBefore, { offsetDays, dayUnit });
+    }
+    if (rule.offsetDays === 0) return t.dateRuleSummary.relativeToEasterSameDay;
+    return formatMessage(t.dateRuleSummary.relativeToEasterAfter, { offsetDays, dayUnit });
   }
   if (rule.type === "weekday_on_or_after") {
     return formatMessage(t.dateRuleSummary.weekdayOnOrAfter, {
