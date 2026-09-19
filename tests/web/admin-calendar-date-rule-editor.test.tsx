@@ -127,14 +127,21 @@ describe("AdminCalendarDateRuleEditor", () => {
           when: { type: "fixed_date_weekday", month: 3, day: 17, weekday: "sunday" },
           use: { type: "fixed", month: 3, day: 17 },
         },
+        {
+          when: { type: "fixed_date_weekday", month: 4, day: 1, weekday: "monday" },
+          use: { type: "fixed", month: 4, day: 1 },
+        },
       ],
     };
     const appendRuleSet = renderRule(noOtherwise);
+    expect(screen.getAllByRole("option", { name: "その他の場合" })[0]).toBeDisabled();
+    expect(screen.getAllByRole("option", { name: "その他の場合" })[1]).not.toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "ルールを追加" }));
     expect(change).toHaveBeenLastCalledWith({
       type: "rule_set",
       rules: [
         noOtherwise.rules[0],
+        noOtherwise.rules[1],
         {
           when: { type: "fixed_date_weekday", month: 1, day: 1, weekday: "sunday" },
           use: { type: "fixed", month: 1, day: 1 },

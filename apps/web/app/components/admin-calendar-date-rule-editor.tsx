@@ -157,7 +157,13 @@ function RuleSetEditor({
                 }
               >
                 <option value="fixed_date_weekday">{t.conditionDate}</option>
-                <option value="otherwise" disabled={hasOtherwise && item.when.type !== "otherwise"}>
+                <option
+                  value="otherwise"
+                  disabled={
+                    (hasOtherwise && item.when.type !== "otherwise") ||
+                    (!hasOtherwise && index !== value.rules.length - 1)
+                  }
+                >
                   {t.otherwise}
                 </option>
               </select>
