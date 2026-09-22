@@ -32,4 +32,6 @@ StatusBadgeは翻訳済みTextとBorderを使い、closedは破線も併用し�
 
 ## Responsive / accessibility
 
+詳細末尾に共通ShareButtonを置きます。公開店舗URLから開いた場合も同じ詳細を表示し、Mobileではexpandedで開始します。共有非対応時はURLコピー、コピー失敗時は手動コピー欄を表示します。
+
 情報のDOM順はDesktop / Mobileで変えません。Button、Link、Sheet handleは44px以上で、Keyboardから一覧→詳細→一覧を往復できます。詳細の内容が長い場合は結果領域内をscrollし、Page全体やMap gestureと競合させません。

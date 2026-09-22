@@ -52,6 +52,22 @@ const pubs: Pub[] = [
   },
 ];
 
+describe("shared pub links", () => {
+  it.each(["open", "closed"] as const)("opens a shared %s pub in the detail panel", (status) => {
+    render(<PubExplorer pubs={[{ ...pubs[0], status }]} initialPubId={pubs[0].id} />);
+    expect(screen.getByRole("heading", { name: pubs[0].name, level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /URLをコピー|共有する/ })).toBeInTheDocument();
+  });
+  it("ignores nonexistent pub IDs", () => {
+    render(<PubExplorer pubs={pubs} initialPubId="missing" />);
+    expect(document.querySelector(".pub-detail-view")).toBeNull();
+  });
+  it.each(["temporarily_closed", "unknown"] as const)("ignores shared %s pub", (status) => {
+    render(<PubExplorer pubs={[{ ...pubs[0], status }]} initialPubId={pubs[0].id} />);
+    expect(document.querySelector(".pub-detail-view")).toBeNull();
+  });
+});
+
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
 const originalGeolocation = navigator.geolocation;
 

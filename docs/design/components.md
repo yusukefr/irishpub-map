@@ -4,6 +4,8 @@
 
 ## 部品カタログ
 
+`ShareButton`（`components/share-button.tsx`）は公開ページの共有操作です。既存secondary Buttonを使い、`title` / 任意の`text` / 正規公開`url` / `locale`を受け取ります。Default、Loading、Copy fallback、Copied、Failure、Manual copyの状態を持ち、処理中は連打を防ぎます。`AbortError`後はエラー通知なしでCopy fallbackへ切り替え、次の明示操作でコピーします。文言は既存i18nのlocale別JSONで管理します。結果は`role="status"`で通知し、手動コピー欄にはlabelを付けます。共有先・履歴は取得しません。`Design System / Share Button`のJapanese / English Storyで確認できます。
+
 | 部品 / ファイル | APIと使い分け |
 | --- | --- |
 | Button / `button.tsx` | `variant="primary" / "secondary" / "ghost" / "destructive"`。同一操作領域のPrimaryは原則1つ。`loading`は連打を防ぎ、ラベルと幅を維持。`loadingLabel`は任意の翻訳済み読み上げ通知。 |
