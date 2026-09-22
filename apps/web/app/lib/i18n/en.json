@@ -1,4 +1,12 @@
 {
+  "share": {
+    "action": "Share",
+    "copy": "Copy URL",
+    "copied": "URL copied.",
+    "failed": "Unable to share. You can copy the URL instead.",
+    "manual": "Unable to copy. Select and copy the URL below.",
+    "url": "Share URL"
+  },
   "metadata": {
     "title": "Irish Pub Map in Japan",
     "description": "Find Irish pubs across Japan using the map and filters."

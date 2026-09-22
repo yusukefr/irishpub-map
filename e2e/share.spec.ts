@@ -46,6 +46,30 @@ for (const locale of ["ja", "en"] as const) {
         JSON.stringify({ title, url: getGuideUrl("split-the-g") }),
       );
       await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", getGuideUrl("split-the-g"));
+      // AbortErrorではキャンセルと共有先なしを区別せず、通知なしでコピーを提供します。
+      await page.evaluate(() => {
+        Object.defineProperty(navigator, "share", {
+          configurable: true,
+          value: async () => {
+            throw new DOMException("No share targets", "AbortError");
+          },
+        });
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true,
+          value: {
+            writeText: async (url: string) => {
+              document.documentElement.dataset.copied = url;
+            },
+          },
+        });
+      });
+      await share.click();
+      const copy = page.getByRole("button", { name: locale === "ja" ? "URLをコピー" : "Copy URL" });
+      await expect(copy).toBeEnabled();
+      await expect(page.getByRole("status")).toBeEmpty();
+      expect(await page.locator("html").getAttribute("data-copied")).toBeNull();
+      await copy.press("Enter");
+      await expect(page.locator("html")).toHaveAttribute("data-copied", getGuideUrl("split-the-g"));
       // API非対応時はページを再読み込みし、hydration後のラベルとコピーを確認します。
       await page.addInitScript(() => {
         Object.defineProperty(navigator, "share", { configurable: true, value: undefined });

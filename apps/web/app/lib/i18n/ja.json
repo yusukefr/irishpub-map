@@ -1,4 +1,12 @@
 {
+  "share": {
+    "action": "共有する",
+    "copy": "URLをコピー",
+    "copied": "URLをコピーしました。",
+    "failed": "共有できませんでした。URLをコピーして共有できます。",
+    "manual": "コピーできませんでした。以下のURLを選択してコピーしてください。",
+    "url": "共有用URL"
+  },
   "metadata": {
     "title": "Irish Pub Map in Japan",
     "description": "日本国内の Irish Pub を地図から探せるサービス"

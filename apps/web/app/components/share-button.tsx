@@ -1,27 +1,8 @@
 "use client";
 
 import { useRef, useState, useSyncExternalStore } from "react";
-import type { Locale } from "../lib/i18n";
+import { getTranslation, type Locale } from "../lib/i18n";
 import { Button } from "./ui/button";
-
-const messages = {
-  ja: {
-    share: "共有する",
-    copy: "URLをコピー",
-    copied: "URLをコピーしました。",
-    failed: "共有できませんでした。URLをコピーして共有できます。",
-    manual: "コピーできませんでした。以下のURLを選択してコピーしてください。",
-    url: "共有用URL",
-  },
-  en: {
-    share: "Share",
-    copy: "Copy URL",
-    copied: "URL copied.",
-    failed: "Unable to share. You can copy the URL instead.",
-    manual: "Unable to copy. Select and copy the URL below.",
-    url: "Share URL",
-  },
-};
 
 const subscribe = () => () => {};
 const supportsShare = () => typeof navigator.share === "function";
@@ -47,7 +28,7 @@ export function ShareButton({
   url: string;
   locale: Locale;
 }) {
-  const t = messages[locale];
+  const t = getTranslation(locale).share;
   const nativeShare = useSyncExternalStore(subscribe, supportsShare, serverSupportsShare);
   const [copyFallback, setCopyFallback] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -71,9 +52,12 @@ export function ShareButton({
     } catch (error) {
       if (copy) {
         setStatus("manual");
-      } else if (!(error instanceof DOMException && error.name === "AbortError")) {
+      } else {
+        // AbortErrorはキャンセルと共有先なしを区別できないため、通知せずコピー導線を残します。
         setCopyFallback(true);
-        setStatus("failed");
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setStatus("failed");
+        }
       }
     } finally {
       inFlight.current = false;
@@ -84,7 +68,7 @@ export function ShareButton({
   return (
     <div className="grid gap-2">
       <Button variant="secondary" loading={busy} onClick={handleShare}>
-        {copy ? t.copy : t.share}
+        {copy ? t.copy : t.action}
       </Button>
       <p role="status" className="text-body-sm">
         {status ? t[status] : ""}

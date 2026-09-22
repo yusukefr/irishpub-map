@@ -44,13 +44,18 @@ describe("ShareButton", () => {
     await waitFor(() => expect(share).toHaveBeenCalledExactlyOnceWith({ title: "Guide", url: getGuideUrl("sample") }));
   });
 
-  it("silently handles cancellation without copying", async () => {
-    share.mockRejectedValue(new DOMException("Cancelled", "AbortError"));
+  it.each(["Cancelled", "No share targets"])("offers copy silently after AbortError: %s", async (reason) => {
+    share.mockRejectedValue(new DOMException(reason, "AbortError"));
     render(<ShareButton {...props} />);
     fireEvent.click(screen.getByRole("button", { name: "共有する" }));
-    await waitFor(() => expect(screen.getByRole("button")).toBeEnabled());
+    const copy = await screen.findByRole("button", { name: "URLをコピー" });
+    expect(copy).toBeEnabled();
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
     expect(writeText).not.toHaveBeenCalled();
+    fireEvent.click(copy);
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("URLをコピーしました"));
+    expect(writeText).toHaveBeenCalledExactlyOnceWith(props.url);
+    expect(share).toHaveBeenCalledTimes(1);
   });
 
   it("offers a separate copy action after a sharing failure", async () => {
