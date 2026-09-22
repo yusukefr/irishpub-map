@@ -47,7 +47,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "storybook": "^10.6.0",
-    "vitest": "^4.1.11",
+    "vitest": "^5.0.1",
     "xlsx": "^0.18.5"
   },
   "engines": {
