@@ -71,6 +71,17 @@ export {
   parseAdminContentWriteInput,
   parseSetAdminContentPublicationInput,
 } from "./admin-content";
+export {
+  ADMIN_MEDIA_PAGE_SIZE,
+  MEDIA_MAX_DIMENSION,
+  MEDIA_MAX_FILE_SIZE_BYTES,
+  MEDIA_MAX_PIXEL_COUNT,
+  MEDIA_MIME_TYPES,
+  AdminMediaSearchValidationError,
+  isMediaAssetId,
+  parseAdminMediaPage,
+} from "./media";
+export type { AdminMediaPage, MediaAsset, MediaMimeType } from "./media";
 export type {
   AdminContent,
   AdminContentFieldErrors,

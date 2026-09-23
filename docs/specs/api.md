@@ -128,6 +128,10 @@ Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`tran
 
 Quiz管理APIの `POST` と `PUT` は、カテゴリ、特別日、関連Guide UUID、日英翻訳、0〜4件のChoice、正解、HTTPSの情報源URLを含む全体Snapshotを受け付けます。Question IDは `POST` でServerがUUIDを生成し、Request Bodyでは受け付けません。UUID移行の完了までは `GET`、`PUT`、公開状態変更で既存のkebab-case IDも受け付けます。`PUT` はURLのIDを対象にし、Request BodyからIDを変更できません。Choice IDはQuestion内で一意なkebab-caseです。通常のテキストはTrimして保存し、IDの空白は正規化せず入力エラーにします。関連ContentはGuideだけを選択でき、Publishedの更新は公開条件を満たさない場合に拒否します。`DELETE` とChoice単位のサブAPIは提供しません。公開時はカテゴリ、日英すべての問題文・解説・情報源ラベル、HTTPS情報源URL、4件のChoiceと各日英ラベル、正解、妥当な特別日をサーバー側で検証します。
 
+Media Asset APIは管理者専用です。`POST /api/admin/media` は同一Originの `multipart/form-data` で `file` 1件だけを受け付けます。JPEG、PNG、WebPの実データをSharpで検証し、4 MiB、縦横8192px、総画素数4000万を上限とします。GIF、AVIF、SVG、アニメーション画像、動画、形式・拡張子の偽装は拒否します。成功時は `201` と `media` DTOを返し、Blobへの保存に失敗すると `503 media_storage_unavailable` または一般化した内部エラーを返します。Blob保存後にDB登録が失敗した場合はBlobを削除して補償します。
+
+`GET /api/admin/media?page=1` は作成日時降順・UUID降順の固定50件ページを返し、未知のQuery Parameterや不正なページ番号は `400` です。応答には `databaseConfigured` と `storageConfigured` を含み、Storage keyは公開しません。DB未設定時は空一覧と `databaseConfigured: false` を返します。`GET /api/admin/media/{uuid}` は詳細を返し、DB未設定は `503`、不正UUIDは `400`、未登録IDは `404` です。削除API、安定URL配信Route、管理UIは提供しません。
+
 参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスは `{ code, key, name }` です。表示名は日本語を既定とし、日本語へフォールバックします。画面操作で再取得する市区町村APIと管理店舗一覧APIは、言語Cookieを優先し、未指定時は `Accept-Language` から表示ロケールを決定します。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
 
 管理APIは共通認証ヘルパーで、管理者設定が揃い、有効な署名済みセッションを持つリクエストだけを許可します。変更系リクエストは共通の同一Origin検証も通し、`Origin` の欠落・不一致を `403` で拒否します。現行は単一管理者モデルのため、このセッションを管理権限として扱います。Repositoryの例外時はDB・SQL・接続情報を含まない一般化したエラーを返します。

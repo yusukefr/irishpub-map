@@ -184,6 +184,22 @@ describe("pubs database migrations", () => {
   });
 });
 
+describe("media asset database migration", () => {
+  it("defines checked public media metadata and a stable admin list index", async () => {
+    const upSql = await readMigration("014_add_media_assets_up.sql");
+    const verifySql = await readMigration("014_add_media_assets_verify.sql");
+    expect(upSql).toContain("CREATE TABLE media_assets");
+    expect(upSql).toContain("id UUID PRIMARY KEY");
+    expect(upSql).toContain("storage_key TEXT NOT NULL UNIQUE");
+    expect(upSql).toContain("CHECK (mime_type IN ('image/jpeg', 'image/png', 'image/webp'))");
+    expect(upSql).toContain("width::BIGINT * height::BIGINT <= 40000000");
+    expect(upSql).toContain("media_assets_admin_list_idx");
+    expect(upSql).toContain("VALUES ('014_add_media_assets')");
+    expect(verifySql).toContain("media_assets_invalid_rows");
+    expect(verifySql).toContain("media_assets_migration_recorded");
+  });
+});
+
 describe("quiz database migration", () => {
   it("defines localized quiz questions, choices, and same-question correct answers", async () => {
     const upSql = await readMigration("012_add_quiz_domain_up.sql");

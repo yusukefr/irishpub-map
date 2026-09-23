@@ -15,6 +15,7 @@
     "@irishpub-map/shared": "*",
     "@neondatabase/serverless": "^1.0.2",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/blob": "^2.8.0",
     "@vercel/speed-insights": "^2.0.0",
     "maplibre-gl": "6.7.0",
     "next": "16.3.4",
@@ -23,6 +24,7 @@
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
+    "sharp": "^0.35.4",
     "unified": "^11.0.5"
   },
   "devDependencies": {
