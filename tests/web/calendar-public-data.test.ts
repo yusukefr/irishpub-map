@@ -5,14 +5,14 @@ const mocks = vi.hoisted(() => ({
   getPublishedCalendarEvents: vi.fn(),
   isCalendarDatabaseConfigured: vi.fn(),
   revalidateTag: vi.fn(),
-  unstableCache: vi.fn(),
+  unstableCacheCalls: [] as Array<[unknown, string[], unknown]>,
   cachedQuery: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
   revalidateTag: mocks.revalidateTag,
   unstable_cache: (query: () => Promise<readonly CalendarEvent[]>, keyParts: string[], options: unknown) => {
-    mocks.unstableCache(query, keyParts, options);
+    mocks.unstableCacheCalls.push([query, keyParts, options]);
     return () => {
       mocks.cachedQuery();
       return query();
@@ -56,10 +56,11 @@ describe("calendar public data loader", () => {
     await expect(getPublishedCalendarData()).resolves.toBe(events);
 
     expect(mocks.getPublishedCalendarEvents).toHaveBeenCalledOnce();
-    expect(mocks.unstableCache).toHaveBeenCalledWith(expect.any(Function), [PUBLIC_CALENDAR_CACHE_TAG], {
-      tags: [PUBLIC_CALENDAR_CACHE_TAG],
-      revalidate: false,
-    });
+    expect(mocks.unstableCacheCalls).toContainEqual([
+      expect.any(Function),
+      [PUBLIC_CALENDAR_CACHE_TAG],
+      { tags: [PUBLIC_CALENDAR_CACHE_TAG], revalidate: false },
+    ]);
   });
 
   it("DATABASE_URL未設定時は空配列をCacheせず返す", async () => {
