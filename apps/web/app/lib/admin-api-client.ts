@@ -68,6 +68,25 @@ export function getAdminCalendarApiErrorMessage(locale: Locale, value: unknown) 
   }
   return getAdminApiErrorMessage(locale, value);
 }
+
+/** Media API固有エラーを管理画面向けの安全な翻訳へ変換します。
+ * @param {Locale} locale - 現在の表示言語。
+ * @param {unknown} value - APIから受け取った値。
+ * @returns {string} Media向け文言、または共通エラー文言。
+ */
+export function getAdminMediaApiErrorMessage(locale: Locale, value: unknown) {
+  const errorCode = getErrorCode(value);
+  const messages = getTranslation(locale).admin.media.errors;
+  const mediaMessages: Partial<Record<AdminApiErrorCode, string>> = {
+    media_file_too_large: messages.fileTooLarge,
+    media_unsupported_format: messages.unsupportedFormat,
+    media_invalid_image: messages.invalidImage,
+    media_dimensions_exceeded: messages.dimensionsExceeded,
+    media_storage_unavailable: messages.storageUnavailable,
+    database_unavailable: messages.databaseUnavailable,
+  };
+  return mediaMessages[errorCode] ?? getAdminApiErrorMessage(locale, value);
+}
 /**
  * タグAPIのフィールド別Validationを優先し、現在のlocaleの文言へ変換します。
  * @param {Locale} locale - 現在の画面表示言語。

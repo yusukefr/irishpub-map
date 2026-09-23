@@ -4,6 +4,7 @@ import { isMediaDatabaseConfigured, listMediaAssets } from "../../../lib/media/r
 import { isMediaStorageConfigured } from "../../../lib/media/storage";
 import { MediaUploadServiceError, uploadAdminMedia } from "../../../lib/media/service";
 import { MediaValidationError } from "../../../lib/media/validation";
+import { isE2ETestMode } from "../../../lib/e2e-test-mode";
 
 export const runtime = "nodejs";
 
@@ -22,7 +23,8 @@ export async function GET(request: Request) {
     if (error instanceof AdminMediaSearchValidationError) return adminApiErrorResponse("invalid_request", 400);
     throw error;
   }
-  if (!isMediaDatabaseConfigured())
+  const databaseConfigured = isMediaDatabaseConfigured() || isE2ETestMode();
+  if (!databaseConfigured)
     return Response.json({
       media: [],
       total: 0,
@@ -34,7 +36,7 @@ export async function GET(request: Request) {
   try {
     return Response.json({
       ...(await listMediaAssets(page)),
-      databaseConfigured: true,
+      databaseConfigured,
       storageConfigured: isMediaStorageConfigured(),
     });
   } catch {
