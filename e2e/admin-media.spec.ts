@@ -4,6 +4,8 @@ import { LOCALE_COOKIE } from "../apps/web/app/lib/i18n";
 import { E2E_TEST_DATA } from "../apps/web/app/lib/e2e-test-fixtures";
 import { loginAsE2EAdmin } from "./support/page-helpers";
 
+test.use({ timezoneId: "Asia/Tokyo" });
+
 test("Japanese Media管理画面にfixtureを表示する", async ({ page }) => {
   await loginAsE2EAdmin(page, "/admin/media");
   await expect(page.getByRole("heading", { name: "Media管理" })).toBeVisible();
