@@ -41,6 +41,7 @@ export function MediaUploader({
   const [error, setError] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
   const objectUrl = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(
     () => () => {
@@ -89,6 +90,7 @@ export function MediaUploader({
         return;
       }
       selectFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       onSuccess?.();
       await onUploaded(media);
     } catch {
@@ -105,6 +107,7 @@ export function MediaUploader({
         <label className={styles.fileLabel}>
           {t.chooseFile}
           <input
+            ref={fileInputRef}
             className={styles.fileInput}
             type="file"
             accept="image/jpeg,image/png,image/webp"

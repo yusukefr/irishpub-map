@@ -57,7 +57,9 @@ describe("MediaUploader", () => {
     );
     renderUploader();
     const file = new File(["image bytes"], "pub-photo.jpg", { type: "image/jpeg" });
-    fireEvent.change(screen.getByLabelText("画像ファイル"), { target: { files: [file] } });
+    const input = screen.getByLabelText<HTMLInputElement>("画像ファイル");
+    fireEvent.change(input, { target: { files: [file] } });
+    Object.defineProperty(input, "value", { configurable: true, writable: true, value: "C:\\fakepath\\pub-photo.jpg" });
 
     expect(await screen.findByAltText("")).toHaveAttribute("src", "blob:local-preview");
     expect(screen.getByText("pub-photo.jpg")).toBeVisible();
@@ -74,6 +76,26 @@ describe("MediaUploader", () => {
     expect((options.body as FormData).get("file")).toBe(file);
     expect(revokeObjectUrl).toHaveBeenCalledWith("blob:local-preview");
     expect(screen.queryByText("pub-photo.jpg")).not.toBeInTheDocument();
+    expect(input.value).toBe("");
+  });
+
+  it("accepts the same file again after a successful upload", async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify({ media: E2E_TEST_DATA.media.landscape }), { status: 201 })),
+    );
+    renderUploader();
+    const input = screen.getByLabelText<HTMLInputElement>("画像ファイル");
+    const file = new File(["image bytes"], "pub-photo.jpg", { type: "image/jpeg" });
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "アップロード" }));
+    await waitFor(() => expect(uploaded).toHaveBeenCalledTimes(1));
+    expect(input.value).toBe("");
+
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(screen.getByRole("button", { name: "アップロード" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "アップロード" }));
+    await waitFor(() => expect(uploaded).toHaveBeenCalledTimes(2));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("rejects oversized files and unsupported MIME before requesting", () => {

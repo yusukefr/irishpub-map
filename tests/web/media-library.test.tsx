@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { E2E_TEST_DATA } from "../../apps/web/app/lib/e2e-test-fixtures";
 import { AdminMediaManager } from "../../apps/web/app/components/media/admin-media-manager";
@@ -125,9 +125,38 @@ describe("Media Library in the admin manager", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not load media.");
     expect(screen.getByText(media[0].id)).toBeVisible();
+    expect(screen.getByText("1–50 / 51")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
     expect(screen.queryByText("private provider details")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText(media[1].id)).toBeVisible();
     expect(fetchMock).toHaveBeenLastCalledWith("/api/admin/media?page=2");
+  });
+
+  it("keeps the uploaded first page when an older page request completes later", async () => {
+    let resolveOldPage!: (response: Response) => void;
+    fetchMock.mockResolvedValueOnce(pageResponse({ items: [media[0]], total: 51 }));
+    fetchMock.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        resolveOldPage = resolve;
+      }),
+    );
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ media: media[1] }), { status: 201 }));
+    fetchMock.mockResolvedValueOnce(pageResponse({ items: [media[1]], total: 2 }));
+    render(<AdminMediaManager locale="en" />);
+    await screen.findByText(media[0].id);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/admin/media?page=2"));
+    const file = new File(["image"], "upload", { type: "" });
+    fireEvent.change(screen.getByLabelText("Image file"), { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "Upload image" }));
+    expect(await screen.findByText(media[1].id)).toBeVisible();
+
+    await act(async () => resolveOldPage(pageResponse({ page: 2, items: [media[0]], total: 51 })));
+    expect(screen.getByText(media[1].id)).toBeVisible();
+    expect(screen.queryByText(media[0].id)).not.toBeInTheDocument();
+    expect(screen.getByText("1–2 / 2")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
   });
 });

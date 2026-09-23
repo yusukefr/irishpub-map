@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AdminMediaPage, MediaAsset } from "@irishpub-map/shared/media";
 import { ADMIN_MEDIA_PAGE_SIZE } from "@irishpub-map/shared/media";
 import { isMediaAsset } from "./presentation";
@@ -45,16 +45,22 @@ export function useMediaLibrary(enabled = true) {
   const [storageConfigured, setStorageConfigured] = useState(false);
   const [configurationKnown, setConfigurationKnown] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const latestRequestId = useRef(0);
+  const retryPage = useRef(1);
 
   const loadPage = useCallback(async (targetPage: number, allowCorrection = true) => {
+    const requestId = ++latestRequestId.current;
+    retryPage.current = targetPage;
     setLoading(true);
     setError(false);
     try {
       let value = await requestMediaPage(targetPage);
+      if (requestId !== latestRequestId.current) return;
       const lastPage = Math.max(1, Math.ceil(value.total / value.pageSize));
       if (allowCorrection && targetPage > 1 && value.media.length === 0 && value.total > 0 && targetPage !== lastPage) {
+        retryPage.current = lastPage;
         value = await requestMediaPage(lastPage);
-        setPage(lastPage);
+        if (requestId !== latestRequestId.current) return;
       }
       setDatabaseConfigured(value.databaseConfigured);
       setStorageConfigured(value.storageConfigured);
@@ -64,16 +70,24 @@ export function useMediaLibrary(enabled = true) {
       setPage(value.page);
       setLoaded(true);
     } catch {
+      if (requestId !== latestRequestId.current) return;
       setLoaded(true);
       setError(true);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequestId.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (!enabled) return;
-    void Promise.resolve().then(() => loadPage(1));
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (active) void loadPage(1);
+    });
+    return () => {
+      active = false;
+      latestRequestId.current += 1;
+    };
   }, [enabled, loadPage]);
 
   const goToPage = useCallback(
@@ -85,18 +99,16 @@ export function useMediaLibrary(enabled = true) {
         nextPage > Math.max(1, Math.ceil(total / ADMIN_MEDIA_PAGE_SIZE))
       )
         return;
-      setPage(nextPage);
       void loadPage(nextPage);
     },
     [loading, loadPage, page, total],
   );
 
   const refreshFirstPage = useCallback(async () => {
-    setPage(1);
     await loadPage(1);
   }, [loadPage]);
 
-  const retry = useCallback(() => void loadPage(page), [loadPage, page]);
+  const retry = useCallback(() => void loadPage(retryPage.current), [loadPage]);
 
   return {
     media,

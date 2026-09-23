@@ -123,20 +123,17 @@
 }
 
 .selectCard {
-  min-height: 44px;
-  cursor: pointer;
-  font: inherit;
+  align-content: start;
 }
 
-.selectCard[aria-pressed="true"] {
+.selectedCard {
   border: 2px solid var(--color-border-brand);
   background: var(--color-brand-soft);
 }
 
-.cardState {
-  min-height: 1.5em;
-  color: var(--color-text-brand);
-  font-weight: 700;
+.selectButton {
+  justify-self: start;
+  min-height: 44px;
 }
 
 .metadata div {

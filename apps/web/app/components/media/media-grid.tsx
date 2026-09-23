@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { MediaAsset } from "@irishpub-map/shared/media";
 import { formatMediaDate, formatMediaFileSize, formatMediaType } from "../../lib/media/presentation";
 import { getTranslation, type Locale } from "../../lib/i18n";
+import { Button } from "../ui/button";
 import styles from "./media.module.css";
 
 /** Media AssetのPreviewと管理用metadataを表示する再利用Gridです。
@@ -33,8 +34,11 @@ export function MediaGrid({
     <div className={styles.grid}>
       {media.map((asset) => {
         const selected = selectedId === asset.id;
-        const card = (
-          <>
+        return (
+          <article
+            key={asset.id}
+            className={`${selectable ? styles.selectCard : styles.card} ${selected ? styles.selectedCard : ""}`}
+          >
             <span className={styles.imageFrame}>
               <Image src={asset.url} alt="" fill sizes="(max-width: 720px) 100vw, (max-width: 1100px) 50vw, 25vw" />
             </span>
@@ -64,23 +68,17 @@ export function MediaGrid({
                 <dd>{asset.id}</dd>
               </div>
             </dl>
-            {selectable ? <span className={styles.cardState}>{selected ? t.selected : ""}</span> : null}
-          </>
-        );
-        return selectable ? (
-          <button
-            key={asset.id}
-            type="button"
-            className={styles.selectCard}
-            aria-pressed={selected}
-            aria-label={`${t.selectMediaAccessible}, ${asset.width} × ${asset.height}, ${formatMediaType(asset.mimeType)}, ${asset.id}`}
-            onClick={() => onSelect?.(asset)}
-          >
-            {card}
-          </button>
-        ) : (
-          <article key={asset.id} className={styles.card}>
-            {card}
+            {selectable ? (
+              <Button
+                variant="secondary"
+                className={styles.selectButton}
+                aria-pressed={selected}
+                aria-label={`${t.selectMediaAccessible}, ${asset.width} × ${asset.height}, ${formatMediaType(asset.mimeType)}, ${asset.id}`}
+                onClick={() => onSelect?.(asset)}
+              >
+                {selected ? t.selected : t.selectMedia}
+              </Button>
+            ) : null}
           </article>
         );
       })}

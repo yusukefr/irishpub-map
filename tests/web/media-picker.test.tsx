@@ -68,8 +68,12 @@ describe("MediaPicker", () => {
     expect(showModalMock).toHaveBeenCalled();
 
     const card = await screen.findByRole("button", { name: new RegExp(landscape.id) });
+    expect(card.closest("article")).toContainElement(card);
+    expect(card.closest("article")?.querySelector("dl")).toBeInTheDocument();
+    expect(card.querySelector("dl")).not.toBeInTheDocument();
     fireEvent.click(card);
     expect(card).toHaveAttribute("aria-pressed", "true");
+    expect(card).toHaveTextContent("選択中");
     expect(onSelect).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "選択した画像を使う" }));
     expect(onSelect).toHaveBeenCalledWith(landscape);
