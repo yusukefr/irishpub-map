@@ -23,14 +23,16 @@ npm install
 cp .env.example .env.local
 ```
 
-| 変数                              | 必要な場面                      | 用途                                    |
-| --------------------------------- | ------------------------------- | --------------------------------------- |
-| `IRISHPUB_MAP_API_KEY`            | 任意                            | `GET /api/pubs`のAPI key                |
-| `VERCEL_AUTOMATION_BYPASS_SECRET` | Preview Protectionを使う場合    | Previewのサーバー側fetch用bypass secret |
-| `DATABASE_URL`                    | 公開Guideまたは永続化を使う場合 | Neon Postgres接続文字列                 |
-| `ADMIN_USERNAME`                  | 管理画面を有効にする場合        | 管理者ID                                |
-| `ADMIN_PASSWORD_HASH`             | 管理画面を有効にする場合        | scrypt password hash                    |
-| `ADMIN_SESSION_SECRET`            | 管理画面を有効にする場合        | セッションCookie署名用のランダム値      |
+| 変数                              | 必要な場面                          | 用途                                    |
+| --------------------------------- | ----------------------------------- | --------------------------------------- |
+| `IRISHPUB_MAP_API_KEY`            | 任意                                | `GET /api/pubs`のAPI key                |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | Preview Protectionを使う場合        | Previewのサーバー側fetch用bypass secret |
+| `DATABASE_URL`                    | 公開Guideまたは永続化を使う場合     | Neon Postgres接続文字列                 |
+| `BLOB_READ_WRITE_TOKEN`           | ローカルでMedia uploadを使う場合    | Vercel Blob read/write token            |
+| `BLOB_STORE_ID`                   | Vercel OIDCでMedia uploadを使う場合 | Blob store ID（OIDC tokenはVercel管理） |
+| `ADMIN_USERNAME`                  | 管理画面を有効にする場合            | 管理者ID                                |
+| `ADMIN_PASSWORD_HASH`             | 管理画面を有効にする場合            | scrypt password hash                    |
+| `ADMIN_SESSION_SECRET`            | 管理画面を有効にする場合            | セッションCookie署名用のランダム値      |
 
 `DATABASE_URL`未設定時は店舗と公開Guideを0件として扱います。3つの`ADMIN_*`変数がすべてそろうと管理画面のログインが有効になり、更新にはさらに`DATABASE_URL`が必要です。
 

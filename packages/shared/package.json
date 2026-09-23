@@ -15,6 +15,7 @@
     "./admin-status": "./src/admin-status.ts",
     "./admin-tag": "./src/admin-tag.ts",
     "./admin-pub": "./src/admin-pub.ts",
-    "./admin-content": "./src/admin-content.ts"
+    "./admin-content": "./src/admin-content.ts",
+    "./media": "./src/media.ts"
   }
 }

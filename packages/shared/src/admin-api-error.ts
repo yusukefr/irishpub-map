@@ -27,6 +27,11 @@ export const ADMIN_API_ERROR_CODES = [
   "quiz_not_found",
   "calendar_conflict",
   "calendar_not_found",
+  "media_storage_unavailable",
+  "media_file_too_large",
+  "media_invalid_image",
+  "media_dimensions_exceeded",
+  "media_unsupported_format",
 ] as const;
 
 /** 管理APIが返す、表示言語に依存しないエラーコードです。 */
