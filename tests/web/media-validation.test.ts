@@ -74,7 +74,6 @@ describe("media upload validation", () => {
   });
 
   it.each([
-    ["GIF", new File(["GIF89a"], "sample.gif", { type: "image/gif" })],
     [
       "SVG",
       new File(['<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>'], "sample.svg", {
@@ -83,6 +82,19 @@ describe("media upload validation", () => {
     ],
   ])("rejects %s uploads", async (_name, file) => {
     await expect(validateMediaFile(file)).rejects.toBeInstanceOf(MediaValidationError);
+  });
+
+  it("rejects a valid single-frame GIF as an unsupported format", async () => {
+    const validGif = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
+    await expect(sharp(validGif, { animated: true }).metadata()).resolves.toMatchObject({
+      format: "gif",
+      width: 1,
+      height: 1,
+      pages: 1,
+    });
+    await expect(validateMediaFile(new File([validGif], "sample.gif", { type: "image/gif" }))).rejects.toMatchObject({
+      kind: "unsupported",
+    });
   });
 
   it("rejects AVIF uploads", async () => {
