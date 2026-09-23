@@ -45,8 +45,7 @@
       "title": "4. Information sent to external services",
       "paragraphs": [
         "This service uses OpenFreeMap and Vercel to the extent necessary to provide and improve the service. OpenFreeMap is used to display maps, and your browser communicates with it directly when a map is displayed. Map data provided by OpenFreeMap uses data from OpenMapTiles and OpenStreetMap. Vercel is used for hosting, content delivery, security, incident investigation, and understanding usage and performance.",
-        "When an administrator uploads an image through the admin API, the image is sent to Vercel Blob for storage and delivery and is stored at a public URL.",
-        "The operator does not independently obtain or store access information collected by OpenFreeMap or Vercel. Images uploaded by administrators and their media asset metadata are stored as needed to provide this service."
+        "The operator of this service does not independently obtain or store information collected by OpenFreeMap or Vercel."
       ],
       "links": [
         {
