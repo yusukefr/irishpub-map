@@ -53,7 +53,8 @@ export async function validateMediaFile(file: File): Promise<ValidatedMedia> {
   if (claimedExtension && ![extension, ...(mimeType === "image/jpeg" ? ["jpeg"] : [])].includes(claimedExtension)) {
     throw new MediaValidationError("unsupported");
   }
-  const { width, height } = metadata;
+  const width = metadata.autoOrient?.width ?? metadata.width;
+  const height = metadata.autoOrient?.height ?? metadata.height;
   if (!width || !height) throw new MediaValidationError("invalid");
   if (width > MEDIA_MAX_DIMENSION || height > MEDIA_MAX_DIMENSION || width * height > MEDIA_MAX_PIXEL_COUNT) {
     throw new MediaValidationError("dimensions");

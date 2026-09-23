@@ -9,12 +9,48 @@ async function imageFile(format: "jpeg" | "png" | "webp" = "png") {
   return new File([buffer], `sample.${format}`, { type: `image/${format}` });
 }
 
+function pngWithDimensions(png: Buffer, width: number, height: number) {
+  const image = Buffer.from(png);
+  image.writeUInt32BE(width, 16);
+  image.writeUInt32BE(height, 20);
+  let crc = 0xffffffff;
+  for (const byte of image.subarray(12, 29)) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+  }
+  image.writeUInt32BE((crc ^ 0xffffffff) >>> 0, 29);
+  return image;
+}
+
+function pngFile(buffer: Buffer) {
+  return new File([buffer], "sample.png", { type: "image/png" });
+}
+
 describe("media upload validation", () => {
   it("uses decoded image format and dimensions", async () => {
     await expect(validateMediaFile(await imageFile())).resolves.toMatchObject({
       mimeType: "image/png",
       width: 8,
       height: 6,
+    });
+  });
+
+  it.each(["jpeg", "webp"] as const)("accepts valid %s files", async (format) => {
+    await expect(validateMediaFile(await imageFile(format))).resolves.toMatchObject({
+      mimeType: `image/${format}`,
+      width: 8,
+      height: 6,
+    });
+  });
+
+  it("stores dimensions after applying JPEG EXIF orientation", async () => {
+    const bytes = await sharp({ create: { width: 8, height: 6, channels: 3, background: "#176b57" } })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .toBuffer();
+    await expect(validateMediaFile(new File([bytes], "rotated.jpg", { type: "image/jpeg" }))).resolves.toMatchObject({
+      width: 6,
+      height: 8,
     });
   });
 
@@ -34,6 +70,39 @@ describe("media upload validation", () => {
     );
     await expect(validateMediaFile(new File(["GIF89a"], "bad.gif", { type: "image/gif" }))).rejects.toMatchObject({
       kind: "invalid",
+    });
+  });
+
+  it.each([
+    ["GIF", new File(["GIF89a"], "sample.gif", { type: "image/gif" })],
+    [
+      "SVG",
+      new File(['<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>'], "sample.svg", {
+        type: "image/svg+xml",
+      }),
+    ],
+  ])("rejects %s uploads", async (_name, file) => {
+    await expect(validateMediaFile(file)).rejects.toBeInstanceOf(MediaValidationError);
+  });
+
+  it("rejects AVIF uploads", async () => {
+    const bytes = await sharp({ create: { width: 2, height: 2, channels: 3, background: "#176b57" } })
+      .avif()
+      .toBuffer();
+    await expect(validateMediaFile(new File([bytes], "sample.avif", { type: "image/avif" }))).rejects.toMatchObject({
+      kind: "unsupported",
+    });
+  });
+
+  it("rejects dimensions over either configured limit", async () => {
+    const png = await sharp({ create: { width: 8, height: 6, channels: 3, background: "#176b57" } })
+      .png()
+      .toBuffer();
+    await expect(validateMediaFile(pngFile(pngWithDimensions(png, 8193, 1)))).rejects.toMatchObject({
+      kind: "dimensions",
+    });
+    await expect(validateMediaFile(pngFile(pngWithDimensions(png, 8000, 5001)))).rejects.toMatchObject({
+      kind: "dimensions",
     });
   });
 

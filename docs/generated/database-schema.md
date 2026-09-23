@@ -130,6 +130,45 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | --------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `content_translations_pkey` | `CREATE UNIQUE INDEX content_translations_pkey ON public.content_translations USING btree (content_id, locale)` |
 
+## media_assets
+
+### Columns
+
+| Column        | Type                       | Nullable | Default |
+| ------------- | -------------------------- | -------- | ------- |
+| `id`          | `uuid`                     | no       | —       |
+| `storage_key` | `text`                     | no       | —       |
+| `url`         | `text`                     | no       | —       |
+| `mime_type`   | `text`                     | no       | —       |
+| `width`       | `integer`                  | no       | —       |
+| `height`      | `integer`                  | no       | —       |
+| `file_size`   | `integer`                  | no       | —       |
+| `created_at`  | `timestamp with time zone` | no       | `now()` |
+
+### Constraints
+
+| Name                             | Type        | Definition                                                                                   |
+| -------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
+| `media_assets_file_size_check`   | CHECK       | `CHECK (file_size >= 1 AND file_size <= 4194304)`                                            |
+| `media_assets_height_check`      | CHECK       | `CHECK (height >= 1 AND height <= 8192)`                                                     |
+| `media_assets_mime_type_check`   | CHECK       | `CHECK (mime_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text, 'image/webp'::text]))` |
+| `media_assets_pixel_count_check` | CHECK       | `CHECK ((width::bigint * height::bigint) <= 40000000)`                                       |
+| `media_assets_pkey`              | PRIMARY KEY | `PRIMARY KEY (id)`                                                                           |
+| `media_assets_storage_key_check` | CHECK       | `CHECK (btrim(storage_key) <> ''::text AND storage_key = btrim(storage_key))`                |
+| `media_assets_storage_key_key`   | UNIQUE      | `UNIQUE (storage_key)`                                                                       |
+| `media_assets_url_check`         | CHECK       | `CHECK (btrim(url) <> ''::text AND url = btrim(url))`                                        |
+| `media_assets_url_key`           | UNIQUE      | `UNIQUE (url)`                                                                               |
+| `media_assets_width_check`       | CHECK       | `CHECK (width >= 1 AND width <= 8192)`                                                       |
+
+### Indexes
+
+| Name                           | Definition                                                                                               |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `media_assets_admin_list_idx`  | `CREATE INDEX media_assets_admin_list_idx ON public.media_assets USING btree (created_at DESC, id DESC)` |
+| `media_assets_pkey`            | `CREATE UNIQUE INDEX media_assets_pkey ON public.media_assets USING btree (id)`                          |
+| `media_assets_storage_key_key` | `CREATE UNIQUE INDEX media_assets_storage_key_key ON public.media_assets USING btree (storage_key)`      |
+| `media_assets_url_key`         | `CREATE UNIQUE INDEX media_assets_url_key ON public.media_assets USING btree (url)`                      |
+
 ## municipality_codes
 
 ### Columns
