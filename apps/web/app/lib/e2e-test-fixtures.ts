@@ -32,6 +32,26 @@ export const E2E_TEST_DATA = {
     guinness: { id: "30000000-0000-4000-8000-000000000101", key: "guinness" },
     whiskey: { id: "30000000-0000-4000-8000-000000000102", key: "whiskey" },
   },
+  media: {
+    landscape: {
+      id: "30000000-0000-4000-8000-000000000301",
+      url: "/media-fixtures/landscape.jpg",
+      mimeType: "image/jpeg",
+      width: 1200,
+      height: 800,
+      fileSize: 184_320,
+      createdAt: "2026-09-20T10:00:00.000Z",
+    },
+    portrait: {
+      id: "30000000-0000-4000-8000-000000000302",
+      url: "/media-fixtures/portrait.webp",
+      mimeType: "image/webp",
+      width: 800,
+      height: 1200,
+      fileSize: 96_256,
+      createdAt: "2026-09-21T10:00:00.000Z",
+    },
+  },
 } as const;
 
 const UPDATED_AT = "2026-01-15T12:00:00.000Z";

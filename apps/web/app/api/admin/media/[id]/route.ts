@@ -1,6 +1,7 @@
 import { isMediaAssetId } from "@irishpub-map/shared/media";
 import { adminApiErrorResponse, getAdminApiAuthorizationError } from "../../../../lib/admin-api";
 import { getMediaAsset, isMediaDatabaseConfigured } from "../../../../lib/media/repository";
+import { isE2ETestMode } from "../../../../lib/e2e-test-mode";
 
 export const runtime = "nodejs";
 
@@ -16,7 +17,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   if (authorizationError) return authorizationError;
   const { id } = await context.params;
   if (!isMediaAssetId(id)) return adminApiErrorResponse("invalid_request", 400);
-  if (!isMediaDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
+  if (!isMediaDatabaseConfigured() && !isE2ETestMode()) return adminApiErrorResponse("database_unavailable", 503);
   try {
     const media = await getMediaAsset(id);
     return media ? Response.json({ media }) : adminApiErrorResponse("not_found", 404);

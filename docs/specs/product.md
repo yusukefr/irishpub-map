@@ -48,6 +48,7 @@
 - `/admin/content` でEditorial ContentのDraft / Published一覧を確認し、`/admin/content/new` と `/admin/content/:id` でkind、slug、category、日英のtitle・summary・Markdown本文を編集する
 - ContentのPreviewは認証済み管理画面内で未保存入力を安全なMarkdownとして描画し、Public Routeや公開Content Cacheを経由しない。公開時は日英すべての必須項目を検証し、未保存変更がある間は公開状態を変更しない
 - `/admin/quiz` でIrish QuizのDraft / Published一覧を確認し、`/admin/quiz/new` と `/admin/quiz/:id` でカテゴリ、特別日、関連Guide、日英の問題文・解説・情報源、最大4件のChoiceと正解を全体Snapshotとして編集する。Question IDは新規保存時にServerがUUIDを生成し、管理画面では入力しない。新規QuizはDraftで作成し、保存後に公開条件をサーバー側で検証して公開・下書き戻しを行う
+- `/admin/media` で登録済みMedia Assetを50件ずつ閲覧し、画像Preview、寸法、形式、サイズ、登録日時、Media IDを確認する。JPEG・PNG・WebPの単一画像を4 MiBまでUploadし、Content・Quiz編集画面向けの共通Media Pickerでは一覧またはUploadした画像を明示的に確定する。DB未設定時はUploadと選択を無効化し、Storage未設定時は既存Mediaの閲覧・選択を維持してUploadを無効化する
 - ContentのDraft保存とPublishは別操作とする。Publishedを編集して保存した場合は既存の公開内容へ即時反映されるため、画面にその動作を明示し、公開前の編集を続ける場合は先にDraftへ戻す
 - 管理APIでは公開・非公開の両方を取得し、新規店舗は非公開で作成する。QuizもDraft・Publishedの両方を取得し、新規QuestionはDraftで作成する
 - 管理者認証または `DATABASE_URL` が未設定の場合、書き込みを拒否して閲覧・設定案内に限定する
