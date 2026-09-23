@@ -17,7 +17,9 @@ GitHub ActionsのCI、PR用app version更新、Vercel Analytics / Speed Insights
 
 ## GitHub Actions
 
-CIはbranch push、Pull Request更新、`workflow_dispatch`で実行されます。`Lint, Test, Build`とE2Eを確認し、PR更新後は最新HEADを対象にCIを確認します。
+CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`で実行されます。Feature branchへのpushでは起動せず、PR更新時は`Lint, Test, Build`（Storybook Buildを含む）のみ実行します。E2EとStorybook browser testsは`main`へのpush後、または手動実行時に実行します。PR中にE2Eを確認する必要があれば、対象branchで`workflow_dispatch`を実行します。
+
+同じPRまたはbranchで新しいrunが始まると、進行中の古いrunはキャンセルされます。PR更新後は最新HEADの通常CIを確認し、`main`へのmerge後は通常CIとE2Eの両方を確認します。E2E失敗時のPlaywright artifactは引き続き保存します。
 
 Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secrets and variables → Actionsで次を設定します。
 

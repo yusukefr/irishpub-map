@@ -3,9 +3,15 @@ name: CI
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -89,6 +95,7 @@ jobs:
 
   e2e:
     name: E2E
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: ci
     runs-on: ubuntu-24.04
     timeout-minutes: 15
