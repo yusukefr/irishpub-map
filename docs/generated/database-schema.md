@@ -73,56 +73,63 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 ### Columns
 
-| Column         | Type                       | Nullable | Default             |
-| -------------- | -------------------------- | -------- | ------------------- |
-| `id`           | `uuid`                     | no       | `gen_random_uuid()` |
-| `kind`         | `text`                     | yes      | —                   |
-| `slug`         | `text`                     | yes      | —                   |
-| `category`     | `text`                     | yes      | —                   |
-| `status`       | `text`                     | no       | —                   |
-| `published_at` | `timestamp with time zone` | yes      | —                   |
-| `created_at`   | `timestamp with time zone` | no       | `now()`             |
-| `updated_at`   | `timestamp with time zone` | no       | `now()`             |
+| Column                | Type                       | Nullable | Default             |
+| --------------------- | -------------------------- | -------- | ------------------- |
+| `id`                  | `uuid`                     | no       | `gen_random_uuid()` |
+| `kind`                | `text`                     | yes      | —                   |
+| `slug`                | `text`                     | yes      | —                   |
+| `category`            | `text`                     | yes      | —                   |
+| `status`              | `text`                     | no       | —                   |
+| `published_at`        | `timestamp with time zone` | yes      | —                   |
+| `created_at`          | `timestamp with time zone` | no       | `now()`             |
+| `updated_at`          | `timestamp with time zone` | no       | `now()`             |
+| `hero_image_asset_id` | `uuid`                     | yes      | —                   |
 
 ### Constraints
 
-| Name                                      | Type        | Definition                                                                                                           |
-| ----------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------- |
-| `content_entries_category_check`          | CHECK       | `CHECK (btrim(category) <> ''::text)`                                                                                |
-| `content_entries_kind_check`              | CHECK       | `CHECK (btrim(kind) <> ''::text)`                                                                                    |
-| `content_entries_kind_slug_key`           | UNIQUE      | `UNIQUE (kind, slug)`                                                                                                |
-| `content_entries_pkey`                    | PRIMARY KEY | `PRIMARY KEY (id)`                                                                                                   |
-| `content_entries_publication_state_check` | CHECK       | `CHECK (status = 'draft'::text AND published_at IS NULL OR status = 'published'::text AND published_at IS NOT NULL)` |
-| `content_entries_slug_check`              | CHECK       | `CHECK (btrim(slug) <> ''::text)`                                                                                    |
-| `content_entries_status_check`            | CHECK       | `CHECK (status = ANY (ARRAY['draft'::text, 'published'::text]))`                                                     |
+| Name                                       | Type        | Definition                                                                                                           |
+| ------------------------------------------ | ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| `content_entries_category_check`           | CHECK       | `CHECK (btrim(category) <> ''::text)`                                                                                |
+| `content_entries_hero_image_asset_id_fkey` | FOREIGN KEY | `FOREIGN KEY (hero_image_asset_id) REFERENCES media_assets(id) ON DELETE SET NULL`                                   |
+| `content_entries_kind_check`               | CHECK       | `CHECK (btrim(kind) <> ''::text)`                                                                                    |
+| `content_entries_kind_slug_key`            | UNIQUE      | `UNIQUE (kind, slug)`                                                                                                |
+| `content_entries_pkey`                     | PRIMARY KEY | `PRIMARY KEY (id)`                                                                                                   |
+| `content_entries_publication_state_check`  | CHECK       | `CHECK (status = 'draft'::text AND published_at IS NULL OR status = 'published'::text AND published_at IS NOT NULL)` |
+| `content_entries_slug_check`               | CHECK       | `CHECK (btrim(slug) <> ''::text)`                                                                                    |
+| `content_entries_status_check`             | CHECK       | `CHECK (status = ANY (ARRAY['draft'::text, 'published'::text]))`                                                     |
 
 ### Indexes
 
-| Name                            | Definition                                                                                             |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `content_entries_kind_slug_key` | `CREATE UNIQUE INDEX content_entries_kind_slug_key ON public.content_entries USING btree (kind, slug)` |
-| `content_entries_pkey`          | `CREATE UNIQUE INDEX content_entries_pkey ON public.content_entries USING btree (id)`                  |
+| Name                                      | Definition                                                                                                                                                 |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `content_entries_hero_image_asset_id_idx` | `CREATE INDEX content_entries_hero_image_asset_id_idx ON public.content_entries USING btree (hero_image_asset_id) WHERE (hero_image_asset_id IS NOT NULL)` |
+| `content_entries_kind_slug_key`           | `CREATE UNIQUE INDEX content_entries_kind_slug_key ON public.content_entries USING btree (kind, slug)`                                                     |
+| `content_entries_pkey`                    | `CREATE UNIQUE INDEX content_entries_pkey ON public.content_entries USING btree (id)`                                                                      |
 
 ## content_translations
 
 ### Columns
 
-| Column          | Type                       | Nullable | Default |
-| --------------- | -------------------------- | -------- | ------- |
-| `content_id`    | `uuid`                     | no       | —       |
-| `locale`        | `text`                     | no       | —       |
-| `title`         | `text`                     | no       | —       |
-| `summary`       | `text`                     | no       | —       |
-| `body_markdown` | `text`                     | no       | —       |
-| `updated_at`    | `timestamp with time zone` | no       | `now()` |
+| Column               | Type                       | Nullable | Default    |
+| -------------------- | -------------------------- | -------- | ---------- |
+| `content_id`         | `uuid`                     | no       | —          |
+| `locale`             | `text`                     | no       | —          |
+| `title`              | `text`                     | no       | —          |
+| `summary`            | `text`                     | no       | —          |
+| `body_markdown`      | `text`                     | no       | —          |
+| `updated_at`         | `timestamp with time zone` | no       | `now()`    |
+| `hero_image_alt`     | `text`                     | no       | `''::text` |
+| `hero_image_caption` | `text`                     | no       | `''::text` |
 
 ### Constraints
 
-| Name                                   | Type        | Definition                                                                  |
-| -------------------------------------- | ----------- | --------------------------------------------------------------------------- |
-| `content_translations_content_id_fkey` | FOREIGN KEY | `FOREIGN KEY (content_id) REFERENCES content_entries(id) ON DELETE CASCADE` |
-| `content_translations_locale_check`    | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`                      |
-| `content_translations_pkey`            | PRIMARY KEY | `PRIMARY KEY (content_id, locale)`                                          |
+| Name                                                   | Type        | Definition                                                                  |
+| ------------------------------------------------------ | ----------- | --------------------------------------------------------------------------- |
+| `content_translations_content_id_fkey`                 | FOREIGN KEY | `FOREIGN KEY (content_id) REFERENCES content_entries(id) ON DELETE CASCADE` |
+| `content_translations_hero_image_alt_length_check`     | CHECK       | `CHECK (char_length(hero_image_alt) <= 500)`                                |
+| `content_translations_hero_image_caption_length_check` | CHECK       | `CHECK (char_length(hero_image_caption) <= 1000)`                           |
+| `content_translations_locale_check`                    | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`                      |
+| `content_translations_pkey`                            | PRIMARY KEY | `PRIMARY KEY (content_id, locale)`                                          |
 
 ### Indexes
 

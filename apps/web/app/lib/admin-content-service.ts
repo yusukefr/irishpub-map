@@ -17,6 +17,7 @@ import {
 } from "./admin-content-repository";
 import { invalidateContentCache } from "./content/cache";
 import { getContentPublicationMissingFields, hasOnlySafeMarkdownUrls } from "./content/validation";
+import { getMediaAsset } from "./media/repository";
 
 /** 管理Editorial Content操作でAPIへ安全に公開できる業務エラーです。 */
 export class AdminContentServiceError extends Error {
@@ -51,6 +52,7 @@ export async function readAdminContentList(): Promise<AdminContentListItem[]> {
  */
 export async function createAdminContent(value: unknown): Promise<AdminContent> {
   const input = parseWriteInput(value);
+  await validateHeroImageAsset(input);
   const id = randomUUID();
   try {
     await insertAdminContent(id, input);
@@ -82,6 +84,7 @@ export async function readAdminContent(id: string): Promise<AdminContent> {
  */
 export async function updateAdminContent(id: string, value: unknown): Promise<AdminContent> {
   const input = parseWriteInput(value);
+  await validateHeroImageAsset(input);
   const publishReady = getContentPublicationMissingFields(input).length === 0;
   let result;
   try {
@@ -148,6 +151,7 @@ export function getPublicationMissingFields(content: AdminContent): string[] {
     kind: content.kind,
     slug: content.slug,
     category: content.category,
+    heroImageAssetId: content.heroImageAssetId,
     translations: content.translations,
   };
   return [
@@ -184,4 +188,10 @@ function getUnsafeMarkdownFields(input: AdminContentWriteInput) {
 
 function isUniqueViolation(error: unknown) {
   return Boolean(error && typeof error === "object" && "code" in error && error.code === "23505");
+}
+
+async function validateHeroImageAsset(input: AdminContentWriteInput) {
+  if (input.heroImageAssetId && !(await getMediaAsset(input.heroImageAssetId))) {
+    throw new AdminContentServiceError("validation", { heroImageAssetId: "invalid_format" });
+  }
 }

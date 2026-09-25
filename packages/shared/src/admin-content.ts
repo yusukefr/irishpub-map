@@ -1,5 +1,6 @@
 import type { AdminFieldErrorCode } from "./admin-api-error";
 import { SUPPORTED_LOCALES, type Locale } from "./locale";
+import { isMediaAssetId, type MediaAsset } from "./media";
 
 /** Editorial Contentで管理できる種類です。 */
 export const CONTENT_KINDS = ["story", "guide"] as const;
@@ -15,6 +16,10 @@ export const CONTENT_TITLE_MAX_LENGTH = 200;
 export const CONTENT_SUMMARY_MAX_LENGTH = 500;
 /** Markdown本文の最大文字数です。 */
 export const CONTENT_BODY_MAX_LENGTH = 100_000;
+/** Hero画像の代替テキストの最大文字数です。 */
+export const CONTENT_HERO_ALT_MAX_LENGTH = 500;
+/** Hero画像のキャプションの最大文字数です。 */
+export const CONTENT_HERO_CAPTION_MAX_LENGTH = 1000;
 
 /** Editorial Contentの種類です。 */
 export type ContentKind = (typeof CONTENT_KINDS)[number];
@@ -28,6 +33,8 @@ export type AdminContentTranslation = {
   title: string;
   summary: string;
   bodyMarkdown: string;
+  heroImageAlt: string;
+  heroImageCaption: string;
 };
 
 /** 管理APIが返すEditorial Content詳細です。 */
@@ -38,19 +45,24 @@ export type AdminContent = {
   category: ContentCategory | null;
   status: ContentStatus;
   publishedAt: string | null;
+  heroImageAssetId: string | null;
+  heroImage: MediaAsset | null;
   translations: Record<Locale, AdminContentTranslation>;
   createdAt: string;
   updatedAt: string;
 };
 
 /** 管理一覧用の軽量なEditorial Contentです。 */
-export type AdminContentListItem = Omit<AdminContent, "translations"> & {
+export type AdminContentListItem = Omit<AdminContent, "translations" | "heroImage" | "heroImageAssetId"> & {
   titleJa: string;
   titleEn: string;
 };
 
 /** 作成・更新APIが受け付ける、公開状態を含まないContent全体のスナップショットです。 */
-export type AdminContentWriteInput = Pick<AdminContent, "kind" | "slug" | "category" | "translations">;
+export type AdminContentWriteInput = Pick<
+  AdminContent,
+  "kind" | "slug" | "category" | "heroImageAssetId" | "translations"
+>;
 /** 公開状態変更APIの入力です。 */
 export type SetAdminContentPublicationInput = { status: ContentStatus };
 /** Content入力のフィールド別Validationエラーです。 */
@@ -89,17 +101,18 @@ export function parseAdminContentWriteInput(value: unknown): AdminContentWriteIn
   const input = asRecord(value);
   if (!input) throw new AdminContentWriteValidationError({ input: "invalid_type" });
   const errors: AdminContentFieldErrors = {};
-  validateKeys(input, ["kind", "slug", "category", "translations"], errors);
+  validateKeys(input, ["kind", "slug", "category", "heroImageAssetId", "translations"], errors);
 
   const kind = parseNullableAllowed(input.kind, CONTENT_KINDS, "kind", errors);
   const slug = parseNullableSlug(input.slug, errors);
   const category = parseNullableAllowed(input.category, CONTENT_CATEGORIES, "category", errors);
+  const heroImageAssetId = parseHeroImageAssetId(input.heroImageAssetId, errors);
   const translations = parseTranslations(input.translations, errors);
 
   if (!translations || Object.keys(errors).length > 0) {
     throw new AdminContentWriteValidationError(errors);
   }
-  return { kind, slug, category, translations };
+  return { kind, slug, category, heroImageAssetId, translations };
 }
 
 /**
@@ -160,11 +173,49 @@ function parseTranslation(value: unknown, locale: Locale, errors: AdminContentFi
     errors[path] = value === undefined ? "required" : "invalid_type";
     return null;
   }
-  validateKeys(translation, ["title", "summary", "bodyMarkdown"], errors, path + ".");
+  validateKeys(
+    translation,
+    ["title", "summary", "bodyMarkdown", "heroImageAlt", "heroImageCaption"],
+    errors,
+    path + ".",
+  );
   const title = parseText(translation.title, path + ".title", CONTENT_TITLE_MAX_LENGTH, errors, true);
   const summary = parseText(translation.summary, path + ".summary", CONTENT_SUMMARY_MAX_LENGTH, errors, true);
   const bodyMarkdown = parseMarkdown(translation.bodyMarkdown, path + ".bodyMarkdown", CONTENT_BODY_MAX_LENGTH, errors);
-  return title === null || summary === null || bodyMarkdown === null ? null : { title, summary, bodyMarkdown };
+  const heroImageAlt = parseText(
+    translation.heroImageAlt,
+    path + ".heroImageAlt",
+    CONTENT_HERO_ALT_MAX_LENGTH,
+    errors,
+    true,
+  );
+  const heroImageCaption = parseText(
+    translation.heroImageCaption,
+    path + ".heroImageCaption",
+    CONTENT_HERO_CAPTION_MAX_LENGTH,
+    errors,
+    true,
+  );
+  return title === null ||
+    summary === null ||
+    bodyMarkdown === null ||
+    heroImageAlt === null ||
+    heroImageCaption === null
+    ? null
+    : { title, summary, bodyMarkdown, heroImageAlt, heroImageCaption };
+}
+
+function parseHeroImageAssetId(value: unknown, errors: AdminContentFieldErrors): string | null {
+  if (value === null) return null;
+  if (typeof value !== "string") {
+    errors.heroImageAssetId = value === undefined ? "required" : "invalid_type";
+    return null;
+  }
+  if (!isMediaAssetId(value)) {
+    errors.heroImageAssetId = "invalid_format";
+    return null;
+  }
+  return value;
 }
 
 function parseNullableAllowed<const T extends readonly string[]>(

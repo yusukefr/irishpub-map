@@ -41,11 +41,35 @@ test.describe("Discover editorial pages", () => {
       await expect(page.getByRole("heading", { level: 1, name: "Explore Ireland" })).toBeVisible();
       await expect(page.getByRole("heading", { level: 2, name: "Guides" })).toBeVisible();
       await expect(page.getByRole("heading", { level: 3 })).toHaveCount(2);
+      const imageAlt = scenario.locale === "ja" ? "パブのテーブルに置かれたグラス" : "A glass on a pub table";
+      const imageCard = page.locator('.discover-guide-grid [data-variant="image"]');
+      await expect(imageCard.getByRole("img", { name: imageAlt })).toBeVisible();
+      const compactCard = page.locator('.discover-guide-grid [data-variant="compact"]');
+      await expect(compactCard).toHaveCount(1);
+      expect((await compactCard.boundingBox())!.height).toBeLessThan((await imageCard.boundingBox())!.height);
       await expect(
         page.getByRole("link", {
           name: scenario.locale === "ja" ? "地図でIrish Pubを探す" : "Find an Irish pub on the map",
         }),
       ).toHaveAttribute("href", "/");
+      await expectNoHorizontalOverflow(page);
+    });
+  }
+
+  for (const locale of ["ja", "en"] as const) {
+    test(locale + "のGuide Heroとcaptionを表示し、画像なしGuideは従来表示を保つ", async ({ context, page }) => {
+      await useLocale(context, locale);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/discover/guides/split-the-g");
+      const imageAlt = locale === "ja" ? "パブのテーブルに置かれたグラス" : "A glass on a pub table";
+      const caption = locale === "ja" ? "パブで過ごす時間" : "Time at the pub";
+      await expect(page.locator("figure.guide-hero").getByRole("img", { name: imageAlt })).toBeVisible();
+      await expect(page.locator("figure.guide-hero figcaption")).toHaveText(caption);
+      await expect(page.locator('link[rel="preload"][as="image"]')).toHaveCount(1);
+      await expectNoHorizontalOverflow(page);
+
+      await page.goto("/discover/guides/sample");
+      await expect(page.locator("figure.guide-hero")).toHaveCount(0);
       await expectNoHorizontalOverflow(page);
     });
   }

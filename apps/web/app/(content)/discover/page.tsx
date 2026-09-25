@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ContentCard } from "../../components/ui/content-card";
 import { listPublishedContent } from "../../lib/content/repository";
 import { getTranslation } from "../../lib/i18n";
@@ -77,7 +78,18 @@ export default async function DiscoverPage() {
               description={guide.summary}
               eyebrow={t.guideLabel}
               headingLevel={3}
-              variant="compact"
+              variant={guide.heroImage ? "image" : "compact"}
+              media={
+                guide.heroImage ? (
+                  <Image
+                    src={guide.heroImage.url}
+                    alt={guide.heroImage.alt}
+                    width={guide.heroImage.width}
+                    height={guide.heroImage.height}
+                    sizes="(max-width: 760px) calc(100vw - 32px), 520px"
+                  />
+                ) : undefined
+              }
               metadata={<time dateTime={guide.publishedAt}>{formatPublishedAt(guide.publishedAt, locale)}</time>}
               action={
                 <Link href={"/discover/guides/" + guide.slug} aria-label={t.readGuide + ": " + guide.title}>

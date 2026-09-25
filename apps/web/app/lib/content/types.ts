@@ -13,6 +13,15 @@ import type { ComponentType } from "react";
 export { CONTENT_CATEGORIES, CONTENT_KINDS, CONTENT_STATUSES, isContentCategory, isContentKind };
 export type { ContentCategory, ContentKind, ContentStatus };
 
+/** 公開Contentで使う、内部Storage keyを含まない代表画像です。 */
+export type PublishedContentHeroImage = {
+  url: string;
+  width: number;
+  height: number;
+  alt: string;
+  caption: string;
+};
+
 /** 公開画面で表示する翻訳済みEditorial Contentです。 */
 export type PublishedContent = {
   slug: string;
@@ -22,9 +31,12 @@ export type PublishedContent = {
   category: ContentCategory;
   publishedAt: string;
   bodyMarkdown: string;
+  heroImage: PublishedContentHeroImage | null;
 };
 /** 公開Content一覧で本文を除外した軽量な表示用メタデータです。 */
-export type PublishedContentSummary = Omit<PublishedContent, "bodyMarkdown">;
+export type PublishedContentSummary = Omit<PublishedContent, "bodyMarkdown" | "heroImage"> & {
+  heroImage: Omit<PublishedContentHeroImage, "caption"> | null;
+};
 /** Markdown Rendererへ渡す本文です。 */
 export type ContentRendererProps = { markdown: string };
 /** 許可済みkindと固定対応する本文Rendererです。 */

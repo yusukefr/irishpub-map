@@ -32,6 +32,11 @@ const row = {
   title: "サンプル",
   summary: "要約",
   body_markdown: "# 本文",
+  hero_image_url: null,
+  hero_image_width: null,
+  hero_image_height: null,
+  hero_image_alt: "",
+  hero_image_caption: "",
 };
 beforeEach(() => {
   process.env.DATABASE_URL = "postgres://test-only";
@@ -56,6 +61,7 @@ describe("editorial content repository", () => {
       title: "サンプル",
       summary: "要約",
       bodyMarkdown: "# 本文",
+      heroImage: null,
     });
     expect(databaseMock.queries[0].text).toContain("entry.status = 'published'");
     expect(databaseMock.queries[0].values).toEqual(expect.arrayContaining(["en", "ja", "guide", "sample"]));
@@ -65,6 +71,31 @@ describe("editorial content repository", () => {
     await expect(listPublishedContent("guide", "ja")).resolves.toHaveLength(1);
     expect(databaseMock.queries[0].text).toContain("ORDER BY entry.published_at DESC");
     expect(databaseMock.queries[0].text).not.toContain("translation.body_markdown");
+    expect(databaseMock.queries[0].text).not.toContain("hero_image_caption");
+  });
+
+  it("returns locale-specific hero metadata and omits caption from summaries", async () => {
+    databaseMock.rows = [
+      {
+        ...row,
+        hero_image_url: "https://sample.public.blob.vercel-storage.com/photo.jpg",
+        hero_image_width: 1200,
+        hero_image_height: 800,
+        hero_image_alt: "Pub photo",
+        hero_image_caption: "Photo credit",
+      },
+    ];
+    await expect(getPublishedContentBySlug("guide", "sample", "en")).resolves.toMatchObject({
+      heroImage: { alt: "Pub photo", caption: "Photo credit", width: 1200, height: 800 },
+    });
+    await expect(listPublishedContent("guide", "en")).resolves.toMatchObject([
+      {
+        heroImage: { alt: "Pub photo", width: 1200, height: 800 },
+      },
+    ]);
+    const summary = await listPublishedContent("guide", "en");
+    expect(summary[0].heroImage).not.toHaveProperty("caption");
+    expect(summary[0].heroImage).not.toHaveProperty("storageKey");
   });
   it("DB未設定時は接続せず公開Contentを返さない", async () => {
     delete process.env.DATABASE_URL;

@@ -26,6 +26,7 @@ export function getContentPublicationMissingFields(input: AdminContentWriteInput
     if (!translation.title) missing.push(`translations.${locale}.title`);
     if (!translation.summary) missing.push(`translations.${locale}.summary`);
     if (!translation.bodyMarkdown.trim()) missing.push(`translations.${locale}.bodyMarkdown`);
+    if (input.heroImageAssetId && !translation.heroImageAlt.trim()) missing.push(`translations.${locale}.heroImageAlt`);
   }
   return missing;
 }

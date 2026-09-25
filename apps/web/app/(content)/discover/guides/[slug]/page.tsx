@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { getContentRenderer } from "../../../../lib/content/renderer-registry";
 import { getPublishedContentBySlug } from "../../../../lib/content/repository";
 import { getTranslation } from "../../../../lib/i18n";
@@ -62,6 +63,19 @@ export default async function GuidePage({ params }: GuidePageProps) {
         <p className="content-kicker">{t.guideLabel}</p>
         <h1>{content.title}</h1>
         <p className="content-lead">{content.summary}</p>
+        {content.heroImage ? (
+          <figure className="guide-hero">
+            <Image
+              src={content.heroImage.url}
+              alt={content.heroImage.alt}
+              width={content.heroImage.width}
+              height={content.heroImage.height}
+              sizes="(max-width: 760px) calc(100vw - 32px), 720px"
+              preload
+            />
+            {content.heroImage.caption ? <figcaption>{content.heroImage.caption}</figcaption> : null}
+          </figure>
+        ) : null}
         <p className="guide-metadata">
           <time dateTime={content.publishedAt}>{publishedAt}</time>
         </p>

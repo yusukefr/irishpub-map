@@ -45,7 +45,7 @@
 - `/admin/pubs` で公開・非公開を含む店舗一覧を確認し、店舗名、都道府県、市区町村、営業ステータス、タグ、公開状態を組み合わせて絞り込む。条件はURLに保持し、一覧は50件ずつ表示する
 - 一覧で公開状態を確認・変更する。非公開化前は一般サイトから見えなくなることを確認し、公開時はサーバー側の公開条件を満たさない項目を一覧表示する
 - Neon が設定されている場合は一覧の「新規登録」または各店舗の「編集」から `/admin/pubs/new`・`/admin/pubs/:id/edit` を開き、基本情報・所在地・日英翻訳・外部リンク・登録済みタグをセクションごとに追加・編集・下書き保存・削除する
-- `/admin/content` でEditorial ContentのDraft / Published一覧を確認し、`/admin/content/new` と `/admin/content/:id` でkind、slug、category、日英のtitle・summary・Markdown本文を編集する
+- `/admin/content` でEditorial ContentのDraft / Published一覧を確認し、`/admin/content/new` と `/admin/content/:id` でkind、slug、category、任意の代表画像、日英のtitle・summary・Markdown本文・画像alt/captionを編集する。画像は共通Media Pickerから選び、変更・解除時に日英alt/captionを消去する
 - ContentのPreviewは認証済み管理画面内で未保存入力を安全なMarkdownとして描画し、Public Routeや公開Content Cacheを経由しない。公開時は日英すべての必須項目を検証し、未保存変更がある間は公開状態を変更しない
 - `/admin/quiz` でIrish QuizのDraft / Published一覧を確認し、`/admin/quiz/new` と `/admin/quiz/:id` でカテゴリ、特別日、関連Guide、日英の問題文・解説・情報源、最大4件のChoiceと正解を全体Snapshotとして編集する。Question IDは新規保存時にServerがUUIDを生成し、管理画面では入力しない。新規QuizはDraftで作成し、保存後に公開条件をサーバー側で検証して公開・下書き戻しを行う
 - `/admin/media` で登録済みMedia Assetを50件ずつ閲覧し、画像Preview、寸法、形式、サイズ、登録日時、Media IDを確認する。JPEG・PNG・WebPの単一画像を4 MiBまでUploadし、Content・Quiz編集画面向けの共通Media Pickerでは一覧またはUploadした画像を明示的に確定する。DB未設定時はUploadと選択を無効化し、Storage未設定時は既存Mediaの閲覧・選択を維持してUploadを無効化する
@@ -88,7 +88,7 @@
 
 公開画面はRoot Layoutを共通のApplication責務として維持し、Mapは`app/(map)/layout.tsx`のViewport Shell、Story / Guide / Quizは`app/(content)/layout.tsx`の通常Document Flowへ配置するNested Layout構成を採用します。Route GroupはURLへ含まれず、既存の`/`、`/privacy`、`/admin`、`/api`のURLと責務は維持します。MapとContentの両Headerから`/discover`へ移動でき、ブランドLinkからMapへ戻れます。
 
-公開GuideはNeonの`content_entries`・`content_translations`をSource of Truthとし、公開Content Repositoryから`status = published`の行だけを取得します。記事は`story` / `guide`のkindと独立したcategoryを持ち、要求localeのTranslationがない場合は既定localeへフォールバックします。未登録slug、Draft、対象kind以外はRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。管理画面だけがDraftを取得します。
+公開GuideはNeonの`content_entries`・`content_translations`をSource of Truthとし、公開Content Repositoryから`status = published`の行だけを取得します。記事は`story` / `guide`のkindと独立したcategoryを持ち、要求localeのTranslationがない場合は既定localeへフォールバックします。任意の代表画像はMedia Assetを参照し、公開時には日英のaltを必須とします。画像ありGuideの詳細には元の縦横比でcaption付きfigure、DiscoverのGuide Cardには16:9画像を表示します。画像なしGuideは従来表示です。未登録slug、Draft、対象kind以外はRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。管理画面だけがDraftを取得します。
 
 Explore Ireland Hubは`/discover`でStories placeholder、Neon由来の公開Guide一覧、Today's Ireland Quiz導線、Irish Calendar導線を表示します。Guideは`/discover/guides/[slug]`でLocale別の安全なMarkdownを表示し、未登録・Draftのslugは404とします。
 

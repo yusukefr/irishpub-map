@@ -64,6 +64,13 @@ const publishedGuideDefinitions: Record<Locale, PublishedContent[]> = {
       publishedAt: "2026-09-05T00:00:00.000Z",
       title: "Split the Gを楽しむ",
       summary: "Guinnessのグラスを使ったPubの遊び「Split the G」を、安全に楽しむためのガイドです。",
+      heroImage: {
+        url: E2E_TEST_DATA.media.landscape.url,
+        width: 1200,
+        height: 800,
+        alt: "パブのテーブルに置かれたグラス",
+        caption: "パブで過ごす時間",
+      },
       bodyMarkdown:
         "## Split the Gとは\n\n地域や一緒に楽しむ人によって判定方法は異なります。\n\nSplit the Gは、成功や飲む速さ・量を競うものではありません。\n\n[Irish Pubを探す →](/)",
     },
@@ -74,6 +81,7 @@ const publishedGuideDefinitions: Record<Locale, PublishedContent[]> = {
       publishedAt: "2026-09-02T00:00:00.000Z",
       title: "サンプルガイド",
       summary: "Explore Irelandセクション用のサンプルコンテンツです。",
+      heroImage: null,
       bodyMarkdown: "コンテンツは後日追加予定です。",
     },
   ],
@@ -85,6 +93,13 @@ const publishedGuideDefinitions: Record<Locale, PublishedContent[]> = {
       publishedAt: "2026-09-05T00:00:00.000Z",
       title: "How to Enjoy Split the G",
       summary: "A guide to enjoying the pub game Split the G with a Guinness glass, safely and at your own pace.",
+      heroImage: {
+        url: E2E_TEST_DATA.media.landscape.url,
+        width: 1200,
+        height: 800,
+        alt: "A glass on a pub table",
+        caption: "Time at the pub",
+      },
       bodyMarkdown:
         "## What is Split the G?\n\nHow the result is judged varies between places and groups.\n\nSplit the G is not about drinking quickly or drinking more.\n\n[Find an Irish pub →](/)",
     },
@@ -95,6 +110,7 @@ const publishedGuideDefinitions: Record<Locale, PublishedContent[]> = {
       publishedAt: "2026-09-02T00:00:00.000Z",
       title: "Sample Guide",
       summary: "Sample content for the Explore Ireland section.",
+      heroImage: null,
       bodyMarkdown: "Content will be added later.",
     },
   ],
@@ -107,16 +123,22 @@ const contentDefinitions: AdminContent[] = [
     category: "pub-culture",
     status: "draft",
     publishedAt: null,
+    heroImageAssetId: null,
+    heroImage: null,
     translations: {
       ja: {
         title: E2E_TEST_DATA.content.draft.title,
         summary: "E2Eで管理画面を確認するための下書きです。",
         bodyMarkdown: "## 下書き本文\n\n[安全なリンク](/discover)",
+        heroImageAlt: "",
+        heroImageCaption: "",
       },
       en: {
         title: "E2E Draft Guide",
         summary: "A draft used to verify the content admin UI.",
         bodyMarkdown: "## Draft body\n\n[Safe link](/discover)",
+        heroImageAlt: "",
+        heroImageCaption: "",
       },
     },
     createdAt: UPDATED_AT,
@@ -129,16 +151,22 @@ const contentDefinitions: AdminContent[] = [
     category: "culture",
     status: "published",
     publishedAt: UPDATED_AT,
+    heroImageAssetId: E2E_TEST_DATA.media.landscape.id,
+    heroImage: E2E_TEST_DATA.media.landscape,
     translations: {
       ja: {
         title: E2E_TEST_DATA.content.published.title,
         summary: "E2Eで管理画面を確認するための公開記事です。",
         bodyMarkdown: "## 公開本文",
+        heroImageAlt: "パブのテーブルに置かれたグラス",
+        heroImageCaption: "パブで過ごす時間",
       },
       en: {
         title: "E2E Published Guide",
         summary: "Published content used to verify the content admin UI.",
         bodyMarkdown: "## Published body",
+        heroImageAlt: "A glass on a pub table",
+        heroImageCaption: "Time at the pub",
       },
     },
     createdAt: UPDATED_AT,
@@ -479,6 +507,14 @@ export function getE2EPublishedContentList(kind: ContentKind, locale: Locale): P
       publishedAt: content.publishedAt,
       title: content.title,
       summary: content.summary,
+      heroImage: content.heroImage
+        ? {
+            url: content.heroImage.url,
+            width: content.heroImage.width,
+            height: content.heroImage.height,
+            alt: content.heroImage.alt,
+          }
+        : null,
     }));
 }
 
