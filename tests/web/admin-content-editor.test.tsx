@@ -90,6 +90,32 @@ describe("AdminContentEditor", () => {
     expect(within(preview).queryByRole("img")).not.toBeInTheDocument();
   });
 
+  it("選択したHero画像と日英の説明・キャプションを保存payloadへ含める", async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ content })));
+    render(<AdminContentEditor initialContent={content} databaseConfigured locale="ja" />);
+    const japanese = screen.getByRole("group", { name: "日本語" });
+    const english = screen.getByRole("group", { name: "English" });
+
+    fireEvent.click(screen.getByRole("button", { name: "画像を選択" }));
+    fireEvent.change(within(japanese).getByLabelText("代表画像の代替テキスト"), { target: { value: "日本語の説明" } });
+    fireEvent.change(within(japanese).getByLabelText("代表画像のキャプション"), {
+      target: { value: "日本語のキャプション" },
+    });
+    fireEvent.change(within(english).getByLabelText("代表画像の代替テキスト"), { target: { value: "English alt" } });
+    fireEvent.change(within(english).getByLabelText("代表画像のキャプション"), {
+      target: { value: "English caption" },
+    });
+    fireEvent.submit(screen.getByRole("button", { name: "下書きを保存" }).closest("form")!);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const payload = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+    expect(payload.heroImageAssetId).toBe("550e8400-e29b-41d4-a716-446655440009");
+    expect(payload.translations.ja.heroImageAlt).toBe("日本語の説明");
+    expect(payload.translations.ja.heroImageCaption).toBe("日本語のキャプション");
+    expect(payload.translations.en.heroImageAlt).toBe("English alt");
+    expect(payload.translations.en.heroImageCaption).toBe("English caption");
+  });
+
   it("入力中の日英Markdownを管理画面内で安全にPreviewする", () => {
     render(<AdminContentEditor initialContent={content} databaseConfigured locale="ja" />);
     const japanese = screen.getByRole("group", { name: "日本語" });
