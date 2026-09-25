@@ -1,11 +1,15 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminContentListItem } from "@irishpub-map/shared/admin-content";
+import type { MediaAsset } from "@irishpub-map/shared/media";
 import {
   QUIZ_CATEGORIES,
   QUIZ_CHOICE_ID_MAX_LENGTH,
+  QUIZ_IMAGE_ALT_MAX_LENGTH,
+  QUIZ_IMAGE_CAPTION_MAX_LENGTH,
   type AdminQuizQuestion,
   type AdminQuizWriteInput,
 } from "../lib/quiz/types";
@@ -13,6 +17,7 @@ import { getAdminQuizApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
 import { getQuizPublicationMissingFields } from "../lib/quiz/publication";
+import { MediaPicker } from "./media/media-picker";
 type Props = {
   initialQuestion: AdminQuizQuestion | null;
   databaseConfigured: boolean;
@@ -31,9 +36,10 @@ const emptyValues: AdminQuizWriteInput = {
   correctChoiceId: null,
   sourceUrl: null,
   relatedContentId: null,
+  imageAssetId: null,
   translations: {
-    ja: { question: "", explanation: "", sourceLabel: "" },
-    en: { question: "", explanation: "", sourceLabel: "" },
+    ja: { question: "", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
+    en: { question: "", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
   },
   choices: [],
 };
@@ -45,6 +51,7 @@ function toValues(question: AdminQuizQuestion | null): AdminQuizWriteInput {
     correctChoiceId: question.correctChoiceId,
     sourceUrl: question.sourceUrl,
     relatedContentId: question.relatedContentId,
+    imageAssetId: question.imageAssetId,
     translations: { ja: { ...question.translations.ja }, en: { ...question.translations.en } },
     choices: question.choices.map((choice) => ({ ...choice, translations: { ...choice.translations } })),
   };
@@ -68,7 +75,16 @@ function toMissingFields(value: unknown): string[] {
 function fieldLabel(path: string, labels: Record<string, string>) {
   const [scope, language, field] = path.split(".");
   if (scope === "translations" && language && field) {
-    const suffix = field === "question" ? "questionJa" : field === "explanation" ? "explanationJa" : "sourceLabelJa";
+    const suffix =
+      field === "question"
+        ? "questionJa"
+        : field === "explanation"
+          ? "explanationJa"
+          : field === "imageAlt"
+            ? "imageAltJa"
+            : field === "imageCaption"
+              ? "imageCaptionJa"
+              : "sourceLabelJa";
     return labels[language === "ja" ? suffix : suffix.replace(/Ja$/, "En")] ?? path;
   }
   if (scope === "choices") return labels.choices ?? path;
@@ -89,6 +105,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
   const q = t.quiz;
   const [questionId, setQuestionId] = useState<string | null>(initialQuestion?.id ?? null);
   const [values, setValues] = useState(() => toValues(initialQuestion));
+  const [selectedImage, setSelectedImage] = useState<MediaAsset | null>(initialQuestion?.image ?? null);
   const [savedSnapshot, setSavedSnapshot] = useState(() => serialize(toValues(initialQuestion)));
   const [status, setStatus] = useState<"draft" | "published">(initialQuestion?.isPublished ? "published" : "draft");
   const [saving, setSaving] = useState(false);
@@ -105,12 +122,35 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
     setValues((current) => ({ ...current, [key]: value }));
     clearError(key);
   }
-  function setTranslation(language: "ja" | "en", key: "question" | "explanation" | "sourceLabel", value: string) {
+  function setTranslation(
+    language: "ja" | "en",
+    key: "question" | "explanation" | "sourceLabel" | "imageAlt" | "imageCaption",
+    value: string,
+  ) {
     setValues((current) => ({
       ...current,
       translations: { ...current.translations, [language]: { ...current.translations[language], [key]: value } },
     }));
     clearError("translations." + language + "." + key);
+  }
+  function selectImage(media: MediaAsset | null) {
+    setValues((current) => {
+      if (current.imageAssetId === media?.id) return current;
+      return {
+        ...current,
+        imageAssetId: media?.id ?? null,
+        translations: {
+          ja: { ...current.translations.ja, imageAlt: "", imageCaption: "" },
+          en: { ...current.translations.en, imageAlt: "", imageCaption: "" },
+        },
+      };
+    });
+    setSelectedImage(media);
+    clearError("imageAssetId");
+    for (const language of ["ja", "en"] as const) {
+      clearError(`translations.${language}.imageAlt`);
+      clearError(`translations.${language}.imageCaption`);
+    }
   }
   function setSpecialDatePart(key: "month" | "day", value: string) {
     const number = value ? Number(value) : null;
@@ -210,6 +250,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
       const created = questionId === null;
       setQuestionId(body.question.id);
       setValues(nextValues);
+      setSelectedImage(body.question.image);
       setSavedSnapshot(serialize(nextValues));
       setStatus(body.question.isPublished ? "published" : "draft");
       setMessage(body.question.isPublished ? q.publishedSaved : q.draftSaved);
@@ -356,6 +397,35 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
             </label>
           </div>
         </fieldset>
+        <fieldset disabled={busy || !databaseConfigured}>
+          <legend>{q.image}</legend>
+          <p className="admin-editor-note">{q.imageEditorialNote}</p>
+          {selectedImage ? (
+            <figure className="admin-content-hero-preview">
+              <Image
+                src={selectedImage.url}
+                alt={values.translations[locale].imageAlt || q.imagePreviewAlt}
+                width={selectedImage.width}
+                height={selectedImage.height}
+                sizes="(max-width: 760px) calc(100vw - 32px), 520px"
+              />
+              <figcaption>{q.imageSelected}</figcaption>
+            </figure>
+          ) : null}
+          <div className="admin-content-hero-actions">
+            <MediaPicker
+              locale={locale}
+              selectedId={values.imageAssetId}
+              triggerLabel={selectedImage ? q.changeImage : q.selectImage}
+              onSelect={selectImage}
+            />
+            {selectedImage ? (
+              <button type="button" className="admin-secondary-action" onClick={() => selectImage(null)}>
+                {q.clearImage}
+              </button>
+            ) : null}
+          </div>
+        </fieldset>
         {(["ja", "en"] as const).map((language) => (
           <fieldset key={language} disabled={busy || !databaseConfigured}>
             <legend>{language === "ja" ? t.japanese : t.english}</legend>
@@ -380,6 +450,27 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
               <input
                 value={values.translations[language].sourceLabel}
                 onChange={(event) => setTranslation(language, "sourceLabel", event.target.value)}
+              />
+            </label>
+            <label>
+              {q.imageAlt}
+              <input
+                value={values.translations[language].imageAlt}
+                maxLength={QUIZ_IMAGE_ALT_MAX_LENGTH}
+                disabled={!values.imageAssetId}
+                aria-invalid={Boolean(fieldErrors[`translations.${language}.imageAlt`])}
+                onChange={(event) => setTranslation(language, "imageAlt", event.target.value)}
+              />
+            </label>
+            <label>
+              {q.imageCaption}
+              <textarea
+                rows={2}
+                value={values.translations[language].imageCaption}
+                maxLength={QUIZ_IMAGE_CAPTION_MAX_LENGTH}
+                disabled={!values.imageAssetId}
+                aria-invalid={Boolean(fieldErrors[`translations.${language}.imageCaption`])}
+                onChange={(event) => setTranslation(language, "imageCaption", event.target.value)}
               />
             </label>
           </fieldset>

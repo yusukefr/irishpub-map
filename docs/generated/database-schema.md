@@ -478,22 +478,26 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 ### Columns
 
-| Column         | Type                       | Nullable | Default |
-| -------------- | -------------------------- | -------- | ------- |
-| `question_id`  | `text`                     | no       | —       |
-| `locale`       | `text`                     | no       | —       |
-| `question`     | `text`                     | no       | —       |
-| `explanation`  | `text`                     | no       | —       |
-| `source_label` | `text`                     | no       | —       |
-| `updated_at`   | `timestamp with time zone` | no       | `now()` |
+| Column          | Type                       | Nullable | Default    |
+| --------------- | -------------------------- | -------- | ---------- |
+| `question_id`   | `text`                     | no       | —          |
+| `locale`        | `text`                     | no       | —          |
+| `question`      | `text`                     | no       | —          |
+| `explanation`   | `text`                     | no       | —          |
+| `source_label`  | `text`                     | no       | —          |
+| `updated_at`    | `timestamp with time zone` | no       | `now()`    |
+| `image_alt`     | `text`                     | no       | `''::text` |
+| `image_caption` | `text`                     | no       | `''::text` |
 
 ### Constraints
 
-| Name                                          | Type        | Definition                                                                  |
-| --------------------------------------------- | ----------- | --------------------------------------------------------------------------- |
-| `quiz_question_translations_locale_check`     | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`                      |
-| `quiz_question_translations_pkey`             | PRIMARY KEY | `PRIMARY KEY (question_id, locale)`                                         |
-| `quiz_question_translations_question_id_fkey` | FOREIGN KEY | `FOREIGN KEY (question_id) REFERENCES quiz_questions(id) ON DELETE CASCADE` |
+| Name                                                    | Type        | Definition                                                                  |
+| ------------------------------------------------------- | ----------- | --------------------------------------------------------------------------- |
+| `quiz_question_translations_image_alt_length_check`     | CHECK       | `CHECK (char_length(image_alt) <= 500)`                                     |
+| `quiz_question_translations_image_caption_length_check` | CHECK       | `CHECK (char_length(image_caption) <= 1000)`                                |
+| `quiz_question_translations_locale_check`               | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`                      |
+| `quiz_question_translations_pkey`                       | PRIMARY KEY | `PRIMARY KEY (question_id, locale)`                                         |
+| `quiz_question_translations_question_id_fkey`           | FOREIGN KEY | `FOREIGN KEY (question_id) REFERENCES quiz_questions(id) ON DELETE CASCADE` |
 
 ### Indexes
 
@@ -517,6 +521,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | `is_published`       | `boolean`                  | no       | `false` |
 | `created_at`         | `timestamp with time zone` | no       | `now()` |
 | `updated_at`         | `timestamp with time zone` | no       | `now()` |
+| `image_asset_id`     | `uuid`                     | yes      | —       |
 
 ### Constraints
 
@@ -526,6 +531,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | `quiz_questions_correct_choice_fkey`     | FOREIGN KEY | `FOREIGN KEY (id, correct_choice_id) REFERENCES quiz_choices(question_id, id) DEFERRABLE INITIALLY DEFERRED`                                                                                                                                                                      |
 | `quiz_questions_correct_choice_id_check` | CHECK       | `CHECK (correct_choice_id IS NULL OR btrim(correct_choice_id) <> ''::text)`                                                                                                                                                                                                       |
 | `quiz_questions_id_check`                | CHECK       | `CHECK (btrim(id) <> ''::text)`                                                                                                                                                                                                                                                   |
+| `quiz_questions_image_asset_id_fkey`     | FOREIGN KEY | `FOREIGN KEY (image_asset_id) REFERENCES media_assets(id) ON DELETE SET NULL`                                                                                                                                                                                                     |
 | `quiz_questions_pkey`                    | PRIMARY KEY | `PRIMARY KEY (id)`                                                                                                                                                                                                                                                                |
 | `quiz_questions_related_content_id_fkey` | FOREIGN KEY | `FOREIGN KEY (related_content_id) REFERENCES content_entries(id) ON DELETE SET NULL`                                                                                                                                                                                              |
 | `quiz_questions_source_url_check`        | CHECK       | `CHECK (source_url IS NULL OR btrim(source_url) <> ''::text)`                                                                                                                                                                                                                     |
@@ -537,6 +543,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `quiz_questions_admin_list_idx`         | `CREATE INDEX quiz_questions_admin_list_idx ON public.quiz_questions USING btree (updated_at DESC, id)`                                                                   |
 | `quiz_questions_category_idx`           | `CREATE INDEX quiz_questions_category_idx ON public.quiz_questions USING btree (category, id)`                                                                            |
+| `quiz_questions_image_asset_id_idx`     | `CREATE INDEX quiz_questions_image_asset_id_idx ON public.quiz_questions USING btree (image_asset_id) WHERE (image_asset_id IS NOT NULL)`                                 |
 | `quiz_questions_pkey`                   | `CREATE UNIQUE INDEX quiz_questions_pkey ON public.quiz_questions USING btree (id)`                                                                                       |
 | `quiz_questions_published_idx`          | `CREATE INDEX quiz_questions_published_idx ON public.quiz_questions USING btree (id) WHERE is_published`                                                                  |
 | `quiz_questions_related_content_id_idx` | `CREATE INDEX quiz_questions_related_content_id_idx ON public.quiz_questions USING btree (related_content_id) WHERE (related_content_id IS NOT NULL)`                     |

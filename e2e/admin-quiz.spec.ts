@@ -19,10 +19,12 @@ test("Quiz一覧からDraft保存、Choice操作、Publishを確認する", asyn
     correctChoiceId: null,
     sourceUrl: null,
     relatedContentId: null,
+    imageAssetId: null,
+    image: null,
     isPublished: false,
     translations: {
-      ja: { question: "E2E 更新Quiz", explanation: "", sourceLabel: "" },
-      en: { question: "E2E Draft Quiz", explanation: "", sourceLabel: "" },
+      ja: { question: "E2E 更新Quiz", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
+      en: { question: "E2E Draft Quiz", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
     },
     choices: [{ id: "choice-1", sortOrder: 0, translations: { ja: "", en: "" } }],
     createdAt: "2026-01-15T12:00:00.000Z",
@@ -59,10 +61,12 @@ test("Quiz新規作成ではQuestion IDを入力せずServer生成UUIDへ遷移�
           correctChoiceId: null,
           sourceUrl: null,
           relatedContentId: null,
+          imageAssetId: null,
+          image: null,
           isPublished: false,
           translations: {
-            ja: { question: "", explanation: "", sourceLabel: "" },
-            en: { question: "", explanation: "", sourceLabel: "" },
+            ja: { question: "", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
+            en: { question: "", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
           },
           choices: [],
           createdAt: "2026-01-15T12:00:00.000Z",
@@ -73,4 +77,53 @@ test("Quiz新規作成ではQuestion IDを入力せずServer生成UUIDへ遷移�
   });
   await page.getByRole("button", { name: "下書きを保存" }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/quiz/${generatedId}$`));
+});
+
+test("Quiz Editorで画像を選択し、日英の説明を保存して解除できる", async ({ page }) => {
+  await loginAsE2EAdmin(page, "/admin/quiz/e2e-draft-question");
+  await page.getByRole("button", { name: "画像を選択" }).click();
+  const dialog = page.getByRole("dialog", { name: "画像を選択" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: new RegExp(E2E_TEST_DATA.media.landscape.id) }).click();
+  await dialog.getByRole("button", { name: "選択した画像を使う" }).click();
+
+  const japanese = page.getByRole("group", { name: "日本語" });
+  const english = page.getByRole("group", { name: "英語" });
+  await japanese.getByLabel("問題画像の代替テキスト").fill("日本語の画像説明");
+  await english.getByLabel("問題画像の代替テキスト").fill("English image description");
+  await japanese.getByLabel("問題画像のキャプション").fill("画像の説明");
+
+  const requestPromise = page.waitForRequest(
+    (request) => request.url().endsWith("/api/admin/quiz/e2e-draft-question") && request.method() === "PUT",
+  );
+  await page.route("**/api/admin/quiz/e2e-draft-question", async (route) => {
+    if (route.request().method() !== "PUT") return route.continue();
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        question: {
+          ...body,
+          id: "e2e-draft-question",
+          image: E2E_TEST_DATA.media.landscape,
+          isPublished: false,
+          choices: [],
+          createdAt: "2026-01-15T12:00:00.000Z",
+          updatedAt: "2026-01-15T12:00:00.000Z",
+        },
+      },
+    });
+  });
+  await page.getByRole("button", { name: "下書きを保存" }).click();
+  const request = await requestPromise;
+  const body = request.postDataJSON();
+  expect(body.imageAssetId).toBe(E2E_TEST_DATA.media.landscape.id);
+  expect(body.translations.ja.imageAlt).toBe("日本語の画像説明");
+  expect(body.translations.en.imageAlt).toBe("English image description");
+  expect(body.translations.ja.imageCaption).toBe("画像の説明");
+  await expect(page.getByRole("status")).toContainText("下書きを保存しました。");
+
+  await page.getByRole("button", { name: "画像を解除" }).click();
+  await expect(japanese.getByLabel("問題画像の代替テキスト")).toBeDisabled();
+  await expect(english.getByLabel("問題画像の代替テキスト")).toHaveValue("");
 });

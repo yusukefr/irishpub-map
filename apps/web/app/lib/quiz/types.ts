@@ -1,4 +1,5 @@
 import type { Locale } from "../i18n";
+import type { MediaAsset } from "@irishpub-map/shared/media";
 
 /** Quizで利用できるLocale非依存カテゴリIDのAllow Listです。 */
 export const QUIZ_CATEGORIES = [
@@ -16,6 +17,10 @@ export const QUIZ_CATEGORIES = [
 export const QUIZ_ID_MAX_LENGTH = 100;
 /** 管理画面で入力できるChoice IDの最大文字数です。 */
 export const QUIZ_CHOICE_ID_MAX_LENGTH = 60;
+/** 問題画像のLocale別代替テキストの最大文字数です。 */
+export const QUIZ_IMAGE_ALT_MAX_LENGTH = 500;
+/** 問題画像のLocale別キャプションの最大文字数です。 */
+export const QUIZ_IMAGE_CAPTION_MAX_LENGTH = 1000;
 
 /** クイズで利用できるLocale非依存のカテゴリIDです。 */
 export type QuizCategory = (typeof QUIZ_CATEGORIES)[number];
@@ -45,11 +50,22 @@ export type QuizAnswerResult = Readonly<{
 /** 回答前のClientへ渡せる、採点情報を含まないChoiceです。 */
 export type PublicQuizChoice = Readonly<{ id: string; label: string }>;
 
+/** 回答前の公開Quizへ渡せる、内部Storage情報を含まない問題画像です。 */
+export type PublicQuizImage = Readonly<{
+  id: string;
+  url: string;
+  width: number;
+  height: number;
+  alt: string;
+  caption: string | null;
+}>;
+
 /** 回答前のClientへ渡せる公開Questionです。 */
 export type PublicQuizQuestion = Readonly<{
   id: string;
   category: QuizCategory;
   question: string;
+  image: PublicQuizImage | null;
   choices: readonly PublicQuizChoice[];
   specialDate?: QuizSpecialDate;
 }>;
@@ -59,6 +75,8 @@ export type AdminQuizTranslation = Readonly<{
   question: string;
   explanation: string;
   sourceLabel: string;
+  imageAlt: string;
+  imageCaption: string;
 }>;
 
 /** 入力途中のDraftを保持できる管理用Choiceです。 */
@@ -76,6 +94,8 @@ export type AdminQuizQuestion = Readonly<{
   correctChoiceId: string | null;
   sourceUrl: string | null;
   relatedContentId: string | null;
+  imageAssetId: string | null;
+  image: MediaAsset | null;
   isPublished: boolean;
   translations: Readonly<Record<Locale, AdminQuizTranslation>>;
   choices: readonly AdminQuizChoice[];
@@ -84,7 +104,7 @@ export type AdminQuizQuestion = Readonly<{
 }>;
 
 /** 管理一覧用の軽量なQuestionです。 */
-export type AdminQuizListItem = Omit<AdminQuizQuestion, "translations" | "choices"> & {
+export type AdminQuizListItem = Omit<AdminQuizQuestion, "translations" | "choices" | "image"> & {
   questionJa: string;
   questionEn: string;
   choiceCount: number;
@@ -93,7 +113,14 @@ export type AdminQuizListItem = Omit<AdminQuizQuestion, "translations" | "choice
 /** 作成・更新で保存する、公開状態と監査日時を除いたQuestion全体です。 */
 export type AdminQuizWriteInput = Pick<
   AdminQuizQuestion,
-  "category" | "specialDate" | "correctChoiceId" | "sourceUrl" | "relatedContentId" | "translations" | "choices"
+  | "category"
+  | "specialDate"
+  | "correctChoiceId"
+  | "sourceUrl"
+  | "relatedContentId"
+  | "imageAssetId"
+  | "translations"
+  | "choices"
 >;
 
 /**

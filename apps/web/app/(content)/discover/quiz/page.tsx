@@ -61,6 +61,7 @@ export default async function QuizPage() {
                 label: QUIZ_CATEGORY_DEFINITIONS[question.category].label[locale],
               },
               question: question.question,
+              image: question.image,
               choices: question.choices,
             }}
             labels={t.quizContent}

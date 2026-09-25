@@ -10,6 +10,8 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 `015_add_content_hero_image` はEditorial Content共通の任意の代表画像参照を `content_entries.hero_image_asset_id` に追加し、`media_assets.id` を `ON DELETE SET NULL` で参照します。日英のaltとcaptionは `content_translations` に保持し、最大長をそれぞれ500文字・1,000文字に制限します。画像URLはContent側へ複製せず、RepositoryがMedia Assetから取得します。
 
+`016_add_quiz_question_image` はQuiz Questionの任意の画像参照を `quiz_questions.image_asset_id` に追加し、`media_assets.id` を `ON DELETE SET NULL` で参照します。日英のaltとcaptionは `quiz_question_translations` に保持し、最大長をそれぞれ500文字・1,000文字に制限します。画像URLはQuiz側へ複製せず、RepositoryがMedia Assetから取得します。画像を参照する問題の公開時は日英のaltを検証します。
+
 ## 概念モデル
 
 アプリケーションは、店舗・地域・営業状況・タグ・Editorial Content・Quiz・Irish Calendarを扱います。各概念の物理テーブル名、カラム、制約、インデックスは、現行Neonから生成した[生成済みスキーマ](../generated/database-schema.md)を参照してください。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理し、アプリケーション用の認証テーブルは持ちません。

@@ -229,6 +229,27 @@ describe("editorial content hero image migration", () => {
 });
 
 describe("quiz database migration", () => {
+  it("adds optional question images and verifies references and translation limits", async () => {
+    const upSql = await readMigration("016_add_quiz_question_image_up.sql");
+    const verifySql = await readMigration("016_add_quiz_question_image_verify.sql");
+
+    expect(upSql).toContain("ADD COLUMN image_asset_id UUID REFERENCES media_assets(id) ON DELETE SET NULL");
+    expect(upSql).toContain("quiz_questions_image_asset_id_idx");
+    expect(upSql).toContain("WHERE image_asset_id IS NOT NULL");
+    expect(upSql).toContain("image_alt TEXT NOT NULL DEFAULT ''");
+    expect(upSql).toContain("image_caption TEXT NOT NULL DEFAULT ''");
+    expect(upSql).toContain("CHECK (char_length(image_alt) <= 500)");
+    expect(upSql).toContain("CHECK (char_length(image_caption) <= 1000)");
+    expect(upSql).toContain("VALUES ('016_add_quiz_question_image')");
+
+    expect(verifySql).toContain("FOREIGN KEY (image_asset_id) REFERENCES media_assets(id) ON DELETE SET NULL");
+    expect(verifySql).toContain("quiz_questions_image_asset_id_idx");
+    expect(verifySql).toContain("quiz_question_translations_image_alt_length_check");
+    expect(verifySql).toContain("quiz_question_translations_image_caption_length_check");
+    expect(verifySql).toContain("orphan quiz image reference found");
+    expect(verifySql).toContain("version = '016_add_quiz_question_image'");
+  });
+
   it("defines localized quiz questions, choices, and same-question correct answers", async () => {
     const upSql = await readMigration("012_add_quiz_domain_up.sql");
     const verifySql = await readMigration("012_add_quiz_domain_verify.sql");

@@ -46,6 +46,8 @@ import {
 const originalDatabaseUrl = process.env.DATABASE_URL;
 const originalE2ETestMode = process.env.E2E_TEST_MODE;
 const relatedContentId = "550e8400-e29b-41d4-a716-446655440001";
+const imageAssetId = "550e8400-e29b-41d4-a716-446655440009";
+const imageUrl = "https://quiz-image.public.blob.vercel-storage.com/question.jpg";
 
 function publicRows(id = "question-1", specialMonth: number | null = null, specialDay: number | null = null) {
   return [2, 0, 3, 1].map((sortOrder) => ({
@@ -54,6 +56,13 @@ function publicRows(id = "question-1", specialMonth: number | null = null, speci
     special_month: specialMonth,
     special_day: specialDay,
     question: `Question ${id}`,
+    image_asset_id: null,
+    image_id: null,
+    image_url: null,
+    image_width: null,
+    image_height: null,
+    image_alt: "",
+    image_caption: "",
     choice_id: `choice-${sortOrder}`,
     sort_order: sortOrder,
     choice_label: `Choice ${sortOrder}`,
@@ -69,6 +78,7 @@ function adminBase(isPublished = false) {
     correct_choice_id: isPublished ? "choice-0" : null,
     source_url: isPublished ? "https://example.com/source" : null,
     related_content_id: null,
+    image_asset_id: null,
     is_published: isPublished,
     created_at: "2026-09-12T00:00:00.000Z",
     updated_at: "2026-09-12T01:00:00.000Z",
@@ -81,9 +91,20 @@ function adminDetailRows(isPublished = false) {
     question_ja: isPublished ? "問題" : "下書き",
     explanation_ja: isPublished ? "解説" : "",
     source_label_ja: isPublished ? "出典" : "",
+    image_alt_ja: "",
+    image_caption_ja: "",
     question_en: isPublished ? "Question" : "",
     explanation_en: isPublished ? "Explanation" : "",
     source_label_en: isPublished ? "Source" : "",
+    image_alt_en: "",
+    image_caption_en: "",
+    media_id: null,
+    media_url: null,
+    media_mime_type: null,
+    media_width: null,
+    media_height: null,
+    media_file_size: null,
+    media_created_at: null,
     choice_id: `choice-${sortOrder}`,
     sort_order: sortOrder,
     choice_label_ja: isPublished ? `選択肢${sortOrder}` : "",
@@ -97,9 +118,10 @@ const writeInput: AdminQuizWriteInput = {
   correctChoiceId: "choice-0",
   sourceUrl: "https://example.com/source",
   relatedContentId,
+  imageAssetId: null,
   translations: {
-    ja: { question: "問題", explanation: "解説", sourceLabel: "出典" },
-    en: { question: "Question", explanation: "Explanation", sourceLabel: "Source" },
+    ja: { question: "問題", explanation: "解説", sourceLabel: "出典", imageAlt: "", imageCaption: "" },
+    en: { question: "Question", explanation: "Explanation", sourceLabel: "Source", imageAlt: "", imageCaption: "" },
   },
   choices: [0, 1, 2, 3].map((sortOrder) => ({
     id: `choice-${sortOrder}`,
@@ -147,6 +169,7 @@ describe("public quiz repository", () => {
         id: "question-1",
         category: "history",
         question: "Question question-1",
+        image: null,
         choices: [0, 1, 2, 3].map((value) => ({ id: `choice-${value}`, label: `Choice ${value}` })),
       },
     ]);
@@ -156,6 +179,56 @@ describe("public quiz repository", () => {
     expect(query.text).toContain("locale_preference");
     expect(query.values).toEqual(expect.arrayContaining(["en", "ja"]));
     expect(query.text).not.toMatch(/correct_choice_id|explanation|source_url|related_content_id/u);
+  });
+
+  it("画像ありQuestionではLocale別説明と必要最小限のMedia情報だけを返す", async () => {
+    mocks.responses = [
+      publicRows().map((row) => ({
+        ...row,
+        image_asset_id: imageAssetId,
+        image_id: imageAssetId,
+        image_url: imageUrl,
+        image_width: 1200,
+        image_height: 800,
+        image_alt: "石造りの建物",
+        image_caption: "街並みの写真",
+      })),
+    ];
+
+    const [question] = await listPublishedQuizQuestions("ja");
+    expect(question.image).toEqual({
+      id: imageAssetId,
+      url: imageUrl,
+      width: 1200,
+      height: 800,
+      alt: "石造りの建物",
+      caption: "街並みの写真",
+    });
+    expect(mocks.queries[0].text).toContain("LEFT JOIN media_assets AS media");
+    expect(mocks.queries[0].text).not.toMatch(/storage_key|file_size|mime_type|correct_choice_id/u);
+  });
+
+  it("画像のalt不足・不正URL・不整合なMedia参照を公開しない", () => {
+    const imageRows = publicRows().map((row) => ({
+      ...row,
+      image_asset_id: imageAssetId,
+      image_id: imageAssetId,
+      image_url: imageUrl,
+      image_width: 1200,
+      image_height: 800,
+      image_alt: "説明",
+      image_caption: "",
+    }));
+    expect(parsePublishedQuizRows(imageRows)[0].image?.caption).toBeNull();
+    expect(() => parsePublishedQuizRows(imageRows.map((row) => ({ ...row, image_alt: "" })))).toThrow(
+      "Invalid quiz data",
+    );
+    expect(() =>
+      parsePublishedQuizRows(imageRows.map((row) => ({ ...row, image_url: "https://example.com/a.jpg" }))),
+    ).toThrow("Invalid quiz data");
+    expect(() => parsePublishedQuizRows(imageRows.map((row) => ({ ...row, image_id: null })))).toThrow(
+      "Invalid quiz data",
+    );
   });
 
   it("Asia/Tokyoの日付でSpecial Dateを優先し、同じ集合から決定的に選択する", async () => {
@@ -308,6 +381,7 @@ describe("admin quiz repository", () => {
     expect(result).toHaveLength(2);
     expect(result.map(({ isPublished }) => isPublished)).toEqual([false, true]);
     expect(mocks.queries[0].text).not.toContain("WHERE question.is_published");
+    expect(mocks.queries[0].text).not.toContain("media_assets");
   });
 
   it("入力途中のDraftとChoiceをsort_order順で取得する", async () => {
@@ -323,6 +397,33 @@ describe("admin quiz repository", () => {
       translations: { ja: { question: "下書き" }, en: { question: "" } },
     });
     expect(result?.choices.map(({ sortOrder }) => sortOrder)).toEqual([0, 1, 2, 3]);
+    expect(result?.image).toBeNull();
+  });
+
+  it("管理詳細だけMedia Assetと日英の画像説明を解決する", async () => {
+    mocks.responses = [
+      adminDetailRows(true).map((row) => ({
+        ...row,
+        image_asset_id: imageAssetId,
+        media_id: imageAssetId,
+        media_url: imageUrl,
+        media_mime_type: "image/jpeg",
+        media_width: 1200,
+        media_height: 800,
+        media_file_size: 1000,
+        media_created_at: "2026-09-25T00:00:00.000Z",
+        image_alt_ja: "石造りの建物",
+        image_alt_en: "A stone building",
+        image_caption_ja: "街並み",
+        image_caption_en: "City scene",
+      })),
+    ];
+    const result = await getAdminQuizQuestion("question-1");
+    expect(result?.imageAssetId).toBe(imageAssetId);
+    expect(result?.image).toMatchObject({ id: imageAssetId, url: imageUrl, width: 1200, height: 800 });
+    expect(result?.translations.en.imageCaption).toBe("City scene");
+    expect(mocks.queries[0].text).toContain("LEFT JOIN media_assets AS media");
+    expect(mocks.queries[0].text).not.toContain("storage_key");
   });
 
   it("Question・翻訳・Choiceをparameterizedな単一transactionで作成する", async () => {
@@ -332,6 +433,8 @@ describe("admin quiz repository", () => {
     expect(mocks.queries).toHaveLength(15);
     expect(mocks.queries.map(({ text }) => text).join("\n")).toContain("INSERT INTO quiz_questions");
     expect(mocks.queries.map(({ text }) => text).join("\n")).toContain("INSERT INTO quiz_choices");
+    expect(mocks.queries.map(({ text }) => text).join("\n")).toContain("image_asset_id");
+    expect(mocks.queries.map(({ text }) => text).join("\n")).toContain("image_alt");
     expect(mocks.queries[0].values).toContain("question-1");
     expect(mocks.queries.map(({ text }) => text).join("\n")).not.toContain("https://example.com/source");
   });
@@ -343,6 +446,7 @@ describe("admin quiz repository", () => {
     expect(mocks.transactionCount).toBe(1);
     expect(mocks.queries[0].text).toContain("FOR UPDATE");
     expect(mocks.queries.map(({ text }) => text).join("\n")).toContain("DELETE FROM quiz_choices");
+    expect(mocks.queries.map(({ text }) => text).join("\n")).toContain("image_caption = EXCLUDED.image_caption");
   });
 
   it("公開中Questionの不完全な全体更新では全クエリを無変更にする", async () => {
@@ -355,6 +459,13 @@ describe("admin quiz repository", () => {
       .map(({ text }) => text)
       .join("\n");
     expect(choiceTranslationSql).toContain("question.is_published = FALSE OR");
+  });
+
+  it("公開中Questionを画像あり・alt不足へ更新できない", async () => {
+    const incomplete = { ...writeInput, imageAssetId };
+    mocks.responses = [[{ id: "question-1", is_published: true }], []];
+    await expect(replaceAdminQuizQuestion("question-1", incomplete)).resolves.toBe("publication_blocked");
+    expect(mocks.queries[1].values).toContain(false);
   });
 
   it("公開時に日英翻訳・4 Choices・正解をtransaction内で再検証する", async () => {
@@ -371,6 +482,7 @@ describe("admin quiz repository", () => {
     expect(sql).toContain("LOWER(question.source_url) LIKE 'https://%'");
     expect(sql).toContain("(VALUES ('ja'), ('en'))");
     expect(sql).toContain("btrim(translation.label)");
+    expect(sql).toContain("question.image_asset_id IS NULL OR btrim(translation.image_alt) <> ''");
   });
 
   it("不完全なPublished行をSilentに返さない", async () => {

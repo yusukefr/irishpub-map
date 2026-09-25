@@ -181,10 +181,12 @@ const quizDefinitions: AdminQuizQuestion[] = [
     correctChoiceId: null,
     sourceUrl: null,
     relatedContentId: null,
+    imageAssetId: null,
+    image: null,
     isPublished: false,
     translations: {
-      ja: { question: "E2E 下書きQuiz", explanation: "", sourceLabel: "" },
-      en: { question: "E2E Draft Quiz", explanation: "", sourceLabel: "" },
+      ja: { question: "E2E 下書きQuiz", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
+      en: { question: "E2E Draft Quiz", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
     },
     choices: [],
     createdAt: UPDATED_AT,
@@ -197,10 +199,24 @@ const quizDefinitions: AdminQuizQuestion[] = [
     correctChoiceId: "choice-1",
     sourceUrl: "https://example.com/e2e-quiz",
     relatedContentId: E2E_TEST_DATA.content.published.id,
+    imageAssetId: E2E_TEST_DATA.media.landscape.id,
+    image: E2E_TEST_DATA.media.landscape,
     isPublished: true,
     translations: {
-      ja: { question: "E2E 公開Quiz", explanation: "E2E用の解説です。", sourceLabel: "E2E Source" },
-      en: { question: "E2E Published Quiz", explanation: "An explanation for E2E.", sourceLabel: "E2E Source" },
+      ja: {
+        question: "E2E 公開Quiz",
+        explanation: "E2E用の解説です。",
+        sourceLabel: "E2E Source",
+        imageAlt: "緑色の問題用画像",
+        imageCaption: "問題用の画像",
+      },
+      en: {
+        question: "E2E Published Quiz",
+        explanation: "An explanation for E2E.",
+        sourceLabel: "E2E Source",
+        imageAlt: "A green quiz image",
+        imageCaption: "Question image",
+      },
     },
     choices: [1, 2, 3, 4].map((number, index) => ({
       id: "choice-" + number,
@@ -401,11 +417,20 @@ export function getE2EAdminContent(id: string): AdminContent | null {
  * @returns {AdminQuizListItem[]} 固定Quiz一覧。
  */
 export function getE2EAdminQuizList(): AdminQuizListItem[] {
-  return quizDefinitions.map(({ translations, choices, ...question }) => ({
-    ...question,
-    questionJa: translations.ja.question,
-    questionEn: translations.en.question,
-    choiceCount: choices.length,
+  return quizDefinitions.map((question) => ({
+    id: question.id,
+    category: question.category,
+    specialDate: question.specialDate,
+    correctChoiceId: question.correctChoiceId,
+    sourceUrl: question.sourceUrl,
+    relatedContentId: question.relatedContentId,
+    imageAssetId: question.imageAssetId,
+    isPublished: question.isPublished,
+    questionJa: question.translations.ja.question,
+    questionEn: question.translations.en.question,
+    choiceCount: question.choices.length,
+    createdAt: question.createdAt,
+    updatedAt: question.updatedAt,
   }));
 }
 
@@ -430,6 +455,16 @@ export function getE2EPublishedQuizQuestions(locale: Locale): readonly PublicQui
       id: question.id,
       category: question.category!,
       question: question.translations[locale].question || question.translations.ja.question,
+      image: question.image
+        ? {
+            id: question.image.id,
+            url: question.image.url,
+            width: question.image.width,
+            height: question.image.height,
+            alt: question.translations[locale].imageAlt,
+            caption: question.translations[locale].imageCaption || null,
+          }
+        : null,
       choices: question.choices.map((choice) => ({
         id: choice.id,
         label: choice.translations[locale] || choice.translations.ja,

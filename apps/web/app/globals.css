@@ -3206,6 +3206,27 @@ body {
   line-height: 1.5;
 }
 
+.quiz-question-figure {
+  margin: var(--spacing-space-6) 0 0;
+}
+
+.quiz-question-image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 480px;
+  margin-inline: auto;
+  border-radius: var(--radius-md);
+}
+
+.quiz-question-figure figcaption {
+  margin-top: var(--spacing-space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm);
+  line-height: var(--text-body-sm--line-height);
+}
+
 .quiz-form {
   margin-top: var(--spacing-space-8);
 }
