@@ -30,16 +30,22 @@ test("Content一覧から日英Preview、Draft保存、Publishを操作する", 
     category: "pub-culture",
     status: "draft",
     publishedAt: null,
+    heroImageAssetId: null,
+    heroImage: null,
     translations: {
       ja: {
         title: "E2E Preview title",
         summary: "E2Eで管理画面を確認するための下書きです。",
         bodyMarkdown: "## E2E Preview body",
+        heroImageAlt: "",
+        heroImageCaption: "",
       },
       en: {
         title: "E2E Draft Guide",
         summary: "A draft used to verify the content admin UI.",
         bodyMarkdown: "## Draft body\n\n[Safe link](/discover)",
+        heroImageAlt: "",
+        heroImageCaption: "",
       },
     },
     createdAt: "2026-01-15T12:00:00.000Z",
@@ -94,9 +100,11 @@ test("未完成Contentを新規Draftとして保存できる", async ({ page }) 
           category: null,
           status: "draft",
           publishedAt: null,
+          heroImageAssetId: null,
+          heroImage: null,
           translations: {
-            ja: { title: "E2E 新規下書き", summary: "", bodyMarkdown: "" },
-            en: { title: "", summary: "", bodyMarkdown: "" },
+            ja: { title: "E2E 新規下書き", summary: "", bodyMarkdown: "", heroImageAlt: "", heroImageCaption: "" },
+            en: { title: "", summary: "", bodyMarkdown: "", heroImageAlt: "", heroImageCaption: "" },
           },
           createdAt: "2026-01-15T12:00:00.000Z",
           updatedAt: "2026-01-15T12:00:00.000Z",
@@ -109,4 +117,28 @@ test("未完成Contentを新規Draftとして保存できる", async ({ page }) 
   const request = await requestPromise;
   expect((await request.postDataJSON()).translations.ja.title).toBe("E2E 新規下書き");
   await expect(page).toHaveURL(new RegExp(`/admin/content/${E2E_TEST_DATA.content.draft.id}$`));
+});
+
+test("Content EditorでMedia PickerからHeroを選び、日英Previewと解除へ反映する", async ({ page }) => {
+  await loginAsE2EAdmin(page, `/admin/content/${E2E_TEST_DATA.content.draft.id}`);
+  await page.getByRole("button", { name: "画像を選択" }).click();
+  const dialog = page.getByRole("dialog", { name: "画像を選択" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: new RegExp(E2E_TEST_DATA.media.landscape.id) }).click();
+  await dialog.getByRole("button", { name: "選択した画像を使う" }).click();
+
+  const japanese = page.getByRole("group", { name: "日本語" });
+  const english = page.getByRole("group", { name: "English" });
+  await japanese.getByLabel("代表画像の代替テキスト").fill("日本語の画像説明");
+  await english.getByLabel("代表画像の代替テキスト").fill("English image description");
+  await japanese.getByLabel("代表画像のキャプション").fill("写真の説明");
+  await page.getByRole("button", { name: "Previewを開く" }).click();
+  const preview = page.locator("#admin-content-preview");
+  await expect(preview.getByRole("img", { name: "日本語の画像説明" })).toBeVisible();
+  await expect(preview.getByRole("img", { name: "English image description" })).toBeVisible();
+  await expect(preview.getByText("写真の説明")).toBeVisible();
+
+  await page.getByRole("button", { name: "画像を解除" }).click();
+  await expect(japanese.getByLabel("代表画像の代替テキスト")).toBeDisabled();
+  await expect(preview.getByRole("img")).toHaveCount(0);
 });

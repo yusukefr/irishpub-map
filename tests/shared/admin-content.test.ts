@@ -10,9 +10,10 @@ const draft = {
   kind: null,
   slug: null,
   category: null,
+  heroImageAssetId: null,
   translations: {
-    ja: { title: "", summary: "", bodyMarkdown: "" },
-    en: { title: "", summary: "", bodyMarkdown: "" },
+    ja: { title: "", summary: "", bodyMarkdown: "", heroImageAlt: "", heroImageCaption: "" },
+    en: { title: "", summary: "", bodyMarkdown: "", heroImageAlt: "", heroImageCaption: "" },
   },
 };
 
@@ -25,17 +26,30 @@ describe("admin content input", () => {
         slug: "  pub-etiquette  ",
         category: "pub-culture",
         translations: {
-          ja: { title: "  パブの作法  ", summary: "", bodyMarkdown: "    const value = 1;\n" },
-          en: { title: "", summary: "", bodyMarkdown: "" },
+          ja: {
+            title: "  パブの作法  ",
+            summary: "",
+            bodyMarkdown: "    const value = 1;\n",
+            heroImageAlt: "",
+            heroImageCaption: "",
+          },
+          en: { ...draft.translations.en },
         },
       }),
     ).toEqual({
       kind: "guide",
       slug: "pub-etiquette",
       category: "pub-culture",
+      heroImageAssetId: null,
       translations: {
-        ja: { title: "パブの作法", summary: "", bodyMarkdown: "    const value = 1;\n" },
-        en: { title: "", summary: "", bodyMarkdown: "" },
+        ja: {
+          title: "パブの作法",
+          summary: "",
+          bodyMarkdown: "    const value = 1;\n",
+          heroImageAlt: "",
+          heroImageCaption: "",
+        },
+        en: { ...draft.translations.en },
       },
     });
     expect(parseAdminContentWriteInput(draft)).toEqual(draft);
@@ -80,5 +94,30 @@ describe("admin content input", () => {
     expect(() => parseSetAdminContentPublicationInput({ status: "draft", extra: true })).toThrow(
       AdminContentPublicationValidationError,
     );
+  });
+
+  it("accepts optional hero ID and draft alt, but rejects invalid ID and excessive text", () => {
+    const id = "550e8400-e29b-41d4-a716-446655440009";
+    expect(parseAdminContentWriteInput({ ...draft, heroImageAssetId: id })).toMatchObject({ heroImageAssetId: id });
+    expect(() => parseAdminContentWriteInput({ ...draft, heroImageAssetId: "https://example.com/image.jpg" })).toThrow(
+      AdminContentWriteValidationError,
+    );
+    expect(() => parseAdminContentWriteInput({ ...draft, heroImageUrl: "https://example.com/image.jpg" })).toThrow(
+      AdminContentWriteValidationError,
+    );
+    try {
+      parseAdminContentWriteInput({
+        ...draft,
+        translations: {
+          ...draft.translations,
+          ja: { ...draft.translations.ja, heroImageAlt: "a".repeat(501), heroImageCaption: "b".repeat(1001) },
+        },
+      });
+    } catch (error) {
+      expect((error as AdminContentWriteValidationError).fieldErrors).toMatchObject({
+        "translations.ja.heroImageAlt": "too_long",
+        "translations.ja.heroImageCaption": "too_long",
+      });
+    }
   });
 });

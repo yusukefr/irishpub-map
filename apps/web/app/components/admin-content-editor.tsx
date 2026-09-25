@@ -2,8 +2,11 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   CONTENT_BODY_MAX_LENGTH,
+  CONTENT_HERO_ALT_MAX_LENGTH,
+  CONTENT_HERO_CAPTION_MAX_LENGTH,
   CONTENT_CATEGORIES,
   CONTENT_KINDS,
   CONTENT_SLUG_MAX_LENGTH,
@@ -16,6 +19,8 @@ import {
   type ContentKind,
   type ContentStatus,
 } from "@irishpub-map/shared/admin-content";
+import type { MediaAsset } from "@irishpub-map/shared/media";
+import { MediaPicker } from "./media/media-picker";
 import { getAdminContentApiErrorMessage } from "../lib/admin-api-client";
 import { SafeMarkdownRenderer } from "../lib/content/renderer";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
@@ -39,9 +44,10 @@ const emptyValues: AdminContentWriteInput = {
   kind: null,
   slug: null,
   category: null,
+  heroImageAssetId: null,
   translations: {
-    ja: { title: "", summary: "", bodyMarkdown: "" },
-    en: { title: "", summary: "", bodyMarkdown: "" },
+    ja: { title: "", summary: "", bodyMarkdown: "", heroImageAlt: "", heroImageCaption: "" },
+    en: { title: "", summary: "", bodyMarkdown: "", heroImageAlt: "", heroImageCaption: "" },
   },
 };
 
@@ -51,6 +57,7 @@ function toValues(content: AdminContent | null): AdminContentWriteInput {
     kind: content.kind,
     slug: content.slug,
     category: content.category,
+    heroImageAssetId: content.heroImageAssetId,
     translations: {
       ja: { ...content.translations.ja },
       en: { ...content.translations.en },
@@ -80,6 +87,7 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
   const c = t.content;
   const [contentId, setContentId] = useState(initialContent?.id ?? null);
   const [values, setValues] = useState(() => toValues(initialContent));
+  const [heroImage, setHeroImage] = useState<MediaAsset | null>(initialContent?.heroImage ?? null);
   const [savedSnapshot, setSavedSnapshot] = useState(() => serialize(toValues(initialContent)));
   const [status, setStatus] = useState<ContentStatus>(initialContent?.status ?? "draft");
   const [publishedAt, setPublishedAt] = useState(initialContent?.publishedAt ?? null);
@@ -101,7 +109,11 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
     clearFieldError(key);
   }
 
-  function setTranslationValue(language: "ja" | "en", key: "title" | "summary" | "bodyMarkdown", value: string) {
+  function setTranslationValue(
+    language: "ja" | "en",
+    key: keyof AdminContentWriteInput["translations"]["ja"],
+    value: string,
+  ) {
     setValues((current) => ({
       ...current,
       translations: {
@@ -110,6 +122,26 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
       },
     }));
     clearFieldError(`translations.${language}.${key}`);
+  }
+
+  function selectHeroImage(media: MediaAsset | null) {
+    setValues((current) => {
+      if (current.heroImageAssetId === media?.id) return current;
+      return {
+        ...current,
+        heroImageAssetId: media?.id ?? null,
+        translations: {
+          ja: { ...current.translations.ja, heroImageAlt: "", heroImageCaption: "" },
+          en: { ...current.translations.en, heroImageAlt: "", heroImageCaption: "" },
+        },
+      };
+    });
+    setHeroImage(media);
+    clearFieldError("heroImageAssetId");
+    for (const language of ["ja", "en"] as const) {
+      clearFieldError(`translations.${language}.heroImageAlt`);
+      clearFieldError(`translations.${language}.heroImageCaption`);
+    }
   }
 
   function clearFieldError(path: string) {
@@ -151,6 +183,7 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
       const created = contentId === null;
       setContentId(body.content.id);
       setValues(savedValues);
+      setHeroImage(body.content.heroImage);
       setSavedSnapshot(serialize(savedValues));
       setStatus(body.content.status);
       setPublishedAt(body.content.publishedAt);
@@ -289,6 +322,37 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
           </label>
         </fieldset>
 
+        <fieldset disabled={busy || !databaseConfigured}>
+          <legend>{c.heroImage}</legend>
+          <p className="admin-editor-note">{c.heroImageRecommendedRatio}</p>
+          {heroImage ? (
+            <figure className="admin-content-hero-preview">
+              <Image
+                src={heroImage.url}
+                alt={values.translations[locale].heroImageAlt || c.heroImagePreviewAlt}
+                width={heroImage.width}
+                height={heroImage.height}
+                sizes="(max-width: 760px) calc(100vw - 32px), 520px"
+              />
+              <figcaption>{c.heroImageSelected}</figcaption>
+            </figure>
+          ) : null}
+          <div className="admin-content-hero-actions">
+            <MediaPicker
+              locale={locale}
+              selectedId={values.heroImageAssetId}
+              triggerLabel={heroImage ? c.changeImage : c.selectImage}
+              onSelect={selectHeroImage}
+            />
+            {heroImage ? (
+              <button type="button" className="admin-secondary-action" onClick={() => selectHeroImage(null)}>
+                {c.clearImage}
+              </button>
+            ) : null}
+          </div>
+          <FieldError path="heroImageAssetId" errors={fieldErrors} label={c.heroImage} messages={c} />
+        </fieldset>
+
         {(["ja", "en"] as const).map((language) => {
           const translation = values.translations[language];
           return (
@@ -319,6 +383,41 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
                   path={`translations.${language}.summary`}
                   errors={fieldErrors}
                   label={c.summary}
+                  messages={c}
+                />
+              </label>
+              <label>
+                {c.heroImageAlt}
+                <input
+                  value={translation.heroImageAlt}
+                  maxLength={CONTENT_HERO_ALT_MAX_LENGTH}
+                  disabled={!values.heroImageAssetId}
+                  onChange={(event) => setTranslationValue(language, "heroImageAlt", event.target.value)}
+                  aria-invalid={Boolean(fieldErrors[`translations.${language}.heroImageAlt`])}
+                  aria-describedby={fieldErrorId(`translations.${language}.heroImageAlt`)}
+                />
+                <FieldError
+                  path={`translations.${language}.heroImageAlt`}
+                  errors={fieldErrors}
+                  label={c.heroImageAlt}
+                  messages={c}
+                />
+              </label>
+              <label>
+                {c.heroImageCaption}
+                <textarea
+                  value={translation.heroImageCaption}
+                  maxLength={CONTENT_HERO_CAPTION_MAX_LENGTH}
+                  disabled={!values.heroImageAssetId}
+                  rows={2}
+                  onChange={(event) => setTranslationValue(language, "heroImageCaption", event.target.value)}
+                  aria-invalid={Boolean(fieldErrors[`translations.${language}.heroImageCaption`])}
+                  aria-describedby={fieldErrorId(`translations.${language}.heroImageCaption`)}
+                />
+                <FieldError
+                  path={`translations.${language}.heroImageCaption`}
+                  errors={fieldErrors}
+                  label={c.heroImageCaption}
                   messages={c}
                 />
               </label>
@@ -386,6 +485,18 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
                   <p className="admin-content-language">{language === "ja" ? c.japaneseContent : c.englishContent}</p>
                   <h3>{translation.title || c.untitled}</h3>
                   {translation.summary ? <p className="admin-content-preview-summary">{translation.summary}</p> : null}
+                  {heroImage ? (
+                    <figure className="admin-content-preview-hero">
+                      <Image
+                        src={heroImage.url}
+                        alt={translation.heroImageAlt}
+                        width={heroImage.width}
+                        height={heroImage.height}
+                        sizes="(max-width: 760px) calc(100vw - 32px), 520px"
+                      />
+                      {translation.heroImageCaption ? <figcaption>{translation.heroImageCaption}</figcaption> : null}
+                    </figure>
+                  ) : null}
                   <div className="content-prose">
                     {translation.bodyMarkdown ? (
                       <SafeMarkdownRenderer markdown={translation.bodyMarkdown} />
@@ -441,6 +552,9 @@ function getPublicationMissingFields(values: AdminContentWriteInput) {
     for (const field of ["title", "summary", "bodyMarkdown"] as const) {
       if (!values.translations[language][field].trim()) fields.push(`translations.${language}.${field}`);
     }
+    if (values.heroImageAssetId && !values.translations[language].heroImageAlt.trim()) {
+      fields.push(`translations.${language}.heroImageAlt`);
+    }
   }
   return fields;
 }
@@ -461,7 +575,16 @@ function fieldLabel(path: string, content: ReturnType<typeof getTranslation>["ad
           : path;
   }
   const languageLabel = language === "ja" ? content.japaneseContent : content.englishContent;
-  const fieldName = field === "title" ? content.title : field === "summary" ? content.summary : content.bodyMarkdown;
+  const fieldName =
+    field === "title"
+      ? content.title
+      : field === "summary"
+        ? content.summary
+        : field === "heroImageAlt"
+          ? content.heroImageAlt
+          : field === "heroImageCaption"
+            ? content.heroImageCaption
+            : content.bodyMarkdown;
   return `${languageLabel}: ${fieldName}`;
 }
 

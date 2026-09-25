@@ -200,6 +200,34 @@ describe("media asset database migration", () => {
   });
 });
 
+describe("editorial content hero image migration", () => {
+  it("adds hero image metadata and verifies its schema and references", async () => {
+    const upSql = await readMigration("015_add_content_hero_image_up.sql");
+    const verifySql = await readMigration("015_add_content_hero_image_verify.sql");
+
+    expect(upSql).toContain("ADD COLUMN hero_image_asset_id UUID REFERENCES media_assets(id) ON DELETE SET NULL");
+    expect(upSql).toContain("content_entries_hero_image_asset_id_idx");
+    expect(upSql).toContain("WHERE hero_image_asset_id IS NOT NULL");
+    expect(upSql).toContain("hero_image_alt TEXT NOT NULL DEFAULT ''");
+    expect(upSql).toContain("hero_image_caption TEXT NOT NULL DEFAULT ''");
+    expect(upSql).toContain("content_translations_hero_image_alt_length_check");
+    expect(upSql).toContain("CHECK (char_length(hero_image_alt) <= 500)");
+    expect(upSql).toContain("content_translations_hero_image_caption_length_check");
+    expect(upSql).toContain("CHECK (char_length(hero_image_caption) <= 1000)");
+    expect(upSql).toContain("VALUES ('015_add_content_hero_image')");
+
+    expect(verifySql).toContain("column_name = 'hero_image_asset_id' AND data_type = 'uuid'");
+    expect(verifySql).toContain("FOREIGN KEY (hero_image_asset_id) REFERENCES media_assets(id) ON DELETE SET NULL");
+    expect(verifySql).toContain("content_entries_hero_image_asset_id_idx");
+    expect(verifySql).toContain("column_name = 'hero_image_alt'");
+    expect(verifySql).toContain("column_name = 'hero_image_caption'");
+    expect(verifySql).toContain("content_translations_hero_image_alt_length_check");
+    expect(verifySql).toContain("content_translations_hero_image_caption_length_check");
+    expect(verifySql).toContain("orphan hero image reference found");
+    expect(verifySql).toContain("version = '015_add_content_hero_image'");
+  });
+});
+
 describe("quiz database migration", () => {
   it("defines localized quiz questions, choices, and same-question correct answers", async () => {
     const upSql = await readMigration("012_add_quiz_domain_up.sql");

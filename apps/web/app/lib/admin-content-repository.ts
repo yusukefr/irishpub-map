@@ -10,6 +10,7 @@ import type {
 import { isContentCategory, isContentKind } from "@irishpub-map/shared/admin-content";
 import { getE2EAdminContent, getE2EAdminContentList } from "./e2e-test-fixtures";
 import { isE2ETestMode, rejectE2ETestMutation } from "./e2e-test-mode";
+import type { MediaAsset } from "@irishpub-map/shared/media";
 
 type DbRow = Record<string, unknown>;
 /** 公開キャッシュを識別するContentの種類とslugです。 */
@@ -61,9 +62,18 @@ export async function getAdminContent(id: string): Promise<AdminContent | null> 
       entry.published_at, entry.created_at, entry.updated_at,
       COALESCE(ja.title, '') AS title_ja, COALESCE(ja.summary, '') AS summary_ja,
       COALESCE(ja.body_markdown, '') AS body_markdown_ja,
+      COALESCE(ja.hero_image_alt, '') AS hero_image_alt_ja,
+      COALESCE(ja.hero_image_caption, '') AS hero_image_caption_ja,
       COALESCE(en.title, '') AS title_en, COALESCE(en.summary, '') AS summary_en,
-      COALESCE(en.body_markdown, '') AS body_markdown_en
+      COALESCE(en.body_markdown, '') AS body_markdown_en,
+      COALESCE(en.hero_image_alt, '') AS hero_image_alt_en,
+      COALESCE(en.hero_image_caption, '') AS hero_image_caption_en,
+      entry.hero_image_asset_id::text,
+      media.url AS hero_image_url, media.mime_type AS hero_image_mime_type,
+      media.width AS hero_image_width, media.height AS hero_image_height,
+      media.file_size AS hero_image_file_size, media.created_at AS hero_image_created_at
     FROM content_entries AS entry
+    LEFT JOIN media_assets AS media ON media.id = entry.hero_image_asset_id
     LEFT JOIN content_translations AS ja ON ja.content_id = entry.id AND ja.locale = 'ja'
     LEFT JOIN content_translations AS en ON en.content_id = entry.id AND en.locale = 'en'
     WHERE entry.id = ${id}::uuid
@@ -85,8 +95,8 @@ export async function insertAdminContent(id: string, input: AdminContentWriteInp
   await sql.transaction(
     (transaction) => [
       transaction`
-        INSERT INTO content_entries (id, kind, slug, category, status)
-        VALUES (${id}::uuid, ${input.kind}, ${input.slug}, ${input.category}, 'draft')
+        INSERT INTO content_entries (id, kind, slug, category, hero_image_asset_id, status)
+        VALUES (${id}::uuid, ${input.kind}, ${input.slug}, ${input.category}, ${input.heroImageAssetId}::uuid, 'draft')
       `,
       translationUpsert(transaction, id, "ja", input),
       translationUpsert(transaction, id, "en", input),
@@ -117,7 +127,8 @@ export async function replaceAdminContent(
       `,
       transaction`
         UPDATE content_entries AS entry
-        SET kind = ${input.kind}, slug = ${input.slug}, category = ${input.category}, updated_at = NOW()
+        SET kind = ${input.kind}, slug = ${input.slug}, category = ${input.category},
+          hero_image_asset_id = ${input.heroImageAssetId}::uuid, updated_at = NOW()
         WHERE entry.id = ${id}::uuid
           AND (entry.status = 'draft' OR ${publishReady})
         RETURNING entry.id
@@ -174,6 +185,7 @@ export async function setAdminContentPublication(
                     AND btrim(translation.title) <> ''
                     AND btrim(translation.summary) <> ''
                     AND btrim(translation.body_markdown) <> ''
+                    AND (entry.hero_image_asset_id IS NULL OR btrim(translation.hero_image_alt) <> '')
                 )
               )
             )
@@ -219,15 +231,18 @@ function translationUpsert(
 ) {
   const translation = input.translations[locale];
   return transaction`
-    INSERT INTO content_translations (content_id, locale, title, summary, body_markdown)
-    SELECT ${id}::uuid, ${locale}, ${translation.title}, ${translation.summary}, ${translation.bodyMarkdown}
+    INSERT INTO content_translations (content_id, locale, title, summary, body_markdown, hero_image_alt, hero_image_caption)
+    SELECT ${id}::uuid, ${locale}, ${translation.title}, ${translation.summary}, ${translation.bodyMarkdown},
+      ${translation.heroImageAlt}, ${translation.heroImageCaption}
     WHERE EXISTS (
       SELECT 1 FROM content_entries AS entry
       WHERE entry.id = ${id}::uuid AND (entry.status = 'draft' OR ${publishReady})
     )
     ON CONFLICT (content_id, locale) DO UPDATE
     SET title = EXCLUDED.title, summary = EXCLUDED.summary,
-      body_markdown = EXCLUDED.body_markdown, updated_at = NOW()
+      body_markdown = EXCLUDED.body_markdown,
+      hero_image_alt = EXCLUDED.hero_image_alt,
+      hero_image_caption = EXCLUDED.hero_image_caption, updated_at = NOW()
   `;
 }
 
@@ -240,18 +255,48 @@ function getRequiredSql() {
 function toAdminContent(row: DbRow): AdminContent {
   return {
     ...toAdminContentBase(row),
+    heroImageAssetId: nullableString(row.hero_image_asset_id),
+    heroImage: toHeroImage(row),
     translations: {
       ja: {
         title: requiredString(row.title_ja),
         summary: requiredString(row.summary_ja),
         bodyMarkdown: requiredString(row.body_markdown_ja),
+        heroImageAlt: requiredString(row.hero_image_alt_ja),
+        heroImageCaption: requiredString(row.hero_image_caption_ja),
       },
       en: {
         title: requiredString(row.title_en),
         summary: requiredString(row.summary_en),
         bodyMarkdown: requiredString(row.body_markdown_en),
+        heroImageAlt: requiredString(row.hero_image_alt_en),
+        heroImageCaption: requiredString(row.hero_image_caption_en),
       },
     },
+  };
+}
+
+function toHeroImage(row: DbRow): MediaAsset | null {
+  if (row.hero_image_asset_id === null) return null;
+  if (row.hero_image_url === null) throw new Error("Hero image asset is missing.");
+  const width = Number(row.hero_image_width);
+  const height = Number(row.hero_image_height);
+  const fileSize = Number(row.hero_image_file_size);
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || !Number.isSafeInteger(fileSize)) {
+    throw new Error("Invalid hero image dimensions.");
+  }
+  const mimeType = requiredString(row.hero_image_mime_type);
+  if (mimeType !== "image/jpeg" && mimeType !== "image/png" && mimeType !== "image/webp") {
+    throw new Error("Invalid hero image MIME type.");
+  }
+  return {
+    id: requiredUuid(row.hero_image_asset_id),
+    url: requiredString(row.hero_image_url),
+    mimeType,
+    width,
+    height,
+    fileSize,
+    createdAt: requiredDate(row.hero_image_created_at),
   };
 }
 

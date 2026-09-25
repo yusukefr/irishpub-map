@@ -13,9 +13,14 @@ type DbContentSummaryRow = {
   published_at: unknown;
   title: unknown;
   summary: unknown;
+  hero_image_url: unknown;
+  hero_image_width: unknown;
+  hero_image_height: unknown;
+  hero_image_alt: unknown;
 };
 type DbContentRow = DbContentSummaryRow & {
   body_markdown: unknown;
+  hero_image_caption: unknown;
 };
 let sqlClient: ReturnType<typeof neon> | null = null;
 const CONTENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -44,6 +49,7 @@ export function parsePublishedContent(row: DbContentRow): PublishedContent {
     title: row.title,
     summary: row.summary,
     bodyMarkdown: row.body_markdown,
+    heroImage: parseHeroImage(row, true),
   };
 }
 /**
@@ -93,12 +99,12 @@ export async function listPublishedContent(
 }
 async function getPublishedContentBySlugFromDatabase(kind: ContentKind, slug: string, locale: Locale) {
   const rows =
-    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary, translation.body_markdown FROM content_entries AS entry JOIN LATERAL (SELECT value.title, value.summary, value.body_markdown FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.kind = ${kind} AND entry.slug = ${slug}`) as DbContentRow[];
+    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary, translation.body_markdown, translation.hero_image_alt, translation.hero_image_caption, media.url AS hero_image_url, media.width AS hero_image_width, media.height AS hero_image_height FROM content_entries AS entry LEFT JOIN media_assets AS media ON media.id = entry.hero_image_asset_id JOIN LATERAL (SELECT value.title, value.summary, value.body_markdown, value.hero_image_alt, value.hero_image_caption FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.kind = ${kind} AND entry.slug = ${slug}`) as DbContentRow[];
   return rows[0] ? parsePublishedContent(rows[0]) : null;
 }
 async function getPublishedContentByIdFromDatabase(id: string, locale: Locale) {
   const rows =
-    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary, translation.body_markdown FROM content_entries AS entry JOIN LATERAL (SELECT value.title, value.summary, value.body_markdown FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.id = ${id}::uuid`) as DbContentRow[];
+    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary, translation.body_markdown, translation.hero_image_alt, translation.hero_image_caption, media.url AS hero_image_url, media.width AS hero_image_width, media.height AS hero_image_height FROM content_entries AS entry LEFT JOIN media_assets AS media ON media.id = entry.hero_image_asset_id JOIN LATERAL (SELECT value.title, value.summary, value.body_markdown, value.hero_image_alt, value.hero_image_caption FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.id = ${id}::uuid`) as DbContentRow[];
   if (rows.length > 1) throw new Error("Invalid published content result.");
   return rows[0] ? parsePublishedContent(rows[0]) : null;
 }
@@ -120,12 +126,36 @@ function parsePublishedContentSummary(row: DbContentSummaryRow): PublishedConten
     publishedAt: row.published_at,
     title: row.title,
     summary: row.summary,
+    heroImage: parseHeroImage(row, false),
   };
 }
 async function listPublishedContentFromDatabase(kind: ContentKind, locale: Locale) {
   const rows =
-    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary FROM content_entries AS entry JOIN LATERAL (SELECT value.title, value.summary FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.kind = ${kind} ORDER BY entry.published_at DESC, entry.slug`) as DbContentSummaryRow[];
+    (await getSql()`WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1) SELECT entry.kind, entry.slug, entry.category, entry.published_at::text, translation.title, translation.summary, translation.hero_image_alt, media.url AS hero_image_url, media.width AS hero_image_width, media.height AS hero_image_height FROM content_entries AS entry LEFT JOIN media_assets AS media ON media.id = entry.hero_image_asset_id JOIN LATERAL (SELECT value.title, value.summary, value.hero_image_alt FROM content_translations AS value JOIN locale_preference AS preference ON preference.locale = value.locale WHERE value.content_id = entry.id ORDER BY preference.priority LIMIT 1) AS translation ON TRUE WHERE entry.status = 'published' AND entry.kind = ${kind} ORDER BY entry.published_at DESC, entry.slug`) as DbContentSummaryRow[];
   return rows.map(parsePublishedContentSummary);
+}
+
+function parseHeroImage(row: DbContentSummaryRow, withCaption: false): PublishedContentSummary["heroImage"];
+function parseHeroImage(row: DbContentRow, withCaption: true): PublishedContent["heroImage"];
+function parseHeroImage(row: DbContentSummaryRow | DbContentRow, withCaption: boolean) {
+  if (row.hero_image_url === null) return null;
+  if (typeof row.hero_image_url !== "string" || typeof row.hero_image_alt !== "string") {
+    throw new Error("Invalid hero image returned from database.");
+  }
+  const url = new URL(row.hero_image_url);
+  if (url.protocol !== "https:" || !url.hostname.endsWith(".public.blob.vercel-storage.com")) {
+    throw new Error("Invalid hero image URL returned from database.");
+  }
+  const width = Number(row.hero_image_width);
+  const height = Number(row.hero_image_height);
+  if (!Number.isSafeInteger(width) || width < 1 || !Number.isSafeInteger(height) || height < 1) {
+    throw new Error("Invalid hero image dimensions returned from database.");
+  }
+  const image = { url: row.hero_image_url, width, height, alt: row.hero_image_alt };
+  if (!withCaption) return image;
+  const caption = (row as DbContentRow).hero_image_caption;
+  if (typeof caption !== "string") throw new Error("Invalid hero image caption returned from database.");
+  return { ...image, caption };
 }
 function getSql() {
   sqlClient ??= neon(process.env.DATABASE_URL!);

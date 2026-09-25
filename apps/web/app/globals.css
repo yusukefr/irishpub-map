@@ -3145,6 +3145,7 @@ body {
 .discover-guide-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: var(--spacing-space-4);
 }
 
@@ -3471,6 +3472,27 @@ body {
   font-size: var(--text-body-sm);
 }
 
+.guide-hero {
+  max-width: 720px;
+  margin: var(--spacing-space-6) 0 0;
+}
+
+.guide-hero img {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
+.guide-hero figcaption,
+.admin-content-preview-hero figcaption {
+  margin-top: var(--spacing-space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm);
+  overflow-wrap: anywhere;
+}
+
 .content-prose {
   font-size: var(--text-body-md);
   line-height: 1.9;
@@ -3632,6 +3654,27 @@ body {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace !important;
   font-size: 0.9rem !important;
   tab-size: 2;
+}
+
+.admin-content-hero-preview,
+.admin-content-preview-hero {
+  max-width: 520px;
+  margin: var(--spacing-space-4) 0;
+}
+
+.admin-content-hero-preview img,
+.admin-content-preview-hero img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
+.admin-content-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-space-3);
+  margin-top: var(--spacing-space-4);
 }
 
 .admin-secondary-action {

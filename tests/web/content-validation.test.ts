@@ -12,9 +12,10 @@ describe("editorial content validation", () => {
         kind: null,
         slug: null,
         category: null,
+        heroImageAssetId: null,
         translations: {
-          ja: { title: "", summary: "要約", bodyMarkdown: "   " },
-          en: { title: "Title", summary: "", bodyMarkdown: "Body" },
+          ja: { title: "", summary: "要約", bodyMarkdown: "   ", heroImageAlt: "", heroImageCaption: "" },
+          en: { title: "Title", summary: "", bodyMarkdown: "Body", heroImageAlt: "", heroImageCaption: "" },
         },
       }),
     ).toEqual([
@@ -34,6 +35,28 @@ describe("editorial content validation", () => {
       ),
     ).toBe(true);
     expect(isAllowedMarkdownUrl("//example.com")).toBe(false);
+  });
+
+  it("requires both locale alt texts only when a hero is selected", () => {
+    const input = {
+      kind: "story" as const,
+      slug: "story",
+      category: "culture" as const,
+      heroImageAssetId: null as string | null,
+      translations: {
+        ja: { title: "記事", summary: "概要", bodyMarkdown: "本文", heroImageAlt: "", heroImageCaption: "" },
+        en: { title: "Story", summary: "Summary", bodyMarkdown: "Body", heroImageAlt: "", heroImageCaption: "" },
+      },
+    };
+    expect(getContentPublicationMissingFields(input)).toEqual([]);
+    input.heroImageAssetId = "550e8400-e29b-41d4-a716-446655440009";
+    expect(getContentPublicationMissingFields(input)).toEqual([
+      "translations.ja.heroImageAlt",
+      "translations.en.heroImageAlt",
+    ]);
+    input.translations.ja.heroImageAlt = "説明";
+    input.translations.en.heroImageAlt = "Description";
+    expect(getContentPublicationMissingFields(input)).toEqual([]);
   });
 
   it("rejects explicit and GFM email autolinks resolved to mailto URLs", () => {

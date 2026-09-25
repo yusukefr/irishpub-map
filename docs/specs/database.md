@@ -8,6 +8,8 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 `014_add_media_assets` は公開Vercel BlobのURLと内部Storage key、実データから判定したMIME type、画像寸法、ファイルサイズを `media_assets` に保存します。UUID、Storage key、URLの一意性、MIME allowlist、8192px・4000万画素・4 MiBの制約と管理一覧用の `(created_at DESC, id DESC)` indexをDB側でも保証します。Migration適用後はRunbookに従って検証し、現行DBから生成済みschemaを更新します。
 
+`015_add_content_hero_image` はEditorial Content共通の任意の代表画像参照を `content_entries.hero_image_asset_id` に追加し、`media_assets.id` を `ON DELETE SET NULL` で参照します。日英のaltとcaptionは `content_translations` に保持し、最大長をそれぞれ500文字・1,000文字に制限します。画像URLはContent側へ複製せず、RepositoryがMedia Assetから取得します。
+
 ## 概念モデル
 
 アプリケーションは、店舗・地域・営業状況・タグ・Editorial Content・Quiz・Irish Calendarを扱います。各概念の物理テーブル名、カラム、制約、インデックスは、現行Neonから生成した[生成済みスキーマ](../generated/database-schema.md)を参照してください。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理し、アプリケーション用の認証テーブルは持ちません。

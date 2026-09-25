@@ -44,6 +44,11 @@ describe("published content ID repository", () => {
         title: "Irish history",
         summary: "Summary",
         body_markdown: "# Body",
+        hero_image_url: null,
+        hero_image_width: null,
+        hero_image_height: null,
+        hero_image_alt: "",
+        hero_image_caption: "",
       },
     ];
 
