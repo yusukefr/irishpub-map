@@ -1,5 +1,6 @@
 import { neon, type NeonQueryFunctionInTransaction } from "@neondatabase/serverless";
 import { DEFAULT_LOCALE, isSupportedLocale, type Locale } from "@irishpub-map/shared/locale";
+import type { MediaAsset, MediaMimeType } from "@irishpub-map/shared/media";
 import { getPublishedContentById } from "../content/repository";
 import {
   getE2EAdminQuiz,
@@ -18,6 +19,7 @@ import {
   type AdminQuizQuestion,
   type AdminQuizWriteInput,
   type PublicQuizQuestion,
+  type PublicQuizImage,
   type QuizAnswerResult,
   type QuizCategory,
   type QuizSpecialDate,
@@ -61,11 +63,16 @@ async function listPublishedQuizQuestionsFromDatabase(locale: Locale): Promise<r
       UNION ALL SELECT ${DEFAULT_LOCALE}, 1
     )
     SELECT question.id, question.category, question.special_month, question.special_day,
-      translation.question, choice.id AS choice_id, choice.sort_order,
+      question.image_asset_id::text,
+      translation.question, translation.image_alt, translation.image_caption,
+      media.id::text AS image_id, media.url AS image_url,
+      media.width AS image_width, media.height AS image_height,
+      choice.id AS choice_id, choice.sort_order,
       choice_translation.label AS choice_label
     FROM quiz_questions AS question
+    LEFT JOIN media_assets AS media ON media.id = question.image_asset_id
     LEFT JOIN LATERAL (
-      SELECT value.question
+      SELECT value.question, value.image_alt, value.image_caption
       FROM quiz_question_translations AS value
       JOIN locale_preference AS preference ON preference.locale = value.locale
       WHERE value.question_id = question.id
@@ -182,6 +189,7 @@ export async function listAdminQuizQuestions(): Promise<readonly AdminQuizListIt
   const rows = (await getRequiredSql()`
     SELECT question.id, question.category, question.special_month, question.special_day,
       question.correct_choice_id, question.source_url, question.related_content_id::text,
+      question.image_asset_id::text,
       question.is_published, question.created_at, question.updated_at,
       COALESCE(ja.question, '') AS question_ja,
       COALESCE(en.question, '') AS question_en,
@@ -210,17 +218,26 @@ export async function getAdminQuizQuestion(id: string): Promise<AdminQuizQuestio
   const rows = (await getRequiredSql()`
     SELECT question.id, question.category, question.special_month, question.special_day,
       question.correct_choice_id, question.source_url, question.related_content_id::text,
+      question.image_asset_id::text,
       question.is_published, question.created_at, question.updated_at,
       COALESCE(ja.question, '') AS question_ja,
       COALESCE(ja.explanation, '') AS explanation_ja,
       COALESCE(ja.source_label, '') AS source_label_ja,
+      COALESCE(ja.image_alt, '') AS image_alt_ja,
+      COALESCE(ja.image_caption, '') AS image_caption_ja,
       COALESCE(en.question, '') AS question_en,
       COALESCE(en.explanation, '') AS explanation_en,
       COALESCE(en.source_label, '') AS source_label_en,
+      COALESCE(en.image_alt, '') AS image_alt_en,
+      COALESCE(en.image_caption, '') AS image_caption_en,
+      media.id::text AS media_id, media.url AS media_url, media.mime_type AS media_mime_type,
+      media.width AS media_width, media.height AS media_height,
+      media.file_size AS media_file_size, media.created_at AS media_created_at,
       choice.id AS choice_id, choice.sort_order,
       COALESCE(choice_ja.label, '') AS choice_label_ja,
       COALESCE(choice_en.label, '') AS choice_label_en
     FROM quiz_questions AS question
+    LEFT JOIN media_assets AS media ON media.id = question.image_asset_id
     LEFT JOIN quiz_question_translations AS ja
       ON ja.question_id = question.id AND ja.locale = 'ja'
     LEFT JOIN quiz_question_translations AS en
@@ -250,10 +267,12 @@ export async function insertAdminQuizQuestion(id: string, input: AdminQuizWriteI
     (transaction) => [
       transaction`
         INSERT INTO quiz_questions (
-          id, category, special_month, special_day, correct_choice_id, source_url, related_content_id
+          id, category, special_month, special_day, correct_choice_id, source_url, related_content_id,
+          image_asset_id
         ) VALUES (
           ${id}, ${input.category}, ${input.specialDate?.month ?? null}, ${input.specialDate?.day ?? null},
-          ${input.correctChoiceId}, ${input.sourceUrl}, ${input.relatedContentId}::uuid
+          ${input.correctChoiceId}, ${input.sourceUrl}, ${input.relatedContentId}::uuid,
+          ${input.imageAssetId}::uuid
         )
       `,
       ...questionTranslationQueries(transaction, id, input),
@@ -285,6 +304,7 @@ export async function replaceAdminQuizQuestion(id: string, input: AdminQuizWrite
           correct_choice_id = ${input.correctChoiceId},
           source_url = ${input.sourceUrl},
           related_content_id = ${input.relatedContentId}::uuid,
+          image_asset_id = ${input.imageAssetId}::uuid,
           updated_at = NOW()
         WHERE question.id = ${id} AND (question.is_published = FALSE OR ${publishReady})
         RETURNING question.id
@@ -353,6 +373,7 @@ AND LOWER(question.source_url) LIKE 'https://%'
                     AND btrim(translation.question) <> ''
                     AND btrim(translation.explanation) <> ''
                     AND btrim(translation.source_label) <> ''
+                    AND (question.image_asset_id IS NULL OR btrim(translation.image_alt) <> '')
                 )
               )
               AND NOT EXISTS (
@@ -395,6 +416,7 @@ export function parsePublishedQuizRows(rows: DbRow[]): readonly PublicQuizQuesti
     const category = requiredCategory(row.category);
     const question = requiredNonEmptyString(row.question);
     const specialDate = parseSpecialDate(row.special_month, row.special_day, undefined);
+    const image = parsePublicQuizImage(row);
     const choice = {
       id: requiredNonEmptyString(row.choice_id),
       label: requiredNonEmptyString(row.choice_label),
@@ -402,12 +424,13 @@ export function parsePublishedQuizRows(rows: DbRow[]): readonly PublicQuizQuesti
     };
     const existing = questions.get(id);
     if (!existing) {
-      questions.set(id, { id, category, question, ...(specialDate ? { specialDate } : {}), choices: [choice] });
+      questions.set(id, { id, category, question, image, ...(specialDate ? { specialDate } : {}), choices: [choice] });
       continue;
     }
     if (
       existing.category !== category ||
       existing.question !== question ||
+      !samePublicQuizImage(existing.image, image) ||
       !sameSpecialDate(existing.specialDate, specialDate) ||
       existing.choices.some((item) => item.id === choice.id || item.sortOrder === choice.sortOrder)
     ) {
@@ -424,6 +447,34 @@ export function parsePublishedQuizRows(rows: DbRow[]): readonly PublicQuizQuesti
         .map(({ id, label }) => ({ id, label })),
     };
   });
+}
+
+function parsePublicQuizImage(row: DbRow): PublicQuizImage | null {
+  const assetId = nullableUuid(row.image_asset_id);
+  if (!assetId) return null;
+  if (requiredUuid(row.image_id) !== assetId) throw invalidDatabaseQuiz();
+  const alt = requiredNonEmptyString(row.image_alt);
+  const caption = requiredString(row.image_caption);
+  return {
+    id: assetId,
+    url: requiredBlobUrl(row.image_url),
+    width: requiredPositiveInteger(row.image_width),
+    height: requiredPositiveInteger(row.image_height),
+    alt,
+    caption: caption || null,
+  };
+}
+
+function samePublicQuizImage(left: PublicQuizImage | null, right: PublicQuizImage | null) {
+  if (!left || !right) return left === right;
+  return (
+    left.id === right.id &&
+    left.url === right.url &&
+    left.width === right.width &&
+    left.height === right.height &&
+    left.alt === right.alt &&
+    left.caption === right.caption
+  );
 }
 
 function parseAnswerRow(rows: DbRow[], selectedChoiceId: string) {
@@ -460,11 +511,15 @@ function toAdminQuizQuestion(rows: DbRow[]): AdminQuizQuestion {
       question: requiredString(rows[0].question_ja),
       explanation: requiredString(rows[0].explanation_ja),
       sourceLabel: requiredString(rows[0].source_label_ja),
+      imageAlt: requiredString(rows[0].image_alt_ja),
+      imageCaption: requiredString(rows[0].image_caption_ja),
     },
     en: {
       question: requiredString(rows[0].question_en),
       explanation: requiredString(rows[0].explanation_en),
       sourceLabel: requiredString(rows[0].source_label_en),
+      imageAlt: requiredString(rows[0].image_alt_en),
+      imageCaption: requiredString(rows[0].image_caption_en),
     },
   };
   const choices: AdminQuizChoice[] = [];
@@ -487,7 +542,12 @@ function toAdminQuizQuestion(rows: DbRow[]): AdminQuizQuestion {
     }
     choices.push(choice);
   }
-  const question = { ...base, translations, choices: choices.toSorted((a, b) => a.sortOrder - b.sortOrder) };
+  const question = {
+    ...base,
+    image: parseAdminQuizImage(rows[0], base.imageAssetId),
+    translations,
+    choices: choices.toSorted((a, b) => a.sortOrder - b.sortOrder),
+  };
   if (question.isPublished && !isPublishReady(question)) throw invalidDatabaseQuiz();
   return question;
 }
@@ -500,9 +560,28 @@ function toAdminQuizBase(row: DbRow) {
     correctChoiceId: nullableNonEmptyString(row.correct_choice_id),
     sourceUrl: nullableHttpsUrl(row.source_url),
     relatedContentId: nullableUuid(row.related_content_id),
+    imageAssetId: nullableUuid(row.image_asset_id),
     isPublished: requiredBoolean(row.is_published),
     createdAt: requiredDate(row.created_at),
     updatedAt: requiredDate(row.updated_at),
+  };
+}
+
+function parseAdminQuizImage(row: DbRow, imageAssetId: string | null): MediaAsset | null {
+  if (!imageAssetId) return null;
+  if (requiredUuid(row.media_id) !== imageAssetId) throw invalidDatabaseQuiz();
+  const mimeType = requiredNonEmptyString(row.media_mime_type);
+  if (mimeType !== "image/jpeg" && mimeType !== "image/png" && mimeType !== "image/webp") {
+    throw invalidDatabaseQuiz();
+  }
+  return {
+    id: imageAssetId,
+    url: requiredBlobUrl(row.media_url),
+    mimeType: mimeType as MediaMimeType,
+    width: requiredPositiveInteger(row.media_width),
+    height: requiredPositiveInteger(row.media_height),
+    fileSize: requiredPositiveInteger(row.media_file_size),
+    createdAt: requiredDate(row.media_created_at),
   };
 }
 
@@ -516,15 +595,19 @@ function questionTranslationQueries(
   return (["ja", "en"] as const).map((locale) => {
     const value = input.translations[locale];
     return transaction`
-      INSERT INTO quiz_question_translations (question_id, locale, question, explanation, source_label)
-      SELECT ${id}, ${locale}, ${value.question}, ${value.explanation}, ${value.sourceLabel}
+      INSERT INTO quiz_question_translations (
+        question_id, locale, question, explanation, source_label, image_alt, image_caption
+      )
+      SELECT ${id}, ${locale}, ${value.question}, ${value.explanation}, ${value.sourceLabel},
+        ${value.imageAlt}, ${value.imageCaption}
       WHERE ${requireExisting} = FALSE OR EXISTS (
         SELECT 1 FROM quiz_questions AS question
         WHERE question.id = ${id} AND (question.is_published = FALSE OR ${publishReady})
       )
       ON CONFLICT (question_id, locale) DO UPDATE
       SET question = EXCLUDED.question, explanation = EXCLUDED.explanation,
-        source_label = EXCLUDED.source_label, updated_at = NOW()
+        source_label = EXCLUDED.source_label, image_alt = EXCLUDED.image_alt,
+        image_caption = EXCLUDED.image_caption, updated_at = NOW()
     `;
   });
 }
@@ -571,11 +654,18 @@ function validateAdminWriteInput(id: string, input: AdminQuizWriteInput) {
   if (input.correctChoiceId !== null) requiredNonEmptyString(input.correctChoiceId);
   if (input.sourceUrl !== null) requiredHttpsUrl(input.sourceUrl);
   if (input.relatedContentId !== null) requiredUuid(input.relatedContentId);
+  if (input.imageAssetId !== null) requiredUuid(input.imageAssetId);
   for (const locale of ["ja", "en"] as const) {
     const translation = input.translations[locale];
     requiredString(translation.question);
     requiredString(translation.explanation);
     requiredString(translation.sourceLabel);
+    if (translation.imageAlt.length > 500 || translation.imageCaption.length > 1000) {
+      throw new Error("Invalid quiz write input.");
+    }
+    if (!input.imageAssetId && (translation.imageAlt || translation.imageCaption)) {
+      throw new Error("Invalid quiz write input.");
+    }
   }
   const ids = new Set<string>();
   const orders = new Set<number>();
@@ -602,6 +692,7 @@ function isPublishReady(input: AdminQuizWriteInput | AdminQuizQuestion) {
     input.translations.en.question.trim() &&
     input.translations.en.explanation.trim() &&
     input.translations.en.sourceLabel.trim() &&
+    (!input.imageAssetId || (input.translations.ja.imageAlt.trim() && input.translations.en.imageAlt.trim())) &&
     input.choices.length === 4 &&
     input.choices.some((choice) => choice.id === input.correctChoiceId) &&
     input.choices.every((choice) => choice.translations.ja.trim() && choice.translations.en.trim()),
@@ -667,6 +758,12 @@ function requiredNonNegativeInteger(value: unknown) {
   return value as number;
 }
 
+function requiredPositiveInteger(value: unknown) {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number < 1) throw invalidDatabaseQuiz();
+  return number;
+}
+
 function requiredDate(value: unknown) {
   const date = value instanceof Date ? value : typeof value === "string" ? new Date(value) : null;
   if (!date || Number.isNaN(date.valueOf())) throw invalidDatabaseQuiz();
@@ -680,6 +777,13 @@ function requiredHttpsUrl(value: unknown) {
   } catch {
     throw invalidDatabaseQuiz();
   }
+  return text;
+}
+
+function requiredBlobUrl(value: unknown) {
+  const text = requiredHttpsUrl(value);
+  const url = new URL(text);
+  if (!url.hostname.endsWith(".public.blob.vercel-storage.com")) throw invalidDatabaseQuiz();
   return text;
 }
 

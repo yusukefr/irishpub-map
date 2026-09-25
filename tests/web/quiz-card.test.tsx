@@ -13,6 +13,7 @@ const question = {
   id: "irish-sports-gaelic-games-001",
   category: { icon: "🏑", label: "アイルランドのスポーツ" },
   question: "次のうち、Gaelic Gamesに含まれる競技はどれですか？",
+  image: null,
   choices: [
     { id: "cricket", label: "Cricket" },
     { id: "hurling", label: "Hurling" },
@@ -65,6 +66,60 @@ describe("QuizCard", () => {
     expect(screen.queryByText("解説")).not.toBeInTheDocument();
     expect(screen.queryByText(/Gaelic Athletic Association/)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /関連Guide/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
+  it("問題文と選択肢の間へ画像を表示し、回答後も同じ画像を保つ", async () => {
+    actionMocks.submitQuizAnswer.mockResolvedValue(correctResult);
+    render(
+      <QuizCard
+        question={{
+          ...question,
+          image: {
+            id: "550e8400-e29b-41d4-a716-446655440009",
+            url: "/media-fixtures/landscape.jpg",
+            width: 1200,
+            height: 800,
+            alt: "競技場の風景",
+            caption: "試合前の様子",
+          },
+        }}
+        labels={labels}
+      />,
+    );
+    const heading = screen.getByRole("heading", { level: 2 });
+    const image = screen.getByRole("img", { name: "競技場の風景" });
+    const choices = screen.getByRole("group", { name: "答えを1つ選んでください" });
+    expect(image).toHaveAttribute("width", "1200");
+    expect(image).toHaveAttribute("height", "800");
+    expect(image.closest("figure")).toHaveTextContent("試合前の様子");
+    expect(heading.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(image.compareDocumentPosition(choices) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "Hurling" }));
+    fireEvent.click(screen.getByRole("button", { name: "回答する" }));
+    await screen.findByRole("heading", { level: 3, name: "正解！ 🎉" });
+    expect(screen.getByRole("img", { name: "競技場の風景" })).toBe(image);
+  });
+
+  it("captionが空ならfigcaptionを描画しない", () => {
+    render(
+      <QuizCard
+        question={{
+          ...question,
+          image: {
+            id: "550e8400-e29b-41d4-a716-446655440009",
+            url: "/media-fixtures/landscape.jpg",
+            width: 1200,
+            height: 800,
+            alt: "競技場の風景",
+            caption: null,
+          },
+        }}
+        labels={labels}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "競技場の風景" })).toBeInTheDocument();
+    expect(document.querySelector("figcaption")).toBeNull();
   });
 
   it("正解を選ぶと正解・解説・情報源・関連Guideを表示し、回答を固定する", async () => {

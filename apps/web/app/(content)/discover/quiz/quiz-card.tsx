@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useTransition, type FormEvent } from "react";
-import type { QuizAnswerResult } from "../../../lib/quiz/types";
+import type { PublicQuizImage, QuizAnswerResult } from "../../../lib/quiz/types";
 import { submitQuizAnswer } from "./actions";
 
 /** 回答前にClient Componentへ渡してよいLocale別の公開問題です。 */
@@ -10,6 +11,7 @@ export type QuizQuestionView = Readonly<{
   id: string;
   category: Readonly<{ icon: string; label: string }>;
   question: string;
+  image: PublicQuizImage | null;
   choices: readonly Readonly<{ id: string; label: string }>[];
 }>;
 
@@ -73,6 +75,20 @@ export function QuizCard({ question, labels }: QuizCardProps) {
         <span className="visually-hidden">{labels.questionLabel}: </span>
         {question.question}
       </h2>
+
+      {question.image ? (
+        <figure className="quiz-question-figure">
+          <Image
+            className="quiz-question-image"
+            src={question.image.url}
+            alt={question.image.alt}
+            width={question.image.width}
+            height={question.image.height}
+            sizes="(max-width: 760px) calc(100vw - 64px), 720px"
+          />
+          {question.image.caption ? <figcaption>{question.image.caption}</figcaption> : null}
+        </figure>
+      ) : null}
 
       <form className="quiz-form" onSubmit={handleSubmit}>
         <fieldset disabled={isAnswered || isPending}>

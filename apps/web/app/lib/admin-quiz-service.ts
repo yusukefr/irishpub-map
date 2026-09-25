@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { AdminFieldErrorCode } from "@irishpub-map/shared/admin-api-error";
+import { isMediaAssetId } from "@irishpub-map/shared/media";
 import { getAdminContent } from "./admin-content-repository";
+import { getMediaAsset } from "./media/repository";
 import { getQuizPublicationMissingFields } from "./quiz/publication";
 import {
   getAdminQuizQuestion,
@@ -16,6 +18,8 @@ import {
   isQuizChoiceId,
   QUIZ_CHOICE_ID_MAX_LENGTH,
   QUIZ_ID_MAX_LENGTH,
+  QUIZ_IMAGE_ALT_MAX_LENGTH,
+  QUIZ_IMAGE_CAPTION_MAX_LENGTH,
   type AdminQuizChoice,
   type AdminQuizListItem,
   type AdminQuizQuestion,
@@ -131,6 +135,7 @@ async function parseWriteInput(value: unknown): Promise<AdminQuizWriteInput> {
     correctChoiceId: parseNullableId(source.correctChoiceId, "correctChoiceId", fieldErrors, QUIZ_CHOICE_ID_MAX_LENGTH),
     sourceUrl: parseSourceUrl(source.sourceUrl, fieldErrors),
     relatedContentId: parseRelatedContentId(source.relatedContentId, fieldErrors),
+    imageAssetId: parseImageAssetId(source.imageAssetId, fieldErrors),
     translations: parseTranslations(source.translations, fieldErrors),
     choices: parseChoices(source.choices, fieldErrors),
   } satisfies AdminQuizWriteInput;
@@ -142,7 +147,25 @@ async function parseWriteInput(value: unknown): Promise<AdminQuizWriteInput> {
     if (!content || content.kind !== "guide")
       throw new AdminQuizServiceError("validation", { relatedContentId: "invalid_format" });
   }
-  return input;
+  if (input.imageAssetId && !(await getMediaAsset(input.imageAssetId))) {
+    throw new AdminQuizServiceError("validation", { imageAssetId: "invalid_format" });
+  }
+  if (input.imageAssetId) return input;
+  return {
+    ...input,
+    translations: {
+      ja: { ...input.translations.ja, imageAlt: "", imageCaption: "" },
+      en: { ...input.translations.en, imageAlt: "", imageCaption: "" },
+    },
+  };
+}
+function parseImageAssetId(value: unknown, errors: FieldErrors): string | null {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value !== "string" || !isMediaAssetId(value)) {
+    errors.imageAssetId = "invalid_format";
+    return null;
+  }
+  return value;
 }
 function parseChoiceId(value: unknown, field: string, errors: FieldErrors, maxLength: number): string | null {
   if (value === undefined || value === null || value === "") {
@@ -218,6 +241,13 @@ function parseTranslation(value: unknown, locale: "ja" | "en", errors: FieldErro
     question: parseText(source.question, `translations.${locale}.question`, errors),
     explanation: parseText(source.explanation, `translations.${locale}.explanation`, errors),
     sourceLabel: parseText(source.sourceLabel, `translations.${locale}.sourceLabel`, errors),
+    imageAlt: parseText(source.imageAlt, `translations.${locale}.imageAlt`, errors, QUIZ_IMAGE_ALT_MAX_LENGTH),
+    imageCaption: parseText(
+      source.imageCaption,
+      `translations.${locale}.imageCaption`,
+      errors,
+      QUIZ_IMAGE_CAPTION_MAX_LENGTH,
+    ),
   };
 }
 function parseChoices(value: unknown, errors: FieldErrors): AdminQuizChoice[] {
@@ -245,13 +275,15 @@ function parseChoices(value: unknown, errors: FieldErrors): AdminQuizChoice[] {
     };
   });
 }
-function parseText(value: unknown, field: string, errors: FieldErrors): string {
+function parseText(value: unknown, field: string, errors: FieldErrors, maxLength?: number): string {
   if (value === undefined || value === null || value === "") return "";
   if (typeof value !== "string") {
     errors[field] = "invalid_type";
     return "";
   }
-  return value.trim();
+  const text = value.trim();
+  if (maxLength !== undefined && text.length > maxLength) errors[field] = "too_long";
+  return text;
 }
 function asRecord(value: unknown): RecordValue {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as RecordValue) : {};

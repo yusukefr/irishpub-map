@@ -13,6 +13,7 @@ export function getQuizPublicationMissingFields(input: AdminQuizQuestion | Admin
     if (!translation.question.trim()) missing.push(`translations.${locale}.question`);
     if (!translation.explanation.trim()) missing.push(`translations.${locale}.explanation`);
     if (!translation.sourceLabel.trim()) missing.push(`translations.${locale}.sourceLabel`);
+    if (input.imageAssetId && !translation.imageAlt.trim()) missing.push(`translations.${locale}.imageAlt`);
   }
   if (!input.sourceUrl) missing.push("sourceUrl");
   if (input.choices.length !== 4) missing.push("choices");

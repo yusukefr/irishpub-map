@@ -5,6 +5,38 @@ import { AdminQuizEditor } from "../../apps/web/app/components/admin-quiz-editor
 const navigation = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }));
 const fetchMock = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => navigation }));
+vi.mock("../../apps/web/app/components/media/media-picker", () => ({
+  MediaPicker: ({ onSelect, triggerLabel }: { onSelect: (media: unknown) => void; triggerLabel: string }) => (
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          onSelect({
+            id: "550e8400-e29b-41d4-a716-446655440009",
+            url: "/media-fixtures/landscape.jpg",
+            width: 1200,
+            height: 800,
+          })
+        }
+      >
+        {triggerLabel}
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onSelect({
+            id: "550e8400-e29b-41d4-a716-446655440010",
+            url: "/media-fixtures/portrait.webp",
+            width: 800,
+            height: 1200,
+          })
+        }
+      >
+        別画像を選択
+      </button>
+    </>
+  ),
+}));
 vi.stubGlobal("fetch", fetchMock);
 const question: AdminQuizQuestion = {
   id: "history-question-001",
@@ -13,10 +45,12 @@ const question: AdminQuizQuestion = {
   correctChoiceId: "choice-1",
   sourceUrl: "https://example.com/source",
   relatedContentId: null,
+  imageAssetId: null,
+  image: null,
   isPublished: false,
   translations: {
-    ja: { question: "問題", explanation: "解説", sourceLabel: "出典" },
-    en: { question: "Question", explanation: "Explanation", sourceLabel: "Source" },
+    ja: { question: "問題", explanation: "解説", sourceLabel: "出典", imageAlt: "", imageCaption: "" },
+    en: { question: "Question", explanation: "Explanation", sourceLabel: "Source", imageAlt: "", imageCaption: "" },
   },
   choices: [1, 2, 3, 4].map((number, sortOrder) => ({
     id: "choice-" + number,
@@ -45,6 +79,51 @@ beforeEach(() => {
   fetchMock.mockReset();
 });
 describe("AdminQuizEditor", () => {
+  it("画像を選択して日英の説明を保存payloadへ含める", async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ question })));
+    render(<AdminQuizEditor initialQuestion={question} relatedGuides={guides} databaseConfigured locale="ja" />);
+    const japanese = screen.getByRole("group", { name: "日本語" });
+    const english = screen.getByRole("group", { name: "英語" });
+    expect(within(japanese).getByLabelText("問題画像の代替テキスト")).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "画像を選択" }));
+    fireEvent.change(within(japanese).getByLabelText("問題画像の代替テキスト"), { target: { value: "石造りの建物" } });
+    fireEvent.change(within(english).getByLabelText("問題画像の代替テキスト"), {
+      target: { value: "A stone building" },
+    });
+    fireEvent.change(within(japanese).getByLabelText("問題画像のキャプション（任意）"), {
+      target: { value: "街並みの写真" },
+    });
+    fireEvent.change(within(english).getByLabelText("問題画像のキャプション（任意）"), {
+      target: { value: "City scene" },
+    });
+    expect(screen.getByRole("img", { name: "石造りの建物" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "下書きを保存" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const payload = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+    expect(payload.imageAssetId).toBe("550e8400-e29b-41d4-a716-446655440009");
+    expect(payload.translations.ja).toMatchObject({ imageAlt: "石造りの建物", imageCaption: "街並みの写真" });
+    expect(payload.translations.en).toMatchObject({ imageAlt: "A stone building", imageCaption: "City scene" });
+  });
+
+  it("同じ画像では説明を保持し、別画像と解除では日英の説明を消す", () => {
+    render(<AdminQuizEditor initialQuestion={question} relatedGuides={guides} databaseConfigured locale="ja" />);
+    const japanese = screen.getByRole("group", { name: "日本語" });
+    const english = screen.getByRole("group", { name: "英語" });
+    fireEvent.click(screen.getByRole("button", { name: "画像を選択" }));
+    fireEvent.change(within(japanese).getByLabelText("問題画像の代替テキスト"), { target: { value: "説明" } });
+    fireEvent.change(within(english).getByLabelText("問題画像のキャプション（任意）"), {
+      target: { value: "Caption" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "画像を変更" }));
+    expect(within(japanese).getByLabelText("問題画像の代替テキスト")).toHaveValue("説明");
+    fireEvent.click(screen.getByRole("button", { name: "別画像を選択" }));
+    expect(within(japanese).getByLabelText("問題画像の代替テキスト")).toHaveValue("");
+    expect(within(english).getByLabelText("問題画像のキャプション（任意）")).toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: "画像を解除" }));
+    expect(within(japanese).getByLabelText("問題画像の代替テキスト")).toBeDisabled();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
   it("renders bilingual fields, guide selection, and prevents deleting the correct choice", () => {
     render(<AdminQuizEditor initialQuestion={question} relatedGuides={guides} databaseConfigured locale="ja" />);
     expect(screen.getByRole("heading", { name: "Quizを編集" })).toBeInTheDocument();

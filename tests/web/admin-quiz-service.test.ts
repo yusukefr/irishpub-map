@@ -7,8 +7,10 @@ const mocks = vi.hoisted(() => ({
   listAdminQuizQuestions: vi.fn(),
   replaceAdminQuizQuestion: vi.fn(),
   setAdminQuizPublication: vi.fn(),
+  getMediaAsset: vi.fn(),
 }));
 vi.mock("../../apps/web/app/lib/admin-content-repository", () => ({ getAdminContent: mocks.getAdminContent }));
+vi.mock("../../apps/web/app/lib/media/repository", () => ({ getMediaAsset: mocks.getMediaAsset }));
 vi.mock("../../apps/web/app/lib/quiz/repository", () => ({
   getAdminQuizQuestion: mocks.getAdminQuizQuestion,
   insertAdminQuizQuestion: mocks.insertAdminQuizQuestion,
@@ -23,6 +25,7 @@ import {
   updateAdminQuiz,
 } from "../../apps/web/app/lib/admin-quiz-service";
 const guideId = "550e8400-e29b-41d4-a716-446655440001";
+const imageAssetId = "550e8400-e29b-41d4-a716-446655440009";
 const question: AdminQuizQuestion = {
   id: "history-question-001",
   category: "history",
@@ -30,10 +33,12 @@ const question: AdminQuizQuestion = {
   correctChoiceId: "choice-1",
   sourceUrl: "https://example.com/source",
   relatedContentId: guideId,
+  imageAssetId: null,
+  image: null,
   isPublished: false,
   translations: {
-    ja: { question: "問題", explanation: "解説", sourceLabel: "出典" },
-    en: { question: "Question", explanation: "Explanation", sourceLabel: "Source" },
+    ja: { question: "問題", explanation: "解説", sourceLabel: "出典", imageAlt: "", imageCaption: "" },
+    en: { question: "Question", explanation: "Explanation", sourceLabel: "Source", imageAlt: "", imageCaption: "" },
   },
   choices: [1, 2, 3, 4].map((number, sortOrder) => ({
     id: "choice-" + number,
@@ -49,9 +54,16 @@ const payload = {
   correctChoiceId: "choice-1",
   sourceUrl: "https://example.com/source",
   relatedContentId: guideId,
+  imageAssetId: null,
   translations: {
-    ja: { question: " 問題 ", explanation: " 解説 ", sourceLabel: " 出典 " },
-    en: { question: " Question ", explanation: " Explanation ", sourceLabel: " Source " },
+    ja: { question: " 問題 ", explanation: " 解説 ", sourceLabel: " 出典 ", imageAlt: "", imageCaption: "" },
+    en: {
+      question: " Question ",
+      explanation: " Explanation ",
+      sourceLabel: " Source ",
+      imageAlt: "",
+      imageCaption: "",
+    },
   },
   choices: [1, 2, 3, 4].map((number) => ({
     id: "choice-" + number,
@@ -61,6 +73,7 @@ const payload = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.getAdminContent.mockResolvedValue({ kind: "guide" });
+  mocks.getMediaAsset.mockResolvedValue({ id: imageAssetId, mimeType: "image/jpeg" });
   mocks.getAdminQuizQuestion.mockResolvedValue(question);
   mocks.insertAdminQuizQuestion.mockResolvedValue(undefined);
   mocks.replaceAdminQuizQuestion.mockResolvedValue("updated");
@@ -73,7 +86,9 @@ describe("admin quiz service", () => {
       expect.stringMatching(/^[0-9a-f-]{36}$/iu),
       expect.objectContaining({
         choices: expect.arrayContaining([expect.objectContaining({ id: "choice-1", sortOrder: 0 })]),
-        translations: expect.objectContaining({ ja: { question: "問題", explanation: "解説", sourceLabel: "出典" } }),
+        translations: expect.objectContaining({
+          ja: { question: "問題", explanation: "解説", sourceLabel: "出典", imageAlt: "", imageCaption: "" },
+        }),
       }),
     );
   });
@@ -105,8 +120,8 @@ describe("admin quiz service", () => {
       sourceUrl: null,
       isPublished: false,
       translations: {
-        ja: { question: "", explanation: "", sourceLabel: "" },
-        en: { question: "", explanation: "", sourceLabel: "" },
+        ja: { question: "", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
+        en: { question: "", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
       },
     });
     await expect(createAdminQuiz(draft)).resolves.toBeTruthy();
@@ -118,8 +133,8 @@ describe("admin quiz service", () => {
         correctChoiceId: null,
         sourceUrl: null,
         translations: {
-          ja: { question: "", explanation: "", sourceLabel: "" },
-          en: { question: "", explanation: "", sourceLabel: "" },
+          ja: { question: "", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
+          en: { question: "", explanation: "", sourceLabel: "", imageAlt: "", imageCaption: "" },
         },
       }),
     ).toEqual(expect.arrayContaining(["category", "choices", "correctChoiceId", "sourceUrl"]));
@@ -131,6 +146,75 @@ describe("admin quiz service", () => {
     });
     await expect(changeAdminQuizPublication(question.id, false)).resolves.toMatchObject({ isPublished: true });
     expect(mocks.setAdminQuizPublication).toHaveBeenCalledWith(question.id, false);
+  });
+  it("画像IDの存在を検証し、Draftではaltなしを許可して画像解除時は説明を消す", async () => {
+    await createAdminQuiz({ ...payload, imageAssetId });
+    expect(mocks.getMediaAsset).toHaveBeenCalledWith(imageAssetId);
+    expect(mocks.insertAdminQuizQuestion).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ imageAssetId }),
+    );
+
+    mocks.insertAdminQuizQuestion.mockClear();
+    await createAdminQuiz({
+      ...payload,
+      imageAssetId: null,
+      translations: {
+        ja: { ...payload.translations.ja, imageAlt: "古い説明", imageCaption: "古いキャプション" },
+        en: { ...payload.translations.en, imageAlt: "Old alt", imageCaption: "Old caption" },
+      },
+    });
+    expect(mocks.insertAdminQuizQuestion).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        imageAssetId: null,
+        translations: expect.objectContaining({
+          ja: expect.objectContaining({ imageAlt: "", imageCaption: "" }),
+          en: expect.objectContaining({ imageAlt: "", imageCaption: "" }),
+        }),
+      }),
+    );
+  });
+
+  it("不正または存在しない画像IDと長すぎるalt/captionを拒否する", async () => {
+    await expect(createAdminQuiz({ ...payload, imageAssetId: "not-a-uuid" })).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { imageAssetId: "invalid_format" },
+    });
+    mocks.getMediaAsset.mockResolvedValueOnce(null);
+    await expect(createAdminQuiz({ ...payload, imageAssetId })).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { imageAssetId: "invalid_format" },
+    });
+    await expect(
+      createAdminQuiz({
+        ...payload,
+        imageAssetId,
+        translations: {
+          ...payload.translations,
+          ja: { ...payload.translations.ja, imageAlt: "a".repeat(501), imageCaption: "b".repeat(1001) },
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { "translations.ja.imageAlt": "too_long", "translations.ja.imageCaption": "too_long" },
+    });
+  });
+
+  it("画像ありの公開には日英altを要求し、captionは任意にする", () => {
+    const withImage = { ...question, imageAssetId };
+    expect(getQuizPublicationMissingFields(withImage)).toEqual(
+      expect.arrayContaining(["translations.ja.imageAlt", "translations.en.imageAlt"]),
+    );
+    expect(
+      getQuizPublicationMissingFields({
+        ...withImage,
+        translations: {
+          ja: { ...question.translations.ja, imageAlt: "建物の外観" },
+          en: { ...question.translations.en, imageAlt: "Exterior of a building" },
+        },
+      }),
+    ).toEqual([]);
   });
   it("maps duplicate Question IDs to a conflict", async () => {
     mocks.insertAdminQuizQuestion.mockRejectedValue({ code: "23505" });
