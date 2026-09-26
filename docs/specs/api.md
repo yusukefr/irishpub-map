@@ -2,7 +2,7 @@
 
 ## 現状
 
-Next.js Route Handler で公開 API と管理 API を提供します。Automation APIでは共通認証・認可基盤を使い、Master参照とタグ作成を提供します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境ではNeonを読み書きし、未設定時は空の店舗一覧を返します。
+Next.js Route Handler で公開 API と管理 API を提供します。Automation APIでは共通認証・認可基盤を使い、Master参照、タグ作成、Editorial Content管理を提供します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境ではNeonを読み書きし、未設定時は空の店舗一覧を返します。
 
 ## 公開 API
 
@@ -77,6 +77,24 @@ Master参照はすべて `master:read` を要求し、現在のDBを既存Reposi
 都道府県と営業ステータスの表示名は日本語を既定とします。市区町村の表示名は管理APIと同じく言語Cookie、次に `Accept-Language` からlocaleを決め、日本語へフォールバックします。`prefectureCode` は1〜47の10進整数を管理APIと同じ条件で検証します。タグ一覧はサポートlocaleの翻訳と、関連する店舗の重複を除いた使用件数を返します。
 
 タグ作成は `tag:create` を要求し、管理タグAPIと同じ `key` および `translations` 入力、共有Validation、競合判定とエラー形式を使います。IDはServer側でUUIDを生成します。Automation Clientは作成前にタグ一覧を取得し、表記・翻訳の違いだけで意味が同じタグや、既存タグで十分に分類できる属性には既存IDを使います。タグ化の対象は複数店舗の検索・分類に継続的に役立つ属性とし、単店固有のイベント、一時的なキャンペーン、主観的な評価は作成しません。意味的重複の完全な自動判定はServer側では行いません。Automation APIにタグ更新・削除Routeはありません。
+
+### Automation Editorial Content管理
+
+各操作は対応する `content:*` Scopeだけを要求し、別のContent Scopeから権限を継承しません。Bearer認証の `401` とScope不足の `403` は上記の共通契約を使います。管理 API と同じContent Service、共有Validation、エラー変換を使い、SQLや公開キャッシュの失効処理をRouteに重複実装しません。
+
+| メソッド | パス | Scope | 成功時 |
+| --- | --- | --- | --- |
+| `GET` | `/api/automation/v1/content` | `content:read` | `200` と `{ content: AdminContentListItem[], databaseConfigured: boolean }`。DraftとPublishedを含む |
+| `GET` | `/api/automation/v1/content/:id` | `content:read` | `200` と `{ content: AdminContent }` |
+| `POST` | `/api/automation/v1/content` | `content:create` | `201` と `{ content: AdminContent }`。ServerがUUIDを発行してDraftを作成 |
+| `PUT` | `/api/automation/v1/content/:id` | `content:update` | `200` と `{ content: AdminContent }`。公開状態を維持して全体Snapshotを更新 |
+| `PATCH` | `/api/automation/v1/content/:id/publication` | `content:publish` | `200` と `{ publication: { id, status, unchanged, publishedAt } }` |
+
+`POST` と `PUT` の本文は管理 Content API の `AdminContentWriteInput` と同じ全体Snapshotです。`kind` (`story` / `guide` / `null`)、`slug`、`category`、`translations.ja` と `translations.en` の各 `title`、`summary`、`bodyMarkdown` を含み、Hero画像関連フィールドも同じ契約に従います。Draftではkind・slug・categoryを `null`、翻訳文言を空文字にできます。`id`、`status`、`publishedAt` は入力できません。slugは最大100文字のkebab-case、categoryは `history` / `culture` / `pub-culture` / `food-drink` です。Markdown URLの安全性は既存Serviceが検証します。
+
+`PATCH` の本文は `{ "status": "published" }` または `{ "status": "draft" }` のみで、余分なフィールドは拒否します。標準フローは `POST` でDraft作成 → `GET /:id` で保存内容確認 → `PATCH /:id/publication` で公開です。Publishedへの変更にはkind、slug、categoryと日英すべてのtitle、summary、bodyMarkdownが必要です。Hero画像を設定した場合は日英の代替テキストも必要です。Publishedの `PUT` でも公開条件を維持し、公開Contentの更新・公開状態変更後は既存の公開キャッシュを失効させます。
+
+入力本文がJSON以外なら `415 invalid_content_type`、不正JSONなら `400 invalid_json`、入力不正なら `422 validation_error` と必要に応じて `fieldErrors` を返します。公開条件不足は `422 publication_requirements_not_met` と `missingFields`、slug競合は `409 content_conflict` と必要に応じて `fieldErrors` を返します。不正なIDは `400 invalid_request`、未登録IDは `404 content_not_found` です。DB未設定時、一覧は空配列と `databaseConfigured: false`、詳細取得と更新系は `503 database_unavailable` を返します。内部エラーは詳細を伏せた `500 internal_error` です。
 
 ## 管理 API
 
