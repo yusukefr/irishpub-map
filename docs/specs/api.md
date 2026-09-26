@@ -90,7 +90,38 @@ Master参照はすべて `master:read` を要求し、現在のDBを既存Reposi
 | `PUT` | `/api/automation/v1/content/:id` | `content:update` | `200` と `{ content: AdminContent }`。公開状態を維持して全体Snapshotを更新 |
 | `PATCH` | `/api/automation/v1/content/:id/publication` | `content:publish` | `200` と `{ publication: { id, status, unchanged, publishedAt } }` |
 
-`POST` と `PUT` の本文は管理 Content API の `AdminContentWriteInput` と同じ全体Snapshotです。`kind` (`story` / `guide` / `null`)、`slug`、`category`、`translations.ja` と `translations.en` の各 `title`、`summary`、`bodyMarkdown` を含み、Hero画像関連フィールドも同じ契約に従います。Draftではkind・slug・categoryを `null`、翻訳文言を空文字にできます。`id`、`status`、`publishedAt` は入力できません。slugは最大100文字のkebab-case、categoryは `history` / `culture` / `pub-culture` / `food-drink` です。Markdown URLの安全性は既存Serviceが検証します。
+`POST` と `PUT` の本文は管理 Content API の `AdminContentWriteInput` と同じ全体Snapshotです。受け付けるトップレベルのフィールドは `kind`、`slug`、`category`、`heroImageAssetId`、`translations` だけです。各翻訳には `title`、`summary`、`bodyMarkdown`、`heroImageAlt`、`heroImageCaption` を含めます。Draft作成時のRequest例:
+
+```json
+{
+  "kind": null,
+  "slug": null,
+  "category": null,
+  "heroImageAssetId": null,
+  "translations": {
+    "ja": {
+      "title": "",
+      "summary": "",
+      "bodyMarkdown": "",
+      "heroImageAlt": "",
+      "heroImageCaption": ""
+    },
+    "en": {
+      "title": "",
+      "summary": "",
+      "bodyMarkdown": "",
+      "heroImageAlt": "",
+      "heroImageCaption": ""
+    }
+  }
+}
+```
+
+`PUT` は `GET /api/automation/v1/content/:id` のResponseをそのまま送信する契約ではありません。GETの `content` に含まれるResponse専用・Server管理フィールド `id`、`status`、`publishedAt`、`createdAt`、`updatedAt`、`heroImage` は送信しません。これらを含むと `422 validation_error` になります。PUTする際はGETのContentから上記の書き込み可能な5フィールドだけを取り出し、必要な値を更新して送信します。公開状態は専用の `PATCH` で変更します。
+
+`heroImageAssetId` は登録済みMedia AssetのUUIDまたは `null` です。`heroImage` オブジェクト自体は `POST` / `PUT` へ送信しません。日英の `heroImageAlt` と `heroImageCaption` はRequest内に文字列として含め、画像のないDraftでは空文字にできます。`heroImageCaption` の文言は任意です。`heroImageAssetId` を設定してPublishedにする場合、日英の `heroImageAlt` には空でない文言が必要です。
+
+Draftではkind・slug・categoryを `null`、翻訳文言を空文字にできます。kindは `story` / `guide`、slugは最大100文字のkebab-case、categoryは `history` / `culture` / `pub-culture` / `food-drink` です。Markdown URLの安全性は既存Serviceが検証します。
 
 `PATCH` の本文は `{ "status": "published" }` または `{ "status": "draft" }` のみで、余分なフィールドは拒否します。標準フローは `POST` でDraft作成 → `GET /:id` で保存内容確認 → `PATCH /:id/publication` で公開です。Publishedへの変更にはkind、slug、categoryと日英すべてのtitle、summary、bodyMarkdownが必要です。Hero画像を設定した場合は日英の代替テキストも必要です。Publishedの `PUT` でも公開条件を維持し、公開Contentの更新・公開状態変更後は既存の公開キャッシュを失効させます。
 
