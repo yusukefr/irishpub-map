@@ -139,6 +139,7 @@
   "list": {
     "kicker": "Search results",
     "heading": "Listed pubs",
+    "carouselLabel": "Pub cards",
     "closeResults": "Close results",
     "backToResults": "Back to results",
     "noResults": "No pubs found",

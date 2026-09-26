@@ -139,6 +139,7 @@
   "list": {
     "kicker": "Search results",
     "heading": "掲載店舗",
+    "carouselLabel": "店舗カード一覧",
     "closeResults": "結果一覧を閉じる",
     "backToResults": "結果一覧に戻る",
     "noResults": "該当するPubがありません",

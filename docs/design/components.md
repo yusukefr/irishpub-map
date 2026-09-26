@@ -39,7 +39,7 @@ Input / Search / BottomSheetはstate・ID・focusを扱うClient Componentです
 
 ## Bottom Sheetの責務と操作
 
-- `collapsed`は見出しとハンドルだけ、`medium`は50dvh、`expanded`は90dvh。safe-area-inset-bottomを下側へ確保します。これらの高さ、mediaの16:9、ドラッグ判定24pxは部品固有の値で、Global Tokenにはしません。
+- `collapsed`は見出しとハンドルを基本とし、Mobile Mapでは任意の`collapsedContent`に店舗カードを表示します。`medium`は50dvh、`expanded`は90dvh。safe-area-inset-bottomを下側へ確保します。これらの高さ、mediaの16:9、ドラッグ判定24pxは部品固有の値で、Global Tokenにはしません。
 - ハンドルのクリック／タップは3段階を循環。上下ドラッグは1段階ずつ変更し、小さな手ぶれとキャンセルを無視します。合成clickによる二重更新を防ぎます。
 - キーボードはArrowUp / ArrowDown、Home / End。Enter / Spaceはnative buttonのクリックとして利用します。
 - 内容は内部スクロール。touch-action:noneはハンドルだけで、内容の通常スクロールを妨げません。内容内にfocusがあるままcollapsedへ変わった場合はハンドルへ戻します。
@@ -68,7 +68,7 @@ Discover のページ構成、長文幅、関連導線、写真利用条件は[D
 
 ## Mobile Map
 
-980px以下では共通BottomSheetを結果一覧・詳細の表示領域に使用します。初期はcollapsedで地図を優先し、件数ボタン・ハンドルからmediumへ、詳細操作からexpandedへ移ります。マーカー選択はcollapsedのときだけmediumへ開き、既に開いたSheetの高さとMap位置を保ちます。詳細の「戻る」は直前の一覧の高さを復元し、「閉じる」はcollapsedへ戻して検索・条件・選択店舗を維持します。
+980px以下では共通BottomSheetを結果一覧・詳細の表示領域に使用します。初期はcollapsedで地図と横スクロールできる店舗カードを表示し、件数ボタン・ハンドルからmediumへ、詳細操作からexpandedへ移ります。マーカー選択はcollapsedのときだけmediumへ開き、既に開いたSheetの高さとMap位置を保ちます。詳細の「戻る」は直前の一覧の高さを復元し、「閉じる」はcollapsedへ戻して検索・条件・選択店舗を維持します。
 
 ハンドルのクリックは3段階を巡回し、上下ドラッグは1段階、矢印キー・Home / Endでも高さを変更できます。ドラッグ対象は44px以上のハンドルに限定し、結果一覧の内部スクロール・地図pan / pinch・条件行の横スクロールとは分離します。Sheetは非モーダルで、focus trapは設けません。共通BottomSheetの`className`で呼び出し側のMap領域に高さを収めます。
 
@@ -141,7 +141,7 @@ Map専用HeaderはモバイルのNavigationをネイティブdetailsのメニュ
 - **Purpose:** Mobile Mapで結果一覧と詳細をMapとの関係を保って表示する。
 - **Variants:** 非モーダルの`collapsed` / `medium` / `expanded`。
 - **States:** 3段階の高さ、drag中、内部scroll、reduced motion。
-- **Usage:** 結果はmedium、詳細はexpandedを基本とし、直前の一覧高さを保持する。Map gestureとhandle gestureを分離する。
+- **Usage:** Mobile Mapのcollapsedでは既存PubCardの横スクロールを`collapsedContent`に置く。結果はmedium、詳細はexpandedを基本とし、直前の一覧高さを保持する。Map gestureとhandle gestureを分離する。
 - **Accessibility:** Handleは44px以上で、Arrow Up / Down、Home / End、Enter / Spaceを利用できる。State labelを読み上げ、非表示内容へfocusを残さない。
 - **Do:** backgroundを操作可能な非モーダルとして扱う。**Don't:** focus trapや`inert`を付ける、内容全体をdrag領域にする。
 

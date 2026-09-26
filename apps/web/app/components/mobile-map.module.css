@@ -11,6 +11,13 @@
   .layout[data-sheet-state="expanded"] {
     --mobile-sheet-height: calc(100% - 120px);
   }
+  .layout.withCarousel[data-sheet-state="collapsed"] {
+    /* 44pxのhandle、カード、上下余白を含む。地図Controlの退避位置にも共有します。 */
+    --mobile-sheet-collapsed: calc(
+      var(--spacing-control) + var(--spacing-space-2) + 192px + var(--spacing-space-3) + env(safe-area-inset-bottom)
+    );
+    --mobile-sheet-height: var(--mobile-sheet-collapsed);
+  }
   .layout.layout :global(.map-canvas) {
     border: 0;
     border-radius: 0;
@@ -134,10 +141,60 @@
     line-height: var(--text-body-md--line-height);
     padding-bottom: var(--spacing-space-3);
   }
-  .sheet > div {
+  .sheet > div:last-child {
     flex: 1;
     padding: 0;
     overflow: hidden;
+  }
+  .sheetWithCarousel > h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    padding: 0;
+  }
+  .sheetWithCarousel > div:first-of-type {
+    padding-block: var(--spacing-space-2) var(--spacing-space-3);
+  }
+  .carousel {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    height: 192px;
+    gap: var(--spacing-space-3);
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline-start: max(var(--spacing-space-3), env(safe-area-inset-left));
+    scroll-padding-inline-end: max(var(--spacing-space-3), env(safe-area-inset-right));
+    padding-inline: max(var(--spacing-space-3), env(safe-area-inset-left))
+      max(var(--spacing-space-3), env(safe-area-inset-right));
+    scrollbar-width: thin;
+  }
+  .carousel > article {
+    flex: 0 0 calc(100% - var(--spacing-space-12));
+    height: 100%;
+    overflow-y: auto;
+    scroll-snap-align: start;
+    scrollbar-width: thin;
+  }
+  .carousel > article > button > span:first-child {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  .carousel > article > button > span:nth-child(2) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .carousel:focus-visible {
+    outline: var(--focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--focus-ring-width));
   }
   .sheet :global(.pub-results-panel) {
     position: static;

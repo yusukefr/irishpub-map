@@ -237,6 +237,31 @@ describe("PubExplorer", () => {
     mockGeolocation(originalGeolocation);
   });
 
+  it("shows filtered PubCards in the collapsed mobile sheet without selecting on scroll", () => {
+    render(<PubExplorer pubs={[pubs[0], { ...pubs[1], status: "open" }]} />);
+
+    const sheet = document.querySelector('section[data-state="collapsed"]')!;
+    const carousel = screen.getByRole("region", { name: "店舗カード一覧" });
+    expect(carousel).toBeInTheDocument();
+    expect(carousel.querySelectorAll("article")).toHaveLength(2);
+    expect(carousel.querySelector('article[data-selected="true"]')).toBeNull();
+    fireEvent.scroll(carousel);
+    expect(carousel.querySelector('article[data-selected="true"]')).toBeNull();
+    expect(sheet).toHaveAttribute("data-state", "collapsed");
+
+    fireEvent.click(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }));
+    expect(sheet).toHaveAttribute("data-state", "medium");
+    expect(carousel).not.toBeVisible();
+    expect(screen.getByRole("complementary", { name: "掲載店舗" })).toBeInTheDocument();
+  });
+
+  it("omits the collapsed carousel for empty results and keeps the empty state reachable", () => {
+    render(<PubExplorer pubs={[]} />);
+    expect(screen.queryByRole("region", { name: "店舗カード一覧" })).not.toBeInTheDocument();
+    openResults();
+    expect(screen.getByRole("heading", { name: "該当するPubがありません" })).toBeInTheDocument();
+  });
+
   it("shows a search placeholder without prefecture", () => {
     render(<PubExplorer pubs={pubs} />);
 

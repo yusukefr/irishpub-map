@@ -14,6 +14,7 @@ export type BottomSheetProps = {
   title: string;
   resizeLabel: string;
   stateLabels: Record<BottomSheetState, string>;
+  collapsedContent?: ReactNode;
   children: ReactNode;
 };
 
@@ -29,11 +30,13 @@ export function BottomSheet({
   title,
   resizeLabel,
   stateLabels,
+  collapsedContent,
   children,
 }: BottomSheetProps) {
   const id = useId();
   const handleRef = useRef<HTMLButtonElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const collapsedRef = useRef<HTMLDivElement>(null);
   const gesture = useRef<{ id: number; y: number } | null>(null);
   const suppressClick = useRef(false);
   const index = STATES.indexOf(state);
@@ -42,6 +45,9 @@ export function BottomSheet({
   useEffect(() => {
     // 親から折りたたまれた場合も、非表示になる内容へfocusを残しません。
     if (state === "collapsed" && bodyRef.current?.contains(document.activeElement)) {
+      handleRef.current?.focus();
+    }
+    if (state !== "collapsed" && collapsedRef.current?.contains(document.activeElement)) {
       handleRef.current?.focus();
     }
   }, [state]);
@@ -103,6 +109,11 @@ export function BottomSheet({
       <h2 id={`${id}-title`} className={styles.sheetTitle}>
         {title}
       </h2>
+      {collapsedContent ? (
+        <div ref={collapsedRef} className={styles.sheetCollapsedContent} hidden={state !== "collapsed"}>
+          {collapsedContent}
+        </div>
+      ) : null}
       <div
         ref={bodyRef}
         id={`${id}-body`}
