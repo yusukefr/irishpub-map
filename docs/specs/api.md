@@ -2,7 +2,7 @@
 
 ## 現状
 
-Next.js Route Handler で公開 API と管理 API を提供します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境ではNeonを読み書きし、未設定時は空の店舗一覧を返します。
+Next.js Route Handler で公開 API と管理 API を提供します。Automation APIの共通認証・認可基盤も用意していますが、リソース固有のEndpointは今後追加します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境ではNeonを読み書きし、未設定時は空の店舗一覧を返します。
 
 ## 公開 API
 
@@ -51,6 +51,16 @@ Web アプリのトップページはサーバー側で `/api/pubs` を fetch �
 Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL_AUTOMATION_BYPASS_SECRET` に Protection Bypass for Automation secret を設定してください。設定されている場合、サーバー側 fetch は `x-vercel-protection-bypass` ヘッダーを送信します。未設定でSSOへリダイレクトされた場合、トップページは静的データを複製せず店舗0件で表示します。実データを表示するには、SSOを回避できる設定とDATABASE_URLの両方を適切に構成してください。
 
 検索・絞り込みは、取得済みの店舗データに対してブラウザで実行します。そのため `prefecture` や `query` のクエリパラメーターは現在の公開 API では受け付けません。
+
+## Automation APIの認証・認可
+
+`/api/automation/v1/*` は外部Automation向けのnamespaceです。各Route Handlerは共通helperへ必要Scopeを明示して認証・認可します。現時点でリソース固有Endpointはありません。
+
+`Authorization: Bearer <token>` を要求し、`Bearer` とTokenの間は1文字以上のスペースを許容します。Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数へ保存しません。Tokenの欠落・不一致・設定不備は `WWW-Authenticate: Bearer` ヘッダーを付けた `401` と `{ "errorCode": "unauthorized" }` を返し、理由やToken/hashをResponseへ含めません。
+
+`AUTOMATION_API_SCOPES` はカンマ区切りで設定します（例: `master:read,tag:create,content:read,content:create`）。利用可能なScopeは `master:read`、`tag:create`、`content:read`、`content:create`、`content:update`、`content:publish`、`quiz:read`、`quiz:create`、`quiz:update`、`quiz:publish`、`pubs:read`、`pubs:create`、`pubs:update`、`pubs:publish` です。未知のScopeは無視し、部分一致では認可しません。認証済みTokenに必要Scopeがない場合は `403` と `{ "errorCode": "forbidden" }` を返します。
+
+Automation認証では管理者Session Cookieを受け付けず、同一Origin検証も要求しません。逆に管理APIはAutomation Bearer Tokenを受け付けません。Tokenは `node scripts/generate-automation-token.mjs` を対話端末で実行して生成し、Raw Tokenは外部Connector側、表示されたSHA-256だけをServer側へ設定します。
 
 ## 管理 API
 
