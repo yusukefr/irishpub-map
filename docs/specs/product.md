@@ -45,7 +45,7 @@
 - `/admin/pubs` で公開・非公開を含む店舗一覧を確認し、店舗名、都道府県、市区町村、営業ステータス、タグ、公開状態を組み合わせて絞り込む。条件はURLに保持し、一覧は50件ずつ表示する
 - 一覧で公開状態を確認・変更する。非公開化前は一般サイトから見えなくなることを確認し、公開時はサーバー側の公開条件を満たさない項目を一覧表示する
 - Neon が設定されている場合は一覧の「新規登録」または各店舗の「編集」から `/admin/pubs/new`・`/admin/pubs/:id/edit` を開き、基本情報・所在地・日英翻訳・外部リンク・登録済みタグをセクションごとに追加・編集・下書き保存・削除する
-- `/admin/content` でEditorial ContentのDraft / Published一覧を確認し、`/admin/content/new` と `/admin/content/:id` でkind、slug、category、任意の代表画像、日英のtitle・summary・Markdown本文・画像alt/captionを編集する。画像は共通Media Pickerから選び、変更・解除時に日英alt/captionを消去する
+- `/admin/content` でEditorial ContentのDraft / Published一覧を確認し、`/admin/content/new` と `/admin/content/:id` でkind、slug、category、任意の代表画像、日英のtitle・summary・Markdown本文・画像alt/captionを編集する。代表画像は共通Media Pickerから選び、変更・解除時に日英alt/captionを消去する。本文では言語ごとのカーソル位置へMedia Pickerで選んだ画像をalt付きMarkdown記法で挿入する
 - ContentのPreviewは認証済み管理画面内で未保存入力を安全なMarkdownとして描画し、Public Routeや公開Content Cacheを経由しない。公開時は日英すべての必須項目を検証し、未保存変更がある間は公開状態を変更しない
 - `/admin/quiz` でIrish QuizのDraft / Published一覧を確認し、`/admin/quiz/new` と `/admin/quiz/:id` でカテゴリ、特別日、関連Guide、日英の問題文・解説・情報源、最大4件のChoiceと正解を全体Snapshotとして編集する。Question IDは新規保存時にServerがUUIDを生成し、管理画面では入力しない。新規QuizはDraftで作成し、保存後に公開条件をサーバー側で検証して公開・下書き戻しを行う
 - `/admin/media` で登録済みMedia Assetを50件ずつ閲覧し、画像Preview、寸法、形式、サイズ、登録日時、Media IDを確認する。JPEG・PNG・WebPの単一画像を4 MiBまでUploadし、Content・Quiz編集画面向けの共通Media Pickerでは一覧またはUploadした画像を明示的に確定する。DB未設定時はUploadと選択を無効化し、Storage未設定時は既存Mediaの閲覧・選択を維持してUploadを無効化する
@@ -88,12 +88,12 @@
 
 公開画面はRoot Layoutを共通のApplication責務として維持し、Mapは`app/(map)/layout.tsx`のViewport Shell、Story / Guide / Quizは`app/(content)/layout.tsx`の通常Document Flowへ配置するNested Layout構成を採用します。Route GroupはURLへ含まれず、既存の`/`、`/privacy`、`/admin`、`/api`のURLと責務は維持します。MapとContentの両Headerから`/discover`へ移動でき、ブランドLinkからMapへ戻れます。
 
-公開GuideはNeonの`content_entries`・`content_translations`をSource of Truthとし、公開Content Repositoryから`status = published`の行だけを取得します。記事は`story` / `guide`のkindと独立したcategoryを持ち、要求localeのTranslationがない場合は既定localeへフォールバックします。任意の代表画像はMedia Assetを参照し、公開時には日英のaltを必須とします。画像ありGuideの詳細には元の縦横比でcaption付きfigure、DiscoverのGuide Cardには16:9画像を表示します。画像なしGuideは従来表示です。未登録slug、Draft、対象kind以外はRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。管理画面だけがDraftを取得します。
+公開GuideとStoryはNeonの`content_entries`・`content_translations`をSource of Truthとし、公開Content Repositoryから`status = published`の行だけを取得します。記事は`story` / `guide`のkindと独立したcategoryを持ち、要求localeのTranslationがない場合は既定localeへフォールバックします。任意の代表画像はMedia Assetを参照し、公開時には日英のaltを必須とします。画像あり記事の詳細には元の縦横比でcaption付きfigure、DiscoverのCardには16:9画像を表示します。画像なし記事は従来表示です。未登録slug、Draft、対象kind以外はRepositoryが`null`を返すため、Route側で`notFound()`へ接続できます。管理画面だけがDraftを取得します。
 
-Explore Ireland Hubは`/discover`でStories placeholder、Neon由来の公開Guide一覧、Today's Ireland Quiz導線、Irish Calendar導線を表示します。Guideは`/discover/guides/[slug]`でLocale別の安全なMarkdownを表示し、未登録・Draftのslugは404とします。
+Explore Ireland Hubは`/discover`でNeon由来の公開Guide・Story一覧、Today's Ireland Quiz導線、Irish Calendar導線を表示します。公開Storyが0件のときだけStoriesの準備中表示を維持します。Guideは`/discover/guides/[slug]`、Storyは`/discover/stories/[slug]`でLocale別の安全なMarkdownを表示し、未登録・Draftのslugは404とします。本文画像はMedia Asset IDを含む `/media/{uuid}` として保存し、公開時にはVercel Blobへ安全に解決します。画像用altは日英のMarkdownそれぞれに保持し、既存の外部HTTP(S)画像記法も維持します。
 
 Today's Ireland Quizは`/discover/quiz`で、Asia/Tokyo基準の日付から決定した4択問題を日英表示します。同じ日と問題データではLocaleや端末によらず同じ問題を選び、記念日指定がある問題を通常ローテーションより優先します。回答はServer Actionで採点し、回答後に正解・解説・公式情報源と任意の関連Guideを表示します。問題データと追加方法は[Today's Ireland Quiz データ仕様](quiz.md)に従います。回答履歴や長期スコアは保持しません。
 
 Irish Calendarは`/discover/calendar`で、Asia/Tokyo基準の当日と選択月に該当するアイルランド共和国の祝日・文化イベントを日英表示します。月別一覧は`?year=<年>&month=<月>`で当月の前後12か月を移動でき、範囲端ではそれ以上の移動を無効にします。不正または範囲外の年月は当月へ戻し、「今日のアイルランド」は選択月にかかわらず実際の当日を表示します。イベント内容はNeonのPublished Calendar EventをSource of Truthとし、Public Calendar Data Loaderが一覧全体をCacheして取得します。`DATABASE_URL`未設定時はイベント0件とし、DB取得失敗や不正データはfallbackせずエラーとして扱います。Calendar domain layerが暦日計算、当日・月別検索を担当します。開催日が年ごとに公式発表されるイベントは通常月の月別一覧に未確定と明示し、具体日を推測しません。公開Content RepositoryやPublic APIには接続しません。
 
-公開本文と管理画面のMarkdown PreviewはRaw HTML・MDX・JavaScriptを実行せず、許可済み要素と安全なURLだけを描画します。公開GuideはNeonだけをSource of Truthとし、Repository内MDX、Static Loader、DB → MDX fallbackは保持しません。RendererはApplication側の固定Allow Listでkindに対応させ、DB値からComponent名やmodule pathを解決しません。RollbackにはGit履歴とNeonのBackup / Branchを利用します。
+公開本文と管理画面のMarkdown PreviewはRaw HTML・MDX・JavaScriptを実行せず、許可済み要素と安全なURLだけを描画します。公開GuideとStoryはNeonだけをSource of Truthとし、Repository内MDX、Static Loader、DB → MDX fallbackは保持しません。RendererはApplication側の固定Allow Listでkindに対応させ、DB値からComponent名やmodule pathを解決しません。RollbackにはGit履歴とNeonのBackup / Branchを利用します。

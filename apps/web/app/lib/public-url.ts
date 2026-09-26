@@ -18,3 +18,12 @@ export function getPubUrl(id: string): string {
 export function getGuideUrl(slug: string): string {
   return `${PUBLIC_ORIGIN}/discover/guides/${encodeURIComponent(slug)}`;
 }
+
+/**
+ * 公開Storyの正規URLを生成します。
+ * @param {string} slug 公開Storyのslug。
+ * @returns {string} 公開Story URL。
+ */
+export function getStoryUrl(slug: string): string {
+  return `${PUBLIC_ORIGIN}/discover/stories/${encodeURIComponent(slug)}`;
+}

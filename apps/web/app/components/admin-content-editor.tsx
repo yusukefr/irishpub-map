@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -23,6 +23,7 @@ import type { MediaAsset } from "@irishpub-map/shared/media";
 import { MediaPicker } from "./media/media-picker";
 import { getAdminContentApiErrorMessage } from "../lib/admin-api-client";
 import { SafeMarkdownRenderer } from "../lib/content/renderer";
+import { insertMediaImageMarkdown } from "../lib/content/editor-image";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
 
@@ -88,6 +89,16 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
   const [contentId, setContentId] = useState(initialContent?.id ?? null);
   const [values, setValues] = useState(() => toValues(initialContent));
   const [heroImage, setHeroImage] = useState<MediaAsset | null>(initialContent?.heroImage ?? null);
+  const [pendingBodyImage, setPendingBodyImage] = useState<{ language: "ja" | "en"; media: MediaAsset } | null>(null);
+  const [pendingBodyAlt, setPendingBodyAlt] = useState("");
+  const [bodyImageUndo, setBodyImageUndo] = useState<{
+    language: "ja" | "en";
+    before: string;
+    after: string;
+    caret: number;
+  } | null>(null);
+  const markdownRefs = useRef<Record<"ja" | "en", HTMLTextAreaElement | null>>({ ja: null, en: null });
+  const markdownSelections = useRef<Record<"ja" | "en", { start: number; end: number } | null>>({ ja: null, en: null });
   const [savedSnapshot, setSavedSnapshot] = useState(() => serialize(toValues(initialContent)));
   const [status, setStatus] = useState<ContentStatus>(initialContent?.status ?? "draft");
   const [publishedAt, setPublishedAt] = useState(initialContent?.publishedAt ?? null);
@@ -144,6 +155,48 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
     }
   }
 
+  function rememberMarkdownSelection(language: "ja" | "en", textarea: HTMLTextAreaElement) {
+    markdownSelections.current[language] = { start: textarea.selectionStart, end: textarea.selectionEnd };
+  }
+
+  function insertBodyImage(language: "ja" | "en") {
+    if (pendingBodyImage?.language !== language || !pendingBodyAlt.trim()) return;
+    const current = values.translations[language].bodyMarkdown;
+    const selection = markdownSelections.current[language] ?? { start: current.length, end: current.length };
+    const inserted = insertMediaImageMarkdown(
+      current,
+      selection.start,
+      selection.end,
+      pendingBodyImage.media.id,
+      pendingBodyAlt,
+    );
+    if (inserted.markdown.length > CONTENT_BODY_MAX_LENGTH) {
+      setFieldErrors((errors) => ({ ...errors, [`translations.${language}.bodyMarkdown`]: "too_long" }));
+      return;
+    }
+    setTranslationValue(language, "bodyMarkdown", inserted.markdown);
+    setBodyImageUndo({ language, before: current, after: inserted.markdown, caret: selection.start });
+    markdownSelections.current[language] = { start: inserted.caret, end: inserted.caret };
+    setPendingBodyImage(null);
+    setPendingBodyAlt("");
+    requestAnimationFrame(() => {
+      markdownRefs.current[language]?.focus();
+      markdownRefs.current[language]?.setSelectionRange(inserted.caret, inserted.caret);
+    });
+  }
+
+  function undoBodyImage(language: "ja" | "en") {
+    if (bodyImageUndo?.language !== language || values.translations[language].bodyMarkdown !== bodyImageUndo.after)
+      return;
+    setTranslationValue(language, "bodyMarkdown", bodyImageUndo.before);
+    const caret = bodyImageUndo.caret;
+    setBodyImageUndo(null);
+    requestAnimationFrame(() => {
+      markdownRefs.current[language]?.focus();
+      markdownRefs.current[language]?.setSelectionRange(caret, caret);
+    });
+  }
+
   function clearFieldError(path: string) {
     setFieldErrors((current) => {
       if (!(path in current)) return current;
@@ -183,6 +236,7 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
       const created = contentId === null;
       setContentId(body.content.id);
       setValues(savedValues);
+      setBodyImageUndo(null);
       setHeroImage(body.content.heroImage);
       setSavedSnapshot(serialize(savedValues));
       setStatus(body.content.status);
@@ -424,11 +478,19 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
               <label>
                 {c.bodyMarkdown}
                 <textarea
+                  ref={(node) => {
+                    markdownRefs.current[language] = node;
+                  }}
                   className="admin-content-markdown"
                   value={translation.bodyMarkdown}
                   maxLength={CONTENT_BODY_MAX_LENGTH}
                   rows={16}
-                  onChange={(event) => setTranslationValue(language, "bodyMarkdown", event.target.value)}
+                  onChange={(event) => {
+                    setBodyImageUndo((current) => (current?.language === language ? null : current));
+                    setTranslationValue(language, "bodyMarkdown", event.target.value);
+                  }}
+                  onSelect={(event) => rememberMarkdownSelection(language, event.currentTarget)}
+                  onBlur={(event) => rememberMarkdownSelection(language, event.currentTarget)}
                   aria-label={c.bodyMarkdown}
                   aria-invalid={Boolean(fieldErrors[`translations.${language}.bodyMarkdown`])}
                   aria-describedby={`admin-content-${language}-markdown-help ${fieldErrorId(
@@ -445,6 +507,60 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
                   messages={c}
                 />
               </label>
+              <div className="admin-content-hero-actions">
+                <MediaPicker
+                  locale={locale}
+                  selectedId={pendingBodyImage?.language === language ? pendingBodyImage.media.id : null}
+                  triggerLabel={c.insertBodyImage}
+                  onSelect={(media) => {
+                    setPendingBodyImage({ language, media });
+                    setPendingBodyAlt("");
+                  }}
+                />
+                {bodyImageUndo?.language === language && translation.bodyMarkdown === bodyImageUndo.after ? (
+                  <button type="button" className="admin-secondary-action" onClick={() => undoBodyImage(language)}>
+                    {c.undoBodyImage}
+                  </button>
+                ) : null}
+              </div>
+              {pendingBodyImage?.language === language ? (
+                <div className="admin-content-body-image-insert">
+                  <figure className="admin-content-hero-preview">
+                    <Image
+                      src={pendingBodyImage.media.url}
+                      alt=""
+                      width={pendingBodyImage.media.width}
+                      height={pendingBodyImage.media.height}
+                      sizes="(max-width: 760px) calc(100vw - 32px), 520px"
+                    />
+                    <figcaption>{c.bodyImageSelected}</figcaption>
+                  </figure>
+                  <label>
+                    {c.bodyImageAlt}
+                    <input
+                      value={pendingBodyAlt}
+                      maxLength={CONTENT_HERO_ALT_MAX_LENGTH}
+                      onChange={(event) => setPendingBodyAlt(event.target.value)}
+                    />
+                  </label>
+                  <p className="admin-editor-note">{c.bodyImageAltHelp}</p>
+                  <div className="admin-content-hero-actions">
+                    <button type="button" disabled={!pendingBodyAlt.trim()} onClick={() => insertBodyImage(language)}>
+                      {c.confirmBodyImage}
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-secondary-action"
+                      onClick={() => {
+                        setPendingBodyImage(null);
+                        setPendingBodyAlt("");
+                      }}
+                    >
+                      {c.cancelBodyImage}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </fieldset>
           );
         })}

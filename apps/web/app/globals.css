@@ -3154,6 +3154,10 @@ body {
   margin-top: var(--spacing-space-10);
 }
 
+.discover-stories.has-content {
+  max-width: none;
+}
+
 .quiz-column,
 .calendar-column {
   max-width: 800px;
@@ -3525,10 +3529,11 @@ body {
 
 .content-prose img {
   display: block;
+  inline-size: auto;
   max-inline-size: 100%;
   block-size: auto;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
+  max-block-size: 720px;
+  object-fit: contain;
   margin-block-end: var(--spacing-space-5);
 }
 
@@ -3696,6 +3701,17 @@ body {
   flex-wrap: wrap;
   gap: var(--spacing-space-3);
   margin-top: var(--spacing-space-4);
+}
+
+.admin-content-body-image-insert {
+  margin-top: var(--spacing-space-4);
+  padding: var(--spacing-space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.admin-content-body-image-insert .admin-content-hero-preview {
+  margin-top: 0;
 }
 
 .admin-secondary-action {

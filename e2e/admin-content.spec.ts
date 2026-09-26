@@ -142,3 +142,36 @@ test("Content EditorでMedia PickerからHeroを選び、日英Previewと解除�
   await expect(japanese.getByLabel("代表画像の代替テキスト")).toBeDisabled();
   await expect(preview.getByRole("img")).toHaveCount(0);
 });
+
+test("日英本文のカーソル位置へMedia画像と各言語のaltを挿入する", async ({ page }) => {
+  await loginAsE2EAdmin(page, `/admin/content/${E2E_TEST_DATA.content.draft.id}`);
+  const japanese = page.getByRole("group", { name: "日本語" });
+  const english = page.getByRole("group", { name: "English" });
+
+  const japaneseBody = japanese.getByLabel("本文（Markdown）");
+  await japaneseBody.fill("前文\n\n後文");
+  await japaneseBody.evaluate((element) => {
+    const textarea = element as HTMLTextAreaElement;
+    textarea.focus();
+    textarea.setSelectionRange(4, 4);
+  });
+  await japanese.getByRole("button", { name: "本文に画像を挿入" }).click();
+  const dialog = page.getByRole("dialog", { name: "画像を選択" });
+  await dialog.getByRole("button", { name: new RegExp(E2E_TEST_DATA.media.landscape.id) }).click();
+  await dialog.getByRole("button", { name: "選択した画像を使う" }).click();
+  await japanese.getByLabel("本文画像の代替テキスト").fill("日本語の店内写真");
+  await japanese.getByRole("button", { name: "カーソル位置に挿入" }).click();
+  await expect(japaneseBody).toHaveValue(`前文\n\n![日本語の店内写真](/media/${E2E_TEST_DATA.media.landscape.id})後文`);
+
+  await english.getByRole("button", { name: "本文に画像を挿入" }).click();
+  await dialog.getByRole("button", { name: new RegExp(E2E_TEST_DATA.media.landscape.id) }).click();
+  await dialog.getByRole("button", { name: "選択した画像を使う" }).click();
+  await english.getByLabel("本文画像の代替テキスト").fill("A photo of the pub interior");
+  await english.getByRole("button", { name: "カーソル位置に挿入" }).click();
+  await expect(english.getByLabel("本文（Markdown）")).toHaveValue(/!\[A photo of the pub interior\]/);
+
+  await page.getByRole("button", { name: "Previewを開く" }).click();
+  const preview = page.locator("#admin-content-preview");
+  await expect(preview.getByRole("img", { name: "日本語の店内写真" })).toBeVisible();
+  await expect(preview.getByRole("img", { name: "A photo of the pub interior" })).toBeVisible();
+});

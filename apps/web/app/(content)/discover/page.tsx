@@ -28,12 +28,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /**
  * Stories、Guide、Quiz、Calendarと地図への入口となるExplore Ireland Hubを表示します。
- * @returns {Promise<JSX.Element>} 公開済みEditorial Guide一覧を含むHub。
+ * @returns {Promise<JSX.Element>} 公開済みGuideとStoryの一覧を含むHub。
  */
 export default async function DiscoverPage() {
   const locale = await getRequestLocale();
   const t = getTranslation(locale).discover;
-  const guides = await listPublishedContent("guide", locale);
+  const [guides, stories] = await Promise.all([
+    listPublishedContent("guide", locale),
+    listPublishedContent("story", locale),
+  ]);
 
   return (
     <section className="content-container discover-page" aria-labelledby="discover-heading">
@@ -101,15 +104,55 @@ export default async function DiscoverPage() {
         </div>
       </section>
 
-      <div className="discover-stories">
-        <ContentCard
-          titleId="discover-stories-heading"
-          title={t.stories}
-          description={t.storiesSummary}
-          metadata={<span>{t.comingSoon}</span>}
-          variant="text-only"
-        />
-      </div>
+      {stories.length > 0 ? (
+        <section className="discover-stories has-content" aria-labelledby="discover-stories-heading">
+          <div className="discover-section-heading">
+            <p className="content-kicker">{t.storyLabel}</p>
+            <h2 id="discover-stories-heading">{t.stories}</h2>
+            <p>{t.storiesLead}</p>
+          </div>
+          <div className="discover-guide-grid">
+            {stories.map((story) => (
+              <ContentCard
+                key={story.slug}
+                titleId={"discover-story-" + story.slug + "-heading"}
+                title={story.title}
+                description={story.summary}
+                eyebrow={t.storyLabel}
+                headingLevel={3}
+                variant={story.heroImage ? "image" : "compact"}
+                media={
+                  story.heroImage ? (
+                    <Image
+                      src={story.heroImage.url}
+                      alt={story.heroImage.alt}
+                      width={story.heroImage.width}
+                      height={story.heroImage.height}
+                      sizes="(max-width: 760px) calc(100vw - 32px), 520px"
+                    />
+                  ) : undefined
+                }
+                metadata={<time dateTime={story.publishedAt}>{formatPublishedAt(story.publishedAt, locale)}</time>}
+                action={
+                  <Link href={"/discover/stories/" + story.slug} aria-label={t.readStory + ": " + story.title}>
+                    {t.readStory}
+                  </Link>
+                }
+              />
+            ))}
+          </div>
+        </section>
+      ) : (
+        <div className="discover-stories">
+          <ContentCard
+            titleId="discover-stories-heading"
+            title={t.stories}
+            description={t.storiesSummary}
+            metadata={<span>{t.comingSoon}</span>}
+            variant="text-only"
+          />
+        </div>
+      )}
     </section>
   );
 }
