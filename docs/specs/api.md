@@ -2,7 +2,7 @@
 
 ## 現状
 
-Next.js Route Handler で公開 API と管理 API を提供します。Automation APIの共通認証・認可基盤も用意していますが、リソース固有のEndpointは今後追加します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境ではNeonを読み書きし、未設定時は空の店舗一覧を返します。
+Next.js Route Handler で公開 API と管理 API を提供します。Automation APIでは共通認証・認可基盤を使い、Master参照とタグ作成を提供します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境ではNeonを読み書きし、未設定時は空の店舗一覧を返します。
 
 ## 公開 API
 
@@ -54,13 +54,29 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 ## Automation APIの認証・認可
 
-`/api/automation/v1/*` は外部Automation向けのnamespaceです。各Route Handlerは共通helperへ必要Scopeを明示して認証・認可します。現時点でリソース固有Endpointはありません。
+`/api/automation/v1/*` は外部Automation向けのnamespaceです。各Route Handlerは共通helperへ必要Scopeを明示して認証・認可します。
 
 `Authorization: Bearer <token>` を要求し、`Bearer` とTokenの間は1文字以上のスペースを許容します。Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数へ保存しません。Tokenの欠落・不一致・設定不備は `WWW-Authenticate: Bearer` ヘッダーを付けた `401` と `{ "errorCode": "unauthorized" }` を返し、理由やToken/hashをResponseへ含めません。
 
 `AUTOMATION_API_SCOPES` はカンマ区切りで設定します（例: `master:read,tag:create,content:read,content:create`）。利用可能なScopeは `master:read`、`tag:create`、`content:read`、`content:create`、`content:update`、`content:publish`、`quiz:read`、`quiz:create`、`quiz:update`、`quiz:publish`、`pubs:read`、`pubs:create`、`pubs:update`、`pubs:publish` です。未知のScopeは無視し、部分一致では認可しません。認証済みTokenに必要Scopeがない場合は `403` と `{ "errorCode": "forbidden" }` を返します。
 
 Automation認証では管理者Session Cookieを受け付けず、同一Origin検証も要求しません。逆に管理APIはAutomation Bearer Tokenを受け付けません。Tokenは `node scripts/generate-automation-token.mjs` を対話端末で実行して生成し、Raw Tokenは外部Connector側、表示されたSHA-256だけをServer側へ設定します。
+
+### Automation Master参照とタグ作成
+
+Master参照はすべて `master:read` を要求し、現在のDBを既存Repositoryから読み取ります。Repositoryの内部行やDBエラー詳細は返しません。`DATABASE_URL` 未設定時は一覧を空配列で返します。
+
+| メソッド | パス | 成功時 | 主な失敗時 |
+| --- | --- | --- | --- |
+| `GET` | `/api/automation/v1/master/prefectures` | `200` と `{ prefectures: [{ code, name }] }` | 認証 `401`、Scope不足 `403`、取得失敗 `500` |
+| `GET` | `/api/automation/v1/master/municipalities?prefectureCode=:code` | `200` と `{ municipalities: [{ code, prefectureCode, name }] }` | 認証 `401`、Scope不足 `403`、コード不正 `400 invalid_prefecture_code`、取得失敗 `500` |
+| `GET` | `/api/automation/v1/master/tags` | `200` と `{ tags: [{ id, key, translations, pubCount }] }` | 認証 `401`、Scope不足 `403`、取得失敗 `500` |
+| `GET` | `/api/automation/v1/master/statuses` | `200` と `{ statuses: [{ code, key, name }] }` | 認証 `401`、Scope不足 `403`、取得失敗 `500` |
+| `POST` | `/api/automation/v1/tags` | `201` と `{ tag: { id, key, translations, pubCount } }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、入力不正 `422`、競合 `409`、DB未設定 `503`、内部エラー `500` |
+
+都道府県と営業ステータスの表示名は日本語を既定とします。市区町村の表示名は管理APIと同じく言語Cookie、次に `Accept-Language` からlocaleを決め、日本語へフォールバックします。`prefectureCode` は1〜47の10進整数を管理APIと同じ条件で検証します。タグ一覧はサポートlocaleの翻訳と、関連する店舗の重複を除いた使用件数を返します。
+
+タグ作成は `tag:create` を要求し、管理タグAPIと同じ `key` および `translations` 入力、共有Validation、競合判定とエラー形式を使います。IDはServer側でUUIDを生成します。Automation Clientは作成前にタグ一覧を取得し、表記・翻訳の違いだけで意味が同じタグや、既存タグで十分に分類できる属性には既存IDを使います。タグ化の対象は複数店舗の検索・分類に継続的に役立つ属性とし、単店固有のイベント、一時的なキャンペーン、主観的な評価は作成しません。意味的重複の完全な自動判定はServer側では行いません。Automation APIにタグ更新・削除Routeはありません。
 
 ## 管理 API
 
