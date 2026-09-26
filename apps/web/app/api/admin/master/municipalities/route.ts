@@ -5,6 +5,7 @@ import {
 } from "../../../../lib/admin-api";
 import { resolveRequestLocale } from "../../../../lib/i18n";
 import { getMunicipalitiesByPrefecture } from "../../../../lib/master-repository";
+import { parseMasterPrefectureCode } from "../../../../lib/prefecture-code";
 
 /**
  * 認証済み管理者へ指定都道府県の市区町村マスタを返します。
@@ -15,14 +16,14 @@ export async function GET(request: Request) {
   const authorizationError = getAdminApiAuthorizationError(request);
   if (authorizationError) return authorizationError;
 
-  const value = new URL(request.url).searchParams.get("prefectureCode");
-  if (!value || !/^(?:[1-9]|[1-3][0-9]|4[0-7])$/.test(value)) {
+  const prefectureCode = parseMasterPrefectureCode(new URL(request.url).searchParams.get("prefectureCode"));
+  if (prefectureCode === null) {
     return adminApiErrorResponse("invalid_prefecture_code", 400);
   }
 
   try {
     return Response.json({
-      municipalities: await getMunicipalitiesByPrefecture(Number(value), resolveRequestLocale(request)),
+      municipalities: await getMunicipalitiesByPrefecture(prefectureCode, resolveRequestLocale(request)),
     });
   } catch {
     return adminMasterErrorResponse();
