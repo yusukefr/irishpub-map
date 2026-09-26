@@ -37,7 +37,7 @@ describe("public Media URL", () => {
     const response = await GET(request, context(id));
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe(asset.url);
-    expect(response.headers.get("cache-control")).toBe("public, max-age=300");
+    expect(response.headers.get("cache-control")).toBe("public, max-age=300, s-maxage=300");
     expect(mocks.getMediaAsset).toHaveBeenCalledWith(id);
   });
 

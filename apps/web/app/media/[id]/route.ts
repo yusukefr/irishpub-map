@@ -23,7 +23,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     if (!target) return new Response(null, { status: 404 });
     return new Response(null, {
       status: 307,
-      headers: { Location: target.toString(), "Cache-Control": "public, max-age=300" },
+      headers: { Location: target.toString(), "Cache-Control": "public, max-age=300, s-maxage=300" },
     });
   } catch {
     return new Response(null, { status: 503 });
