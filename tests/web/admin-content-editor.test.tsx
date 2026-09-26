@@ -65,6 +65,59 @@ beforeEach(() => {
 });
 
 describe("AdminContentEditor", () => {
+  it("Media Pickerの画像を日本語の選択範囲へ挿入し、英語本文を変えずにPreviewできる", () => {
+    render(<AdminContentEditor initialContent={content} databaseConfigured locale="ja" />);
+    const japanese = screen.getByRole("group", { name: "日本語" });
+    const english = screen.getByRole("group", { name: "English" });
+    const textarea = within(japanese).getByLabelText("本文（Markdown）") as HTMLTextAreaElement;
+    textarea.setSelectionRange(3, 5);
+    fireEvent.select(textarea);
+    fireEvent.blur(textarea);
+
+    fireEvent.click(within(japanese).getByRole("button", { name: "本文に画像を挿入" }));
+    const insert = within(japanese).getByRole("button", { name: "カーソル位置に挿入" });
+    expect(insert).toBeDisabled();
+    fireEvent.change(within(japanese).getByLabelText("本文画像の代替テキスト"), {
+      target: { value: "店内の写真" },
+    });
+    fireEvent.click(insert);
+
+    expect(textarea).toHaveValue("## ![店内の写真](/media/550e8400-e29b-41d4-a716-446655440009)");
+    expect(within(english).getByLabelText("本文（Markdown）")).toHaveValue("## Body");
+    fireEvent.click(screen.getByRole("button", { name: "Previewを開く" }));
+    const preview = screen.getByRole("heading", { name: "入力内容のPreview" }).closest("section")!;
+    expect(within(preview).getByRole("img", { name: "店内の写真" })).toHaveAttribute(
+      "src",
+      "/media/550e8400-e29b-41d4-a716-446655440009",
+    );
+    fireEvent.click(within(japanese).getByRole("button", { name: "画像の挿入を取り消す" }));
+    expect(textarea).toHaveValue("## 本文");
+    expect(within(preview).queryByRole("img", { name: "店内の写真" })).not.toBeInTheDocument();
+  });
+
+  it("英語本文へ独立したaltで挿入し、安定Media URLを保存payloadへ含める", async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ content })));
+    render(<AdminContentEditor initialContent={content} databaseConfigured locale="ja" />);
+    const english = screen.getByRole("group", { name: "English" });
+    const textarea = within(english).getByLabelText("本文（Markdown）") as HTMLTextAreaElement;
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    fireEvent.select(textarea);
+    fireEvent.blur(textarea);
+    fireEvent.click(within(english).getByRole("button", { name: "本文に画像を挿入" }));
+    fireEvent.change(within(english).getByLabelText("本文画像の代替テキスト"), {
+      target: { value: "A pub interior" },
+    });
+    fireEvent.click(within(english).getByRole("button", { name: "カーソル位置に挿入" }));
+    fireEvent.submit(screen.getByRole("button", { name: "下書きを保存" }).closest("form")!);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const payload = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+    expect(payload.translations.ja.bodyMarkdown).toBe("## 本文");
+    expect(payload.translations.en.bodyMarkdown).toBe(
+      "## Body![A pub interior](/media/550e8400-e29b-41d4-a716-446655440009)",
+    );
+  });
+
   it("Heroの選択・同じ画像の再選択・別画像への変更・解除をPreviewと入力へ反映する", () => {
     render(<AdminContentEditor initialContent={content} databaseConfigured locale="ja" />);
     const japanese = screen.getByRole("group", { name: "日本語" });
@@ -82,7 +135,9 @@ describe("AdminContentEditor", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "画像を変更" }));
     expect(within(japanese).getByLabelText("代表画像の代替テキスト")).toHaveValue("日本語の説明");
-    fireEvent.click(screen.getByRole("button", { name: "別画像を選択" }));
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "代表画像" })).getByRole("button", { name: "別画像を選択" }),
+    );
     expect(within(japanese).getByLabelText("代表画像の代替テキスト")).toHaveValue("");
     expect(within(english).getByLabelText("代表画像の代替テキスト")).toHaveValue("");
     fireEvent.click(screen.getByRole("button", { name: "画像を解除" }));

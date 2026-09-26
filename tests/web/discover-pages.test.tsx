@@ -9,6 +9,7 @@ type GuideContent = {
   publishedAt: string;
   bodyMarkdown: string;
 };
+type StoryContent = Omit<GuideContent, "kind"> & { kind: "story" };
 
 const pageMocks = vi.hoisted(() => ({
   getRequestLocale: vi.fn(),
@@ -37,6 +38,9 @@ import DiscoverPage, { generateMetadata as generateDiscoverMetadata } from "../.
 import GuidePage, {
   generateMetadata as generateGuideMetadata,
 } from "../../apps/web/app/(content)/discover/guides/[slug]/page";
+import StoryPage, {
+  generateMetadata as generateStoryMetadata,
+} from "../../apps/web/app/(content)/discover/stories/[slug]/page";
 import QuizPage, { generateMetadata as generateQuizMetadata } from "../../apps/web/app/(content)/discover/quiz/page";
 
 const metadataByLocale = {
@@ -59,6 +63,27 @@ const metadataByLocale = {
     bodyMarkdown: "Content will be added later.",
   },
 } satisfies Record<"ja" | "en", GuideContent>;
+
+const storyByLocale = {
+  ja: {
+    slug: "pub-story",
+    kind: "story",
+    title: "パブの物語",
+    summary: "パブの風景です。",
+    category: "culture",
+    publishedAt: "2026-09-03T00:00:00.000Z",
+    bodyMarkdown: "![店内の写真](/media/550e8400-e29b-41d4-a716-446655440009)",
+  },
+  en: {
+    slug: "pub-story",
+    kind: "story",
+    title: "A Pub Story",
+    summary: "A scene from a pub.",
+    category: "culture",
+    publishedAt: "2026-09-03T00:00:00.000Z",
+    bodyMarkdown: "![A pub interior](/media/550e8400-e29b-41d4-a716-446655440009)",
+  },
+} satisfies Record<"ja" | "en", StoryContent>;
 
 const splitTheGMetadataByLocale = {
   ja: {
@@ -88,10 +113,14 @@ beforeEach(() => {
   pageMocks.getRequestLocale.mockReset().mockImplementation(() => Promise.resolve(locale));
   pageMocks.listPublishedContent
     .mockReset()
-    .mockImplementation((_kind, contentLocale: "ja" | "en") =>
-      Promise.resolve([splitTheGMetadataByLocale[contentLocale], metadataByLocale[contentLocale]]),
+    .mockImplementation((kind: "guide" | "story", contentLocale: "ja" | "en") =>
+      Promise.resolve(
+        kind === "guide" ? [splitTheGMetadataByLocale[contentLocale], metadataByLocale[contentLocale]] : [],
+      ),
     );
-  pageMocks.getPublishedContentBySlug.mockReset().mockImplementation((_kind, slug, contentLocale: "ja" | "en") => {
+  pageMocks.getPublishedContentBySlug.mockReset().mockImplementation((kind, slug, contentLocale: "ja" | "en") => {
+    if (kind === "story" && slug === "pub-story") return Promise.resolve(storyByLocale[contentLocale]);
+    if (kind !== "guide") return Promise.resolve(null);
     if (slug === "sample") return Promise.resolve(metadataByLocale[contentLocale]);
     if (slug === "split-the-g") return Promise.resolve(splitTheGMetadataByLocale[contentLocale]);
     return Promise.resolve(null);
@@ -129,6 +158,30 @@ describe("Discover pages", () => {
     expect(screen.getByRole("link", { name: "地図でIrish Pubを探す" })).toHaveAttribute("href", "/");
     expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(2);
     expect(screen.queryByRole("main")).not.toBeInTheDocument();
+  });
+
+  it("公開済みStoryがある場合は一覧導線と日英本文画像を表示する", async () => {
+    pageMocks.listPublishedContent.mockImplementation((kind: "guide" | "story", contentLocale: "ja" | "en") =>
+      Promise.resolve(kind === "story" ? [storyByLocale[contentLocale]] : []),
+    );
+    const { unmount } = render(await DiscoverPage());
+    expect(screen.getByRole("link", { name: "物語を読む: パブの物語" })).toHaveAttribute(
+      "href",
+      "/discover/stories/pub-story",
+    );
+    expect(screen.queryByText("準備中")).not.toBeInTheDocument();
+
+    unmount();
+    render(await StoryPage({ params: Promise.resolve({ slug: "pub-story" }) }));
+    expect(screen.getByRole("img", { name: "店内の写真" })).toHaveAttribute(
+      "src",
+      "/media/550e8400-e29b-41d4-a716-446655440009",
+    );
+    expect(screen.getByRole("navigation", { name: "現在位置" })).toBeInTheDocument();
+
+    locale = "en";
+    render(await StoryPage({ params: Promise.resolve({ slug: "pub-story" }) }));
+    expect(screen.getByRole("img", { name: "A pub interior" })).toBeInTheDocument();
   });
 
   it("Content LayoutがHeader、単一main、通常Footerと共通Navigationを提供する", async () => {
@@ -177,6 +230,11 @@ describe("Discover pages", () => {
   it("未登録Guideを404として扱う", async () => {
     await expect(GuidePage({ params: Promise.resolve({ slug: "unknown" }) })).rejects.toThrow("not-found");
     await expect(generateGuideMetadata({ params: Promise.resolve({ slug: "unknown" }) })).rejects.toThrow("not-found");
+  });
+
+  it("未登録Storyを404として扱う", async () => {
+    await expect(StoryPage({ params: Promise.resolve({ slug: "unknown" }) })).rejects.toThrow("not-found");
+    await expect(generateStoryMetadata({ params: Promise.resolve({ slug: "unknown" }) })).rejects.toThrow("not-found");
   });
 
   it("QuizはLocale別の今日の1問と4択、パンくずを表示する", async () => {

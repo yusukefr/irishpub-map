@@ -55,7 +55,7 @@ export const E2E_TEST_DATA = {
 } as const;
 
 const UPDATED_AT = "2026-01-15T12:00:00.000Z";
-const publishedGuideDefinitions: Record<Locale, PublishedContent[]> = {
+const publishedContentDefinitions: Record<Locale, PublishedContent[]> = {
   ja: [
     {
       kind: "guide",
@@ -71,8 +71,7 @@ const publishedGuideDefinitions: Record<Locale, PublishedContent[]> = {
         alt: "パブのテーブルに置かれたグラス",
         caption: "パブで過ごす時間",
       },
-      bodyMarkdown:
-        "## Split the Gとは\n\n地域や一緒に楽しむ人によって判定方法は異なります。\n\nSplit the Gは、成功や飲む速さ・量を競うものではありません。\n\n[Irish Pubを探す →](/)",
+      bodyMarkdown: `## Split the Gとは\n\n地域や一緒に楽しむ人によって判定方法は異なります。\n\n![パブのグラス](/media/${E2E_TEST_DATA.media.landscape.id})\n\nSplit the Gは、成功や飲む速さ・量を競うものではありません。\n\n[Irish Pubを探す →](/)`,
     },
     {
       kind: "guide",
@@ -83,6 +82,16 @@ const publishedGuideDefinitions: Record<Locale, PublishedContent[]> = {
       summary: "Explore Irelandセクション用のサンプルコンテンツです。",
       heroImage: null,
       bodyMarkdown: "コンテンツは後日追加予定です。",
+    },
+    {
+      kind: "story",
+      slug: "e2e-pub-story",
+      category: "culture",
+      publishedAt: "2026-09-03T00:00:00.000Z",
+      title: "パブで過ごす物語",
+      summary: "アイルランドのパブでのひとときです。",
+      heroImage: null,
+      bodyMarkdown: `## パブの風景\n\n![カウンターの写真](/media/${E2E_TEST_DATA.media.landscape.id})\n\n![縦長の店内写真](/media/${E2E_TEST_DATA.media.portrait.id})`,
     },
   ],
   en: [
@@ -100,8 +109,7 @@ const publishedGuideDefinitions: Record<Locale, PublishedContent[]> = {
         alt: "A glass on a pub table",
         caption: "Time at the pub",
       },
-      bodyMarkdown:
-        "## What is Split the G?\n\nHow the result is judged varies between places and groups.\n\nSplit the G is not about drinking quickly or drinking more.\n\n[Find an Irish pub →](/)",
+      bodyMarkdown: `## What is Split the G?\n\nHow the result is judged varies between places and groups.\n\n![A glass on a pub table](/media/${E2E_TEST_DATA.media.landscape.id})\n\nSplit the G is not about drinking quickly or drinking more.\n\n[Find an Irish pub →](/)`,
     },
     {
       kind: "guide",
@@ -112,6 +120,16 @@ const publishedGuideDefinitions: Record<Locale, PublishedContent[]> = {
       summary: "Sample content for the Explore Ireland section.",
       heroImage: null,
       bodyMarkdown: "Content will be added later.",
+    },
+    {
+      kind: "story",
+      slug: "e2e-pub-story",
+      category: "culture",
+      publishedAt: "2026-09-03T00:00:00.000Z",
+      title: "An Evening at the Pub",
+      summary: "A moment in an Irish pub.",
+      heroImage: null,
+      bodyMarkdown: `## A pub scene\n\n![A photo of the bar](/media/${E2E_TEST_DATA.media.landscape.id})\n\n![A portrait photo of the pub interior](/media/${E2E_TEST_DATA.media.portrait.id})`,
     },
   ],
 };
@@ -523,7 +541,7 @@ export function gradeE2EPublishedQuizAnswer(questionId: string, choiceId: string
  * @returns {PublishedContent | null} 公開fixture、または対象なし。
  */
 export function getE2EPublishedContentBySlug(kind: ContentKind, slug: string, locale: Locale): PublishedContent | null {
-  return publishedGuideDefinitions[locale].find((content) => content.kind === kind && content.slug === slug) ?? null;
+  return publishedContentDefinitions[locale].find((content) => content.kind === kind && content.slug === slug) ?? null;
 }
 
 /**
@@ -533,7 +551,7 @@ export function getE2EPublishedContentBySlug(kind: ContentKind, slug: string, lo
  * @returns {PublishedContentSummary[]} 公開fixtureの一覧。
  */
 export function getE2EPublishedContentList(kind: ContentKind, locale: Locale): PublishedContentSummary[] {
-  return publishedGuideDefinitions[locale]
+  return publishedContentDefinitions[locale]
     .filter((content) => content.kind === kind)
     .map((content) => ({
       kind: content.kind,
