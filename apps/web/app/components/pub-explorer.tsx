@@ -17,6 +17,7 @@ import { type GeolocationStatus } from "./current-location-control";
 import styles from "./desktop-map.module.css";
 import mobile from "./mobile-map.module.css";
 import { BottomSheet, type BottomSheetState } from "./ui/bottom-sheet";
+import { PubCard } from "./ui/pub-card";
 
 type PubExplorerProps = {
   pubs: Pub[];
@@ -88,6 +89,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
   const mapFocusPubs = selectedPrefecture === currentPrefecture ? EMPTY_FOCUS_PUBS : prefecturePubs;
   const hasActiveFilters = Boolean(selectedPrefecture || selectedTags.length || includeClosed);
   const detailedFilterCount = Number(Boolean(selectedPrefecture)) + selectedTags.length + Number(includeClosed);
+  const hasMobileCarousel = filteredPubs.length > 0 && !isFiltersExpanded;
 
   const clearSelectedPub = () => {
     setSelectedPubId(null);
@@ -265,7 +267,13 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
   return (
     <div className="pub-explorer">
       <section
-        className={["map-layout", styles.layout, mobile.layout, isResultsOpen ? "map-layout-results-open" : ""]
+        className={[
+          "map-layout",
+          styles.layout,
+          mobile.layout,
+          hasMobileCarousel ? mobile.withCarousel : "",
+          isResultsOpen ? "map-layout-results-open" : "",
+        ]
           .filter(Boolean)
           .join(" ")}
         data-sheet-state={isFiltersExpanded ? "collapsed" : sheetState}
@@ -342,7 +350,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
           ) : (
             <div className={mobile.sheetPosition}>
               <BottomSheet
-                className={mobile.sheet}
+                className={[mobile.sheet, hasMobileCarousel ? mobile.sheetWithCarousel : ""].filter(Boolean).join(" ")}
                 state={isFiltersExpanded ? "collapsed" : sheetState}
                 onStateChange={(state) => {
                   setIsFiltersExpanded(false);
@@ -351,6 +359,22 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
                 title={t.list.heading}
                 resizeLabel={t.explorer.resizeSheet}
                 stateLabels={t.explorer.sheetStates}
+                collapsedContent={
+                  hasMobileCarousel ? (
+                    <div className={mobile.carousel} role="region" aria-label={t.list.carouselLabel} tabIndex={0}>
+                      {filteredPubs.map((pub) => (
+                        <PubCard
+                          key={pub.id}
+                          pub={pub}
+                          density="compact"
+                          locale={locale}
+                          selected={selectedPubId === pub.id}
+                          onSelect={selectPub}
+                        />
+                      ))}
+                    </div>
+                  ) : null
+                }
               >
                 {resultsPanel}
               </BottomSheet>

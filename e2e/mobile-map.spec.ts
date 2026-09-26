@@ -14,11 +14,38 @@ for (const locale of ["ja", "en"] as const) {
       await mockExternalMapStyle(page);
       await page.goto("/");
       const sheet = page.locator("section[data-state]");
+      const carousel = page.getByRole("region", { name: t.list.carouselLabel });
       const handle = page.getByRole("button", { name: new RegExp(t.explorer.resizeSheet) });
       const search = page.getByRole("searchbox", { name: t.explorer.searchLabel });
       await expect(page.locator(".pub-map-marker")).toHaveCount(2);
       await expect(sheet).toHaveAttribute("data-state", "collapsed");
-      expect((await sheet.boundingBox())!.height).toBeLessThan(100);
+      expect((await sheet.boundingBox())!.height).toBeLessThan(300);
+      await expect(carousel.locator("article")).toHaveCount(2);
+      expect(await carousel.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+      expect(await carousel.evaluate((element) => getComputedStyle(element).scrollSnapType)).toBe("x mandatory");
+      expect((await carousel.locator("article").nth(1).boundingBox())!.x).toBeLessThan(width);
+      await carousel.evaluate((element) => {
+        element.scrollLeft = element.scrollWidth;
+      });
+      await expect.poll(() => carousel.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+      await carousel.evaluate((element) => {
+        element.scrollLeft = 0;
+      });
+      const pubName = carousel.locator('article [role="heading"]').first();
+      const originalName = await pubName.textContent();
+      await pubName.evaluate(
+        (element, name) => {
+          element.textContent = name;
+        },
+        locale === "ja"
+          ? "とても長い名前のアイリッシュパブと音楽と料理を楽しむお店"
+          : "A Very Long Irish Pub Name for Music Food and Friends",
+      );
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(await carousel.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+      await pubName.evaluate((element, name) => {
+        element.textContent = name;
+      }, originalName);
       await expect(search).toBeInViewport();
       const menu = page.locator(".app-header summary");
       await menu.click();
@@ -50,7 +77,7 @@ for (const locale of ["ja", "en"] as const) {
       await expect(sheet).toHaveAttribute("data-state", "collapsed");
       await page.locator(".pub-map-marker").first().click();
       await expect(sheet).toHaveAttribute("data-state", "medium");
-      await expect(page.locator('article[data-selected="true"]')).toHaveCount(1);
+      await expect(page.locator('.pub-results-panel article[data-selected="true"]')).toHaveCount(1);
       await canvas.click({ position: { x: 10, y: 240 } });
       if (width === 390 && locale === "ja") {
         await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", { animations: "disabled" });

@@ -31,6 +31,32 @@ function pointer(
 }
 
 describe("BottomSheet", () => {
+  it("shows optional collapsed content and moves its focus to the handle when expanded", () => {
+    function WithCollapsedContent() {
+      const [state, setState] = useState<BottomSheetState>("collapsed");
+      return (
+        <BottomSheet
+          title="結果"
+          resizeLabel="高さ"
+          stateLabels={labels}
+          state={state}
+          onStateChange={setState}
+          collapsedContent={<button>折りたたみ内の店舗</button>}
+        >
+          <button>一覧内の店舗</button>
+        </BottomSheet>
+      );
+    }
+
+    render(<WithCollapsedContent />);
+    const card = screen.getByRole("button", { name: "折りたたみ内の店舗" });
+    card.focus();
+    fireEvent.click(screen.getByRole("button", { name: "高さ: 折りたたみ" }));
+    expect(card).not.toBeVisible();
+    expect(screen.getByRole("button", { name: "一覧内の店舗" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "高さ: 中間" })).toHaveFocus();
+  });
+
   it("cycles states, clamps arrow movement and leaves Tab navigation intact", () => {
     render(<Demo />);
     const handle = screen.getByRole("button", { name: "高さ: 中間" });

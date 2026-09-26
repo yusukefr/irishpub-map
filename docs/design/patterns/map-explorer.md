@@ -35,7 +35,7 @@ Map
 Bottom Sheet: collapsed / medium / expanded
 ```
 
-980px以下ではMapを背景の主要領域にし、結果と詳細を非モーダルBottom Sheetに置きます。初期状態は`collapsed`、結果表示は`medium`、詳細は`expanded`です。単純なDesktop縮小や常時表示のSide Panelを使いません。Sheetの内容scroll、handle drag、Mapのpan / pinchを分離し、safe areaと低いviewportを考慮します。
+980px以下ではMapを背景の主要領域にし、結果と詳細を非モーダルBottom Sheetに置きます。初期状態の`collapsed`では絞り込み済み店舗のPubCardを横スクロールとScroll Snapで表示し、次のカードを一部見せます。0件ではカードを表示せず、件数ボタンから既存のEmpty Stateへ進めます。結果表示は`medium`、詳細は`expanded`です。単純なDesktop縮小や常時表示のSide Panelを使いません。Sheetの内容scroll、handle drag、Mapのpan / pinchを分離し、safe areaと低いviewportを考慮します。
 
 ## Selectionと状態遷移
 
