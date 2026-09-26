@@ -28,6 +28,8 @@ Framework、Library、Vercelの仕様は、使用中のVersionに対応する公
 - 指示がない限り、このリポジトリ内だけを変更し、必要以上に変更範囲を広げません。
 - 変更前に `git status --short --branch` を確認し、ユーザーや他Agentの未コミット変更を勝手に戻したり上書きしたりしません。
 - `main` へ直接commitしません。Issueと関連するIssue / PR / 実装を確認し、`origin/main` 起点の `ai/<short-description>` ブランチで作業します。
+- 独立したIssueを並列実装するときは、原則 `1 Issue = 1 Branch = 1 Worktree = 1 Codex task` とし、作業前に取得した最新の `origin/main` からIssue専用のworktreeを作ります。複数Agentが同じWorking Treeを同時に変更したり、無関係なIssueの変更を同じbranchへ混在させたりしません。
+- 各taskは自分のworktree内で変更・検証・commit・PR作成を完結させます。依存するIssueや同一ファイルを大きく変更するIssueは無理に並列化せず、`main` のWorking Treeは並列実装用に使いません。merge後は未commit変更を確認してからworktreeを片付けます。詳細は[並列開発のworktree運用](docs/development/codex-parallel-workflow.md)を参照してください。
 - Issue対応では実装前に設計・影響範囲・検証方針を `scripts/comment-issue-design.sh --issue <number> --body-file <file>` でコメントします。
 - ファイル削除、既存ファイル全体の置換、大量変更など、破壊的または復元コストの高い変更の前は確認を取り、変更は小さく分けます。
 - 個人情報、アカウント名、Preview URL、credential、秘密鍵などをコード、文書、出力へ記録しません。

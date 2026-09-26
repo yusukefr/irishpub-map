@@ -38,6 +38,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Editorial content cache | [Editorial content cache](specs/editorial-content-cache.md) | Current。実装・テストを優先 |
 | Public UI | [Irish Pub Map Design System](design/README.md) | Current。Token、Component、Pattern、Reference Screenの入口 |
 | Development rules / GitHub / JSDoc | [Development conventions](development/conventions.md) | Current。root `AGENTS.md` のMandatory Rulesを優先 |
+| Codexの並列開発 | [Git worktreeによる並列開発](development/codex-parallel-workflow.md) | Current。root `AGENTS.md` のMandatory Rulesを優先 |
 | Local development | [ローカル開発の開始](setup/development.md) | Current。最短の開発開始手順。低頻度作業はRunbookへ |
 | Standard deployment | [通常デプロイ](setup/deployment.md) | Current。Preview / Productionの通常フロー。障害対応はRunbookへ |
 | Import pubs | [Pub Import](runbooks/import-pubs.md) | Current。import scriptと対象DBを優先 |

@@ -82,6 +82,7 @@ Neon BranchはSchema変更やMigrationの検証に必要な場合だけ作成し
 - GitHub Issueのタイトルは原則として日本語で作成し、`[AI Task]` や `[Bug]` などの接頭辞は英語のまま使用できます。
 - Issue対応では、実装前に設計コメントを投稿し、PRには関連Issue、検証結果、省略理由、コードと文書の同期確認を記載します。
 - IssueコメントとPR本文はTemplateおよびリポジトリのスクリプトを使います。AI AgentのGitHub操作に関する必須ルールと具体的な手順はrootの[AGENTS.md](../../AGENTS.md)を参照し、CI確認は[Release and CI Runbook](../runbooks/release-operations.md)を参照してください。
+- 独立したIssueを複数のCodex taskで並列実装する場合は、[Git worktreeによる並列開発](codex-parallel-workflow.md)に従い、IssueごとにbranchとWorking Treeを分けます。
 
 ### ESLint と JSDoc
 
