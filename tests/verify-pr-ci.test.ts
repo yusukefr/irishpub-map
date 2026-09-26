@@ -9,7 +9,7 @@ const script = resolve("scripts/verify-pr-ci.sh");
 
 function verifyWithChecks(
   checks: string[],
-  options: { dispatch?: boolean; runSha?: string; currentSha?: string } = {},
+  options: { dispatch?: boolean; runSha?: string; currentSha?: string; changeAfterFirstPoll?: boolean } = {},
 ) {
   const directory = mkdtempSync(join(tmpdir(), "verify-pr-ci-"));
   const log = join(directory, "calls.log");
@@ -27,7 +27,11 @@ printf 'gh %s\n' "$*" >> "$MOCK_LOG"
 case "$1 $2" in
   'pr view')
     if [[ "$*" == *'--json headRefOid'* ]]; then
-      printf '%s\n' "$MOCK_CURRENT_SHA"
+      if [[ "$MOCK_CHANGE_AFTER_FIRST_POLL" == true && "$(cat "$MOCK_CURSOR")" -gt 1 ]]; then
+        printf 'sha-new\n'
+      else
+        printf '%s\n' "$MOCK_CURRENT_SHA"
+      fi
     else
       printf '1\tOPEN\thttps://example.test/pr/1\tfeature\tsha-123\n'
     fi
@@ -69,6 +73,7 @@ esac
         MOCK_RUN_ID: "42",
         MOCK_RUN_SHA: options.runSha ?? "sha-123",
         MOCK_CURRENT_SHA: options.currentSha ?? "sha-123",
+        MOCK_CHANGE_AFTER_FIRST_POLL: options.changeAfterFirstPoll ? "true" : "false",
       },
     });
     return { result, calls: readFileSync(log, "utf8") };
@@ -141,11 +146,24 @@ describe("verify-pr-ci", () => {
     expect(calls).not.toContain("gh run watch");
   });
 
-  it("does not dispatch if the PR HEAD changes during the polling window", () => {
+  it("does not dispatch if the PR HEAD has already changed", () => {
     const { result, calls } = verifyWithChecks(["-"], { dispatch: true, currentSha: "sha-new" });
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("HEAD changed");
+    expect(calls).not.toContain("gh workflow run");
+  });
+
+  it("stops polling an active check as soon as the PR HEAD changes", () => {
+    const { result, calls } = verifyWithChecks(
+      ["queued\t-\thttps://example.test/check/1", "completed\tcancelled\thttps://example.test/check/1"],
+      { dispatch: true, changeAfterFirstPoll: true },
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("HEAD changed");
+    expect(result.stderr).not.toContain("finished with cancelled");
+    expect(calls.match(/gh api /g)).toHaveLength(1);
     expect(calls).not.toContain("gh workflow run");
   });
 });

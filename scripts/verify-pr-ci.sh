@@ -69,6 +69,7 @@ ensure_latest_head() {
 }
 
 while true; do
+  ensure_latest_head
   # 同じ HEAD の再実行がある場合は、古い成功ではなく最新の check を判定する。
   check_run="$(gh api "repos/$repo/commits/$head_sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == "Lint, Test, Build")] | max_by(.id) | if . == null then empty else [.status, (.conclusion // "-"), .html_url] | @tsv end')"
 
