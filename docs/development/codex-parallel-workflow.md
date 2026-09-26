@@ -26,11 +26,11 @@ main（参照用）
 git status --short --branch
 git worktree list
 git fetch origin main
-git worktree add -b ai/issue-a ../irishpub-map-issue-a origin/main
-git worktree add -b ai/issue-b ../irishpub-map-issue-b origin/main
+git worktree add --no-track -b ai/issue-a ../irishpub-map-issue-a origin/main
+git worktree add --no-track -b ai/issue-b ../irishpub-map-issue-b origin/main
 ```
 
-各taskには自分のworktreeのpathとIssue番号を渡します。Gitは同じbranchを複数worktreeで同時にcheckoutできないため、branchを使い回しません。作成後は対象worktreeでbranchと作業状態を確認し、Node.jsのversionと依存関係を用意します。
+各taskには自分のworktreeのpathとIssue番号を渡します。`--no-track`を指定して、作成直後のfeature branchが`origin/main`をupstreamに設定しないようにします。Gitは同じbranchを複数worktreeで同時にcheckoutできないため、branchを使い回しません。作成後は対象worktreeでbranchと作業状態を確認し、Node.jsのversionと依存関係を用意します。
 
 ```bash
 cd ../irishpub-map-issue-a
@@ -41,7 +41,13 @@ npm ci
 
 ## taskごとに実装・検証・PRを完結させる
 
-Issueの設計コメント、変更、検証、commit、push、PR作成は対象worktree内で行います。別worktreeのテスト結果やビルド成果物を、自分のbranchの検証結果として扱いません。検証コマンドは変更内容に応じて[Development conventions](conventions.md)から選び、コミット前の`npm run check:sensitive-data`、PR後の`scripts/verify-pr-ci.sh`などrootの[AGENTS.md](../../AGENTS.md)にある必須手順を守ります。検証を省略した場合は理由をPR本文に記載します。
+Issueの設計コメント、変更、検証、commit、push、PR作成は対象worktree内で行います。別worktreeのテスト結果やビルド成果物を、自分のbranchの検証結果として扱いません。検証コマンドは変更内容に応じて[Development conventions](conventions.md)から選び、コミット前の`npm run check:sensitive-data`、PR後の`scripts/verify-pr-ci.sh`などrootの[AGENTS.md](../../AGENTS.md)にある必須手順を守ります。初回pushではremoteとupstreamを明示します。
+
+```bash
+git push -u origin HEAD
+```
+
+検証を省略した場合は理由をPR本文に記載します。
 
 PRは原則としてIssueとworktreeごとに1件作り、baseを`main`にします。別taskの未merge PRを前提にしません。並列作業中に`main`が更新された場合は自分のworktreeで`git fetch origin main`を行い、必要な競合解消を自分のbranchに限定します。共有の参照用Working Treeや別taskのbranchをcheckout・変更しません。
 
