@@ -6,13 +6,13 @@ usage() {
 Usage:
   scripts/verify-pr-ci.sh [--pr NUMBER|URL] [--dispatch]
 
-Checks that the latest commit of a pull request has a successful
+Waits for the latest commit of a pull request to receive a completed
 "Lint, Test, Build" check. With --dispatch, runs ci.yml via workflow_dispatch
-when the check is missing or unsuccessful and waits for that run to finish.
+only if the check has not appeared after 90 seconds.
 
 Options:
   --pr PR              Pull request number or URL. Defaults to the current branch's PR.
-  --dispatch           Run ci.yml manually when the latest HEAD has no successful CI.
+  --dispatch           Run ci.yml manually if no check appears within 90 seconds.
   -h, --help           Show this help.
 USAGE
 }
@@ -56,19 +56,54 @@ if [[ "$pr_state" != "OPEN" ]]; then
 fi
 
 repo="$(gh repo view --json nameWithOwner --jq '.nameWithOwner')"
-check_runs="$(gh api "repos/$repo/commits/$head_sha/check-runs?per_page=100" --jq '.check_runs[] | select(.name == "Lint, Test, Build") | [.status, (.conclusion // ""), .html_url] | @tsv')"
+missing_polls=0
+active_polls=0
 
-if while IFS=$'\t' read -r status conclusion url; do
-  [[ "$status" == "completed" && "$conclusion" == "success" ]] && {
-    echo "CI passed for PR #$pr_number at $head_sha"
-    echo "$url"
-    exit 0
-  }
-done <<< "$check_runs"; then
-  :
-fi
+ensure_latest_head() {
+  local current_sha
+  current_sha="$(gh pr view "$pr_number" --json headRefOid --jq '.headRefOid')"
+  if [[ "$current_sha" != "$head_sha" ]]; then
+    echo "PR #$pr_number HEAD changed while waiting for CI. Run this command again." >&2
+    exit 1
+  fi
+}
 
-echo "No successful Lint, Test, Build check found for PR #$pr_number at $head_sha." >&2
+while true; do
+  # 同じ HEAD の再実行がある場合は、古い成功ではなく最新の check を判定する。
+  check_run="$(gh api "repos/$repo/commits/$head_sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == "Lint, Test, Build")] | max_by(.id) | if . == null then empty else [.status, (.conclusion // "-"), .html_url] | @tsv end')"
+
+  if [[ -z "$check_run" ]]; then
+    if (( missing_polls >= 18 )); then
+      break
+    fi
+    ((missing_polls += 1))
+    sleep 5
+    continue
+  fi
+
+  IFS=$'\t' read -r status conclusion url <<< "$check_run"
+  if [[ "$status" == "completed" ]]; then
+    if [[ "$conclusion" == "success" ]]; then
+      ensure_latest_head
+      echo "CI passed for PR #$pr_number at $head_sha"
+      echo "$url"
+      exit 0
+    fi
+    echo "CI finished with $conclusion for PR #$pr_number at $head_sha." >&2
+    echo "$url" >&2
+    exit 1
+  fi
+
+  if (( active_polls >= 240 )); then
+    echo "Timed out waiting for the existing CI check for PR #$pr_number at $head_sha." >&2
+    echo "$url" >&2
+    exit 1
+  fi
+  ((active_polls += 1))
+  sleep 5
+done
+
+echo "No Lint, Test, Build check appeared for PR #$pr_number at $head_sha after 90 seconds." >&2
 echo "$pr_url" >&2
 
 if [[ "$dispatch" != true ]]; then
@@ -76,6 +111,7 @@ if [[ "$dispatch" != true ]]; then
   exit 1
 fi
 
+ensure_latest_head
 gh workflow run ci.yml --ref "$head_branch"
 
 run_id=""
@@ -93,5 +129,6 @@ if [[ -z "$run_id" ]]; then
 fi
 
 gh run watch "$run_id" --exit-status
+ensure_latest_head
 echo "Manual CI passed for PR #$pr_number at $head_sha (workflow_dispatch run $run_id)."
 echo "workflow_dispatch may not appear as a pull_request check on the PR page."
