@@ -99,6 +99,9 @@ jobs:
     needs: ci
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      SLACK_CICD_CHANNEL: ${{ vars.SLACK_CICD_CHANNEL }}
+      SLACK_CICD_WEBHOOK_URL: ${{ secrets.SLACK_CICD_WEBHOOK_URL }}
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
 
@@ -125,3 +128,36 @@ jobs:
             test-results/
           if-no-files-found: ignore
           retention-days: 10
+
+      - name: Notify Slack on E2E failure
+        if: failure() && env.SLACK_CICD_WEBHOOK_URL != ''
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          payload = {
+              "text": (
+                  f"❌ E2E failed\n"
+                  f"Repository: {os.environ['REPOSITORY']}\n"
+                  f"Branch: {os.environ['REF_NAME']}\n"
+                  f"Run: {os.environ['RUN_URL']}"
+              ),
+          }
+          channel = os.environ.get("SLACK_CICD_CHANNEL")
+          if channel:
+              payload["channel"] = channel
+          request = urllib.request.Request(
+              os.environ["SLACK_CICD_WEBHOOK_URL"],
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=10) as response:
+              response.read()
+          PY
