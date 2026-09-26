@@ -38,6 +38,9 @@ test.describe("Public UI visual regression", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await expect(page.getByRole("searchbox", { name: "店舗を検索" })).toBeVisible();
+    await expect(page.locator(".pub-map-marker")).toHaveCount(2);
+    await expect(page.locator("section[data-state]")).toHaveAttribute("data-state", "collapsed");
+    await expect(page.getByRole("button", { name: "現在地から探す" })).toBeVisible();
     await expect(page).toHaveScreenshot("map-mobile-ja.png", { animations: "disabled", fullPage: true });
   });
 
