@@ -47,6 +47,10 @@ for (const locale of ["ja", "en"] as const) {
         element.textContent = name;
       }, originalName);
       await expect(search).toBeInViewport();
+      const filterBox = (await page.locator(".filter-toggle").boundingBox())!;
+      const locationBox = (await page.getByRole("button", { name: t.explorer.currentLocationAction }).boundingBox())!;
+      expect(locationBox.x).toBeGreaterThanOrEqual(filterBox.x + filterBox.width);
+      expect(locationBox.x + locationBox.width).toBeLessThanOrEqual(width);
       const menu = page.locator(".app-header summary");
       await menu.click();
       await expect(page.getByRole("link", { name: t.discover.navigation, exact: true })).toBeVisible();
