@@ -2,6 +2,7 @@
 
 import { useRef, type RefObject } from "react";
 import { Search } from "./ui/search";
+import { Icon } from "./ui/ui-icon";
 import { PubFilterPanel } from "./pub-filter-panel";
 import { CurrentLocationControl, type GeolocationStatus } from "./current-location-control";
 
@@ -129,7 +130,8 @@ export function MapSearchControls({
               </span>
             ) : null}
             <span className="filter-toggle-chevron" aria-hidden="true">
-              {isFiltersExpanded ? "⌃" : "⌄"}
+              <span className="filter-toggle-chevron-glyph">{isFiltersExpanded ? "⌃" : "⌄"}</span>
+              <Icon name="chevron" />
             </span>
           </button>
           <CurrentLocationControl

@@ -3,7 +3,7 @@ import styles from "./ui.module.css";
 // App Routerのメタデータ予約名icon.tsxを避け、通常のUI部品として扱います。
 
 /** 共通操作で使う装飾アイコンです。 */
-export type IconName = "search" | "close" | "location" | "plus" | "minus" | "menu" | "check";
+export type IconName = "search" | "close" | "location" | "plus" | "minus" | "menu" | "check" | "chevron";
 const paths: Record<IconName, string> = {
   search: "M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0",
   close: "M6 6l12 12M6 18L18 6",
@@ -12,6 +12,7 @@ const paths: Record<IconName, string> = {
   minus: "M5 12h14",
   menu: "M4 6h16M4 12h16M4 18h16",
   check: "M4 12l5 5L20 6",
+  chevron: "M6 9l6 6 6-6",
 };
 
 /**
