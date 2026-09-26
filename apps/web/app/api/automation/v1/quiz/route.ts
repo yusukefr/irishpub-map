@@ -12,6 +12,7 @@ import { isQuizDatabaseConfigured } from "../../../../lib/quiz/repository";
 export async function GET(request: Request) {
   const authorizationError = getAutomationApiAuthorizationError(request, "quiz:read");
   if (authorizationError) return authorizationError;
+  if (!isQuizDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
   try {
     return Response.json({ questions: await readAdminQuizList() });
   } catch {

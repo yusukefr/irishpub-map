@@ -80,6 +80,16 @@ describe("automation quiz routes", () => {
     expect(mocks.readAdminQuiz).toHaveBeenCalledWith("history-question");
   });
 
+  it("returns database_unavailable instead of an empty list when the database is not configured", async () => {
+    mocks.isQuizDatabaseConfigured.mockReturnValue(false);
+
+    const response = await getQuizList(request("GET", "quiz:read"));
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({ errorCode: "database_unavailable" });
+    expect(mocks.readAdminQuizList).not.toHaveBeenCalled();
+  });
+
   it("creates a Draft through the shared service and returns its server-generated ID", async () => {
     const payload = { category: "history", translations: { ja: {}, en: {} }, choices: [] };
     const response = await createQuiz(request("POST", "quiz:create", payload));
