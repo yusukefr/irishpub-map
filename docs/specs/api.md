@@ -78,6 +78,22 @@ Master参照はすべて `master:read` を要求し、現在のDBを既存Reposi
 
 タグ作成は `tag:create` を要求し、管理タグAPIと同じ `key` および `translations` 入力、共有Validation、競合判定とエラー形式を使います。IDはServer側でUUIDを生成します。Automation Clientは作成前にタグ一覧を取得し、表記・翻訳の違いだけで意味が同じタグや、既存タグで十分に分類できる属性には既存IDを使います。タグ化の対象は複数店舗の検索・分類に継続的に役立つ属性とし、単店固有のイベント、一時的なキャンペーン、主観的な評価は作成しません。意味的重複の完全な自動判定はServer側では行いません。Automation APIにタグ更新・削除Routeはありません。
 
+### Automation Quiz管理
+
+Quiz APIは既存のQuiz Service、Validation、Repository、管理API Error Contractを再利用します。Scopeは操作ごとに分離され、一覧・詳細取得は `quiz:read`、Draft作成は `quiz:create`、全体Snapshot更新は `quiz:update`、公開状態変更は `quiz:publish` を要求します。Scope間の権限継承はありません。
+
+| メソッド | パス | 成功時 | 主な失敗時 |
+| --- | --- | --- | --- |
+| `GET` | `/api/automation/v1/quiz` | `200` と `{ questions }`。DraftとPublishedを含む | 認証 `401`、Scope不足 `403`、取得失敗 `500` |
+| `GET` | `/api/automation/v1/quiz/:id` | `200` と `{ question }` | 認証 `401`、Scope不足 `403`、対象なし `404 quiz_not_found`、DB未設定 `503` |
+| `POST` | `/api/automation/v1/quiz` | `201` とServer生成IDのDraft `{ question }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、入力不正 `422`、競合 `409`、DB未設定 `503` |
+| `PUT` | `/api/automation/v1/quiz/:id` | `200` と公開状態を維持した `{ question }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、入力不正・公開条件不足 `422`、競合 `409`、対象なし `404`、DB未設定 `503` |
+| `PATCH` | `/api/automation/v1/quiz/:id/publication` | `200` と `{ publication }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、本文不正・公開条件不足 `422`、対象なし `404`、DB未設定 `503` |
+
+作成と更新のRequestは管理Quiz APIと同じ全体Snapshot契約です。ID、公開状態、日時、並び順などServer管理Fieldは保存入力として利用されません。作成時のQuestion IDとChoiceの並び順はServerが決定し、新規Quizは必ずDraftになります。Publication状態の変更は専用Endpointだけが受け付け、Bodyはbooleanの `isPublished` だけを許可します。
+
+Draft / Publishedの検証、カテゴリAllow List、Choice（Draftは0〜4件、公開時は4件）、正解Choice参照、日英翻訳、HTTPS `sourceUrl`、Guide参照、特別日の条件は既存Quiz Serviceが検証します。Published Quizの更新も現在の公開条件を満たす場合に限り、公開時の要件不足は `422 publication_requirements_not_met` と `missingFields` で返します。詳細なQuiz入力と公開条件は下記のQuiz管理API仕様と同じです。
+
 ## 管理 API
 
 管理 API は有効な管理者セッション Cookie を必要とします。ログイン用の環境変数が未設定の場合、ログイン API は `503` を返します。`DATABASE_URL` が未設定の場合、管理画面での一覧取得はできますが、更新系 API は `503` を返します。
