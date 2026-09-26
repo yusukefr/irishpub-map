@@ -127,6 +127,48 @@ Draftではkind・slug・categoryを `null`、翻訳文言を空文字にでき�
 
 入力本文がJSON以外なら `415 invalid_content_type`、不正JSONなら `400 invalid_json`、入力不正なら `422 validation_error` と必要に応じて `fieldErrors` を返します。公開条件不足は `422 publication_requirements_not_met` と `missingFields`、slug競合は `409 content_conflict` と必要に応じて `fieldErrors` を返します。不正なIDは `400 invalid_request`、未登録IDは `404 content_not_found` です。DB未設定時、一覧は空配列と `databaseConfigured: false`、詳細取得と更新系は `503 database_unavailable` を返します。内部エラーは詳細を伏せた `500 internal_error` です。
 
+### Automation Quiz管理
+
+Quiz APIは既存のQuiz Service、Validation、Repository、管理API Error Contractを再利用します。Scopeは操作ごとに分離され、一覧・詳細取得は `quiz:read`、Draft作成は `quiz:create`、全体Snapshot更新は `quiz:update`、公開状態変更は `quiz:publish` を要求します。Scope間の権限継承はありません。
+
+| メソッド | パス | 成功時 | 主な失敗時 |
+| --- | --- | --- | --- |
+| `GET` | `/api/automation/v1/quiz` | `200` と `{ questions }`。DraftとPublishedを含む | 認証 `401`、Scope不足 `403`、DB未設定 `503 database_unavailable`、取得失敗 `500` |
+| `GET` | `/api/automation/v1/quiz/:id` | `200` と `{ question }` | 認証 `401`、Scope不足 `403`、対象なし `404 quiz_not_found`、DB未設定 `503` |
+| `POST` | `/api/automation/v1/quiz` | `201` とServer生成IDのDraft `{ question }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、入力不正 `422`、競合 `409`、DB未設定 `503` |
+| `PUT` | `/api/automation/v1/quiz/:id` | `200` と公開状態を維持した `{ question }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、入力不正・公開条件不足 `422`、競合 `409`、対象なし `404`、DB未設定 `503` |
+| `PATCH` | `/api/automation/v1/quiz/:id/publication` | `200` と `{ publication }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、本文不正・公開条件不足 `422`、対象なし `404`、DB未設定 `503` |
+
+作成と更新のRequestは管理Quiz APIと同じ全体Snapshot契約です。画像関連Fieldは `imageAssetId`、`translations.ja.imageAlt`、`translations.ja.imageCaption`、`translations.en.imageAlt`、`translations.en.imageCaption` を含みます。画像を付けない場合は `imageAssetId: null` とし、既存画像を維持して `PUT` する場合は `imageAssetId` と日英の `imageAlt` / `imageCaption` も引き継いでください。Snapshot更新でこれらを省略すると、画像情報は維持されません。
+
+画像関連Fieldの入力例です。公開時、`imageAssetId` が指定されていれば日英それぞれの `imageAlt` が必須です。`imageCaption` は任意です。
+
+```json
+{
+  "imageAssetId": null,
+  "translations": {
+    "ja": {
+      "question": "",
+      "explanation": "",
+      "sourceLabel": "",
+      "imageAlt": "",
+      "imageCaption": ""
+    },
+    "en": {
+      "question": "",
+      "explanation": "",
+      "sourceLabel": "",
+      "imageAlt": "",
+      "imageCaption": ""
+    }
+  }
+}
+```
+
+ID、公開状態、日時、Choiceの `sortOrder` などServer管理Fieldは保存入力として利用されません。GET ResponseのQuestionはChoiceごとにServerが決めた `sortOrder` を含みますが、POST / PUT Requestでは送信できず、指定すると `422 validation_error` になります。RequestのChoice配列順からServerが並び順を決定するため、GETしたQuestion ResponseをそのままPUTする契約ではありません。作成時のQuestion IDはServerが生成し、新規Quizは必ずDraftになります。Publication状態の変更は専用Endpointだけが受け付け、Bodyはbooleanの `isPublished` だけを許可します。
+
+Draft / Publishedの検証、カテゴリAllow List、Choice（Draftは0〜4件、公開時は4件）、正解Choice参照、日英翻訳、HTTPS `sourceUrl`、Guide参照、特別日の条件は既存Quiz Serviceが検証します。Published Quizの更新も現在の公開条件を満たす場合に限り、公開時の要件不足は `422 publication_requirements_not_met` と `missingFields` で返します。詳細なQuiz入力と公開条件は下記のQuiz管理API仕様と同じです。
+
 ## 管理 API
 
 管理 API は有効な管理者セッション Cookie を必要とします。ログイン用の環境変数が未設定の場合、ログイン API は `503` を返します。`DATABASE_URL` が未設定の場合、管理画面での一覧取得はできますが、更新系 API は `503` を返します。
@@ -201,7 +243,7 @@ Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`tran
 
 営業ステータス管理APIの固定key、日英表示名、transaction更新は[管理ステータス仕様](status-management.md)を参照してください。更新本文は必須の `nameJa` と任意の `nameEn` だけを利用し、余分な `key` は更新対象にしません。
 
-Quiz管理APIの `POST` と `PUT` は、カテゴリ、特別日、関連Guide UUID、日英翻訳、0〜4件のChoice、正解、HTTPSの情報源URLを含む全体Snapshotを受け付けます。Question IDは `POST` でServerがUUIDを生成し、Request Bodyでは受け付けません。UUID移行の完了までは `GET`、`PUT`、公開状態変更で既存のkebab-case IDも受け付けます。`PUT` はURLのIDを対象にし、Request BodyからIDを変更できません。Choice IDはQuestion内で一意なkebab-caseです。通常のテキストはTrimして保存し、IDの空白は正規化せず入力エラーにします。関連ContentはGuideだけを選択でき、Publishedの更新は公開条件を満たさない場合に拒否します。`DELETE` とChoice単位のサブAPIは提供しません。公開時はカテゴリ、日英すべての問題文・解説・情報源ラベル、HTTPS情報源URL、4件のChoiceと各日英ラベル、正解、妥当な特別日をサーバー側で検証します。
+Quiz管理APIの `POST` と `PUT` は、カテゴリ、特別日、関連Guide UUID、日英翻訳、0〜4件のChoice、正解、HTTPSの情報源URLを含む全体Snapshotを受け付けます。Question IDは `POST` でServerがUUIDを生成し、Request Bodyでは受け付けません。UUID移行の完了までは `GET`、`PUT`、公開状態変更で既存のkebab-case IDも受け付けます。`PUT` はURLのIDを対象にし、Request BodyからIDを変更できません。Choice IDはQuestion内で一意なkebab-caseです。通常のテキストはTrimして保存し、IDの空白は正規化せず入力エラーにします。Choice Requestに `sortOrder` は含めず、配列順を利用します。関連ContentはGuideだけを選択でき、Publishedの更新は公開条件を満たさない場合に拒否します。画像付きQuizのSnapshotには `imageAssetId` と日英の `imageAlt` / `imageCaption` を含め、画像を維持する更新では値を引き継ぎます。公開時はカテゴリ、日英すべての問題文・解説・情報源ラベル、HTTPS情報源URL、4件のChoiceと各日英ラベル、正解、妥当な特別日を検証し、画像を含む場合は日英の代替テキストも必須です。`imageCaption` は任意です。`DELETE` とChoice単位のサブAPIは提供しません。
 
 Media Asset APIは管理者専用です。`POST /api/admin/media` は同一Originの `multipart/form-data` で `file` 1件だけを受け付けます。JPEG、PNG、WebPの実データをSharpで検証し、4 MiB、縦横8192px、総画素数4000万を上限とします。GIF、AVIF、SVG、アニメーション画像、動画、形式・拡張子の偽装は拒否します。成功時は `201` と `media` DTOを返し、Blobへの保存に失敗すると `503 media_storage_unavailable` または一般化した内部エラーを返します。Blob保存後にDB登録が失敗した場合はBlobを削除して補償します。
 
