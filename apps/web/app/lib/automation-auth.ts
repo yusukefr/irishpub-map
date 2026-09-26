@@ -28,7 +28,7 @@ export type AutomationPrincipal = {
 
 const allowedScopes: ReadonlySet<string> = new Set(AUTOMATION_SCOPES);
 const SHA256_HEX_PATTERN = /^[a-f\d]{64}$/i;
-const BEARER_PATTERN = /^Bearer ([^\s]+)$/i;
+const BEARER_PATTERN = /^Bearer +([^\s]+)$/i;
 
 /**
  * AuthorizationヘッダーのBearer Tokenを設定済みSHA-256と照合します。
@@ -71,7 +71,9 @@ export function authorizeAutomationScope(principal: AutomationPrincipal, require
  */
 export function getAutomationApiAuthorizationError(request: Request, requiredScope: AutomationScope): Response | null {
   const principal = authenticateAutomationRequest(request);
-  if (!principal) return Response.json({ errorCode: "unauthorized" }, { status: 401 });
+  if (!principal) {
+    return Response.json({ errorCode: "unauthorized" }, { status: 401, headers: { "WWW-Authenticate": "Bearer" } });
+  }
   if (!authorizeAutomationScope(principal, requiredScope)) {
     return Response.json({ errorCode: "forbidden" }, { status: 403 });
   }

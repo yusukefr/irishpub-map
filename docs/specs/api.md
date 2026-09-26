@@ -56,7 +56,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 `/api/automation/v1/*` は外部Automation向けのnamespaceです。各Route Handlerは共通helperへ必要Scopeを明示して認証・認可します。現時点でリソース固有Endpointはありません。
 
-`Authorization: Bearer <token>` を要求し、Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数へ保存しません。Tokenの欠落・不一致・設定不備は `401` と `{ "errorCode": "unauthorized" }` を返し、理由やToken/hashをResponseへ含めません。
+`Authorization: Bearer <token>` を要求し、`Bearer` とTokenの間は1文字以上のスペースを許容します。Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数へ保存しません。Tokenの欠落・不一致・設定不備は `WWW-Authenticate: Bearer` ヘッダーを付けた `401` と `{ "errorCode": "unauthorized" }` を返し、理由やToken/hashをResponseへ含めません。
 
 `AUTOMATION_API_SCOPES` はカンマ区切りで設定します（例: `master:read,tag:create,content:read,content:create`）。利用可能なScopeは `master:read`、`tag:create`、`content:read`、`content:create`、`content:update`、`content:publish`、`quiz:read`、`quiz:create`、`quiz:update`、`quiz:publish`、`pubs:read`、`pubs:create`、`pubs:update`、`pubs:publish` です。未知のScopeは無視し、部分一致では認可しません。認証済みTokenに必要Scopeがない場合は `403` と `{ "errorCode": "forbidden" }` を返します。
 

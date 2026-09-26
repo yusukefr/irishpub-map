@@ -53,6 +53,7 @@ describe("Automation API authentication", () => {
       const response = getAutomationApiAuthorizationError(request(authorization), "content:read");
       expect(authenticateAutomationRequest(request(authorization))).toBeNull();
       expect(response?.status).toBe(401);
+      expect(response?.headers.get("www-authenticate")).toBe("Bearer");
       const body = await response?.text();
       expect(JSON.parse(body ?? "")).toEqual({ errorCode: "unauthorized" });
       expect(body).not.toContain(token);
@@ -68,6 +69,7 @@ describe("Automation API authentication", () => {
 
       const response = getAutomationApiAuthorizationError(request(`Bearer ${token}`), "content:read");
       expect(response?.status).toBe(401);
+      expect(response?.headers.get("www-authenticate")).toBe("Bearer");
       await expect(response?.json()).resolves.toEqual({ errorCode: "unauthorized" });
     },
   );
@@ -76,6 +78,12 @@ describe("Automation API authentication", () => {
     expect(authenticateAutomationRequest(request("Bearer x"))).toBeNull();
     expect(authenticateAutomationRequest(request(`Bearer ${"x".repeat(500)}`))).toBeNull();
     expect(authenticateAutomationRequest(request(`bearer ${token}`))).not.toBeNull();
+  });
+
+  it("accepts one or more spaces between the Bearer scheme and token", () => {
+    expect(getAutomationApiAuthorizationError(request(`Bearer ${token}`), "content:read")).toBeNull();
+    expect(getAutomationApiAuthorizationError(request(`Bearer  ${token}`), "content:read")).toBeNull();
+    expect(getAutomationApiAuthorizationError(request(`Bearer   ${token}`), "content:read")).toBeNull();
   });
 
   it("returns a principal with exact, allow-listed scopes", () => {
