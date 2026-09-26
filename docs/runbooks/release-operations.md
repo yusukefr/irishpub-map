@@ -21,6 +21,8 @@ CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`�
 
 同じPRまたはbranchで新しいrunが始まると、進行中の古いrunはキャンセルされます。PR更新後は最新HEADの通常CIを確認し、`main`へのmerge後は通常CIとE2Eの両方を確認します。E2E失敗時のPlaywright artifactは引き続き保存します。
 
+PR作成・更新後は`scripts/verify-pr-ci.sh --pr <番号>`で最新HEADの`Lint, Test, Build`を確認します。checkが未作成なら最大90秒待ち、`queued`や`in_progress`なら既存checkの完了を待ちます。待機中にPRのHEADが変わった場合は中止するため、コマンドを再実行します。成功は正常終了、失敗・キャンセル・待機のタイムアウトはエラーになります。check未作成時のfallbackも必要なら`--dispatch`を付けます。この場合も90秒待ってcheckが作成されないときだけ`workflow_dispatch`で手動CIを起動し、対象PRのHEAD SHAと一致するrunを待ちます。通常CIの失敗時は原因を確認し、fallbackを自動起動しません。
+
 Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secrets and variables → Actionsで次を設定します。
 
 | 種別     | 名前                     | 用途                       |
