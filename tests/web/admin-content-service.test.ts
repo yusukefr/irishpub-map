@@ -67,6 +67,21 @@ describe("admin content service", () => {
     expect(repositoryMocks.insertAdminContent).toHaveBeenCalledWith(expect.any(String), completeInput);
   });
 
+  it("rejects publication fields in create and update snapshots before writing", async () => {
+    await expect(
+      createAdminContent({ ...completeInput, status: "published", publishedAt: "2026-09-11" }),
+    ).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { status: "immutable", publishedAt: "immutable" },
+    });
+    await expect(updateAdminContent(id, { ...completeInput, status: "draft" })).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { status: "immutable" },
+    });
+    expect(repositoryMocks.insertAdminContent).not.toHaveBeenCalled();
+    expect(repositoryMocks.replaceAdminContent).not.toHaveBeenCalled();
+  });
+
   it("rejects unsafe Markdown URLs before writing", async () => {
     await expect(
       createAdminContent({
