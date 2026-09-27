@@ -148,13 +148,27 @@ describe("AdminTagManager", () => {
     expect(screen.getByRole("button", { name: "追加" })).toBeDisabled();
     for (const button of screen.getAllByRole("button", { name: "編集" })) expect(button).toBeDisabled();
   });
-  it("keeps dirty edits when starting a new tag and cancellation is chosen", () => {
+  it("returns to the new tag form when editing is cancelled", () => {
+    render(<AdminTagManager initialTags={[tags[0]]} databaseConfigured locale="ja" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "編集" }));
+    expect(screen.getByRole("heading", { name: "タグを編集" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "更新" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+
+    expect(screen.getByRole("heading", { name: "新規登録" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "追加" })).toBeEnabled();
+    expect(screen.getByLabelText("key")).not.toHaveAttribute("readonly");
+  });
+
+  it("keeps dirty edits when cancelling the edit is declined", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     render(<AdminTagManager initialTags={[tags[0]]} databaseConfigured locale="ja" />);
 
     fireEvent.click(screen.getByRole("button", { name: "編集" }));
     fireEvent.change(screen.getByLabelText("日本語"), { target: { value: "編集中のタグ" } });
-    fireEvent.click(screen.getByRole("button", { name: "新規登録" }));
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
 
     expect(confirm).toHaveBeenCalledWith("保存されていない変更があります。このページから移動しますか？");
     expect(screen.getByDisplayValue("編集中のタグ")).toBeInTheDocument();
@@ -175,9 +189,11 @@ describe("AdminTagManager", () => {
     fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
     expect(window.confirm).toHaveBeenLastCalledWith("保存されていない変更があります。このページから移動しますか？");
   });
-  it("disables the redundant new tag switch while the new form is already shown", () => {
+  it("shows no redundant new tag button while the new form is already shown", () => {
     render(<AdminTagManager initialTags={[]} databaseConfigured locale="ja" />);
 
-    expect(screen.getByRole("button", { name: "新規登録" })).toBeDisabled();
+    expect(screen.getByRole("heading", { name: "新規登録" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "新規登録" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "追加" })).toBeEnabled();
   });
 });
