@@ -2,11 +2,11 @@ import { del, put } from "@vercel/blob";
 import type { MediaMimeType } from "@irishpub-map/shared/media";
 
 /**
- * Blob storage is available with a local token or Vercel OIDC plus store ID.
- * @returns {boolean} Whether upload credentials are present.
+ * A local token or an attached Vercel Blob store enables upload attempts.
+ * @returns {boolean} Whether Blob storage is configured for upload attempts.
  */
 export function isMediaStorageConfigured(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || (process.env.VERCEL_OIDC_TOKEN && process.env.BLOB_STORE_ID));
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 }
 
 /**
