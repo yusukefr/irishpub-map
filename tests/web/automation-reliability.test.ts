@@ -9,15 +9,18 @@ const state = vi.hoisted(() => {
     status: "pending" | "completed";
     status_code: number | null;
     response_body: unknown;
+    expires_at: number;
   };
   const keys = new Map<string, RecordValue>();
   const audits: Record<string, unknown>[] = [];
-  return { keys, audits, expired: false, stale: false };
+  return { keys, audits, now: Date.parse("2026-09-27T00:00:00Z"), stale: false };
 });
 
 vi.mock("../../apps/web/app/lib/automation-reliability-repository", () => ({
   claimAutomationKey: vi.fn(
     async (keyHash: string, requestHash: string, _method: string, _path: string, _type: string, resourceId: string) => {
+      const previous = state.keys.get(keyHash);
+      if (previous?.status === "completed" && previous.expires_at <= state.now) state.keys.delete(keyHash);
       const existing = state.keys.get(keyHash);
       if (existing) return { claimed: false, record: existing };
       const record = {
@@ -27,15 +30,21 @@ vi.mock("../../apps/web/app/lib/automation-reliability-repository", () => ({
         status: "pending" as const,
         status_code: null,
         response_body: null,
+        expires_at: state.now + 24 * 60 * 60 * 1000,
       };
       state.keys.set(keyHash, record);
       return { claimed: true, record };
     },
   ),
   cleanupExpiredAutomationKeys: vi.fn(async () => {
-    if (!state.expired) return 0;
-    for (const [key, record] of state.keys) if (record.status === "completed") state.keys.delete(key);
-    return 1;
+    let deleted = 0;
+    for (const [key, record] of state.keys) {
+      if (record.status !== "completed" || record.expires_at > state.now) continue;
+      state.keys.delete(key);
+      deleted++;
+      if (deleted === 100) break;
+    }
+    return deleted;
   }),
   completeAutomationKey: vi.fn(async (id: string, statusCode: number, body: unknown) => {
     const record = [...state.keys.values()].find((value) => value.id === id);
@@ -43,6 +52,7 @@ vi.mock("../../apps/web/app/lib/automation-reliability-repository", () => ({
     record.status = "completed";
     record.status_code = statusCode;
     record.response_body = body;
+    record.expires_at = state.now + 24 * 60 * 60 * 1000;
   }),
   insertAutomationAudit: vi.fn(async (entry: Record<string, unknown>) => {
     state.audits.push(entry);
@@ -81,7 +91,7 @@ function request(path: string, method: string, body: unknown, key = "same-operat
 beforeEach(() => {
   state.keys.clear();
   state.audits.length = 0;
-  state.expired = false;
+  state.now = Date.parse("2026-09-27T00:00:00Z");
   state.stale = false;
   process.env.AUTOMATION_API_TOKEN_SHA256 = createHash("sha256").update(token).digest("hex");
   process.env.AUTOMATION_API_SCOPES =
@@ -224,7 +234,7 @@ describe("automation reliability", () => {
     expect(execute).toHaveBeenCalledTimes(2);
   });
 
-  it("cleans expired completed keys without touching resources", async () => {
+  it("reuses an expired completed key as a new create without touching the old resource", async () => {
     const created = new Map<string, unknown>();
     const options = {
       scope: "content:create" as const,
@@ -235,10 +245,67 @@ describe("automation reliability", () => {
       },
       recover: async (id: string) => created.get(id) ?? null,
     };
-    await handleAutomationCreate(request("content", "POST", {}), options);
-    state.expired = true;
-    await handleAutomationCreate(request("content", "POST", {}), options);
+    const first = await handleAutomationCreate(request("content", "POST", {}), options);
+    state.now += 24 * 60 * 60 * 1000 + 1;
+    const second = await handleAutomationCreate(request("content", "POST", {}), options);
     expect(created.size).toBe(2);
+    expect(await second.json()).not.toEqual(await first.json());
+  });
+
+  it("checks the target key even when batch cleanup leaves it behind", async () => {
+    const execute = vi.fn(async (id: string) => Response.json({ content: { id } }, { status: 201 }));
+    const options = {
+      scope: "content:create" as const,
+      resourceType: "content" as const,
+      execute,
+      recover: async () => null,
+    };
+    const first = await handleAutomationCreate(request("content", "POST", {}), options);
+    const [keyHash, oldRecord] = [...state.keys.entries()][0];
+    state.keys.clear();
+    state.now += 24 * 60 * 60 * 1000 + 1;
+    for (let index = 0; index < 101; index++) {
+      state.keys.set(`older-${index}`, { ...oldRecord, id: `older-${index}` });
+    }
+    state.keys.set(keyHash, oldRecord);
+
+    const second = await handleAutomationCreate(request("content", "POST", {}), options);
+    expect(second.status).toBe(201);
+    expect(await second.json()).not.toEqual(await first.json());
+    expect(execute).toHaveBeenCalledTimes(2);
+    expect([...state.keys.values()].filter((record) => record.status === "completed")).toHaveLength(2);
+  });
+
+  it("extends expiry after recovering a pending resource older than 24 hours", async () => {
+    let resource: { id: string } | null = null;
+    const execute = vi.fn(async (id: string) => {
+      resource = { id };
+      return Response.json({ errorCode: "internal_error" }, { status: 500 });
+    });
+    let recoveryAttempts = 0;
+    const options = {
+      scope: "content:create" as const,
+      resourceType: "content" as const,
+      execute,
+      recover: async () => {
+        recoveryAttempts++;
+        if (recoveryAttempts === 1) throw new Error("temporary read failure");
+        return resource;
+      },
+    };
+    const first = await handleAutomationCreate(request("content", "POST", {}), options);
+    expect(first.status).toBe(500);
+    expect([...state.keys.values()][0].status).toBe("pending");
+
+    state.now += 25 * 60 * 60 * 1000;
+    state.stale = true;
+    const recovered = await handleAutomationCreate(request("content", "POST", {}), options);
+    expect(recovered.status).toBe(201);
+    expect([...state.keys.values()][0].expires_at).toBe(state.now + 24 * 60 * 60 * 1000);
+
+    const retry = await handleAutomationCreate(request("content", "POST", {}), options);
+    expect(await retry.json()).toEqual(await recovered.json());
+    expect(execute).toHaveBeenCalledTimes(1);
   });
 
   it("audits slug-based quiz unpublish metadata without request body or bearer token", async () => {

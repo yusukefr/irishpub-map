@@ -54,6 +54,12 @@ export async function claimAutomationKey(
 ): Promise<{ claimed: boolean; record: IdempotencyRecord }> {
   const sql = getSql();
   const id = randomUUID();
+  // 一括cleanupの100件上限に依存せず、今回使うKeyの期限をclaim直前に確定する。
+  // 期限切れcompletedだけを削除し、pendingはResource二重作成防止のため残す。
+  await sql`
+    DELETE FROM automation_idempotency_keys
+    WHERE key_hash = ${keyHash} AND status = 'completed' AND expires_at <= now()
+  `;
   const inserted = (await sql`
     INSERT INTO automation_idempotency_keys
       (id, key_hash, request_hash, method, path, resource_type, resource_id)
@@ -95,7 +101,8 @@ export async function takeOverStaleAutomationKey(id: string): Promise<boolean> {
 export async function completeAutomationKey(id: string, statusCode: number, body: unknown): Promise<void> {
   const rows = (await getSql()`
     UPDATE automation_idempotency_keys
-    SET status = 'completed', status_code = ${statusCode}, response_body = ${JSON.stringify(body)}::jsonb
+    SET status = 'completed', status_code = ${statusCode}, response_body = ${JSON.stringify(body)}::jsonb,
+      expires_at = now() + INTERVAL '24 hours'
     WHERE id = ${id}::uuid AND status = 'pending'
     RETURNING id
   `) as Record<string, unknown>[];
