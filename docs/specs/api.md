@@ -247,7 +247,7 @@ Quiz管理APIの `POST` と `PUT` は、カテゴリ、特別日、関連Guide U
 
 Media Asset APIは管理者専用です。`POST /api/admin/media` は同一Originの `multipart/form-data` で `file` 1件だけを受け付けます。JPEG、PNG、WebPの実データをSharpで検証し、4 MiB、縦横8192px、総画素数4000万を上限とします。GIF、AVIF、SVG、アニメーション画像、動画、形式・拡張子の偽装は拒否します。成功時は `201` と `media` DTOを返し、Blobへの保存に失敗すると `503 media_storage_unavailable` または一般化した内部エラーを返します。Blob保存後にDB登録が失敗した場合はBlobを削除して補償します。
 
-`GET /api/admin/media?page=1` は作成日時降順・UUID降順の固定50件ページを返し、未知のQuery Parameterや不正なページ番号は `400` です。応答には `databaseConfigured` と `storageConfigured` を含み、Storage keyは公開しません。DB未設定時は空一覧と `databaseConfigured: false` を返します。`GET /api/admin/media/{uuid}` は詳細を返し、DB未設定は `503`、不正UUIDは `400`、未登録IDは `404` です。管理UIは `/admin/media` にあり、削除APIは提供しません。
+`GET /api/admin/media?page=1` は作成日時降順・UUID降順の固定50件ページを返し、未知のQuery Parameterや不正なページ番号は `400` です。応答には `databaseConfigured` と `storageConfigured` を含み、Storage keyは公開しません。`storageConfigured` は `BLOB_READ_WRITE_TOKEN` または接続済みBlob Storeを示す `BLOB_STORE_ID` が設定されている場合に `true` です。Vercel OIDC tokenをアプリが直接参照できることは前提とせず、認証の成否はアップロード時のBlob操作で処理します。DB未設定時は空一覧と `databaseConfigured: false` を返します。`GET /api/admin/media/{uuid}` は詳細を返し、DB未設定は `503`、不正UUIDは `400`、未登録IDは `404` です。管理UIは `/admin/media` にあり、削除APIは提供しません。
 
 公開用の `GET /media/{uuid}` は本文Markdownの安定した画像参照です。登録済みMedia Assetだけを許可済みVercel Blob URLへ `307` redirectし、画像バイナリはアプリ経由でproxyしません。redirectは `max-age=300` と `s-maxage=300` でブラウザと共有CDNに5分間Cacheします。不正UUID・未登録ID・許可外URLは `404`、DB未設定・取得障害は `503` です。Storage keyとDB接続情報は返しません。
 
