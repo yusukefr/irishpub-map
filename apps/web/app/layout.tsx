@@ -25,9 +25,9 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t.title,
     description: t.description,
     icons: {
-      icon: "/icon.svg",
-      shortcut: "/icon.svg",
-      apple: "/icon.svg",
+      icon: "/icon.png",
+      shortcut: "/icon.png",
+      apple: "/icon.png",
     },
   };
 }
