@@ -4,7 +4,8 @@ import {
   getAdminApiAuthorizationError,
   getAdminJsonContentTypeError,
 } from "../../../../lib/admin-api";
-import { AdminPubServiceError, deleteAdminPub, readAdminPub, updateAdminPub } from "../../../../lib/admin-pub-service";
+import { adminPubServiceErrorResponse } from "../../../../lib/admin-pub-api";
+import { deleteAdminPub, readAdminPub, updateAdminPub } from "../../../../lib/admin-pub-service";
 import { isDatabaseConfigured } from "../../../../lib/pub-repository";
 
 /**
@@ -75,17 +76,4 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
   } catch (error) {
     return adminPubServiceErrorResponse(error);
   }
-}
-
-function adminPubServiceErrorResponse(error: unknown) {
-  if (!(error instanceof AdminPubServiceError)) return adminApiErrorResponse("internal_error", 500);
-  if (error.code === "not_found") return adminApiErrorResponse("pub_not_found", 404);
-  if (error.code === "validation") return adminApiErrorResponse("validation_error", 422, error.fieldErrors);
-  if (error.code === "reference_conflict") {
-    return adminApiErrorResponse("validation_error", 409, error.fieldErrors);
-  }
-  return Response.json(
-    { errorCode: "publication_requirements_not_met", missingFields: error.missingFields },
-    { status: 422 },
-  );
 }
