@@ -1,6 +1,7 @@
 import { adminApiErrorResponse, getAdminJsonContentTypeError } from "../../../../../lib/admin-api";
 import { adminQuizServiceErrorResponse } from "../../../../../lib/admin-quiz-api";
 import { getAutomationApiAuthorizationError } from "../../../../../lib/automation-auth";
+import { handleAutomationMutation } from "../../../../../lib/automation-reliability";
 import { readAdminQuiz, updateAdminQuiz } from "../../../../../lib/admin-quiz-service";
 import { isQuizDatabaseConfigured } from "../../../../../lib/quiz/repository";
 import { isQuizId } from "../../../../../lib/quiz/types";
@@ -33,6 +34,16 @@ export async function GET(request: Request, context: Context) {
  * @returns {Promise<Response>} 更新したQuiz、または認証・入力・更新エラー。
  */
 export async function PUT(request: Request, context: Context) {
+  const { id } = await context.params;
+  return handleAutomationMutation(request, {
+    scope: "quiz:update",
+    resourceType: "quiz",
+    resourceId: isQuizId(id) ? id : null,
+    execute: () => update(request, context),
+  });
+}
+
+async function update(request: Request, context: Context) {
   const authorizationError = getAutomationApiAuthorizationError(request, "quiz:update");
   if (authorizationError) return authorizationError;
   if (!isQuizDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);

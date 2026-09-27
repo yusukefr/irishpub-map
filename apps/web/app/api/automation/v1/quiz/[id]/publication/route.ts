@@ -1,6 +1,7 @@
 import { adminApiErrorResponse, getAdminJsonContentTypeError } from "../../../../../../lib/admin-api";
 import { adminQuizServiceErrorResponse } from "../../../../../../lib/admin-quiz-api";
 import { getAutomationApiAuthorizationError } from "../../../../../../lib/automation-auth";
+import { handleAutomationMutation } from "../../../../../../lib/automation-reliability";
 import { changeAdminQuizPublication } from "../../../../../../lib/admin-quiz-service";
 import { isQuizDatabaseConfigured } from "../../../../../../lib/quiz/repository";
 import { isQuizId } from "../../../../../../lib/quiz/types";
@@ -14,6 +15,16 @@ type Context = { params: Promise<{ id: string }> };
  * @returns {Promise<Response>} 変更結果、または認証・入力・公開条件エラー。
  */
 export async function PATCH(request: Request, context: Context) {
+  const { id } = await context.params;
+  return handleAutomationMutation(request, {
+    scope: "quiz:publish",
+    resourceType: "quiz",
+    resourceId: isQuizId(id) ? id : null,
+    execute: () => changePublication(request, context),
+  });
+}
+
+async function changePublication(request: Request, context: Context) {
   const authorizationError = getAutomationApiAuthorizationError(request, "quiz:publish");
   if (authorizationError) return authorizationError;
   if (!isQuizDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);

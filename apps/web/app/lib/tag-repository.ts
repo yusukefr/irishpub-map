@@ -53,13 +53,13 @@ export async function getAdminTags(): Promise<AdminTag[]> {
 /**
  * タグ本体と必須の日本語翻訳、任意のサポートlocale翻訳を単一transactionで登録します。
  * @param {CreateAdminTagInput} input - 共有Validationを通過したタグ入力。
+ * @param {string} id - 再送時も固定するResource ID。省略時はServerが発行します。
  * @returns {Promise<AdminTag>} 登録した未使用タグ。
  */
-export async function createAdminTag(input: CreateAdminTagInput): Promise<AdminTag> {
+export async function createAdminTag(input: CreateAdminTagInput, id: string = randomUUID()): Promise<AdminTag> {
   rejectE2ETestMutation();
   const sql = getRequiredSql();
   if (await hasTagConflict(sql, input, null)) throw new TagRepositoryError("conflict");
-  const id = randomUUID();
   try {
     await sql.transaction((transaction) => {
       const queries = [transaction`INSERT INTO tags (id, key) VALUES (${id}::uuid, ${input.key})`];

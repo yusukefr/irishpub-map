@@ -2,7 +2,8 @@ import { parseCreateAdminTagInput } from "@irishpub-map/shared/admin-tag";
 import { adminApiErrorResponse, getAdminJsonContentTypeError } from "../../../../lib/admin-api";
 import { adminTagErrorResponse } from "../../../../lib/admin-tag-api";
 import { getAutomationApiAuthorizationError } from "../../../../lib/automation-auth";
-import { createAdminTag } from "../../../../lib/tag-repository";
+import { handleAutomationCreate } from "../../../../lib/automation-reliability";
+import { createAdminTag, getAdminTags } from "../../../../lib/tag-repository";
 
 /**
  * tag:createを持つAutomation Clientの入力を共有Validationに通し、タグを作成します。
@@ -10,6 +11,15 @@ import { createAdminTag } from "../../../../lib/tag-repository";
  * @returns {Promise<Response>} 作成したタグ、または認証・入力・競合・設定エラー。
  */
 export async function POST(request: Request) {
+  return handleAutomationCreate(request, {
+    scope: "tag:create",
+    resourceType: "tag",
+    execute: (id) => create(request, id),
+    recover: async (id) => (await getAdminTags()).find((tag) => tag.id === id) ?? null,
+  });
+}
+
+async function create(request: Request, id: string) {
   const authorizationError = getAutomationApiAuthorizationError(request, "tag:create");
   if (authorizationError) return authorizationError;
   if (!process.env.DATABASE_URL) return adminApiErrorResponse("database_unavailable", 503);
@@ -22,7 +32,7 @@ export async function POST(request: Request) {
     return adminApiErrorResponse("invalid_json", 400);
   }
   try {
-    return Response.json({ tag: await createAdminTag(parseCreateAdminTagInput(body)) }, { status: 201 });
+    return Response.json({ tag: await createAdminTag(parseCreateAdminTagInput(body), id) }, { status: 201 });
   } catch (error) {
     return adminTagErrorResponse(error);
   }

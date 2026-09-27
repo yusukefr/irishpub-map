@@ -62,6 +62,14 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 Automation認証では管理者Session Cookieを受け付けず、同一Origin検証も要求しません。逆に管理APIはAutomation Bearer Tokenを受け付けません。Tokenは `node scripts/generate-automation-token.mjs` を対話端末で実行して生成し、Raw Tokenは外部Connector側、表示されたSHA-256だけをServer側へ設定します。
 
+### Automation Createの冪等性と監査
+
+`POST /api/automation/v1/content`、`/quiz`、`/pubs`、`/tags` は認証・Scope確認後に `Idempotency-Key` を要求します。Keyは空文字・前後空白・制御文字を含まず、128文字以内とします。HTTPの `Headers` が前後空白を除去した場合は、Serverが受け取った値を検証します。欠落時は `400 idempotency_key_required`、形式不正は `400 invalid_idempotency_key` を返します。
+
+同じKeyと同じmethod・path・JSON本文の再送は、初回の `201` とJSON Responseを返し、Resourceを再作成しません。JSON objectのfield順は判定に影響しません。Keyを別のRequestに使うと `409 idempotency_conflict`、同じRequestがまだ処理中なら `409 idempotency_in_progress` です。処理中のRetryは後で再送します。成功結果の保持期間は24時間で、期限切れの完了記録はCreate時に少量ずつ削除します。Validation失敗と5xxは成功結果としてcacheしません。Clientは論理的に別のCreateには新しいKeyを使います。
+
+認証済みのCreate、Update、Publish/Unpublishの結果は `X-Request-Id` をResponse Headerへ返し、Request ID、Scope、method、path（動的ID部分は `:id`）、Resource種別・ID、action、成功/失敗とHTTP statusを監査記録へ保存します。Readと認証失敗は監査対象外です。同じCreateの成功結果を再送した場合は変更がないため監査行を追加しません。Bearer Token、Authorization Header、Token hash、Cookie、Request/Response本文と環境変数は監査記録へ保存しません。成立済みの変更後に監査書込だけが失敗した場合は変更をrollbackせず、Request IDをServer Logへ記録します。
+
 ### Automation Master参照とタグ作成
 
 Master参照はすべて `master:read` を要求し、現在のDBを既存Repositoryから読み取ります。Repositoryの内部行やDBエラー詳細は返しません。`DATABASE_URL` 未設定時は一覧を空配列で返します。
