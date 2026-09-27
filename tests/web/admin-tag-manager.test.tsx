@@ -162,6 +162,31 @@ describe("AdminTagManager", () => {
     expect(screen.getByLabelText("key")).not.toHaveAttribute("readonly");
   });
 
+  it("clears validation feedback when editing is cancelled", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ errorCode: "validation_error", fieldErrors: { "translations.ja": "required" } }), {
+        status: 422,
+      }),
+    );
+    render(<AdminTagManager initialTags={[tags[0]]} databaseConfigured locale="ja" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "編集" }));
+    fireEvent.change(screen.getByLabelText("日本語"), { target: { value: "" } });
+    fireEvent.submit(screen.getByRole("button", { name: "更新" }).closest("form")!);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("日本語表示名は必須です。");
+    expect(screen.getByRole("textbox", { name: /日本語/ })).toHaveAttribute("aria-invalid", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+
+    expect(confirm).toHaveBeenCalledWith("保存されていない変更があります。このページから移動しますか？");
+    expect(screen.getByRole("heading", { name: "新規登録" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText("日本語表示名は必須です。")).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "日本語" })).toHaveAttribute("aria-invalid", "false");
+  });
+
   it("keeps dirty edits when cancelling the edit is declined", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     render(<AdminTagManager initialTags={[tags[0]]} databaseConfigured locale="ja" />);

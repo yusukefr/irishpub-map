@@ -189,6 +189,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
                   if (formDirty && !window.confirm(t.unsavedChanges)) return;
                   setEditing(null);
                   setFormDirty(false);
+                  resetFeedback();
                 }}
               >
                 {t.cancel}
