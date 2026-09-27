@@ -2,7 +2,7 @@
 
 ## 現状
 
-Next.js Route Handler で公開 API と管理 API を提供します。Automation APIでは共通認証・認可基盤を使い、Master参照、タグ作成、Editorial Content管理を提供します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境ではNeonを読み書きし、未設定時は空の店舗一覧を返します。
+Next.js Route Handler で公開 API と管理 API を提供します。Automation APIでは共通認証・認可基盤を使い、Master参照、タグ作成、Pub・Editorial Content・Quiz管理を提供します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境ではNeonを読み書きし、未設定時は空の店舗一覧を返します。
 
 ## 公開 API
 
@@ -77,6 +77,48 @@ Master参照はすべて `master:read` を要求し、現在のDBを既存Reposi
 都道府県と営業ステータスの表示名は日本語を既定とします。市区町村の表示名は管理APIと同じく言語Cookie、次に `Accept-Language` からlocaleを決め、日本語へフォールバックします。`prefectureCode` は1〜47の10進整数を管理APIと同じ条件で検証します。タグ一覧はサポートlocaleの翻訳と、関連する店舗の重複を除いた使用件数を返します。
 
 タグ作成は `tag:create` を要求し、管理タグAPIと同じ `key` および `translations` 入力、共有Validation、競合判定とエラー形式を使います。IDはServer側でUUIDを生成します。Automation Clientは作成前にタグ一覧を取得し、表記・翻訳の違いだけで意味が同じタグや、既存タグで十分に分類できる属性には既存IDを使います。タグ化の対象は複数店舗の検索・分類に継続的に役立つ属性とし、単店固有のイベント、一時的なキャンペーン、主観的な評価は作成しません。意味的重複の完全な自動判定はServer側では行いません。Automation APIにタグ更新・削除Routeはありません。
+
+### Automation Pub管理
+
+各操作は対応する `pubs:*` Scopeだけを要求し、別のPub Scopeから権限を継承しません。Bearer認証の `401 unauthorized` とScope不足の `403 forbidden` は上記の共通契約を使います。管理 Pub API と同じ検索Validation、Service、Repository、エラー形式を使います。
+
+| メソッド | パス | Scope | 成功時 |
+| --- | --- | --- | --- |
+| `GET` | `/api/automation/v1/pubs` | `pubs:read` | `200` と `{ pubs: AdminPubListItem[], total, page, pageSize, databaseConfigured }`。DraftとPublishedを含む |
+| `GET` | `/api/automation/v1/pubs/:id` | `pubs:read` | `200` と `{ pub: AdminPub }`。NULL項目、日英翻訳、Tag ID、公開状態を含む |
+| `POST` | `/api/automation/v1/pubs` | `pubs:create` | `201` と `{ pub: AdminPub }`。ServerがUUIDを発行し、必ず非公開で作成 |
+| `PUT` | `/api/automation/v1/pubs/:id` | `pubs:update` | `200` と `{ pub: AdminPub }`。公開状態を維持して全体Snapshotを更新 |
+| `PATCH` | `/api/automation/v1/pubs/:id/publication` | `pubs:publish` | `200` と `{ publication: { id, isPublished, unchanged } }` |
+
+一覧のQueryは管理 Pub API と同じ `name`、`prefecture`、`municipality`、`status`、`tag`、`published`、`page` です。条件はANDで結合し、`page` は1から始まり、1ページ50件です。`prefecture` は1〜47の整数、`municipality` は指定した都道府県に対応する6桁コード、`tag` はUUID、`published` は `true` / `false` を指定します。`name` は前後の空白を除いた最大100文字です。不明なQueryや不正な値、同じQueryの重複は `400 invalid_request` です。表示値のlocaleは管理 Pub API と同じく言語Cookie、次に `Accept-Language` から決めます。
+
+`POST` / `PUT` の本文は管理 Pub API の `AdminPubWriteInput` と同じ全体Snapshotです。書き込み可能なトップレベルのフィールドは `prefectureCode`、`municipalityCode`、`latitude`、`longitude`、`websiteUrl`、`googleMapsUrl`、`instagramUrl`、`status`、`translations`、`tagIds` です。例えば:
+
+```json
+{
+  "prefectureCode": 23,
+  "municipalityCode": "231061",
+  "latitude": 35.1709,
+  "longitude": 136.8815,
+  "websiteUrl": "https://example.com",
+  "googleMapsUrl": null,
+  "instagramUrl": null,
+  "status": "open",
+  "translations": {
+    "ja": { "name": "Example Irish Pub", "nameReading": null, "address": "名古屋市..." },
+    "en": null
+  },
+  "tagIds": []
+}
+```
+
+日本語店舗名はDraft時点で必須です。Draftではほかの基本項目を `null`、英語翻訳を `null`、Tag IDを空配列にできます。指定する座標は有限数で緯度−90〜90・経度−180〜180、URLはHTTP/HTTPS、営業ステータスは `open` / `temporarily_closed` / `closed` / `unknown` です。Tag IDは重複のないUUID配列です。市区町村と都道府県の対応、営業ステータスとTagの存在は既存ServiceとRepositoryが現在のDBで検証します。`id`、`isPublished`、`updatedAt` などのServer管理フィールドを本文へ含めると `422 validation_error` になります。GETの `pub` をそのままPUTせず、上記の書き込み可能なフィールドだけを送信します。
+
+作成前には `GET /pubs?name=...` などで既存店舗を検索し、店舗名、住所、Website URL、Google Maps URL、Instagram URLを比較します。登録する都道府県・市区町村・営業ステータスは上記のMaster APIから、Tag IDは `GET /master/tags` から取得します。適切なTagがない場合だけ `POST /tags` で作成し、返されたIDをPub入力の `tagIds` に指定します。Client側でMasterコードやTag IDを推測せず、Pub APIはTagを自動作成しません。意味的な店舗重複の自動判定はありません。
+
+標準フローは既存Pub検索 → MasterとTag確認 → `POST` で非公開Draft作成 → `GET /:id` で保存内容確認 → `PATCH /:id/publication` で公開です。`PATCH` の本文は `{ "isPublished": true }` または `{ "isPublished": false }` のみで、余分なフィールドやboolean以外の値を拒否します。公開時は既存のPub Publication Validationを適用し、不足項目をまとめて返します。Published Pubの `PUT` でも公開条件を満たす必要があり、更新によって自動的に非公開へ変わることはありません。Automation APIにPub削除Routeや `pubs:delete` Scopeはありません。
+
+不正JSONは `400 invalid_json`、JSON以外のContent-Typeは `415 invalid_content_type`、入力不正は `422 validation_error` と必要に応じて `fieldErrors`、存在しないMasterやTagは `409 validation_error` と `fieldErrors` を返します。公開条件不足は `422 publication_requirements_not_met` と `missingFields`、不正なPub IDは `400 invalid_request`、未登録IDは `404 pub_not_found` です。DB未設定時、一覧は空配列と `databaseConfigured: false`、詳細取得と更新系は `503 database_unavailable` を返します。内部エラーは詳細を伏せた `500 internal_error` です。
 
 ### Automation Editorial Content管理
 
