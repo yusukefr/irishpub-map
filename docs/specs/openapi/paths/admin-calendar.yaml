@@ -1,0 +1,234 @@
+CalendarCollection:
+  get:
+    tags: [Admin Calendar]
+    operationId: listAdminCalendarEvents
+    summary: List calendar events
+    description: Returns draft and published events. When the database is not configured, events is empty and databaseConfigured is false.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Calendar event list
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [events, databaseConfigured]
+              properties:
+                events:
+                  type: array
+                  items:
+                    $ref: ../schemas/calendar.yaml#/AdminCalendarListItem
+                databaseConfigured:
+                  type: boolean
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+  post:
+    tags: [Admin Calendar]
+    operationId: createAdminCalendarEvent
+    summary: Create a calendar event draft
+    description: Creates a draft. The server generates the event ID, sort order, publication state, and timestamps.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/calendar.yaml#/AdminCalendarWriteInput
+    responses:
+      "201":
+        description: Created calendar event draft
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [event]
+              properties:
+                event:
+                  $ref: ../schemas/calendar.yaml#/AdminCalendarEvent
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidJson
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "409":
+        $ref: ../schemas/errors.yaml#/CalendarConflict
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/ValidationError
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+CalendarItem:
+  parameters:
+    - $ref: ../schemas/common.yaml#/CalendarEventIdParameter
+  get:
+    tags: [Admin Calendar]
+    operationId: getAdminCalendarEvent
+    summary: Get a calendar event
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Calendar event
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [event]
+              properties:
+                event:
+                  $ref: ../schemas/calendar.yaml#/AdminCalendarEvent
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidRequest
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "404":
+        $ref: ../schemas/errors.yaml#/CalendarNotFound
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+  put:
+    tags: [Admin Calendar]
+    operationId: updateAdminCalendarEvent
+    summary: Replace a calendar event
+    description: Replaces editable fields while preserving publication state. The body cannot set id or server-managed fields.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/calendar.yaml#/AdminCalendarWriteInput
+    responses:
+      "200":
+        description: Updated calendar event
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [event]
+              properties:
+                event:
+                  $ref: ../schemas/calendar.yaml#/AdminCalendarEvent
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidJson
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: ../schemas/errors.yaml#/CalendarNotFound
+      "409":
+        $ref: ../schemas/errors.yaml#/CalendarConflict
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/ValidationError
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+  delete:
+    tags: [Admin Calendar]
+    operationId: deleteAdminCalendarEvent
+    summary: Delete a calendar event
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Calendar event deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [ok]
+              properties:
+                ok:
+                  type: boolean
+                  const: true
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: ../schemas/errors.yaml#/CalendarNotFound
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+CalendarPublication:
+  parameters:
+    - $ref: ../schemas/common.yaml#/CalendarEventIdParameter
+  patch:
+    tags: [Admin Calendar]
+    operationId: changeAdminCalendarEventPublication
+    summary: Change calendar event publication state
+    description: Publishes or returns an event to draft. Publishing can fail when publication requirements are not met.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [isPublished]
+            properties:
+              isPublished:
+                type: boolean
+    responses:
+      "200":
+        description: Publication state changed or was already current
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [publication]
+              properties:
+                publication:
+                  type: object
+                  additionalProperties: false
+                  required: [id, isPublished, unchanged]
+                  properties:
+                    id:
+                      type: string
+                      maxLength: 100
+                      pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    isPublished:
+                      type: boolean
+                    unchanged:
+                      type: boolean
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidJson
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: ../schemas/errors.yaml#/CalendarNotFound
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/PublicationRequirementsNotMet
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError

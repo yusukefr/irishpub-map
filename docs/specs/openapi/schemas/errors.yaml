@@ -1,0 +1,161 @@
+ErrorBody:
+  type: object
+  required: [errorCode]
+  properties:
+    errorCode:
+      type: string
+
+ErrorResponse:
+  description: Error response
+  content:
+    application/json:
+      schema:
+        $ref: "#/ErrorBody"
+
+Unauthorized:
+  description: An authenticated administrator session is required.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: unauthorized
+
+Forbidden:
+  description: The request origin is not allowed.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: forbidden
+
+InvalidRequest:
+  description: The path parameter is invalid.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: invalid_request
+
+InvalidJson:
+  description: The request body is not valid JSON.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: invalid_json
+
+InvalidContentType:
+  description: The request must use application/json.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: invalid_content_type
+
+ValidationError:
+  description: The request data is invalid.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: validation_error
+              fieldErrors:
+                type: object
+                additionalProperties:
+                  type: string
+
+PublicationRequirementsNotMet:
+  description: The event does not meet publication requirements.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: publication_requirements_not_met
+              fieldErrors:
+                type: object
+                additionalProperties:
+                  type: string
+              missingFields:
+                type: array
+                items:
+                  type: string
+
+CalendarConflict:
+  description: A calendar event conflicts with an existing event.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: calendar_conflict
+              fieldErrors:
+                type: object
+                additionalProperties:
+                  type: string
+
+CalendarNotFound:
+  description: The calendar event does not exist.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: calendar_not_found
+
+DatabaseUnavailable:
+  description: The database is not configured or available.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: database_unavailable
+
+InternalError:
+  description: An unexpected error occurred.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: internal_error

@@ -25,7 +25,6 @@ import {
 } from "../../apps/web/app/lib/admin-calendar-service";
 
 const completeInput = {
-  id: "event-one",
   category: "culture",
   dateRule: { type: "fixed", month: 3, day: 17 },
   isPublicHoliday: false,
@@ -39,6 +38,7 @@ const completeInput = {
 };
 
 const event = {
+  id: "event-one",
   ...completeInput,
   isPublished: false,
   createdAt: "2026-09-17T00:00:00.000Z",
@@ -47,7 +47,7 @@ const event = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  repositoryMocks.getAdminCalendarEvent.mockResolvedValue(event);
+  repositoryMocks.getAdminCalendarEvent.mockImplementation(async (id: string) => ({ ...event, id }));
   repositoryMocks.listAdminCalendarEvents.mockResolvedValue([event]);
   repositoryMocks.setCalendarEventPublication.mockResolvedValue({
     id: "event-one",
@@ -59,12 +59,11 @@ beforeEach(() => {
 });
 
 describe("admin calendar service", () => {
-  it("安全な入力を正規化して作成し、一覧をRepositoryへ委譲する", async () => {
-    await expect(createAdminCalendarEvent({ ...completeInput, source: "  " })).resolves.toMatchObject({
-      id: "event-one",
-    });
+  it("Server生成UUIDで作成し、正規化した入力と一覧をRepositoryへ委譲する", async () => {
+    const created = await createAdminCalendarEvent({ ...completeInput, source: "  " });
+    expect(created.id).toMatch(/^[0-9a-f-]{36}$/u);
     expect(repositoryMocks.insertCalendarEvent).toHaveBeenCalledWith(
-      "event-one",
+      created.id,
       expect.objectContaining({ source: null }),
     );
     expect(repositoryMocks.insertCalendarEvent.mock.calls[0][1]).not.toHaveProperty("sortOrder");
@@ -73,8 +72,6 @@ describe("admin calendar service", () => {
 
   it("不正ID、カテゴリ、日付ルールをvalidation errorへ変換する", async () => {
     for (const value of [
-      { ...completeInput, id: "a".repeat(101) },
-      { ...completeInput, id: " Event-One" },
       { ...completeInput, category: "unknown" },
       { ...completeInput, aliases: ["Alias", " Alias "] },
       { ...completeInput, dateRule: { type: "unknown" } },
@@ -83,6 +80,10 @@ describe("admin calendar service", () => {
         code: "validation",
       });
     }
+    await expect(createAdminCalendarEvent({ ...completeInput, id: "client-id" })).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { id: "immutable" },
+    });
   });
 
   it("Draft保存時もotherwiseの重複と途中配置を拒否する", async () => {
@@ -122,12 +123,11 @@ describe("admin calendar service", () => {
   it("Draftは公開必須項目が空でも作成でき、型不正は拒否する", async () => {
     await expect(
       createAdminCalendarEvent({
-        id: "draft-event",
         isPublicHoliday: false,
         featured: false,
         translations: { ja: {}, en: {} },
       }),
-    ).resolves.toBe(event);
+    ).resolves.toMatchObject({ isPublished: false });
     await expect(createAdminCalendarEvent({ ...completeInput, featured: "yes" })).rejects.toMatchObject({
       fieldErrors: { featured: "invalid_type" },
     });
