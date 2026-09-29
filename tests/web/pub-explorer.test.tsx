@@ -278,6 +278,23 @@ describe("PubExplorer", () => {
     );
   });
 
+  it("cancels pending carousel selection when the sheet expands", async () => {
+    render(<PubExplorer pubs={[pubs[0], { ...pubs[1], status: "open" }]} />);
+
+    const carousel = screen.getByRole("region", { name: "店舗カード一覧" });
+    vi.spyOn(carousel, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 300, 190));
+    vi.spyOn(carousel.children[0], "getBoundingClientRect").mockReturnValue(new DOMRect(-150, 0, 180, 190));
+    vi.spyOn(carousel.children[1], "getBoundingClientRect").mockReturnValue(new DOMRect(50, 0, 180, 190));
+    fireEvent.scroll(carousel);
+    fireEvent.keyDown(screen.getByRole("button", { name: /結果パネルの高さを変更/ }), { key: "ArrowUp" });
+
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 150));
+    });
+
+    expect(document.querySelector('article[data-selected="true"]')).toBeNull();
+  });
+
   it("omits the collapsed carousel for empty results and keeps the empty state reachable", () => {
     render(<PubExplorer pubs={[]} />);
     expect(screen.queryByRole("region", { name: "店舗カード一覧" })).not.toBeInTheDocument();

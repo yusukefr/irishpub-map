@@ -116,6 +116,12 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
     window.clearTimeout(carouselScrollTimeoutRef.current);
   }, [filteredPubs]);
 
+  useEffect(() => {
+    if (isDesktop || sheetState !== "collapsed" || isFiltersExpanded) {
+      window.clearTimeout(carouselScrollTimeoutRef.current);
+    }
+  }, [isDesktop, isFiltersExpanded, sheetState]);
+
   const resetDetailedFilters = () => {
     hasSelectedPrefecture.current = false;
     setSelectedPrefecture("");

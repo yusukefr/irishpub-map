@@ -72,6 +72,7 @@ function PubMapCanvas({
   // Style の非同期ロード完了時にも最新のサイト言語を反映します。
   const localeRef = useRef(locale);
   const markersRef = useRef(new globalThis.Map<string, Marker>());
+  const lastMapSelectionIdRef = useRef<string | null | undefined>(undefined);
   const activePopupRef = useRef<Popup | null>(null);
   const currentLocationMarkerRef = useRef<Marker | null>(null);
   // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
@@ -254,6 +255,11 @@ function PubMapCanvas({
   }, [currentLocation, focusPubs]);
 
   useEffect(() => {
+    if (lastMapSelectionIdRef.current === selectedPubId) {
+      return;
+    }
+
+    lastMapSelectionIdRef.current = selectedPubId;
     const map = mapRef.current;
     const selectedPub = pubs.find((pub) => pub.id === selectedPubId);
 
