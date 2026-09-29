@@ -11,6 +11,8 @@ PlaywrightのVisual Regressionで比較するReference Screenshotを、意図し
 
 通常のE2E実行やUIに関係しない変更ではsnapshotを更新しません。
 
+Public画面のsnapshotでは、PRごとに自動更新されるアプリVersion表示（`.app-version`）をmaskし、表示自体は[AppVersionFooterのcomponent test](../../tests/web/app-version-footer.test.tsx)で検証します。Version番号の変更だけでReference Screenshotを更新する必要はありません。
+
 ## Prerequisites
 
 - Issue Requirement、対象Pattern、Component、Reference Screenを確認済みである。

@@ -20,7 +20,11 @@ test.describe("Public UI visual regression", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
     await expect(page.getByRole("region", { name: "Irish Pub の地図と一覧" })).toBeVisible();
-    await expect(page).toHaveScreenshot("map-desktop-ja.png", { animations: "disabled", fullPage: true });
+    await expect(page).toHaveScreenshot("map-desktop-ja.png", {
+      animations: "disabled",
+      fullPage: true,
+      mask: [page.locator(".app-version")],
+    });
   });
 
   test("Map desktop English", async ({ context, page }) => {
@@ -29,7 +33,11 @@ test.describe("Public UI visual regression", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
     await expect(page.getByRole("region", { name: "Irish Pub map and list" })).toBeVisible();
-    await expect(page).toHaveScreenshot("map-desktop-en.png", { animations: "disabled", fullPage: true });
+    await expect(page).toHaveScreenshot("map-desktop-en.png", {
+      animations: "disabled",
+      fullPage: true,
+      mask: [page.locator(".app-version")],
+    });
   });
 
   test("Map mobile Japanese", async ({ context, page }) => {
@@ -41,7 +49,11 @@ test.describe("Public UI visual regression", () => {
     await expect(page.locator(".pub-map-marker")).toHaveCount(2);
     await expect(page.locator("section[data-state]")).toHaveAttribute("data-state", "collapsed");
     await expect(page.getByRole("button", { name: "現在地から探す" })).toBeVisible();
-    await expect(page).toHaveScreenshot("map-mobile-ja.png", { animations: "disabled", fullPage: true });
+    await expect(page).toHaveScreenshot("map-mobile-ja.png", {
+      animations: "disabled",
+      fullPage: true,
+      mask: [page.locator(".app-version")],
+    });
   });
 
   for (const scenario of [
@@ -55,7 +67,11 @@ test.describe("Public UI visual regression", () => {
       await page.setViewportSize({ width: scenario.width, height: scenario.height });
       await page.goto("/discover");
       await expect(page.getByRole("heading", { level: 1, name: "Explore Ireland" })).toBeVisible();
-      await expect(page).toHaveScreenshot(scenario.snapshot, { animations: "disabled", fullPage: true });
+      await expect(page).toHaveScreenshot(scenario.snapshot, {
+        animations: "disabled",
+        fullPage: true,
+        mask: [page.locator(".app-version")],
+      });
     });
   }
 });

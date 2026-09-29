@@ -49,7 +49,10 @@ for (const locale of ["ja", "en"] as const) {
       await expect(results.locator('article[data-selected="true"]')).toContainText(tokyo);
       await page.mouse.move(10, 20);
       if (locale === "ja" && viewport.width === 1440) {
-        await expect(page).toHaveScreenshot("map-desktop-pub-selected.png", { animations: "disabled" });
+        await expect(page).toHaveScreenshot("map-desktop-pub-selected.png", {
+          animations: "disabled",
+          mask: [page.locator(".app-version")],
+        });
       }
       await results
         .locator('article[data-selected="true"]')
@@ -89,7 +92,10 @@ for (const locale of ["ja", "en"] as const) {
       await expect(results.locator("article")).toHaveCount(1);
       if (locale === "ja" && viewport.width === 1440) {
         await page.mouse.move(10, 20);
-        await expect(page).toHaveScreenshot("map-desktop-filters-open.png", { animations: "disabled" });
+        await expect(page).toHaveScreenshot("map-desktop-filters-open.png", {
+          animations: "disabled",
+          mask: [page.locator(".app-version")],
+        });
       }
       const axe = await new AxeBuilder({ page }).analyze();
       expect(axe.violations.filter(({ impact }) => impact === "serious" || impact === "critical")).toEqual([]);
