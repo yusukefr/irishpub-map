@@ -346,6 +346,14 @@ describe("PubMap", () => {
     expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
   });
 
+  it("avoids animating selected-pub movement when reduced motion is enabled", () => {
+    mockHoverCapability(true);
+
+    render(<PubMap pubs={pubs} selectedPubId="osaka-sample" />);
+
+    expect(maplibreMock.mapPanTo).toHaveBeenCalledWith([135.502, 34.693], { duration: 0 });
+  });
+
   it("updates markers without rebuilding the map when pubs are filtered", () => {
     const { rerender } = render(<PubMap pubs={pubs} />);
 
