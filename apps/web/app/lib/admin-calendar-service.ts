@@ -300,6 +300,9 @@ function parseNullableText(value: unknown, field: string, errors: FieldErrors): 
 
 function parseTranslations(value: unknown, errors: FieldErrors) {
   const source = asRecord(value);
+  if (value !== undefined && value !== null && (!value || typeof value !== "object" || Array.isArray(value))) {
+    errors.translations = "invalid_type";
+  }
   return {
     ja: parseTranslation(source.ja, "ja", errors),
     en: parseTranslation(source.en, "en", errors),
@@ -308,6 +311,9 @@ function parseTranslations(value: unknown, errors: FieldErrors) {
 
 function parseTranslation(value: unknown, locale: "ja" | "en", errors: FieldErrors) {
   const source = asRecord(value);
+  if (value !== undefined && value !== null && (!value || typeof value !== "object" || Array.isArray(value))) {
+    errors["translations." + locale] = "invalid_type";
+  }
   return {
     name: parseText(source.name, "translations." + locale + ".name", errors),
     description: parseText(source.description, "translations." + locale + ".description", errors),

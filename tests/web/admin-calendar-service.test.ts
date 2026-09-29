@@ -60,12 +60,13 @@ beforeEach(() => {
 
 describe("admin calendar service", () => {
   it("Server生成UUIDで作成し、正規化した入力と一覧をRepositoryへ委譲する", async () => {
-    const created = await createAdminCalendarEvent({ ...completeInput, source: "  " });
+    const created = await createAdminCalendarEvent({ ...completeInput, source: "  ", ignoredProperty: true });
     expect(created.id).toMatch(/^[0-9a-f-]{36}$/u);
     expect(repositoryMocks.insertCalendarEvent).toHaveBeenCalledWith(
       created.id,
       expect.objectContaining({ source: null }),
     );
+    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][1]).not.toHaveProperty("ignoredProperty");
     expect(repositoryMocks.insertCalendarEvent.mock.calls[0][1]).not.toHaveProperty("sortOrder");
     await expect(readAdminCalendarList()).resolves.toHaveLength(1);
   });
@@ -134,6 +135,12 @@ describe("admin calendar service", () => {
     await expect(createAdminCalendarEvent({ ...completeInput, isPublicHoliday: null })).rejects.toMatchObject({
       fieldErrors: { isPublicHoliday: "invalid_type" },
     });
+    await expect(createAdminCalendarEvent({ ...completeInput, translations: "invalid" })).rejects.toMatchObject({
+      fieldErrors: { translations: "invalid_type" },
+    });
+    await expect(
+      createAdminCalendarEvent({ ...completeInput, translations: { ja: "invalid", en: {} } }),
+    ).rejects.toMatchObject({ fieldErrors: { "translations.ja": "invalid_type" } });
   });
 
   it("公開不足項目を列挙し、Published更新を拒否する", async () => {

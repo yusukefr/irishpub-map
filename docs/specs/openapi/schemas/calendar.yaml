@@ -8,7 +8,7 @@ CalendarWeekdayName:
 
 CalendarMonthDay:
   type: object
-  additionalProperties: false
+  additionalProperties: true
   required: [month, day]
   properties:
     month:
@@ -45,7 +45,7 @@ CalendarDateRule:
 
 FixedDateRule:
   type: object
-  additionalProperties: false
+  additionalProperties: true
   required: [type, month, day]
   properties:
     type:
@@ -61,7 +61,7 @@ FixedDateRule:
 
 DateRangeRule:
   type: object
-  additionalProperties: false
+  additionalProperties: true
   required: [type, start, end]
   properties:
     type:
@@ -73,7 +73,7 @@ DateRangeRule:
 
 NthWeekdayRule:
   type: object
-  additionalProperties: false
+  additionalProperties: true
   required: [type, month, weekday, nth]
   properties:
     type:
@@ -91,7 +91,7 @@ NthWeekdayRule:
 
 LastWeekdayRule:
   type: object
-  additionalProperties: false
+  additionalProperties: true
   required: [type, month, weekday]
   properties:
     type:
@@ -105,7 +105,7 @@ LastWeekdayRule:
 
 RelativeToEasterRule:
   type: object
-  additionalProperties: false
+  additionalProperties: true
   required: [type, offsetDays]
   properties:
     type:
@@ -115,7 +115,7 @@ RelativeToEasterRule:
 
 WeekdayRelativeRule:
   type: object
-  additionalProperties: false
+  additionalProperties: true
   required: [type, month, day, weekday]
   properties:
     type:
@@ -134,7 +134,7 @@ WeekdayRelativeRule:
 RuleSetCondition:
   oneOf:
     - type: object
-      additionalProperties: false
+      additionalProperties: true
       required: [type, month, day, weekday]
       properties:
         type:
@@ -150,7 +150,7 @@ RuleSetCondition:
         weekday:
           $ref: "#/CalendarWeekdayName"
     - type: object
-      additionalProperties: false
+      additionalProperties: true
       required: [type]
       properties:
         type:
@@ -158,7 +158,7 @@ RuleSetCondition:
 
 RuleSetDateRule:
   type: object
-  additionalProperties: false
+  additionalProperties: true
   required: [type, rules]
   properties:
     type:
@@ -168,7 +168,7 @@ RuleSetDateRule:
       minItems: 1
       items:
         type: object
-        additionalProperties: false
+        additionalProperties: true
         required: [when, use]
         properties:
           when:
@@ -183,7 +183,7 @@ RuleSetDateRule:
 
 AnnualVariableRule:
   type: object
-  additionalProperties: false
+  additionalProperties: true
   required: [type, usualMonth, requiresOfficialConfirmation]
   properties:
     type:
@@ -217,27 +217,80 @@ AdminCalendarTranslations:
 
 AdminCalendarWriteInput:
   type: object
-  additionalProperties: false
-  required: [category, dateRule, isPublicHoliday, featured, aliases, source, translations]
+  description: Missing optional fields use the same defaults as the Admin API. Unknown properties are ignored by the server.
+  additionalProperties: true
+  required: [isPublicHoliday, featured]
   properties:
     category:
-      $ref: "#/CalendarCategory"
+      description: Omitted, null, or empty values are stored as null.
+      oneOf:
+        - $ref: "#/CalendarCategory"
+        - const: ""
     dateRule:
       oneOf:
         - $ref: "#/CalendarDateRule"
         - type: "null"
+        - const: ""
     isPublicHoliday:
       type: boolean
     featured:
       type: boolean
     aliases:
-      type: array
-      items:
-        type: string
+      description: Omitted or null values are stored as an empty array; values are trimmed and duplicate aliases are rejected.
+      oneOf:
+        - type: array
+          items:
+            type: string
+        - type: "null"
     source:
+      description: Omitted, null, or empty values are stored as null.
       type: [string, "null"]
     translations:
-      $ref: "#/AdminCalendarTranslations"
+      $ref: "#/AdminCalendarTranslationsInput"
+
+AdminCalendarCreateInput:
+  allOf:
+    - $ref: "#/AdminCalendarWriteInput"
+    - not:
+        type: object
+        properties:
+          id: {}
+        required: [id]
+
+AdminCalendarUpdateInput:
+  allOf:
+    - $ref: "#/AdminCalendarWriteInput"
+    - type: object
+      properties:
+        id:
+          type: string
+          maxLength: 100
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          description: If provided, this value must equal the path parameter.
+
+AdminCalendarTranslationInput:
+  type: object
+  description: Name and description may be omitted or null; both default to empty strings.
+  additionalProperties: true
+  properties:
+    name:
+      type: [string, "null"]
+    description:
+      type: [string, "null"]
+
+AdminCalendarTranslationsInput:
+  type: [object, "null"]
+  description: Locale objects may be omitted; missing locale content defaults to empty strings.
+  additionalProperties: true
+  properties:
+    ja:
+      oneOf:
+        - $ref: "#/AdminCalendarTranslationInput"
+        - type: "null"
+    en:
+      oneOf:
+        - $ref: "#/AdminCalendarTranslationInput"
+        - type: "null"
 
 AdminCalendarEvent:
   type: object

@@ -48,6 +48,31 @@ InvalidRequest:
               errorCode:
                 const: invalid_request
 
+InvalidRequestBody:
+  allOf:
+    - $ref: "#/ErrorBody"
+    - type: object
+      properties:
+        errorCode:
+          const: invalid_request
+
+InvalidJsonBody:
+  allOf:
+    - $ref: "#/ErrorBody"
+    - type: object
+      properties:
+        errorCode:
+          const: invalid_json
+
+InvalidRequestOrInvalidJson:
+  description: The path parameter is invalid or the request body is not valid JSON.
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: "#/InvalidRequestBody"
+          - $ref: "#/InvalidJsonBody"
+
 InvalidJson:
   description: The request body is not valid JSON.
   content:
@@ -87,6 +112,43 @@ ValidationError:
                 type: object
                 additionalProperties:
                   type: string
+
+ValidationErrorBody:
+  allOf:
+    - $ref: "#/ErrorBody"
+    - type: object
+      properties:
+        errorCode:
+          const: validation_error
+        fieldErrors:
+          type: object
+          additionalProperties:
+            type: string
+
+PublicationRequirementsNotMetBody:
+  allOf:
+    - $ref: "#/ErrorBody"
+    - type: object
+      properties:
+        errorCode:
+          const: publication_requirements_not_met
+        fieldErrors:
+          type: object
+          additionalProperties:
+            type: string
+        missingFields:
+          type: array
+          items:
+            type: string
+
+ValidationOrPublicationRequirementsNotMet:
+  description: The request is invalid or the event does not meet publication requirements.
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: "#/ValidationErrorBody"
+          - $ref: "#/PublicationRequirementsNotMetBody"
 
 PublicationRequirementsNotMet:
   description: The event does not meet publication requirements.

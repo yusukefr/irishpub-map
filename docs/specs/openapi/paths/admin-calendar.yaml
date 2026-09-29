@@ -38,7 +38,7 @@ CalendarCollection:
       content:
         application/json:
           schema:
-            $ref: ../schemas/calendar.yaml#/AdminCalendarWriteInput
+            $ref: ../schemas/calendar.yaml#/AdminCalendarCreateInput
     responses:
       "201":
         description: Created calendar event draft
@@ -103,7 +103,7 @@ CalendarItem:
     tags: [Admin Calendar]
     operationId: updateAdminCalendarEvent
     summary: Replace a calendar event
-    description: Replaces editable fields while preserving publication state. The body cannot set id or server-managed fields.
+    description: Replaces editable fields while preserving publication state. Server-managed fields are ignored. If id is supplied, it must match the path parameter.
     security:
       - AdminSession: []
     requestBody:
@@ -111,7 +111,7 @@ CalendarItem:
       content:
         application/json:
           schema:
-            $ref: ../schemas/calendar.yaml#/AdminCalendarWriteInput
+            $ref: ../schemas/calendar.yaml#/AdminCalendarUpdateInput
     responses:
       "200":
         description: Updated calendar event
@@ -125,7 +125,7 @@ CalendarItem:
                 event:
                   $ref: ../schemas/calendar.yaml#/AdminCalendarEvent
       "400":
-        $ref: ../schemas/errors.yaml#/InvalidJson
+        $ref: ../schemas/errors.yaml#/InvalidRequestOrInvalidJson
       "401":
         $ref: ../schemas/errors.yaml#/Unauthorized
       "403":
@@ -137,7 +137,7 @@ CalendarItem:
       "415":
         $ref: ../schemas/errors.yaml#/InvalidContentType
       "422":
-        $ref: ../schemas/errors.yaml#/ValidationError
+        $ref: ../schemas/errors.yaml#/ValidationOrPublicationRequirementsNotMet
       "503":
         $ref: ../schemas/errors.yaml#/DatabaseUnavailable
       "500":
@@ -163,6 +163,8 @@ CalendarItem:
                   const: true
       "401":
         $ref: ../schemas/errors.yaml#/Unauthorized
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidRequest
       "403":
         $ref: ../schemas/errors.yaml#/Forbidden
       "404":
@@ -188,7 +190,8 @@ CalendarPublication:
         application/json:
           schema:
             type: object
-            additionalProperties: false
+            description: Unknown properties are ignored by the server.
+            additionalProperties: true
             required: [isPublished]
             properties:
               isPublished:
@@ -217,7 +220,7 @@ CalendarPublication:
                     unchanged:
                       type: boolean
       "400":
-        $ref: ../schemas/errors.yaml#/InvalidJson
+        $ref: ../schemas/errors.yaml#/InvalidRequestOrInvalidJson
       "401":
         $ref: ../schemas/errors.yaml#/Unauthorized
       "403":
@@ -227,7 +230,7 @@ CalendarPublication:
       "415":
         $ref: ../schemas/errors.yaml#/InvalidContentType
       "422":
-        $ref: ../schemas/errors.yaml#/PublicationRequirementsNotMet
+        $ref: ../schemas/errors.yaml#/ValidationOrPublicationRequirementsNotMet
       "503":
         $ref: ../schemas/errors.yaml#/DatabaseUnavailable
       "500":
