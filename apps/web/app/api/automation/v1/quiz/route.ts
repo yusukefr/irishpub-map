@@ -1,8 +1,10 @@
 import { adminApiErrorResponse, getAdminJsonContentTypeError } from "../../../../lib/admin-api";
 import { adminQuizServiceErrorResponse } from "../../../../lib/admin-quiz-api";
 import { getAutomationApiAuthorizationError } from "../../../../lib/automation-auth";
+import { handleAutomationCreate } from "../../../../lib/automation-reliability";
 import { createAdminQuiz, readAdminQuizList } from "../../../../lib/admin-quiz-service";
 import { isQuizDatabaseConfigured } from "../../../../lib/quiz/repository";
+import { getAdminQuizQuestion } from "../../../../lib/quiz/repository";
 
 /**
  * quiz:readを持つAutomation ClientへDraftを含むQuiz一覧を返します。
@@ -26,6 +28,15 @@ export async function GET(request: Request) {
  * @returns {Promise<Response>} 作成したDraft、または認証・入力・作成エラー。
  */
 export async function POST(request: Request) {
+  return handleAutomationCreate(request, {
+    scope: "quiz:create",
+    resourceType: "quiz",
+    execute: (id) => create(request, id),
+    recover: (id) => getAdminQuizQuestion(id),
+  });
+}
+
+async function create(request: Request, id: string) {
   const authorizationError = getAutomationApiAuthorizationError(request, "quiz:create");
   if (authorizationError) return authorizationError;
   if (!isQuizDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
@@ -38,7 +49,7 @@ export async function POST(request: Request) {
     return adminApiErrorResponse("invalid_json", 400);
   }
   try {
-    return Response.json({ question: await createAdminQuiz(body) }, { status: 201 });
+    return Response.json({ question: await createAdminQuiz(body, id) }, { status: 201 });
   } catch (error) {
     return adminQuizServiceErrorResponse(error);
   }

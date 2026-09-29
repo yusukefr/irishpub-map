@@ -1,8 +1,9 @@
 import { adminApiErrorResponse, getAdminJsonContentTypeError } from "../../../../lib/admin-api";
 import { adminContentServiceErrorResponse } from "../../../../lib/admin-content-api";
-import { isContentDatabaseConfigured } from "../../../../lib/admin-content-repository";
+import { getAdminContent, isContentDatabaseConfigured } from "../../../../lib/admin-content-repository";
 import { createAdminContent, readAdminContentList } from "../../../../lib/admin-content-service";
 import { getAutomationApiAuthorizationError } from "../../../../lib/automation-auth";
+import { handleAutomationCreate } from "../../../../lib/automation-reliability";
 
 /**
  * content:readを持つAutomation ClientへDraftとPublishedの管理一覧を返します。
@@ -28,6 +29,15 @@ export async function GET(request: Request) {
  * @returns {Promise<Response>} 作成後詳細、または認証・入力・保存エラー。
  */
 export async function POST(request: Request) {
+  return handleAutomationCreate(request, {
+    scope: "content:create",
+    resourceType: "content",
+    execute: (id) => create(request, id),
+    recover: (id) => getAdminContent(id),
+  });
+}
+
+async function create(request: Request, id: string) {
   const authorizationError = getAutomationApiAuthorizationError(request, "content:create");
   if (authorizationError) return authorizationError;
   if (!isContentDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
@@ -40,7 +50,7 @@ export async function POST(request: Request) {
     return adminApiErrorResponse("invalid_json", 400);
   }
   try {
-    return Response.json({ content: await createAdminContent(body) }, { status: 201 });
+    return Response.json({ content: await createAdminContent(body, id) }, { status: 201 });
   } catch (error) {
     return adminContentServiceErrorResponse(error);
   }

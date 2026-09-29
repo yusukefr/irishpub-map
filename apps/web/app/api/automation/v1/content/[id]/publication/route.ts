@@ -8,6 +8,7 @@ import { adminContentServiceErrorResponse } from "../../../../../../lib/admin-co
 import { isContentDatabaseConfigured } from "../../../../../../lib/admin-content-repository";
 import { changeAdminContentPublication } from "../../../../../../lib/admin-content-service";
 import { getAutomationApiAuthorizationError } from "../../../../../../lib/automation-auth";
+import { handleAutomationMutation } from "../../../../../../lib/automation-reliability";
 
 /**
  * content:publishを持つAutomation Clientが指定Contentを公開またはDraftへ変更します。
@@ -17,6 +18,16 @@ import { getAutomationApiAuthorizationError } from "../../../../../../lib/automa
  * @returns {Promise<Response>} 公開状態変更結果またはエラー。
  */
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
+  return handleAutomationMutation(request, {
+    scope: "content:publish",
+    resourceType: "content",
+    resourceId: isAdminContentId(id) ? id : null,
+    execute: () => changePublication(request, context),
+  });
+}
+
+async function changePublication(request: Request, context: { params: Promise<{ id: string }> }) {
   const authorizationError = getAutomationApiAuthorizationError(request, "content:publish");
   if (authorizationError) return authorizationError;
   if (!isContentDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);

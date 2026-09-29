@@ -2,6 +2,12 @@
 import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Tag Repositoryとの結合を検証する。冪等性と監査は専用テストで検証します。
+vi.mock("../../apps/web/app/lib/automation-reliability", () => ({
+  handleAutomationCreate: (_request: Request, options: { execute: (id: string) => Promise<Response> }) =>
+    options.execute("550e8400-e29b-41d4-a716-446655440001"),
+}));
+
 const databaseMock = vi.hoisted(() => ({
   tag: null as null | { id: string; key: string; translations: Record<string, string> },
 }));

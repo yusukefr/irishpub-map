@@ -4,6 +4,7 @@ import { adminContentServiceErrorResponse } from "../../../../../lib/admin-conte
 import { isContentDatabaseConfigured } from "../../../../../lib/admin-content-repository";
 import { readAdminContent, updateAdminContent } from "../../../../../lib/admin-content-service";
 import { getAutomationApiAuthorizationError } from "../../../../../lib/automation-auth";
+import { handleAutomationMutation } from "../../../../../lib/automation-reliability";
 
 /**
  * content:readを持つAutomation Clientへ指定Contentの管理詳細を返します。
@@ -33,6 +34,16 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
  * @returns {Promise<Response>} 更新後詳細またはエラー。
  */
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
+  return handleAutomationMutation(request, {
+    scope: "content:update",
+    resourceType: "content",
+    resourceId: isAdminContentId(id) ? id : null,
+    execute: () => update(request, context),
+  });
+}
+
+async function update(request: Request, context: { params: Promise<{ id: string }> }) {
   const authorizationError = getAutomationApiAuthorizationError(request, "content:update");
   if (authorizationError) return authorizationError;
   if (!isContentDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);

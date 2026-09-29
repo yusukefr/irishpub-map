@@ -35,14 +35,14 @@ export class AdminPubServiceError extends Error {
 /**
  * 未検証入力から必ず非公開の管理店舗を作成します。
  * @param {unknown} value - Route Handlerが受け取ったJSON本文。
+ * @param {string} id - 再送時も固定するResource ID。省略時はServerが発行します。
  * @returns {Promise<AdminPub>} 作成後の管理店舗詳細。
  */
-export async function createAdminPub(value: unknown): Promise<AdminPub> {
+export async function createAdminPub(value: unknown, id: string = randomUUID()): Promise<AdminPub> {
   const input = parseWriteInput(value);
   const references = await validateAdminPubReferences(input);
   throwReferenceErrors(references.fieldErrors);
 
-  const id = randomUUID();
   await insertAdminPub(id, input, references.statusCode);
   const created = await getAdminPub(id);
   if (!created) throw new Error("Created admin pub could not be read.");
