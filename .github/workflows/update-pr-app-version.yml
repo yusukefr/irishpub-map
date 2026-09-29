@@ -51,7 +51,7 @@ jobs:
           fi
 
       - name: Run CI for updated pull request branch
-        if: steps.version-update.outputs.committed == "true"
+        if: steps.version-update.outputs.committed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}

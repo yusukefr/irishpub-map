@@ -56,7 +56,10 @@ for (const locale of ["ja", "en"] as const) {
       await expect(page.getByRole("link", { name: t.discover.navigation, exact: true })).toBeVisible();
       await menu.click();
       if (width === 390) {
-        await expect(page).toHaveScreenshot(`map-mobile-${locale}.png`, { animations: "disabled" });
+        await expect(page).toHaveScreenshot(`map-mobile-${locale}.png`, {
+          animations: "disabled",
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
+        });
       }
       for (const button of await page.locator(".pub-map-marker, .maplibregl-ctrl-group button").all()) {
         const box = (await button.boundingBox())!;
@@ -84,7 +87,10 @@ for (const locale of ["ja", "en"] as const) {
       await expect(page.locator('.pub-results-panel article[data-selected="true"]')).toHaveCount(1);
       await canvas.click({ position: { x: 10, y: 240 } });
       if (width === 390 && locale === "ja") {
-        await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", { animations: "disabled" });
+        await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", {
+          animations: "disabled",
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
+        });
       }
       const results = page.locator(".pub-results-panel");
       await results
@@ -95,7 +101,10 @@ for (const locale of ["ja", "en"] as const) {
       const back = page.getByRole("button", { name: new RegExp(t.list.backToResults) });
       await expect(back).toBeFocused();
       if (width === 390 && locale === "ja") {
-        await expect(page).toHaveScreenshot("map-mobile-pub-selected.png", { animations: "disabled" });
+        await expect(page).toHaveScreenshot("map-mobile-pub-selected.png", {
+          animations: "disabled",
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
+        });
       }
       await back.click();
       await expect(sheet).toHaveAttribute("data-state", "medium");
@@ -107,7 +116,10 @@ for (const locale of ["ja", "en"] as const) {
       });
       await expect(sheet).toHaveAttribute("data-state", "expanded");
       if (width === 390 && locale === "ja") {
-        await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-expanded.png", { animations: "disabled" });
+        await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-expanded.png", {
+          animations: "disabled",
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
+        });
       }
       const axe = await new AxeBuilder({ page }).analyze();
       expect(axe.violations.filter(({ impact }) => impact === "serious" || impact === "critical")).toEqual([]);
