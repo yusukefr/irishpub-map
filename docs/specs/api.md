@@ -277,6 +277,8 @@ Draft / Publishedの検証、カテゴリAllow List、Choice（Draftは0〜4件�
 | `PUT` | `/api/admin/quiz/:id` | `200` と公開状態を維持した `{ question }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404`、DB未設定は `503` |
 | `PATCH` | `/api/admin/quiz/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
 
+Calendar Admin APIのPath、Method、Request / Response、Status、認証、Schemaの機械可読な契約は[OpenAPI定義](openapi/openapi.yaml)を正とします。この文書では引き続きCalendar APIの設計方針と運用上の補足を扱います。
+
 Irish Calendarは公開用APIを新設せず、`/discover/calendar`のServer ComponentがPublic Calendar Data Loader経由でPublished Eventを取得します。管理操作は上記の`/api/admin/calendar`系Routeだけが受け付け、CreateはDraft、`PUT`は公開状態を維持し、Publication変更は専用`PATCH`で行います。Published変更時はPublic Calendar Cacheをinvalidateし、Date RuleはServer-side Validationを通過させます。
 
 Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`translations: { ja, en }` を含む全体スナップショットを受け付けます。各翻訳は `title`、`summary`、`bodyMarkdown` を持ちます。Draftでは言語非依存項目を `null`、翻訳文言を空文字で保存できます。kindは `story` / `guide`、categoryは既知分類、localeは `ja` / `en`、slugは小文字英数字と単語間のハイフンだけを許可します。bodyMarkdownは先頭・末尾の空白を含む原文を保持します。MarkdownはRendererと同じCommonMark・GFM ParserでAST化し、link・image・definitionのURLにはHTTP(S)、ルート相対、ページ内アンカーだけを許可します。
