@@ -74,6 +74,8 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
   const isResultsOpen = isDesktop ? (resultsOpenOverride ?? true) : sheetState !== "collapsed" && !isFiltersExpanded;
   const [resultsView, setResultsView] = useState<"list" | "detail">(initialPub ? "detail" : "list");
   const resultsTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const carouselScrollTimeoutRef = useRef<number | undefined>(undefined);
   const hasSelectedPrefecture = useRef(false);
   const isMounted = useRef(true);
   const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
@@ -109,6 +111,10 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
 
     return () => window.clearTimeout(resetId);
   }, [filteredPubs, selectedPubId]);
+
+  useEffect(() => {
+    window.clearTimeout(carouselScrollTimeoutRef.current);
+  }, [filteredPubs]);
 
   const resetDetailedFilters = () => {
     hasSelectedPrefecture.current = false;
@@ -187,6 +193,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
               : null;
 
   const selectPub = (pubId: string) => {
+    window.clearTimeout(carouselScrollTimeoutRef.current);
     setSelectedPubId(pubId);
     if (!isDesktop) {
       setIsFiltersExpanded(false);
@@ -196,6 +203,61 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
       setIsResultsOpen(true);
     }
   };
+
+  const handleCarouselScroll = () => {
+    window.clearTimeout(carouselScrollTimeoutRef.current);
+    carouselScrollTimeoutRef.current = window.setTimeout(() => {
+      const carousel = carouselRef.current;
+
+      if (!carousel) {
+        return;
+      }
+
+      const carouselRect = carousel.getBoundingClientRect();
+      const carouselCenter = carouselRect.left + carouselRect.width / 2;
+      const activeIndex = Array.from(carousel.children).reduce((closestIndex, child, index, children) => {
+        const closest = children[closestIndex]?.getBoundingClientRect();
+        const candidate = child.getBoundingClientRect();
+
+        return !closest ||
+          Math.abs(candidate.left + candidate.width / 2 - carouselCenter) <
+            Math.abs(closest.left + closest.width / 2 - carouselCenter)
+          ? index
+          : closestIndex;
+      }, 0);
+      const activePub = filteredPubs[activeIndex];
+
+      if (activePub && activePub.id !== selectedPubId) {
+        setSelectedPubId(activePub.id);
+      }
+    }, 120);
+  };
+
+  useEffect(() => () => window.clearTimeout(carouselScrollTimeoutRef.current), []);
+
+  useEffect(() => {
+    if (isDesktop || sheetState !== "collapsed" || isFiltersExpanded || !selectedPubId) {
+      return;
+    }
+
+    const carousel = carouselRef.current;
+    const selectedIndex = filteredPubs.findIndex((pub) => pub.id === selectedPubId);
+    const selectedCard = carousel?.children.item(selectedIndex);
+
+    if (!carousel || !selectedCard || selectedIndex < 0) {
+      return;
+    }
+
+    const carouselRect = carousel.getBoundingClientRect();
+    const cardRect = selectedCard.getBoundingClientRect();
+    const paddingStart = Number.parseFloat(getComputedStyle(carousel).paddingInlineStart);
+    const snapStart = carouselRect.left + (Number.isFinite(paddingStart) ? paddingStart : 0);
+
+    if (cardRect.left < snapStart - 2 || cardRect.right > carouselRect.right) {
+      // selectedPubIdが外部操作で変わったときだけ位置を合わせ、操作主体へのfocusは奪いません。
+      carousel.scrollBy({ left: cardRect.left - snapStart, behavior: "auto" });
+    }
+  }, [filteredPubs, isDesktop, isFiltersExpanded, selectedPubId, sheetState]);
 
   const toggleFilters = () => {
     setIsFiltersExpanded((current) => {
@@ -361,7 +423,14 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
                 stateLabels={t.explorer.sheetStates}
                 collapsedContent={
                   hasMobileCarousel ? (
-                    <div className={mobile.carousel} role="region" aria-label={t.list.carouselLabel} tabIndex={0}>
+                    <div
+                      ref={carouselRef}
+                      className={mobile.carousel}
+                      role="region"
+                      aria-label={t.list.carouselLabel}
+                      tabIndex={0}
+                      onScroll={handleCarouselScroll}
+                    >
                       {filteredPubs.map((pub) => (
                         <PubCard
                           key={pub.id}

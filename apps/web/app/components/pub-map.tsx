@@ -254,6 +254,28 @@ function PubMapCanvas({
   }, [currentLocation, focusPubs]);
 
   useEffect(() => {
+    const map = mapRef.current;
+    const selectedPub = pubs.find((pub) => pub.id === selectedPubId);
+
+    if (!map || !selectedPub) {
+      return;
+    }
+
+    const center = map.getCenter();
+
+    if (
+      Math.abs(center.lng - selectedPub.longitude) < 0.000001 &&
+      Math.abs(center.lat - selectedPub.latitude) < 0.000001
+    ) {
+      return;
+    }
+
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    // 選択店舗へ中心だけを移し、利用者が調整したzoom・bearing・pitchを保ちます。
+    map.panTo([selectedPub.longitude, selectedPub.latitude], { duration: reducedMotion ? 0 : 300 });
+  }, [pubs, selectedPubId]);
+
+  useEffect(() => {
     markerElementsRef.current.forEach((marker, pubId) => {
       const isSelected = pubId === selectedPubId;
       marker.classList.toggle("pub-map-marker-selected", isSelected);

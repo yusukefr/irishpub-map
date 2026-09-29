@@ -339,6 +339,13 @@ describe("PubMap", () => {
     expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
   });
 
+  it("centers the selected pub while preserving map zoom, bearing, and pitch", () => {
+    render(<PubMap pubs={pubs} selectedPubId="osaka-sample" />);
+
+    expect(maplibreMock.mapPanTo).toHaveBeenCalledWith([135.502, 34.693], { duration: 300 });
+    expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
+  });
+
   it("updates markers without rebuilding the map when pubs are filtered", () => {
     const { rerender } = render(<PubMap pubs={pubs} />);
 
