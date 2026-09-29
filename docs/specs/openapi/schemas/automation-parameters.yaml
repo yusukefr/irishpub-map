@@ -1,0 +1,29 @@
+IdempotencyKey:
+  name: Idempotency-Key
+  in: header
+  required: true
+  description: "One key per logical create, at most 128 characters. Must be nonempty with no leading/trailing whitespace or control characters. An identical retry returns the original 201 response; a different request with the same key returns 409."
+  schema:
+    type: string
+    minLength: 1
+    maxLength: 128
+    pattern: '^[^\s\x00-\x1f\x7f](?:[^\x00-\x1f\x7f]*[^\s\x00-\x1f\x7f])?$'
+RequestId:
+  description: Identifier for tracing an authenticated create or mutation in audit records.
+  schema: { type: string, format: uuid }
+ContentId:
+  name: id
+  in: path
+  required: true
+  schema: { $ref: "./automation.yaml#/Uuid" }
+QuizId:
+  name: id
+  in: path
+  required: true
+  description: Existing kebab-case ID or a server-generated UUID.
+  schema: { type: string, maxLength: 100, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+PubId:
+  name: id
+  in: path
+  required: true
+  schema: { $ref: "./automation.yaml#/Uuid" }

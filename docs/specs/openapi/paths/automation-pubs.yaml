@@ -1,0 +1,156 @@
+Collection:
+  get:
+    tags: [Automation Pubs]
+    operationId: searchAutomationPubs
+    summary: Search draft and published pubs
+    description: "Required server-side scope: `pubs:read`. Filters combine with AND. Unknown or repeated query parameters, invalid values, or municipality without matching prefecture return `400 invalid_request`. Results use 1-based pages of 50. Without DATABASE_URL returns an empty page with databaseConfigured false."
+    x-required-scope: pubs:read
+    security: [{ AutomationBearer: [] }]
+    parameters:
+      - name: name
+        in: query
+        description: Trimmed name fragment, at most 100 characters.
+        schema: { type: string, maxLength: 100 }
+      - name: prefecture
+        in: query
+        schema: { type: integer, minimum: 1, maximum: 47 }
+      - name: municipality
+        in: query
+        description: Six-digit municipality code; requires its prefecture.
+        schema: { type: string, pattern: '^\d{6}$' }
+      - name: status
+        in: query
+        schema: { type: string, enum: [open, temporarily_closed, closed, unknown] }
+      - name: tag
+        in: query
+        schema: { $ref: "../schemas/automation.yaml#/Uuid" }
+      - name: published
+        in: query
+        schema: { type: boolean }
+      - name: page
+        in: query
+        schema: { type: integer, minimum: 1, maximum: 100000, default: 1 }
+    responses:
+      "200":
+        description: Paginated pub matches
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/PubListResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+  post:
+    tags: [Automation Pubs]
+    operationId: createAutomationPub
+    summary: Create an unpublished pub
+    description: "Required server-side scope: `pubs:create`. Search for duplicates and read master data and tag IDs first. Always creates an unpublished pub with server-generated ID. `Idempotency-Key` is mandatory. Missing/invalid keys return 400; reused keys with different input or while processing return `409 idempotency_conflict` or `409 idempotency_in_progress`. Missing master/tag references return `409 validation_error` with fieldErrors."
+    x-required-scope: pubs:create
+    security: [{ AutomationBearer: [] }]
+    parameters:
+      - $ref: "../schemas/automation-parameters.yaml#/IdempotencyKey"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/automation.yaml#/PubWrite" }
+    responses:
+      "201":
+        description: Created unpublished pub, or the same response replayed for an identical retry
+        headers:
+          X-Request-Id: { $ref: "../schemas/automation-parameters.yaml#/RequestId" }
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/PubResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/MutationBadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "409": { $ref: "../schemas/automation-errors.yaml#/MutationConflict" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/MutationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/MutationValidation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/MutationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/MutationInternalError" }
+
+Item:
+  parameters:
+    - $ref: "../schemas/automation-parameters.yaml#/PubId"
+  get:
+    tags: [Automation Pubs]
+    operationId: getAutomationPub
+    summary: Get pub detail
+    description: "Required server-side scope: `pubs:read`. GET includes server-managed fields, which must be removed before PUT."
+    x-required-scope: pubs:read
+    security: [{ AutomationBearer: [] }]
+    responses:
+      "200":
+        description: Pub detail
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/PubResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/NotFound" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+  put:
+    tags: [Automation Pubs]
+    operationId: updateAutomationPub
+    summary: Replace editable pub fields
+    description: "Required server-side scope: `pubs:update`. Send the PubWrite snapshot without ID, isPublished or updatedAt. Published pubs must remain publishable. Missing master/tag references return `409 validation_error` with fieldErrors."
+    x-required-scope: pubs:update
+    security: [{ AutomationBearer: [] }]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/automation.yaml#/PubWrite" }
+    responses:
+      "200":
+        description: Updated pub detail
+        headers:
+          X-Request-Id: { $ref: "../schemas/automation-parameters.yaml#/RequestId" }
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/PubResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/MutationBadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/MutationNotFound" }
+      "409": { $ref: "../schemas/automation-errors.yaml#/MutationConflict" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/MutationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/MutationValidation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/MutationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/MutationInternalError" }
+
+Publication:
+  parameters:
+    - $ref: "../schemas/automation-parameters.yaml#/PubId"
+  patch:
+    tags: [Automation Pubs]
+    operationId: setAutomationPubPublication
+    summary: Publish or unpublish a pub
+    description: "Required server-side scope: `pubs:publish`. Publish only after GET detail confirms the saved data. Missing publication fields return `422 publication_requirements_not_met` with missingFields. There is no Automation pub delete operation."
+    x-required-scope: pubs:publish
+    security: [{ AutomationBearer: [] }]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/automation.yaml#/BooleanPublicationInput" }
+    responses:
+      "200":
+        description: Publication result
+        headers:
+          X-Request-Id: { $ref: "../schemas/automation-parameters.yaml#/RequestId" }
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/PubPublicationResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/MutationBadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/MutationNotFound" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/MutationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/MutationValidation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/MutationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/MutationInternalError" }

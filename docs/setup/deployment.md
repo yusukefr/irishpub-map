@@ -35,7 +35,7 @@ Production / Previewの対象を明示して、Vercel ProjectのEnvironment Vari
 
 Productionで`IRISHPUB_MAP_API_KEY`が未設定の場合、buildは失敗します。`DATABASE_URL`未設定時は店舗・公開Guideを0件として扱い、書き込みは行いません。Preview DBは[Neon Preview DB運用](../runbooks/neon-preview-branch.md)に従います。
 
-Automation利用時は `node scripts/generate-automation-token.mjs` を対話端末で実行し、32 byteの乱数から生成されたRaw Tokenを外部Connectorへ、SHA-256だけをServerの `AUTOMATION_API_TOKEN_SHA256` へ設定します。`AUTOMATION_API_SCOPES` は許可するScopeをカンマ区切りで設定します。Local / Preview / ProductionでTokenとScopeを別々に管理し、Raw TokenやhashをRepository、Issue、PR、ログへ記録しません。未設定ならAutomation認証は拒否されます。Scopeと管理APIとの差分は[API仕様](../specs/api.md#automation-apiの認証認可)を参照してください。
+Automation利用時は `node scripts/generate-automation-token.mjs` を対話端末で実行し、32 byteの乱数から生成されたRaw Tokenを外部Connectorへ、SHA-256だけをServerの `AUTOMATION_API_TOKEN_SHA256` へ設定します。`AUTOMATION_API_SCOPES` は許可するScopeをカンマ区切りで設定します。Local / Preview / ProductionでTokenとScopeを別々に管理し、Raw TokenやhashをRepository、Issue、PR、ログへ記録しません。未設定ならAutomation認証は拒否されます。環境別設定、Scope、Rotation、失効、疎通確認は[Automation API Runbook](../runbooks/automation-api-access.md)、Endpoint契約は[OpenAPI定義](../specs/openapi/openapi.yaml)を参照してください。
 
 ## 通常フロー
 
@@ -68,6 +68,7 @@ npm test
 npm run format:check
 npm run typecheck
 npm run lint
+npm run lint:openapi
 npm run build
 npm run check:sensitive-data
 ```
@@ -81,6 +82,7 @@ npm run check:sensitive-data
 - [Vercel Preview Protectionを設定・復旧する](../runbooks/vercel-preview-protection.md)
 - [リリース・CI運用を行う](../runbooks/release-operations.md)
 - [Repository設定を確認・復元する](../runbooks/repository-settings.md)
+- [Automation APIを設定・運用する](../runbooks/automation-api-access.md)
 
 ## 関連資料
 

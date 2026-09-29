@@ -54,6 +54,8 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 ## Automation APIの認証・認可
 
+全EndpointのPath、Method、Bearer認証、必要Scope、入出力Schema、Error、`Idempotency-Key` の機械可読な契約は[OpenAPI定義](openapi/openapi.yaml)を参照してください。接続、Token Rotation、権限設定、Create / Publishの運用は[Automation API Runbook](../runbooks/automation-api-access.md)を参照してください。
+
 `/api/automation/v1/*` は外部Automation向けのnamespaceです。各Route Handlerは共通helperへ必要Scopeを明示して認証・認可します。
 
 `Authorization: Bearer <token>` を要求し、`Bearer` とTokenの間は1文字以上のスペースを許容します。Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数へ保存しません。Tokenの欠落・不一致・設定不備は `WWW-Authenticate: Bearer` ヘッダーを付けた `401` と `{ "errorCode": "unauthorized" }` を返し、理由やToken/hashをResponseへ含めません。

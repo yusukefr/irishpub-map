@@ -1,0 +1,109 @@
+Prefectures:
+  get:
+    tags: [Automation Master]
+    operationId: listAutomationPrefectures
+    summary: List prefectures
+    description: "Required server-side scope: `master:read`. Returns an empty list without DATABASE_URL."
+    x-required-scope: master:read
+    security: [{ AutomationBearer: [] }]
+    responses:
+      "200":
+        description: Prefectures ordered by code
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/PrefecturesResponse" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+
+Municipalities:
+  get:
+    tags: [Automation Master]
+    operationId: listAutomationMunicipalities
+    summary: List municipalities in a prefecture
+    description: "Required server-side scope: `master:read`. Invalid prefectureCode returns `400 invalid_prefecture_code`. Locale uses the language cookie, then Accept-Language, then Japanese."
+    x-required-scope: master:read
+    security: [{ AutomationBearer: [] }]
+    parameters:
+      - name: prefectureCode
+        in: query
+        required: true
+        schema: { type: integer, minimum: 1, maximum: 47 }
+    responses:
+      "200":
+        description: Municipalities ordered by code; empty without DATABASE_URL
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/MunicipalitiesResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+
+Tags:
+  get:
+    tags: [Automation Master]
+    operationId: listAutomationTags
+    summary: List tags and their current pub counts
+    description: "Required server-side scope: `master:read`. Check existing keys and translations before creating a tag. Returns an empty list without DATABASE_URL."
+    x-required-scope: master:read
+    security: [{ AutomationBearer: [] }]
+    responses:
+      "200":
+        description: Tags ordered by key
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/TagsResponse" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+
+Statuses:
+  get:
+    tags: [Automation Master]
+    operationId: listAutomationStatuses
+    summary: List current pub statuses
+    description: "Required server-side scope: `master:read`. Returns an empty list without DATABASE_URL."
+    x-required-scope: master:read
+    security: [{ AutomationBearer: [] }]
+    responses:
+      "200":
+        description: Pub statuses ordered by code
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/StatusesResponse" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+
+TagCollection:
+  post:
+    tags: [Automation Tags]
+    operationId: createAutomationTag
+    summary: Create a tag
+    description: "Required server-side scope: `tag:create`. `Idempotency-Key` is required. Retry the same request with the same key; another request with that key returns `409 idempotency_conflict`, and a pending request returns `409 idempotency_in_progress`. Duplicate tag keys return `409 tag_conflict`. There is no Automation tag update or delete operation."
+    x-required-scope: tag:create
+    security: [{ AutomationBearer: [] }]
+    parameters:
+      - $ref: "../schemas/automation-parameters.yaml#/IdempotencyKey"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/automation.yaml#/TagWrite" }
+    responses:
+      "201":
+        description: Created tag, or the same response replayed for an identical retry
+        headers:
+          X-Request-Id: { $ref: "../schemas/automation-parameters.yaml#/RequestId" }
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/TagResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/MutationBadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "409": { $ref: "../schemas/automation-errors.yaml#/MutationConflict" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/MutationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/MutationValidation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/MutationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/MutationInternalError" }

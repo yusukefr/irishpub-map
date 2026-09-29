@@ -28,7 +28,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | --- | --- | --- |
 | Product仕様・画面Behavior | [Product specification](specs/product.md) | Current。現行Behaviorは実装・テストを優先 |
 | Architecture | [System overview](architecture/system-overview.md)、[Sequences](architecture/sequences.md) | Current。実装とInfrastructureを優先 |
-| Public API | [API specification](specs/api.md)、[OpenAPI contract](specs/openapi/openapi.yaml) | Current。API全体方針はMarkdown、機械可読なCalendar Admin契約はOpenAPI。Route Handlerとテストを優先 |
+| Public API | [API specification](specs/api.md)、[OpenAPI contract](specs/openapi/openapi.yaml) | Current。API全体方針はMarkdown、機械可読なCalendar Admin / Automation契約はOpenAPI。Route Handlerとテストを優先 |
 | Pub data contract | [Data specification](specs/data.md) | Current。共有型、Validation、DBを優先 |
 | Database | [Database specification](specs/database.md)、[Generated schema](generated/database-schema.md) | 設計はCurrent、物理SchemaはGenerated。Neonの現行Schemaを優先 |
 | Pub draft / publish | [Admin pub lifecycle](specs/admin-pub-lifecycle.md) | Current。管理APIとテストを優先 |
@@ -48,6 +48,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Neon Preview DB | [Neon Preview DB](runbooks/neon-preview-branch.md) | Current。Vercel / Neonの現行設定を優先 |
 | Vercel Preview protection | [Vercel Preview Protection](runbooks/vercel-preview-protection.md) | Current。Vercelの現行設定を優先 |
 | Admin access setup | [Admin access](runbooks/admin-access.md) | Current。認証実装と環境変数を優先 |
+| Automation API access | [Automation API access](runbooks/automation-api-access.md) | Current。OpenAPI、認証実装、Route Handlerを優先 |
 | Release and CI operations | [Release and CI](runbooks/release-operations.md) | Current。GitHub ActionsとVercel設定を優先 |
 | Privacy / Analytics | [Privacy and external transmission](operations/privacy-and-external-transmission.md) | Current。実装とProduction設定を優先 |
 | Map provider | [Map provider](operations/map-provider.md) | Current。OpenFreeMapの現行Policyを優先 |

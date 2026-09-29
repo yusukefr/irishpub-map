@@ -5,13 +5,23 @@ info:
   license:
     name: MIT
     identifier: MIT
-  description: Machine-readable API contract. Initial coverage is Admin Calendar.
+  description: Machine-readable contracts for Admin Calendar and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
 servers:
   - url: /
     description: Current application origin
 tags:
   - name: Admin Calendar
     description: Calendar event management for authenticated administrators.
+  - name: Automation Master
+    description: Read-only master data. Scopes are server-side allow-list entries, not OAuth scopes.
+  - name: Automation Tags
+    description: Create tags after checking existing tags. No update or delete endpoint.
+  - name: Automation Content
+    description: Create draft, verify, then publish through a separate request.
+  - name: Automation Quiz
+    description: Create draft, verify, then publish through a separate request.
+  - name: Automation Pubs
+    description: Search duplicates, create unpublished, verify, then publish. No delete endpoint.
 paths:
   /api/admin/calendar:
     $ref: ./paths/admin-calendar.yaml#/CalendarCollection
@@ -19,10 +29,48 @@ paths:
     $ref: ./paths/admin-calendar.yaml#/CalendarItem
   /api/admin/calendar/{id}/publication:
     $ref: ./paths/admin-calendar.yaml#/CalendarPublication
+  /api/automation/v1/master/prefectures:
+    $ref: ./paths/automation-master.yaml#/Prefectures
+  /api/automation/v1/master/municipalities:
+    $ref: ./paths/automation-master.yaml#/Municipalities
+  /api/automation/v1/master/tags:
+    $ref: ./paths/automation-master.yaml#/Tags
+  /api/automation/v1/master/statuses:
+    $ref: ./paths/automation-master.yaml#/Statuses
+  /api/automation/v1/tags:
+    $ref: ./paths/automation-master.yaml#/TagCollection
+  /api/automation/v1/content:
+    $ref: ./paths/automation-content.yaml#/Collection
+  /api/automation/v1/content/{id}:
+    $ref: ./paths/automation-content.yaml#/Item
+  /api/automation/v1/content/{id}/publication:
+    $ref: ./paths/automation-content.yaml#/Publication
+  /api/automation/v1/quiz:
+    $ref: ./paths/automation-quiz.yaml#/Collection
+  /api/automation/v1/quiz/{id}:
+    $ref: ./paths/automation-quiz.yaml#/Item
+  /api/automation/v1/quiz/{id}/publication:
+    $ref: ./paths/automation-quiz.yaml#/Publication
+  /api/automation/v1/pubs:
+    $ref: ./paths/automation-pubs.yaml#/Collection
+  /api/automation/v1/pubs/{id}:
+    $ref: ./paths/automation-pubs.yaml#/Item
+  /api/automation/v1/pubs/{id}/publication:
+    $ref: ./paths/automation-pubs.yaml#/Publication
 components:
+  schemas:
+    AutomationError:
+      $ref: ./schemas/automation-errors.yaml#/Error
+  parameters:
+    AutomationIdempotencyKey:
+      $ref: ./schemas/automation-parameters.yaml#/IdempotencyKey
   securitySchemes:
     AdminSession:
       type: apiKey
       in: cookie
       name: irishpub-map-admin-session
       description: Authenticated administrator session cookie. The cookie value is never included in this document.
+    AutomationBearer:
+      type: http
+      scheme: bearer
+      description: Raw token is supplied only in the Authorization header. Required scope is shown on each operation via x-required-scope and description; scopes are not OAuth grants.
