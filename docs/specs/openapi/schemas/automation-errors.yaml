@@ -1,0 +1,87 @@
+Error:
+  type: object
+  required: [errorCode]
+  properties:
+    errorCode:
+      type: string
+      enum:
+        - unauthorized
+        - forbidden
+        - invalid_request
+        - invalid_json
+        - invalid_content_type
+        - invalid_prefecture_code
+        - validation_error
+        - not_found
+        - database_unavailable
+        - internal_error
+        - content_conflict
+        - content_not_found
+        - quiz_conflict
+        - quiz_not_found
+        - pub_not_found
+        - tag_conflict
+        - publication_requirements_not_met
+        - idempotency_key_required
+        - invalid_idempotency_key
+        - idempotency_conflict
+        - idempotency_in_progress
+    fieldErrors:
+      type: object
+      additionalProperties:
+        type: string
+        enum: [required, too_long, invalid_format, invalid_type, leading_or_trailing_space, immutable]
+    missingFields:
+      type: array
+      items: { type: string }
+
+AutomationUnauthorized:
+  description: Bearer token is missing, invalid, or not configured. Includes WWW-Authenticate Bearer.
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+      example: { errorCode: unauthorized }
+AutomationForbidden:
+  description: The authenticated token lacks this operation's server-side scope.
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+      example: { errorCode: forbidden }
+BadRequest:
+  description: Invalid path or query parameter, malformed JSON, or missing/invalid Idempotency-Key on POST. See operation description for applicable codes.
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+AutomationInvalidContentType:
+  description: Request Content-Type must be application/json.
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+      example: { errorCode: invalid_content_type }
+Validation:
+  description: Input validation failed; fieldErrors may identify fields and reason codes. Publication requirements return missingFields.
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+Conflict:
+  description: A resource, reference, or idempotency key conflicts with existing state. See operation description for applicable codes.
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+NotFound:
+  description: The requested resource does not exist. Error code is content_not_found, quiz_not_found, or pub_not_found.
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+AutomationDatabaseUnavailable:
+  description: The database is not configured.
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+      example: { errorCode: database_unavailable }
+AutomationInternalError:
+  description: Unexpected server failure; internal details are withheld.
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+      example: { errorCode: internal_error }

@@ -1,0 +1,503 @@
+Uuid:
+  type: string
+  format: uuid
+
+MediaAsset:
+  type: object
+  additionalProperties: false
+  required: [id, url, mimeType, width, height, fileSize, createdAt]
+  properties:
+    id: { $ref: "#/Uuid" }
+    url: { type: string }
+    mimeType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+    width: { type: integer }
+    height: { type: integer }
+    fileSize: { type: integer }
+    createdAt: { type: string, format: date-time }
+
+Prefecture:
+  type: object
+  additionalProperties: false
+  required: [code, name]
+  properties:
+    code: { type: integer, minimum: 1, maximum: 47 }
+    name: { type: string }
+Municipality:
+  type: object
+  additionalProperties: false
+  required: [code, prefectureCode, name]
+  properties:
+    code: { type: string, pattern: '^\d{6}$' }
+    prefectureCode: { type: integer, minimum: 1, maximum: 47 }
+    name: { type: string }
+Status:
+  type: object
+  additionalProperties: false
+  required: [code, key, name]
+  properties:
+    code: { type: integer }
+    key: { type: string, enum: [open, temporarily_closed, closed, unknown] }
+    name: { type: string }
+TagTranslations:
+  type: object
+  required: [ja]
+  properties:
+    ja: { type: string, maxLength: 100 }
+    en: { type: string, maxLength: 100 }
+TagWrite:
+  type: object
+  required: [key, translations]
+  properties:
+    key: { type: string, maxLength: 64, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+    translations: { $ref: "#/TagTranslations" }
+Tag:
+  allOf:
+    - $ref: "#/TagWrite"
+    - type: object
+      required: [id, pubCount]
+      properties:
+        id: { $ref: "#/Uuid" }
+        pubCount: { type: integer, minimum: 0 }
+
+ContentTranslation:
+  type: object
+  additionalProperties: false
+  required: [title, summary, bodyMarkdown, heroImageAlt, heroImageCaption]
+  properties:
+    title: { type: string, maxLength: 200 }
+    summary: { type: string, maxLength: 500 }
+    bodyMarkdown: { type: string, maxLength: 100000 }
+    heroImageAlt: { type: string, maxLength: 500 }
+    heroImageCaption: { type: string, maxLength: 1000 }
+ContentWrite:
+  type: object
+  additionalProperties: false
+  required: [kind, slug, category, heroImageAssetId, translations]
+  properties:
+    kind: { type: [string, "null"], enum: [story, guide, null] }
+    slug: { type: [string, "null"], maxLength: 100, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+    category: { type: [string, "null"], enum: [history, culture, pub-culture, food-drink, null] }
+    heroImageAssetId:
+      anyOf: [{ $ref: "#/Uuid" }, { type: "null" }]
+    translations:
+      type: object
+      additionalProperties: false
+      required: [ja, en]
+      properties:
+        ja: { $ref: "#/ContentTranslation" }
+        en: { $ref: "#/ContentTranslation" }
+Content:
+  type: object
+  additionalProperties: false
+  required:
+    [id, kind, slug, category, status, publishedAt, heroImageAssetId, heroImage, translations, createdAt, updatedAt]
+  properties:
+    id: { $ref: "#/Uuid" }
+    kind: { $ref: "#/ContentWrite/properties/kind" }
+    slug: { $ref: "#/ContentWrite/properties/slug" }
+    category: { $ref: "#/ContentWrite/properties/category" }
+    status: { type: string, enum: [draft, published] }
+    publishedAt: { type: [string, "null"], format: date-time }
+    heroImageAssetId: { $ref: "#/ContentWrite/properties/heroImageAssetId" }
+    heroImage:
+      anyOf: [{ $ref: "#/MediaAsset" }, { type: "null" }]
+    translations: { $ref: "#/ContentWrite/properties/translations" }
+    createdAt: { type: string, format: date-time }
+    updatedAt: { type: string, format: date-time }
+ContentListItem:
+  type: object
+  required: [id, kind, slug, category, status, publishedAt, createdAt, updatedAt, titleJa, titleEn]
+  properties:
+    id: { $ref: "#/Uuid" }
+    kind: { type: [string, "null"], enum: [story, guide, null] }
+    slug: { type: [string, "null"] }
+    category: { type: [string, "null"], enum: [history, culture, pub-culture, food-drink, null] }
+    status: { type: string, enum: [draft, published] }
+    publishedAt: { type: [string, "null"], format: date-time }
+    createdAt: { type: string, format: date-time }
+    updatedAt: { type: string, format: date-time }
+    titleJa: { type: string }
+    titleEn: { type: string }
+ContentPublicationInput:
+  type: object
+  additionalProperties: false
+  required: [status]
+  properties:
+    status: { type: string, enum: [draft, published] }
+ContentPublication:
+  type: object
+  required: [id, status, unchanged, publishedAt]
+  properties:
+    id: { $ref: "#/Uuid" }
+    status: { type: string, enum: [draft, published] }
+    unchanged: { type: boolean }
+    publishedAt: { type: [string, "null"], format: date-time }
+
+QuizTranslation:
+  type: object
+  required: [question, explanation, sourceLabel, imageAlt, imageCaption]
+  properties:
+    question: { type: string }
+    explanation: { type: string }
+    sourceLabel: { type: string }
+    imageAlt: { type: string, maxLength: 500 }
+    imageCaption: { type: string, maxLength: 1000 }
+QuizTranslationInput:
+  type: object
+  description: Omitted text fields are normalized to empty strings in a draft.
+  properties:
+    question: { $ref: "#/QuizTranslation/properties/question" }
+    explanation: { $ref: "#/QuizTranslation/properties/explanation" }
+    sourceLabel: { $ref: "#/QuizTranslation/properties/sourceLabel" }
+    imageAlt: { $ref: "#/QuizTranslation/properties/imageAlt" }
+    imageCaption: { $ref: "#/QuizTranslation/properties/imageCaption" }
+QuizChoiceWrite:
+  type: object
+  description: The server assigns sortOrder from array order; sending sortOrder is rejected.
+  required: [id]
+  properties:
+    id: { type: string, maxLength: 60, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+    translations:
+      type: object
+      properties:
+        ja: { type: string }
+        en: { type: string }
+QuizChoice:
+  type: object
+  required: [id, sortOrder, translations]
+  properties:
+    id: { $ref: "#/QuizChoiceWrite/properties/id" }
+    sortOrder: { type: integer, minimum: 0 }
+    translations:
+      type: object
+      required: [ja, en]
+      properties:
+        ja: { type: string }
+        en: { type: string }
+QuizCategory:
+  type: [string, "null"]
+  enum:
+    [ireland-basics, pub-guinness, irish-whiskey, irish-music, irish-sports, literature, myth-folklore, history, null]
+QuizWrite:
+  type: object
+  description: Omitted draft fields normalize to null, empty strings, or an empty choices array. Publication requires exactly four complete choices and a correctChoiceId referring to one of them.
+  properties:
+    category: { $ref: "#/QuizCategory" }
+    specialDate:
+      anyOf:
+        - type: object
+          required: [month, day]
+          properties:
+            month: { type: integer, minimum: 1, maximum: 12 }
+            day: { type: integer, minimum: 1, maximum: 31 }
+        - type: "null"
+    correctChoiceId: { type: [string, "null"], maxLength: 60 }
+    sourceUrl: { type: [string, "null"], format: uri, pattern: "^https://" }
+    relatedContentId:
+      anyOf: [{ $ref: "#/Uuid" }, { type: "null" }]
+    imageAssetId:
+      anyOf: [{ $ref: "#/Uuid" }, { type: "null" }]
+    translations:
+      type: object
+      properties:
+        ja: { $ref: "#/QuizTranslationInput" }
+        en: { $ref: "#/QuizTranslationInput" }
+    choices:
+      type: array
+      maxItems: 4
+      items: { $ref: "#/QuizChoiceWrite" }
+Quiz:
+  type: object
+  required:
+    [
+      id,
+      category,
+      specialDate,
+      correctChoiceId,
+      sourceUrl,
+      relatedContentId,
+      imageAssetId,
+      image,
+      isPublished,
+      translations,
+      choices,
+      createdAt,
+      updatedAt,
+    ]
+  properties:
+    id: { type: string, maxLength: 100 }
+    category: { $ref: "#/QuizCategory" }
+    specialDate: { $ref: "#/QuizWrite/properties/specialDate" }
+    correctChoiceId: { $ref: "#/QuizWrite/properties/correctChoiceId" }
+    sourceUrl: { $ref: "#/QuizWrite/properties/sourceUrl" }
+    relatedContentId: { $ref: "#/QuizWrite/properties/relatedContentId" }
+    imageAssetId: { $ref: "#/QuizWrite/properties/imageAssetId" }
+    image:
+      anyOf: [{ $ref: "#/MediaAsset" }, { type: "null" }]
+    isPublished: { type: boolean }
+    translations:
+      type: object
+      required: [ja, en]
+      properties:
+        ja: { $ref: "#/QuizTranslation" }
+        en: { $ref: "#/QuizTranslation" }
+    choices:
+      type: array
+      maxItems: 4
+      items: { $ref: "#/QuizChoice" }
+    createdAt: { type: string, format: date-time }
+    updatedAt: { type: string, format: date-time }
+QuizListItem:
+  type: object
+  required:
+    [
+      id,
+      category,
+      specialDate,
+      correctChoiceId,
+      sourceUrl,
+      relatedContentId,
+      imageAssetId,
+      isPublished,
+      createdAt,
+      updatedAt,
+      questionJa,
+      questionEn,
+      choiceCount,
+    ]
+  properties:
+    id: { type: string }
+    category: { $ref: "#/QuizCategory" }
+    specialDate: { $ref: "#/QuizWrite/properties/specialDate" }
+    correctChoiceId: { $ref: "#/QuizWrite/properties/correctChoiceId" }
+    sourceUrl: { $ref: "#/QuizWrite/properties/sourceUrl" }
+    relatedContentId: { $ref: "#/QuizWrite/properties/relatedContentId" }
+    imageAssetId: { $ref: "#/QuizWrite/properties/imageAssetId" }
+    isPublished: { type: boolean }
+    createdAt: { type: string, format: date-time }
+    updatedAt: { type: string, format: date-time }
+    questionJa: { type: string }
+    questionEn: { type: string }
+    choiceCount: { type: integer, minimum: 0, maximum: 4 }
+BooleanPublicationInput:
+  type: object
+  additionalProperties: false
+  required: [isPublished]
+  properties:
+    isPublished: { type: boolean }
+BooleanPublication:
+  type: object
+  required: [id, isPublished, unchanged]
+  properties:
+    id: { type: string }
+    isPublished: { type: boolean }
+    unchanged: { type: boolean }
+
+PubTranslation:
+  type: object
+  required: [name, nameReading, address]
+  properties:
+    name: { type: string }
+    nameReading: { type: [string, "null"] }
+    address: { type: [string, "null"] }
+PubTranslations:
+  type: object
+  required: [ja, en]
+  properties:
+    ja: { $ref: "#/PubTranslation" }
+    en:
+      anyOf: [{ $ref: "#/PubTranslation" }, { type: "null" }]
+PubWrite:
+  type: object
+  additionalProperties: false
+  required:
+    [
+      prefectureCode,
+      municipalityCode,
+      latitude,
+      longitude,
+      websiteUrl,
+      googleMapsUrl,
+      instagramUrl,
+      status,
+      translations,
+      tagIds,
+    ]
+  properties:
+    prefectureCode: { type: [integer, "null"], minimum: 1, maximum: 47 }
+    municipalityCode: { type: [string, "null"], pattern: '^\d{6}$' }
+    latitude: { type: [number, "null"], minimum: -90, maximum: 90 }
+    longitude: { type: [number, "null"], minimum: -180, maximum: 180 }
+    websiteUrl: { type: [string, "null"], format: uri }
+    googleMapsUrl: { type: [string, "null"], format: uri }
+    instagramUrl: { type: [string, "null"], format: uri }
+    status: { type: [string, "null"], enum: [open, temporarily_closed, closed, unknown, null] }
+    translations: { $ref: "#/PubTranslations" }
+    tagIds:
+      type: array
+      uniqueItems: true
+      items: { $ref: "#/Uuid" }
+Pub:
+  type: object
+  additionalProperties: false
+  required:
+    [
+      id,
+      isPublished,
+      prefectureCode,
+      municipalityCode,
+      latitude,
+      longitude,
+      websiteUrl,
+      googleMapsUrl,
+      instagramUrl,
+      status,
+      translations,
+      tagIds,
+      updatedAt,
+    ]
+  properties:
+    id: { $ref: "#/Uuid" }
+    isPublished: { type: boolean }
+    prefectureCode: { $ref: "#/PubWrite/properties/prefectureCode" }
+    municipalityCode: { $ref: "#/PubWrite/properties/municipalityCode" }
+    latitude: { $ref: "#/PubWrite/properties/latitude" }
+    longitude: { $ref: "#/PubWrite/properties/longitude" }
+    websiteUrl: { $ref: "#/PubWrite/properties/websiteUrl" }
+    googleMapsUrl: { $ref: "#/PubWrite/properties/googleMapsUrl" }
+    instagramUrl: { $ref: "#/PubWrite/properties/instagramUrl" }
+    status: { $ref: "#/PubWrite/properties/status" }
+    translations: { $ref: "#/PubTranslations" }
+    tagIds: { $ref: "#/PubWrite/properties/tagIds" }
+    updatedAt: { type: string, format: date-time }
+PubListTag:
+  type: object
+  required: [id, key, name]
+  properties:
+    id: { $ref: "#/Uuid" }
+    key: { type: string }
+    name: { type: string }
+PubListItem:
+  type: object
+  required:
+    [
+      id,
+      name,
+      kana,
+      prefecture,
+      city,
+      municipalityCode,
+      address,
+      latitude,
+      longitude,
+      websiteUrl,
+      googleMapsUrl,
+      instagramUrl,
+      tags,
+      tagDisplayNames,
+      status,
+      prefectureCode,
+      statusCode,
+      statusDisplayName,
+      tagItems,
+      isPublished,
+      updatedAt,
+    ]
+  properties:
+    id: { $ref: "#/Uuid" }
+    name: { type: string }
+    kana: { type: [string, "null"] }
+    prefecture: { type: [string, "null"] }
+    city: { type: [string, "null"] }
+    municipalityCode: { type: [string, "null"] }
+    address: { type: [string, "null"] }
+    latitude: { type: [number, "null"] }
+    longitude: { type: [number, "null"] }
+    websiteUrl: { type: [string, "null"] }
+    googleMapsUrl: { type: [string, "null"] }
+    instagramUrl: { type: [string, "null"] }
+    tags: { type: array, items: { type: string } }
+    tagDisplayNames: { type: object, additionalProperties: { type: string } }
+    status: { type: [string, "null"] }
+    prefectureCode: { type: [integer, "null"] }
+    statusCode: { type: [integer, "null"] }
+    statusDisplayName: { type: [string, "null"] }
+    tagItems: { type: array, items: { $ref: "#/PubListTag" } }
+    isPublished: { type: boolean }
+    updatedAt: { type: string, format: date-time }
+
+PrefecturesResponse:
+  type: object
+  required: [prefectures]
+  properties:
+    prefectures: { type: array, items: { $ref: "#/Prefecture" } }
+MunicipalitiesResponse:
+  type: object
+  required: [municipalities]
+  properties:
+    municipalities: { type: array, items: { $ref: "#/Municipality" } }
+StatusesResponse:
+  type: object
+  required: [statuses]
+  properties:
+    statuses: { type: array, items: { $ref: "#/Status" } }
+TagsResponse:
+  type: object
+  required: [tags]
+  properties:
+    tags: { type: array, items: { $ref: "#/Tag" } }
+TagResponse:
+  type: object
+  required: [tag]
+  properties:
+    tag: { $ref: "#/Tag" }
+ContentListResponse:
+  type: object
+  required: [content, databaseConfigured]
+  properties:
+    content: { type: array, items: { $ref: "#/ContentListItem" } }
+    databaseConfigured: { type: boolean }
+ContentResponse:
+  type: object
+  required: [content]
+  properties:
+    content: { $ref: "#/Content" }
+ContentPublicationResponse:
+  type: object
+  required: [publication]
+  properties:
+    publication: { $ref: "#/ContentPublication" }
+QuizListResponse:
+  type: object
+  required: [questions]
+  properties:
+    questions: { type: array, items: { $ref: "#/QuizListItem" } }
+QuizResponse:
+  type: object
+  required: [question]
+  properties:
+    question: { $ref: "#/Quiz" }
+QuizPublicationResponse:
+  type: object
+  required: [publication]
+  properties:
+    publication: { $ref: "#/BooleanPublication" }
+PubListResponse:
+  type: object
+  required: [pubs, total, page, pageSize, databaseConfigured]
+  properties:
+    pubs: { type: array, items: { $ref: "#/PubListItem" } }
+    total: { type: integer, minimum: 0 }
+    page: { type: integer, minimum: 1 }
+    pageSize: { type: integer, const: 50 }
+    databaseConfigured: { type: boolean }
+PubResponse:
+  type: object
+  required: [pub]
+  properties:
+    pub: { $ref: "#/Pub" }
+PubPublicationResponse:
+  type: object
+  required: [publication]
+  properties:
+    publication: { $ref: "#/BooleanPublication" }

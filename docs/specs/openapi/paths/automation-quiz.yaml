@@ -1,0 +1,132 @@
+Collection:
+  get:
+    tags: [Automation Quiz]
+    operationId: listAutomationQuiz
+    summary: List draft and published questions
+    description: "Required server-side scope: `quiz:read`. Without DATABASE_URL returns `503 database_unavailable`."
+    x-required-scope: quiz:read
+    security: [{ AutomationBearer: [] }]
+    responses:
+      "200":
+        description: Quiz question list
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/QuizListResponse" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+  post:
+    tags: [Automation Quiz]
+    operationId: createAutomationQuiz
+    summary: Create a quiz draft
+    description: "Required server-side scope: `quiz:create`. Always creates a draft with a server-generated ID. Draft allows 0–4 choices; a correctChoiceId, both locales, HTTPS sourceUrl, and exactly four complete choices are required before publishing. `Idempotency-Key` is mandatory. Invalid/missing keys return 400; reused keys with different input or while processing return `409 idempotency_conflict` or `409 idempotency_in_progress`."
+    x-required-scope: quiz:create
+    security: [{ AutomationBearer: [] }]
+    parameters:
+      - $ref: "../schemas/automation-parameters.yaml#/IdempotencyKey"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/automation.yaml#/QuizWrite" }
+    responses:
+      "201":
+        description: Created draft, or the same response replayed for an identical retry
+        headers:
+          X-Request-Id: { $ref: "../schemas/automation-parameters.yaml#/RequestId" }
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/QuizResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "409": { $ref: "../schemas/automation-errors.yaml#/Conflict" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/AutomationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/Validation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+
+Item:
+  parameters:
+    - $ref: "../schemas/automation-parameters.yaml#/QuizId"
+  get:
+    tags: [Automation Quiz]
+    operationId: getAutomationQuiz
+    summary: Get quiz detail
+    description: "Required server-side scope: `quiz:read`. Invalid ID returns `400 invalid_request`; missing ID returns `404 quiz_not_found`. GET includes server-managed choice sortOrder and cannot be sent verbatim to PUT."
+    x-required-scope: quiz:read
+    security: [{ AutomationBearer: [] }]
+    responses:
+      "200":
+        description: Quiz detail
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/QuizResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/NotFound" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+  put:
+    tags: [Automation Quiz]
+    operationId: updateAutomationQuiz
+    summary: Replace editable quiz fields
+    description: "Required server-side scope: `quiz:update`. Send QuizWrite without ID, publication state, timestamps, image, or choice sortOrder. Choice array order determines sortOrder. Publication state is preserved; published questions must remain publishable."
+    x-required-scope: quiz:update
+    security: [{ AutomationBearer: [] }]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/automation.yaml#/QuizWrite" }
+    responses:
+      "200":
+        description: Updated quiz detail
+        headers:
+          X-Request-Id: { $ref: "../schemas/automation-parameters.yaml#/RequestId" }
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/QuizResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/NotFound" }
+      "409": { $ref: "../schemas/automation-errors.yaml#/Conflict" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/AutomationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/Validation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+
+Publication:
+  parameters:
+    - $ref: "../schemas/automation-parameters.yaml#/QuizId"
+  patch:
+    tags: [Automation Quiz]
+    operationId: setAutomationQuizPublication
+    summary: Publish or unpublish a quiz question
+    description: "Required server-side scope: `quiz:publish`. Publishing requires a category, both locales’ question/explanation/sourceLabel, HTTPS sourceUrl, exactly four complete choices, correctChoiceId referring to a choice, and image alt text in both locales if an image is set. Missing fields return `422 publication_requirements_not_met` with missingFields."
+    x-required-scope: quiz:publish
+    security: [{ AutomationBearer: [] }]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/automation.yaml#/BooleanPublicationInput" }
+    responses:
+      "200":
+        description: Publication result
+        headers:
+          X-Request-Id: { $ref: "../schemas/automation-parameters.yaml#/RequestId" }
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/QuizPublicationResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/NotFound" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/AutomationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/Validation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }

@@ -1,0 +1,131 @@
+Collection:
+  get:
+    tags: [Automation Content]
+    operationId: listAutomationContent
+    summary: List draft and published content
+    description: "Required server-side scope: `content:read`. Without DATABASE_URL returns an empty list and databaseConfigured false."
+    x-required-scope: content:read
+    security: [{ AutomationBearer: [] }]
+    responses:
+      "200":
+        description: Content list
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/ContentListResponse" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+  post:
+    tags: [Automation Content]
+    operationId: createAutomationContent
+    summary: Create a content draft
+    description: "Required server-side scope: `content:create`. Always creates a draft with a server-generated ID, regardless of request fields. `Idempotency-Key` is required: missing/invalid key yields 400, a different request with the same key yields `409 idempotency_conflict`, and a pending request yields `409 idempotency_in_progress`. Published state requires a later publication request."
+    x-required-scope: content:create
+    security: [{ AutomationBearer: [] }]
+    parameters:
+      - $ref: "../schemas/automation-parameters.yaml#/IdempotencyKey"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/automation.yaml#/ContentWrite" }
+    responses:
+      "201":
+        description: Created content draft, or the same response replayed for an identical retry
+        headers:
+          X-Request-Id: { $ref: "../schemas/automation-parameters.yaml#/RequestId" }
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/ContentResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "409": { $ref: "../schemas/automation-errors.yaml#/Conflict" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/AutomationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/Validation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+
+Item:
+  parameters:
+    - $ref: "../schemas/automation-parameters.yaml#/ContentId"
+  get:
+    tags: [Automation Content]
+    operationId: getAutomationContent
+    summary: Get content detail
+    description: "Required server-side scope: `content:read`. Response includes server-managed fields, which must be removed before PUT."
+    x-required-scope: content:read
+    security: [{ AutomationBearer: [] }]
+    responses:
+      "200":
+        description: Content detail
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/ContentResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/NotFound" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+  put:
+    tags: [Automation Content]
+    operationId: updateAutomationContent
+    summary: Replace editable content fields
+    description: "Required server-side scope: `content:update`. Send the five editable ContentWrite fields, not the GET response. Publication state is preserved. A published item must continue meeting publication requirements; slug collision yields `409 content_conflict`."
+    x-required-scope: content:update
+    security: [{ AutomationBearer: [] }]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/automation.yaml#/ContentWrite" }
+    responses:
+      "200":
+        description: Updated content detail
+        headers:
+          X-Request-Id: { $ref: "../schemas/automation-parameters.yaml#/RequestId" }
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/ContentResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/NotFound" }
+      "409": { $ref: "../schemas/automation-errors.yaml#/Conflict" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/AutomationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/Validation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+
+Publication:
+  parameters:
+    - $ref: "../schemas/automation-parameters.yaml#/ContentId"
+  patch:
+    tags: [Automation Content]
+    operationId: setAutomationContentPublication
+    summary: Publish or unpublish content
+    description: "Required server-side scope: `content:publish`. Publishing requires kind, slug, category, and both locales’ title, summary, and Markdown body. If a hero image is set, both locales require alt text. Missing fields return `422 publication_requirements_not_met` with missingFields. An unchanged state is reported in the response."
+    x-required-scope: content:publish
+    security: [{ AutomationBearer: [] }]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/automation.yaml#/ContentPublicationInput" }
+    responses:
+      "200":
+        description: Publication result
+        headers:
+          X-Request-Id: { $ref: "../schemas/automation-parameters.yaml#/RequestId" }
+        content:
+          application/json:
+            schema: { $ref: "../schemas/automation.yaml#/ContentPublicationResponse" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/NotFound" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/AutomationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/Validation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
