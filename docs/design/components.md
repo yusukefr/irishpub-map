@@ -68,7 +68,7 @@ Discover のページ構成、長文幅、関連導線、写真利用条件は[D
 
 ## Mobile Map
 
-980px以下では共通BottomSheetを結果一覧・詳細の表示領域に使用します。初期はcollapsedで地図と横スクロールできる店舗カードを表示し、件数ボタン・ハンドルからmediumへ、詳細操作からexpandedへ移ります。マーカー選択はcollapsedのときだけmediumへ開き、既に開いたSheetの高さとMap位置を保ちます。詳細の「戻る」は直前の一覧の高さを復元し、「閉じる」はcollapsedへ戻して検索・条件・選択店舗を維持します。
+980px以下では共通BottomSheetを結果一覧・詳細の表示領域に使用します。collapsedでは地図と横スクロールできる店舗カードを表示し、件数ボタン・ハンドルからmediumへ、詳細操作からexpandedへ移ります。Marker選択はcollapsedを維持して対応カードへ選択を同期し、medium / expandedでは既存のSheet状態を保ちます。Carouselの「詳細」から開いた場合、「結果へ戻る」はcollapsedと選択・Carousel位置を復元します。結果一覧から開いた詳細は直前の一覧状態へ戻り、「閉じる」はcollapsedへ戻して検索・条件・選択店舗を維持します。
 
 ハンドルのクリックは3段階を巡回し、上下ドラッグは1段階、矢印キー・Home / Endでも高さを変更できます。ドラッグ対象は44px以上のハンドルに限定し、結果一覧の内部スクロール・地図pan / pinch・条件行の横スクロールとは分離します。Sheetは非モーダルで、focus trapは設けません。共通BottomSheetの`className`で呼び出し側のMap領域に高さを収めます。
 

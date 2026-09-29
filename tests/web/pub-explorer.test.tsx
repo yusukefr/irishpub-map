@@ -266,6 +266,7 @@ describe("PubExplorer", () => {
     vi.spyOn(carousel, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 300, 190));
     vi.spyOn(carousel.children[0], "getBoundingClientRect").mockReturnValue(new DOMRect(-150, 0, 180, 190));
     vi.spyOn(carousel.children[1], "getBoundingClientRect").mockReturnValue(new DOMRect(50, 0, 180, 190));
+    Object.defineProperty(carousel, "scrollBy", { configurable: true, value: vi.fn() });
     fireEvent.scroll(carousel);
     fireEvent.click(maplibreMock.markerConstructor.mock.calls[0][0].element as HTMLButtonElement);
 
@@ -419,12 +420,45 @@ describe("PubExplorer", () => {
     expect(screen.getByRole("heading", { name: "該当するPubがありません" })).toBeInTheDocument();
     expect(getCurrentPosition).toHaveBeenCalledOnce();
   });
-  it("opens the mobile sheet from a marker and restores list height after details", () => {
-    render(<PubExplorer pubs={pubs} />);
+  it("keeps the mobile sheet collapsed when a marker selects its carousel card", () => {
+    render(<PubExplorer pubs={[pubs[0], { ...pubs[1], status: "open" }]} />);
     const handle = screen.getByRole("button", { name: /結果パネルの高さを変更/ });
     expect(handle).toHaveAttribute("aria-expanded", "false");
+    const marker = (maplibreMock.markerConstructor.mock.calls[1][0] as { element: HTMLButtonElement }).element;
+    fireEvent.click(marker);
+    expect(handle).toHaveAccessibleName("結果パネルの高さを変更: 地図を広く表示");
+    expect(handle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("complementary", { name: "掲載店舗" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "店舗カード一覧" }).querySelector('article[data-selected="true"]'),
+    ).toHaveTextContent("Osaka Sample Pub");
+    expect(marker).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("opens details from a collapsed carousel and returns with selection and position preserved", () => {
+    render(<PubExplorer pubs={[pubs[0], { ...pubs[1], status: "open" }]} />);
+    const handle = screen.getByRole("button", { name: /結果パネルの高さを変更/ });
+    const carousel = screen.getByRole("region", { name: "店舗カード一覧" });
+    const osakaCard = carousel.querySelectorAll("article")[1];
+    const osakaButtons = osakaCard.querySelectorAll("button");
+
+    fireEvent.click(osakaButtons[1]);
+    expect(handle).toHaveAccessibleName("結果パネルの高さを変更: 一覧・詳細を広く表示");
+    expect(screen.getByRole("heading", { name: "Osaka Sample Pub", level: 3 })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /結果一覧に戻る/ }));
+
+    expect(handle).toHaveAccessibleName("結果パネルの高さを変更: 地図を広く表示");
+    expect(carousel.querySelector('article[data-selected="true"]')).toHaveTextContent("Osaka Sample Pub");
+    expect(screen.queryByRole("complementary", { name: "掲載店舗" })).not.toBeInTheDocument();
+  });
+
+  it("restores the existing mobile sheet height when opening details from results", () => {
+    render(<PubExplorer pubs={pubs} />);
+    const handle = screen.getByRole("button", { name: /結果パネルの高さを変更/ });
     const marker = (maplibreMock.markerConstructor.mock.calls[0][0] as { element: HTMLButtonElement }).element;
     fireEvent.click(marker);
+    expect(handle).toHaveAccessibleName("結果パネルの高さを変更: 地図を広く表示");
+    openResults();
     expect(handle).toHaveAccessibleName("結果パネルの高さを変更: 一覧と地図を表示");
     fireEvent.click(screen.getByRole("button", { name: "詳細" }));
     expect(handle).toHaveAccessibleName("結果パネルの高さを変更: 一覧・詳細を広く表示");

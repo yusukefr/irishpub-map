@@ -87,9 +87,28 @@ for (const locale of ["ja", "en"] as const) {
       });
       await expect(sheet).toHaveAttribute("data-state", "collapsed");
       await page.locator(".pub-map-marker").first().click();
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await expect(page.locator('article[data-density="compact"][data-selected="true"]')).toHaveCount(1);
+      await expect(page.locator(".pub-results-panel")).toHaveCount(0);
+      await carousel
+        .locator('article[data-selected="true"]')
+        .getByRole("button", { name: t.list.details, exact: true })
+        .click();
+      await expect(sheet).toHaveAttribute("data-state", "expanded");
+      const back = page.getByRole("button", { name: new RegExp(t.list.backToResults) });
+      await expect(back).toBeFocused();
+      if (width === 390 && locale === "ja") {
+        await expect(page).toHaveScreenshot("map-mobile-pub-selected.png", {
+          animations: "disabled",
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
+        });
+      }
+      await back.click();
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await expect(carousel.locator('article[data-selected="true"]')).toHaveCount(1);
+      await page.locator(".map-result-count").click();
       await expect(sheet).toHaveAttribute("data-state", "medium");
       await expect(page.locator('.pub-results-panel article[data-selected="true"]')).toHaveCount(1);
-      await expect(page.locator('article[data-density="compact"][data-selected="true"]')).toHaveCount(1);
       await canvas.click({ position: { x: 10, y: 240 } });
       if (width === 390 && locale === "ja") {
         await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", {
@@ -103,14 +122,6 @@ for (const locale of ["ja", "en"] as const) {
         .getByRole("button", { name: t.list.details, exact: true })
         .click();
       await expect(sheet).toHaveAttribute("data-state", "expanded");
-      const back = page.getByRole("button", { name: new RegExp(t.list.backToResults) });
-      await expect(back).toBeFocused();
-      if (width === 390 && locale === "ja") {
-        await expect(page).toHaveScreenshot("map-mobile-pub-selected.png", {
-          animations: "disabled",
-          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
-        });
-      }
       await back.click();
       await expect(sheet).toHaveAttribute("data-state", "medium");
       await handle.focus();

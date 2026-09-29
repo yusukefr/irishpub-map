@@ -210,6 +210,18 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
     }
   };
 
+  const selectMapMarker = (pubId: string) => {
+    if (isDesktop || sheetState !== "collapsed") {
+      selectPub(pubId);
+      return;
+    }
+
+    // 地図を広く使う選択ではSheetを開かず、共有selectionでCarouselだけ追従させます。
+    window.clearTimeout(carouselScrollTimeoutRef.current);
+    setIsFiltersExpanded(false);
+    setSelectedPubId(pubId);
+  };
+
   const handleCarouselScroll = () => {
     window.clearTimeout(carouselScrollTimeoutRef.current);
     carouselScrollTimeoutRef.current = window.setTimeout(() => {
@@ -291,7 +303,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
   };
 
   const showResultDetails = (pubId: string) => {
-    listSheetState.current = sheetState === "collapsed" ? "medium" : sheetState;
+    listSheetState.current = isDesktop && sheetState === "collapsed" ? "medium" : sheetState;
     if (!isDesktop) setSheetState("expanded");
     setSelectedPubId(pubId);
     setResultsView("detail");
@@ -445,6 +457,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
                           locale={locale}
                           selected={selectedPubId === pub.id}
                           onSelect={selectPub}
+                          onShowDetails={showResultDetails}
                         />
                       ))}
                     </div>
@@ -462,7 +475,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
             focusPubs={mapFocusPubs}
             currentLocation={currentLocation}
             selectedPubId={selectedPubId}
-            onSelectPub={selectPub}
+            onSelectPub={selectMapMarker}
             locale={locale}
           />
         </div>
