@@ -19,6 +19,8 @@ GitHub ActionsのCI、PR用app version更新、Vercel Analytics / Speed Insights
 
 CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`で実行されます。Feature branchへのpushでは起動せず、PR更新時は`Lint, Test, Build`（Storybook Buildを含む）のみ実行します。E2EとStorybook browser testsは`main`へのpush後、または手動実行時に実行します。PR中にE2Eを確認する必要があれば、対象branchで`workflow_dispatch`を実行します。
 
+CIでは`rhysd/actionlint`の固定バージョンを使い、`.github/workflows/*.yml`を静的検査します。Workflowの構文やExpressionの誤りをPRのCIで検知します。この検査は書き込み権限や通知用Secretを持たない独立Jobで実行します。
+
 同じPRまたはbranchで新しいrunが始まると、進行中の古いrunはキャンセルされます。PR更新後は最新HEADの通常CIを確認し、`main`へのmerge後は通常CIとE2Eの両方を確認します。E2E失敗時のPlaywright artifactは引き続き保存します。
 
 PR作成・更新後は`scripts/verify-pr-ci.sh --pr <番号>`で最新HEADの`Lint, Test, Build`を確認します。checkが未作成なら最大90秒待ち、`queued`や`in_progress`なら既存checkの完了を待ちます。待機中にPRのHEADが変わった場合は中止するため、コマンドを再実行します。成功は正常終了、失敗・キャンセル・待機のタイムアウトはエラーになります。check未作成時のfallbackも必要なら`--dispatch`を付けます。この場合も90秒待ってcheckが作成されないときだけ`workflow_dispatch`で手動CIを起動し、対象PRのHEAD SHAと一致するrunを待ちます。通常CIの失敗時は原因を確認し、fallbackを自動起動しません。
