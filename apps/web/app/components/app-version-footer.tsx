@@ -20,9 +20,11 @@ export function AppVersionFooter({ locale, variant = "default" }: AppVersionFoot
       className={variant === "compact" ? "app-version app-version-compact" : "app-version"}
       aria-label={t.footer.ariaLabel}
     >
-      <span>v{appVersion.version}</span>
+      <span className="app-version-number">v{appVersion.version}</span>
       {variant === "default" ? (
-        <span>{formatMessage(t.footer.releaseDate, { date: appVersion.releaseDate })}</span>
+        <span className="app-version-release-date">
+          {formatMessage(t.footer.releaseDate, { date: appVersion.releaseDate })}
+        </span>
       ) : null}
       <Link href="/privacy">{t.footer.privacyPolicy}</Link>
     </footer>

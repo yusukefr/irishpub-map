@@ -9,8 +9,10 @@ describe("AppVersionFooter", () => {
     render(<AppVersionFooter locale="ja" />);
 
     const versionInfo = screen.getByRole("contentinfo", { name: "アプリのバージョン情報" });
-    expect(versionInfo).toHaveTextContent(`v${appVersion.version}`);
-    expect(versionInfo).toHaveTextContent(`Release Date ${appVersion.releaseDate}（JST）`);
+    expect(versionInfo.querySelector(".app-version-number")).toHaveTextContent(`v${appVersion.version}`);
+    expect(versionInfo.querySelector(".app-version-release-date")).toHaveTextContent(
+      `Release Date ${appVersion.releaseDate}（JST）`,
+    );
     expect(screen.getByRole("link", { name: "プライバシーポリシー" })).toHaveAttribute("href", "/privacy");
   });
   it("renders translated footer text in English", () => {
@@ -19,13 +21,18 @@ describe("AppVersionFooter", () => {
     expect(screen.getByRole("contentinfo", { name: "App version information" })).toHaveTextContent(
       `Release date ${appVersion.releaseDate} (JST)`,
     );
+    expect(document.querySelector(".app-version-number")).toHaveTextContent(`v${appVersion.version}`);
+    expect(document.querySelector(".app-version-release-date")).toHaveTextContent(
+      `Release date ${appVersion.releaseDate} (JST)`,
+    );
     expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute("href", "/privacy");
   });
   it("renders a compact footer without the release date", () => {
     render(<AppVersionFooter locale="ja" variant="compact" />);
 
     const footer = screen.getByRole("contentinfo", { name: "アプリのバージョン情報" });
-    expect(footer).toHaveTextContent("v" + appVersion.version);
+    expect(footer.querySelector(".app-version-number")).toHaveTextContent("v" + appVersion.version);
+    expect(footer.querySelector(".app-version-release-date")).toBeNull();
     expect(footer).not.toHaveTextContent("Release Date " + appVersion.releaseDate + "（JST）");
     expect(screen.getByRole("link", { name: "プライバシーポリシー" })).toHaveAttribute("href", "/privacy");
   });

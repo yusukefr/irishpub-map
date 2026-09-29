@@ -51,7 +51,7 @@ for (const locale of ["ja", "en"] as const) {
       if (locale === "ja" && viewport.width === 1440) {
         await expect(page).toHaveScreenshot("map-desktop-pub-selected.png", {
           animations: "disabled",
-          mask: [page.locator(".app-version")],
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
         });
       }
       await results
@@ -94,7 +94,7 @@ for (const locale of ["ja", "en"] as const) {
         await page.mouse.move(10, 20);
         await expect(page).toHaveScreenshot("map-desktop-filters-open.png", {
           animations: "disabled",
-          mask: [page.locator(".app-version")],
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
         });
       }
       const axe = await new AxeBuilder({ page }).analyze();

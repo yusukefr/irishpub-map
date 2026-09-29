@@ -11,7 +11,7 @@ PlaywrightのVisual Regressionで比較するReference Screenshotを、意図し
 
 通常のE2E実行やUIに関係しない変更ではsnapshotを更新しません。
 
-Public画面のsnapshotでは、PRごとに自動更新されるアプリVersion表示（`.app-version`）をmaskし、表示自体は[AppVersionFooterのcomponent test](../../tests/web/app-version-footer.test.tsx)で検証します。Version番号の変更だけでReference Screenshotを更新する必要はありません。
+Public画面のsnapshotでは、PRごとに自動更新されるアプリVersion番号（`.app-version-number`）とリリース日（`.app-version-release-date`）の文字部分だけをmaskします。フッター全体やPrivacy Policyリンクは比較対象に残し、表示内容は[AppVersionFooterのcomponent test](../../tests/web/app-version-footer.test.tsx)で検証します。Version情報の変更だけでReference Screenshotを更新する必要はありません。
 
 ## Prerequisites
 
@@ -31,7 +31,7 @@ npm run test:e2e
 
 ```bash
 docker run --rm --ipc=host --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
-  mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e \
+  mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27 \
   bash -lc "npm ci && npx playwright test e2e/visual-regression.spec.ts --update-snapshots"
 ```
 

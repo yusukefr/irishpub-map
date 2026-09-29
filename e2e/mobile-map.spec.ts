@@ -58,7 +58,7 @@ for (const locale of ["ja", "en"] as const) {
       if (width === 390) {
         await expect(page).toHaveScreenshot(`map-mobile-${locale}.png`, {
           animations: "disabled",
-          mask: [page.locator(".app-version")],
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
         });
       }
       for (const button of await page.locator(".pub-map-marker, .maplibregl-ctrl-group button").all()) {
@@ -89,7 +89,7 @@ for (const locale of ["ja", "en"] as const) {
       if (width === 390 && locale === "ja") {
         await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", {
           animations: "disabled",
-          mask: [page.locator(".app-version")],
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
         });
       }
       const results = page.locator(".pub-results-panel");
@@ -103,7 +103,7 @@ for (const locale of ["ja", "en"] as const) {
       if (width === 390 && locale === "ja") {
         await expect(page).toHaveScreenshot("map-mobile-pub-selected.png", {
           animations: "disabled",
-          mask: [page.locator(".app-version")],
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
         });
       }
       await back.click();
@@ -118,7 +118,7 @@ for (const locale of ["ja", "en"] as const) {
       if (width === 390 && locale === "ja") {
         await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-expanded.png", {
           animations: "disabled",
-          mask: [page.locator(".app-version")],
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
         });
       }
       const axe = await new AxeBuilder({ page }).analyze();

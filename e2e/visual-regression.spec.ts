@@ -23,7 +23,7 @@ test.describe("Public UI visual regression", () => {
     await expect(page).toHaveScreenshot("map-desktop-ja.png", {
       animations: "disabled",
       fullPage: true,
-      mask: [page.locator(".app-version")],
+      mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
     });
   });
 
@@ -36,7 +36,7 @@ test.describe("Public UI visual regression", () => {
     await expect(page).toHaveScreenshot("map-desktop-en.png", {
       animations: "disabled",
       fullPage: true,
-      mask: [page.locator(".app-version")],
+      mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
     });
   });
 
@@ -52,7 +52,7 @@ test.describe("Public UI visual regression", () => {
     await expect(page).toHaveScreenshot("map-mobile-ja.png", {
       animations: "disabled",
       fullPage: true,
-      mask: [page.locator(".app-version")],
+      mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
     });
   });
 
@@ -70,7 +70,7 @@ test.describe("Public UI visual regression", () => {
       await expect(page).toHaveScreenshot(scenario.snapshot, {
         animations: "disabled",
         fullPage: true,
-        mask: [page.locator(".app-version")],
+        mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
       });
     });
   }
