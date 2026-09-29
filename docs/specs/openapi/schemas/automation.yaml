@@ -162,6 +162,10 @@ QuizChoiceWrite:
       properties:
         ja: { type: string }
         en: { type: string }
+  not:
+    required: [sortOrder]
+    properties:
+      sortOrder: {}
 QuizChoice:
   type: object
   required: [id, sortOrder, translations]
@@ -328,9 +332,9 @@ PubWrite:
     municipalityCode: { type: [string, "null"], pattern: '^\d{6}$' }
     latitude: { type: [number, "null"], minimum: -90, maximum: 90 }
     longitude: { type: [number, "null"], minimum: -180, maximum: 180 }
-    websiteUrl: { type: [string, "null"], format: uri }
-    googleMapsUrl: { type: [string, "null"], format: uri }
-    instagramUrl: { type: [string, "null"], format: uri }
+    websiteUrl: { type: [string, "null"], format: uri, pattern: "^https?://" }
+    googleMapsUrl: { type: [string, "null"], format: uri, pattern: "^https?://" }
+    instagramUrl: { type: [string, "null"], format: uri, pattern: "^https?://" }
     status: { type: [string, "null"], enum: [open, temporarily_closed, closed, unknown, null] }
     translations: { $ref: "#/PubTranslations" }
     tagIds:

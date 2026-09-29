@@ -99,11 +99,11 @@ TagCollection:
         content:
           application/json:
             schema: { $ref: "../schemas/automation.yaml#/TagResponse" }
-      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/MutationBadRequest" }
       "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
       "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
-      "409": { $ref: "../schemas/automation-errors.yaml#/Conflict" }
-      "415": { $ref: "../schemas/automation-errors.yaml#/AutomationInvalidContentType" }
-      "422": { $ref: "../schemas/automation-errors.yaml#/Validation" }
-      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
-      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+      "409": { $ref: "../schemas/automation-errors.yaml#/MutationConflict" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/MutationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/MutationValidation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/MutationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/MutationInternalError" }

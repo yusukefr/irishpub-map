@@ -37,14 +37,14 @@ Collection:
         content:
           application/json:
             schema: { $ref: "../schemas/automation.yaml#/ContentResponse" }
-      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/MutationBadRequest" }
       "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
       "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
-      "409": { $ref: "../schemas/automation-errors.yaml#/Conflict" }
-      "415": { $ref: "../schemas/automation-errors.yaml#/AutomationInvalidContentType" }
-      "422": { $ref: "../schemas/automation-errors.yaml#/Validation" }
-      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
-      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+      "409": { $ref: "../schemas/automation-errors.yaml#/MutationConflict" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/MutationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/MutationValidation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/MutationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/MutationInternalError" }
 
 Item:
   parameters:
@@ -88,15 +88,15 @@ Item:
         content:
           application/json:
             schema: { $ref: "../schemas/automation.yaml#/ContentResponse" }
-      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/MutationBadRequest" }
       "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
       "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
-      "404": { $ref: "../schemas/automation-errors.yaml#/NotFound" }
-      "409": { $ref: "../schemas/automation-errors.yaml#/Conflict" }
-      "415": { $ref: "../schemas/automation-errors.yaml#/AutomationInvalidContentType" }
-      "422": { $ref: "../schemas/automation-errors.yaml#/Validation" }
-      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
-      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/MutationNotFound" }
+      "409": { $ref: "../schemas/automation-errors.yaml#/MutationConflict" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/MutationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/MutationValidation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/MutationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/MutationInternalError" }
 
 Publication:
   parameters:
@@ -121,11 +121,11 @@ Publication:
         content:
           application/json:
             schema: { $ref: "../schemas/automation.yaml#/ContentPublicationResponse" }
-      "400": { $ref: "../schemas/automation-errors.yaml#/BadRequest" }
+      "400": { $ref: "../schemas/automation-errors.yaml#/MutationBadRequest" }
       "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
       "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
-      "404": { $ref: "../schemas/automation-errors.yaml#/NotFound" }
-      "415": { $ref: "../schemas/automation-errors.yaml#/AutomationInvalidContentType" }
-      "422": { $ref: "../schemas/automation-errors.yaml#/Validation" }
-      "503": { $ref: "../schemas/automation-errors.yaml#/AutomationDatabaseUnavailable" }
-      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+      "404": { $ref: "../schemas/automation-errors.yaml#/MutationNotFound" }
+      "415": { $ref: "../schemas/automation-errors.yaml#/MutationInvalidContentType" }
+      "422": { $ref: "../schemas/automation-errors.yaml#/MutationValidation" }
+      "503": { $ref: "../schemas/automation-errors.yaml#/MutationDatabaseUnavailable" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/MutationInternalError" }

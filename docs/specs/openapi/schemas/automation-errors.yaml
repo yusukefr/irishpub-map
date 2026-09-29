@@ -36,7 +36,10 @@ Error:
       items: { type: string }
 
 AutomationUnauthorized:
-  description: Bearer token is missing, invalid, or not configured. Includes WWW-Authenticate Bearer.
+  description: Bearer token is missing, invalid, or not configured.
+  headers:
+    WWW-Authenticate:
+      schema: { type: string, const: Bearer }
   content:
     application/json:
       schema: { $ref: "#/Error" }
@@ -81,6 +84,59 @@ AutomationDatabaseUnavailable:
       example: { errorCode: database_unavailable }
 AutomationInternalError:
   description: Unexpected server failure; internal details are withheld.
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+      example: { errorCode: internal_error }
+
+MutationBadRequest:
+  description: Invalid path, malformed JSON, or missing/invalid Idempotency-Key on POST.
+  headers:
+    X-Request-Id: { $ref: "./automation-parameters.yaml#/RequestId" }
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+MutationNotFound:
+  description: The requested content, quiz, or pub does not exist.
+  headers:
+    X-Request-Id: { $ref: "./automation-parameters.yaml#/RequestId" }
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+MutationConflict:
+  description: A resource, reference, or idempotency key conflicts with existing state.
+  headers:
+    X-Request-Id: { $ref: "./automation-parameters.yaml#/RequestId" }
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+MutationInvalidContentType:
+  description: Request Content-Type must be application/json.
+  headers:
+    X-Request-Id: { $ref: "./automation-parameters.yaml#/RequestId" }
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+      example: { errorCode: invalid_content_type }
+MutationValidation:
+  description: Input validation failed; fieldErrors may identify fields and reason codes. Publication requirements return missingFields.
+  headers:
+    X-Request-Id: { $ref: "./automation-parameters.yaml#/RequestId" }
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+MutationDatabaseUnavailable:
+  description: The database is not configured.
+  headers:
+    X-Request-Id: { $ref: "./automation-parameters.yaml#/RequestId" }
+  content:
+    application/json:
+      schema: { $ref: "#/Error" }
+      example: { errorCode: database_unavailable }
+MutationInternalError:
+  description: Unexpected server failure; internal details are withheld.
+  headers:
+    X-Request-Id: { $ref: "./automation-parameters.yaml#/RequestId" }
   content:
     application/json:
       schema: { $ref: "#/Error" }
