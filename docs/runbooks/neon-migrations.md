@@ -14,23 +14,26 @@
 ## Prerequisites
 
 - 対象が検証用Branch、Preview用固定Branch、Productionのどれかを明確にしている。
+- この運用では、Git管理外の`.env.development.local`にPreview、`.env.local`にProductionの接続情報を置く。ファイル名だけで接続先を判断せず、対象Branchを確認する。
 - migration SQLと対応する`*_verify.sql`を確認済みである。
+- `scripts/run-neon-migration.mjs`はenvファイルを自動で読み込まず、`MIGRATION_DATABASE_URL`だけを参照する。
 - `MIGRATION_DATABASE_URL`にはPooledではなくDirect / Unpooled Connection Stringを安全な一時環境変数として設定する。
 - Productionへ直接試行せず、先に通常Neon BranchまたはSchema-only Branchで検証している。
 
 ## Procedure
 
-1. 対象Branchと適用済みmigrationを読み取り専用で確認する。
-2. 検証用Branchにup SQLとverify SQLを順に適用する。
+1. 対象Branchと適用済みmigrationを読み取り専用で確認する。Previewには`.env.development.local`、Productionには`.env.local`の接続情報を使う。検証用Branchには、そのBranch専用のDirect / Unpooled接続情報を使う。
+2. 対象ファイルから接続情報をシェルへ読み込み、Direct / Unpooledであることを確かめてから、同じシェルで`MIGRATION_DATABASE_URL`へ渡す。`DATABASE_URL`を使う場合も、その値がDirect / Unpooledであることを確認する。
+3. 検証用Branchにup SQLとverify SQLを順に適用する。
 
 ```bash
 node scripts/run-neon-migration.mjs db/migrations/<migration>_up.sql
 node scripts/run-neon-migration.mjs db/migrations/<migration>_verify.sql
 ```
 
-3. table、constraint、index、外部キー、必要な参照データ、`schema_migrations`をverify SQLで確認する。
-4. 関連するアプリケーション、unit test、E2Eを検証する。
-5. 検証成功後に限り、同じ順序で対象のPreviewまたはProduction Branchへの適用を判断する。
+4. table、constraint、index、外部キー、必要な参照データ、`schema_migrations`をverify SQLで確認する。
+5. 関連するアプリケーション、unit test、E2Eを検証する。
+6. 検証成功後に限り、同じ順序で対象のPreviewまたはProduction Branchへの適用を判断する。
 
 Vercelは`db/migrations/`を自動適用しません。アプリをデプロイする前に、対象Branchへの適用と検証を完了します。
 
@@ -50,6 +53,7 @@ Vercelは`db/migrations/`を自動適用しません。アプリをデプロイ�
 ## Security notes
 
 - `MIGRATION_DATABASE_URL`、接続文字列、query結果に含まれる機微情報を文書、ログ、Issue、PRへ残さない。
+- ローカルenvファイルはGit管理外に保ち、接続文字列をコマンドライン引数やshell historyへ直接書かない。
 - Production / Preview / 検証用Branchを取り違えない。削除や破壊的SQLの前に対象resourceを再確認する。
 
 ## Related docs

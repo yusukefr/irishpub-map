@@ -50,11 +50,11 @@ export async function readAdminQuizList(): Promise<readonly AdminQuizListItem[]>
 }
 /**
  * 未検証入力からServer生成UUIDを持つDraftを作成します。
- * @param value
+ * @param value - 未検証入力。
+ * @param id - 再送時も固定するResource ID。省略時はServerが発行します。
  * @returns {Promise<AdminQuizQuestion>} 作成されたQuiz。
  */
-export async function createAdminQuiz(value: unknown): Promise<AdminQuizQuestion> {
-  const id = randomUUID();
+export async function createAdminQuiz(value: unknown, id: string = randomUUID()): Promise<AdminQuizQuestion> {
   const input = await parseWriteInput(value);
   try {
     await insertAdminQuizQuestion(id, input);

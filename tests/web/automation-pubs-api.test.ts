@@ -1,6 +1,13 @@
 import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Business Routeの既存契約を確認するテスト。冪等性と監査は専用テストで検証します。
+vi.mock("../../apps/web/app/lib/automation-reliability", () => ({
+  handleAutomationCreate: (_request: Request, options: { execute: (id: string) => Promise<Response> }) =>
+    options.execute("550e8400-e29b-41d4-a716-446655440001"),
+  handleAutomationMutation: (_request: Request, options: { execute: () => Promise<Response> }) => options.execute(),
+}));
+
 const repositoryMocks = vi.hoisted(() => ({
   PubPublicationValidationError: class PubPublicationValidationError extends Error {
     constructor(readonly missingFields: string[]) {
@@ -145,7 +152,7 @@ describe("Automation Pub API", () => {
     const response = await POST(request("/api/automation/v1/pubs", "POST", "pubs:create", JSON.stringify(draftInput)));
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toEqual({ pub: { id, isPublished: false, ...draftInput } });
-    expect(serviceMocks.createAdminPub).toHaveBeenCalledWith(draftInput);
+    expect(serviceMocks.createAdminPub).toHaveBeenCalledWith(draftInput, id);
   });
 
   it("updates the full snapshot through the shared service while retaining publication state", async () => {

@@ -48,12 +48,12 @@ export async function readAdminContentList(): Promise<AdminContentListItem[]> {
 /**
  * 未検証入力からEditorial ContentのDraftを作成します。
  * @param {unknown} value - Route Handlerが受け取ったJSON。
+ * @param {string} id - 再送時も固定するResource ID。省略時はServerが発行します。
  * @returns {Promise<AdminContent>} 作成後の詳細。
  */
-export async function createAdminContent(value: unknown): Promise<AdminContent> {
+export async function createAdminContent(value: unknown, id: string = randomUUID()): Promise<AdminContent> {
   const input = parseWriteInput(value);
   await validateHeroImageAsset(input);
-  const id = randomUUID();
   try {
     await insertAdminContent(id, input);
   } catch (error) {

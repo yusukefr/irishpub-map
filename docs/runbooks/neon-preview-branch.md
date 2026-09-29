@@ -44,7 +44,7 @@ printf "%s" "$NEON_PREVIEW_DATABASE_URL" | vercel env add DATABASE_URL preview
 
 ## Security notes
 
-- 接続文字列はSecretであり、Issue、PR、ログ、`.env`、Repositoryへ保存しない。
+- 接続文字列はSecretであり、Issue、PR、ログ、Repositoryへ保存しない。ローカルではGit管理外の`.env.development.local`にPreview、`.env.local`にProductionの接続情報を置く運用とし、両者を取り違えない。
 - Branch削除は破壊的操作である。対象が未使用でありProduction / 現行Previewではないことを確認してから実行する。
 
 ## Related docs

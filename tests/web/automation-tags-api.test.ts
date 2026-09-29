@@ -2,6 +2,12 @@
 import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Business Routeの既存契約を確認するテスト。冪等性と監査は専用テストで検証します。
+vi.mock("../../apps/web/app/lib/automation-reliability", () => ({
+  handleAutomationCreate: (_request: Request, options: { execute: (id: string) => Promise<Response> }) =>
+    options.execute("550e8400-e29b-41d4-a716-446655440001"),
+}));
+
 const repositoryMocks = vi.hoisted(() => {
   class TagRepositoryError extends Error {
     constructor(readonly code: "conflict") {
@@ -76,10 +82,10 @@ describe("automation tag create API", () => {
       request(JSON.stringify({ key: "live-music", translations: { ja: " ライブ音楽 ", en: " Live Music " } })),
     );
     expect(response.status).toBe(201);
-    expect(repositoryMocks.createAdminTag).toHaveBeenCalledWith({
-      key: "live-music",
-      translations: { ja: "ライブ音楽", en: "Live Music" },
-    });
+    expect(repositoryMocks.createAdminTag).toHaveBeenCalledWith(
+      { key: "live-music", translations: { ja: "ライブ音楽", en: "Live Music" } },
+      "550e8400-e29b-41d4-a716-446655440001",
+    );
     await expect(response.json()).resolves.toEqual({ tag });
   });
 

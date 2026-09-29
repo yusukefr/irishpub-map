@@ -1,8 +1,10 @@
 import { AdminPubSearchValidationError, parseAdminPubSearchParams } from "@irishpub-map/shared/admin-pub";
 import { adminApiErrorResponse, getAdminJsonContentTypeError } from "../../../../lib/admin-api";
 import { adminPubServiceErrorResponse } from "../../../../lib/admin-pub-api";
+import { getAdminPub } from "../../../../lib/admin-pub-repository";
 import { createAdminPub } from "../../../../lib/admin-pub-service";
 import { getAutomationApiAuthorizationError } from "../../../../lib/automation-auth";
+import { handleAutomationCreate } from "../../../../lib/automation-reliability";
 import { resolveRequestLocale } from "../../../../lib/i18n";
 import { getAdminPubPage, isDatabaseConfigured } from "../../../../lib/pub-repository";
 
@@ -32,6 +34,15 @@ export async function GET(request: Request) {
  * @returns {Promise<Response>} 作成後詳細、または認証・入力・保存エラー。
  */
 export async function POST(request: Request) {
+  return handleAutomationCreate(request, {
+    scope: "pubs:create",
+    resourceType: "pub",
+    execute: (id) => create(request, id),
+    recover: (id) => getAdminPub(id),
+  });
+}
+
+async function create(request: Request, id: string) {
   const authorizationError = getAutomationApiAuthorizationError(request, "pubs:create");
   if (authorizationError) return authorizationError;
   if (!isDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
@@ -44,7 +55,7 @@ export async function POST(request: Request) {
     return adminApiErrorResponse("invalid_json", 400);
   }
   try {
-    return Response.json({ pub: await createAdminPub(body) }, { status: 201 });
+    return Response.json({ pub: await createAdminPub(body, id) }, { status: 201 });
   } catch (error) {
     return adminPubServiceErrorResponse(error);
   }
