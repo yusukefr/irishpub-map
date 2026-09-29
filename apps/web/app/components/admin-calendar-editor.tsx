@@ -63,8 +63,8 @@ function toValues(event: AdminCalendarEvent | null): AdminCalendarWriteInput {
   };
 }
 
-function serialize(id: string, values: AdminCalendarWriteInput) {
-  return JSON.stringify({ id, ...values });
+function serialize(values: AdminCalendarWriteInput) {
+  return JSON.stringify(values);
 }
 
 function asFieldErrors(value: unknown): Record<string, string> {
@@ -85,10 +85,9 @@ export function AdminCalendarEditor({ initialEvent, databaseConfigured, locale }
   const router = useRouter();
   const t = getTranslation(locale).admin;
   const c = t.calendar;
-  const [eventId, setEventId] = useState(initialEvent?.id ?? "");
   const [contentId, setContentId] = useState(initialEvent?.id ?? null);
   const [values, setValues] = useState(() => toValues(initialEvent));
-  const [savedSnapshot, setSavedSnapshot] = useState(() => serialize(initialEvent?.id ?? "", toValues(initialEvent)));
+  const [savedSnapshot, setSavedSnapshot] = useState(() => serialize(toValues(initialEvent)));
   const [status, setStatus] = useState<"draft" | "published">(initialEvent?.isPublished ? "published" : "draft");
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -97,7 +96,7 @@ export function AdminCalendarEditor({ initialEvent, databaseConfigured, locale }
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [serverMissingFields, setServerMissingFields] = useState<string[]>([]);
-  const isDirty = savedSnapshot !== serialize(eventId, values);
+  const isDirty = savedSnapshot !== serialize(values);
   const busy = saving || publishing || deleting;
   const missingFields = useMemo(() => getCalendarPublicationMissingFields(values), [values]);
   useUnsavedChangesWarning({ isDirty, message: t.unsavedChanges });
@@ -151,7 +150,7 @@ export function AdminCalendarEditor({ initialEvent, databaseConfigured, locale }
       const response = await fetch(contentId ? `/api/admin/calendar/${contentId}` : "/api/admin/calendar", {
         method: contentId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...(contentId ? {} : { id: eventId }), ...values }),
+        body: JSON.stringify(values),
       });
       const body = (await response.json().catch(() => ({}))) as ApiResponse;
       if (!response.ok || !body.event) {
@@ -162,10 +161,9 @@ export function AdminCalendarEditor({ initialEvent, databaseConfigured, locale }
       }
       const nextValues = toValues(body.event);
       const created = contentId === null;
-      setEventId(body.event.id);
       setContentId(body.event.id);
       setValues(nextValues);
-      setSavedSnapshot(serialize(body.event.id, nextValues));
+      setSavedSnapshot(serialize(nextValues));
       setStatus(body.event.isPublished ? "published" : "draft");
       setMessage(body.event.isPublished ? c.publishedSaved : c.draftSaved);
       if (created) router.push(`/admin/calendar/${body.event.id}`);
@@ -179,7 +177,7 @@ export function AdminCalendarEditor({ initialEvent, databaseConfigured, locale }
 
   async function changePublication(nextPublished: boolean) {
     if (!contentId || busy || !databaseConfigured || (nextPublished && isDirty)) return;
-    const title = values.translations.ja.name || eventId;
+    const title = values.translations.ja.name || contentId;
     if (!window.confirm(formatMessage(nextPublished ? c.confirmPublish : c.confirmDraft, { title }))) return;
     resetFeedback();
     setPublishing(true);
@@ -208,7 +206,7 @@ export function AdminCalendarEditor({ initialEvent, databaseConfigured, locale }
 
   async function deleteEvent() {
     if (!contentId || busy || !databaseConfigured) return;
-    const title = values.translations.ja.name || eventId;
+    const title = values.translations.ja.name || contentId;
     const confirmation = status === "published" ? c.confirmDeletePublished : c.confirmDeleteDraft;
     if (!window.confirm(formatMessage(confirmation, { title }))) return;
     resetFeedback();
@@ -271,19 +269,11 @@ export function AdminCalendarEditor({ initialEvent, databaseConfigured, locale }
       <form className="admin-form admin-editor-form admin-calendar-form" onSubmit={save} aria-busy={busy}>
         <fieldset disabled={busy || !databaseConfigured}>
           <legend>{t.basicInformation}</legend>
-          <label>
-            {c.id}
-            <input
-              value={eventId}
-              maxLength={100}
-              disabled={contentId !== null}
-              onChange={(event) => {
-                setEventId(event.target.value);
-                clearError("id");
-              }}
-            />
-            <span className="admin-editor-note">{c.idHelp}</span>
-          </label>
+          {contentId ? (
+            <p>
+              {c.id}: <code>{contentId}</code>
+            </p>
+          ) : null}
           <div className="admin-editor-grid">
             <label>
               {c.category}

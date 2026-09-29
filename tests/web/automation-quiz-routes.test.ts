@@ -1,6 +1,13 @@
 import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Business Routeの既存契約を確認するテスト。冪等性と監査は専用テストで検証します。
+vi.mock("../../apps/web/app/lib/automation-reliability", () => ({
+  handleAutomationCreate: (_request: Request, options: { execute: (id: string) => Promise<Response> }) =>
+    options.execute("550e8400-e29b-41d4-a716-446655440001"),
+  handleAutomationMutation: (_request: Request, options: { execute: () => Promise<Response> }) => options.execute(),
+}));
+
 const mocks = vi.hoisted(() => ({
   changeAdminQuizPublication: vi.fn(),
   createAdminQuiz: vi.fn(),
@@ -95,7 +102,7 @@ describe("automation quiz routes", () => {
     const response = await createQuiz(request("POST", "quiz:create", payload));
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toEqual({ question: { id: "server-generated-id", isPublished: false } });
-    expect(mocks.createAdminQuiz).toHaveBeenCalledWith(payload);
+    expect(mocks.createAdminQuiz).toHaveBeenCalledWith(payload, "550e8400-e29b-41d4-a716-446655440001");
   });
 
   it("updates through the shared service while retaining the response publication state", async () => {

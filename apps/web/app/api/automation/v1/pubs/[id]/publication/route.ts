@@ -2,6 +2,7 @@ import { AdminPubPublicationValidationError, parseSetAdminPubPublicationInput } 
 import { isPubId } from "@irishpub-map/shared/pub";
 import { adminApiErrorResponse, getAdminJsonContentTypeError } from "../../../../../../lib/admin-api";
 import { getAutomationApiAuthorizationError } from "../../../../../../lib/automation-auth";
+import { handleAutomationMutation } from "../../../../../../lib/automation-reliability";
 import {
   isDatabaseConfigured,
   PubPublicationValidationError,
@@ -16,6 +17,16 @@ import {
  * @returns {Promise<Response>} 公開状態変更結果、または認証・入力・公開条件エラー。
  */
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
+  return handleAutomationMutation(request, {
+    scope: "pubs:publish",
+    resourceType: "pub",
+    resourceId: isPubId(id) ? id : null,
+    execute: () => changePublication(request, context),
+  });
+}
+
+async function changePublication(request: Request, context: { params: Promise<{ id: string }> }) {
   const authorizationError = getAutomationApiAuthorizationError(request, "pubs:publish");
   if (authorizationError) return authorizationError;
   if (!isDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);

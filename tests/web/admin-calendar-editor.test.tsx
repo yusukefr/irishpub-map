@@ -32,10 +32,11 @@ beforeEach(() => {
 });
 
 describe("AdminCalendarEditor", () => {
-  it("renders bilingual fields, date rule, aliases, and immutable ID", () => {
+  it("renders bilingual fields, date rule, aliases, and a read-only ID", () => {
     render(<AdminCalendarEditor initialEvent={event} databaseConfigured locale="ja" />);
     expect(screen.getByRole("heading", { name: "Calendar Eventを編集" })).toBeInTheDocument();
-    expect(screen.getByDisplayValue(event.id)).toBeDisabled();
+    expect(screen.getByText(event.id)).toBeInTheDocument();
+    expect(screen.queryByDisplayValue(event.id)).not.toBeInTheDocument();
     expect(screen.getAllByDisplayValue("聖パトリックの日")).toHaveLength(1);
     expect(screen.getByDisplayValue("Saint Patrick\u0027s Day")).toBeInTheDocument();
     expect(screen.getByText("毎年3月17日")).toBeInTheDocument();
@@ -49,16 +50,16 @@ describe("AdminCalendarEditor", () => {
   });
 
   it("creates a draft and redirects to the created event", async () => {
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ event }), { status: 201 }));
+    const createdEvent = { ...event, id: "11223344-5566-4788-9abc-def012345678" };
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ event: createdEvent }), { status: 201 }));
     render(<AdminCalendarEditor initialEvent={null} databaseConfigured locale="ja" />);
-    fireEvent.change(screen.getAllByRole("textbox")[0], { target: { value: event.id } });
     fireEvent.click(screen.getByRole("button", { name: "下書きを保存" }));
-    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith(`/admin/calendar/${event.id}`));
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith(`/admin/calendar/${createdEvent.id}`));
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/admin/calendar",
       expect.objectContaining({ method: "POST", headers: { "Content-Type": "application/json" } }),
     );
-    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toHaveProperty("id", event.id);
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).not.toHaveProperty("id");
   });
 
   it("saves existing data, publishes, returns to draft, and deletes after confirmation", async () => {

@@ -2,6 +2,13 @@
 import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Business Routeの既存契約を確認するテスト。冪等性と監査は専用テストで検証します。
+vi.mock("../../apps/web/app/lib/automation-reliability", () => ({
+  handleAutomationCreate: (_request: Request, options: { execute: (id: string) => Promise<Response> }) =>
+    options.execute("550e8400-e29b-41d4-a716-446655440001"),
+  handleAutomationMutation: (_request: Request, options: { execute: () => Promise<Response> }) => options.execute(),
+}));
+
 const repositoryMocks = vi.hoisted(() => ({ isContentDatabaseConfigured: vi.fn() }));
 vi.mock("../../apps/web/app/lib/admin-content-repository", () => repositoryMocks);
 
@@ -150,7 +157,7 @@ describe("automation content API", () => {
     serviceMocks.createAdminContent.mockResolvedValue({ id, status: "draft", publishedAt: null });
     const created = await POST(request("", "POST", JSON.stringify(input)));
     expect(created.status).toBe(201);
-    expect(serviceMocks.createAdminContent).toHaveBeenCalledWith(input);
+    expect(serviceMocks.createAdminContent).toHaveBeenCalledWith(input, id);
     await expect(created.json()).resolves.toEqual({ content: { id, status: "draft", publishedAt: null } });
 
     expect((await POST(request("", "POST", "{}", token, "text/plain"))).status).toBe(415);

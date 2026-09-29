@@ -1,0 +1,28 @@
+openapi: 3.1.1
+info:
+  title: Irish Pub Map API
+  version: 1.0.0
+  license:
+    name: MIT
+    identifier: MIT
+  description: Machine-readable API contract. Initial coverage is Admin Calendar.
+servers:
+  - url: /
+    description: Current application origin
+tags:
+  - name: Admin Calendar
+    description: Calendar event management for authenticated administrators.
+paths:
+  /api/admin/calendar:
+    $ref: ./paths/admin-calendar.yaml#/CalendarCollection
+  /api/admin/calendar/{id}:
+    $ref: ./paths/admin-calendar.yaml#/CalendarItem
+  /api/admin/calendar/{id}/publication:
+    $ref: ./paths/admin-calendar.yaml#/CalendarPublication
+components:
+  securitySchemes:
+    AdminSession:
+      type: apiKey
+      in: cookie
+      name: irishpub-map-admin-session
+      description: Authenticated administrator session cookie. The cookie value is never included in this document.

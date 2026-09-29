@@ -16,6 +16,7 @@
     "validate:production-env": "node scripts/validate-production-env.mjs",
     "update-app-version": "node scripts/update-app-version.mjs",
     "lint": "eslint --config eslint.config.mjs apps/web/app packages/shared/src e2e playwright.config.ts playwright.storybook.config.ts --max-warnings=0",
+    "lint:openapi": "redocly lint docs/specs/openapi/openapi.yaml",
     "typecheck": "npm run typecheck -w apps/web && npm run typecheck:e2e",
     "typecheck:e2e": "tsc --noEmit --project tsconfig.e2e.json",
     "test": "vitest run --coverage",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "1.63.0",
+    "@redocly/cli": "^2.54.3",
     "@storybook/addon-a11y": "^10.6.0",
     "@storybook/nextjs-vite": "^10.6.0",
     "@testing-library/jest-dom": "^7.0.1",

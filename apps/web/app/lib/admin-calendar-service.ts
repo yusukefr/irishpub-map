@@ -1,4 +1,5 @@
 import type { AdminFieldErrorCode } from "@irishpub-map/shared/admin-api-error";
+import { randomUUID } from "node:crypto";
 import {
   isCalendarEventId,
   parseCalendarDateRuleDefinition,
@@ -56,20 +57,20 @@ export function readAdminCalendarList(): Promise<readonly AdminCalendarListItem[
 }
 
 /**
- * 未検証入力からCalendar Eventを作成します。
+ * 未検証入力からServer生成IDを持つCalendar Eventを作成します。
  * @param value
  * @returns 作成されたCalendar Event。
  */
 export async function createAdminCalendarEvent(value: unknown): Promise<AdminCalendarEvent> {
   const parsed = parseWriteInput(value);
-  if (!parsed.id) throw new AdminCalendarServiceError("validation", { id: "required" });
+  const id = randomUUID();
   try {
-    await insertCalendarEvent(parsed.id, parsed.input);
+    await insertCalendarEvent(id, parsed.input);
   } catch (error) {
     if (isUniqueViolation(error)) throw new AdminCalendarServiceError("conflict", { id: "invalid_format" });
     throw error;
   }
-  const event = await getAdminCalendarEvent(parsed.id);
+  const event = await getAdminCalendarEvent(id);
   if (!event) throw new Error("Created admin calendar event could not be read.");
   return event;
 }
@@ -190,9 +191,12 @@ function parseWriteInput(value: unknown, expectedId?: string): { id: string | nu
   const fieldErrors: FieldErrors = {};
   if (!value || typeof value !== "object" || Array.isArray(value)) fieldErrors.input = "invalid_type";
   const id =
-    expectedId !== undefined && source.id === undefined
-      ? expectedId
-      : parseId(source.id, "id", fieldErrors, expectedId === undefined);
+    expectedId === undefined
+      ? null
+      : source.id === undefined
+        ? expectedId
+        : parseId(source.id, "id", fieldErrors, false);
+  if (expectedId === undefined && source.id !== undefined) fieldErrors.id = "immutable";
   if (expectedId !== undefined && source.id !== undefined && id !== expectedId) fieldErrors.id = "immutable";
   const input = {
     category: parseCategory(source.category, fieldErrors),
@@ -296,6 +300,9 @@ function parseNullableText(value: unknown, field: string, errors: FieldErrors): 
 
 function parseTranslations(value: unknown, errors: FieldErrors) {
   const source = asRecord(value);
+  if (value !== undefined && value !== null && (!value || typeof value !== "object" || Array.isArray(value))) {
+    errors.translations = "invalid_type";
+  }
   return {
     ja: parseTranslation(source.ja, "ja", errors),
     en: parseTranslation(source.en, "en", errors),
@@ -304,6 +311,9 @@ function parseTranslations(value: unknown, errors: FieldErrors) {
 
 function parseTranslation(value: unknown, locale: "ja" | "en", errors: FieldErrors) {
   const source = asRecord(value);
+  if (value !== undefined && value !== null && (!value || typeof value !== "object" || Array.isArray(value))) {
+    errors["translations." + locale] = "invalid_type";
+  }
   return {
     name: parseText(source.name, "translations." + locale + ".name", errors),
     description: parseText(source.description, "translations." + locale + ".description", errors),
