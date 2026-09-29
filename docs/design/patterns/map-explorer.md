@@ -35,13 +35,13 @@ Map
 Bottom Sheet: collapsed / medium / expanded
 ```
 
-980px以下ではMapを背景の主要領域にし、結果と詳細を非モーダルBottom Sheetに置きます。初期状態の`collapsed`では絞り込み済み店舗のPubCardを横スクロールとScroll Snapで表示し、次のカードを一部見せます。0件ではカードを表示せず、件数ボタンから既存のEmpty Stateへ進めます。結果表示は`medium`、詳細は`expanded`です。Marker選択はcollapsedを維持し、対応Carousel Cardの選択と表示位置を同期します。Carousel Cardの「詳細」はexpandedへ進み、戻るとcollapsedのCarouselへ選択位置を保って戻ります。単純なDesktop縮小や常時表示のSide Panelを使いません。Sheetの内容scroll、handle drag、Mapのpan / pinchを分離し、safe areaと低いviewportを考慮します。
+980px以下ではMapを背景の主要領域にし、結果と詳細を非モーダルBottom Sheetに置きます。初期状態の`collapsed`では絞り込み済み店舗のPubCardを横スクロールとScroll Snapで表示し、次のカードを一部見せます。0件ではカードを表示せず、件数ボタンから既存のEmpty Stateへ進めます。Carouselのスワイプは選択だけを更新し、Card選択・件数ボタンから`medium`へ、詳細は`expanded`へ移ります。Marker選択はcollapsedを維持し、対応Carousel Cardの選択と表示位置を同期します。Carousel Cardの「詳細」はexpandedへ進み、戻るとcollapsedのCarouselへ選択位置を保って戻ります。単純なDesktop縮小や常時表示のSide Panelを使いません。Sheetの内容scroll、handle drag、Mapのpan / pinchを分離し、safe areaと低いviewportを考慮します。
 
 ## Selectionと状態遷移
 
 Mobile carouselのscrollが止まった時点でactiveカードを判定し、一覧・Markerと共有する選択IDを更新します。Markerや一覧で店舗を選んだときは対応カードを必要な場合だけ表示します。collapsed中のMarker選択はSheetの高さを変えず、一覧が開いているときはその高さを維持します。選択店舗へMapの中心を移しますが、zoom、bearing、pitchは維持し、`prefers-reduced-motion`ではMap移動のanimationを行いません。
 
-MarkerとPubCardは同じ選択IDを共有します。collapsed中のMarker選択はSheetを開かず、Filter panelが開いている場合は条件値を保って閉じます。Desktopで閉じたResultsはMarker選択で再表示し、Mobileのmedium / expandedでは現在のSheet状態を保ちます。一覧から詳細へ進んだときは直前の一覧状態を保持し、「戻る」で一覧へ、「閉じる」でSheetをcollapsedへ戻します。検索語、Filter、選択状態は不要に初期化しません。
+MarkerとPubCardは同じ選択IDを共有します。collapsed中のMarker選択はSheetを開かず、Filter panelが開いている場合は条件値を保って閉じます。Desktopで閉じたResultsはMarker選択で再表示し、Mobileのmedium / expandedでは現在のSheet状態を保ちます。Search / Filter変更後も選択店舗が結果に残れば選択を維持し、結果から外れた場合にだけ選択を解除します。一覧から詳細へ進んだときは直前の一覧状態を保持し、「戻る」で一覧へ、「閉じる」でSheetをcollapsedへ戻します。検索語、Filter、選択状態は不要に初期化しません。
 
 Escapeは展開中の条件パネルを優先して閉じ、条件ボタンへfocusを戻します。条件が閉じているときは結果を閉じ、件数ボタンへfocusを戻します。空結果の「条件をリセット」は検索語と詳細条件を解除して検索欄へfocusを戻します。条件パネル内のリセットは詳細条件だけを解除します。
 

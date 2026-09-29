@@ -155,7 +155,9 @@ for (const locale of ["ja", "en"] as const) {
         .selectOption(locale === "ja" ? "東京都" : "Tokyo");
       await expect(page.locator(".filter-toggle-count")).toHaveText("1");
       await page.keyboard.press("Escape");
+      await expect(page.locator('article[data-density="compact"][data-selected="true"]')).toHaveCount(1);
       await search.fill("no matching pub");
+      await expect(page.locator('article[data-density="compact"][data-selected="true"]')).toHaveCount(0);
       await handle.click();
       await expect(results.getByRole("heading", { name: t.list.noResults })).toBeVisible();
       await results.getByRole("button", { name: t.explorer.resetFilters }).click();

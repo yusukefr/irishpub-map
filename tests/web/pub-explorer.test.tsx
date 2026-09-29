@@ -92,7 +92,7 @@ function mockGeolocation(geolocation: Partial<Geolocation> | undefined) {
 
 /** 初期状態で折りたたまれている詳細条件を開きます。 */
 function openDetailedFilters() {
-  fireEvent.click(screen.getByRole("button", { name: "条件を指定" }));
+  fireEvent.click(screen.getByRole("button", { name: /条件を指定/ }));
 } /** Result count buttonからResults Panelを開きます。 */
 function openResults() {
   fireEvent.click(screen.getByRole("button", { name: /件のPubが見つかりました/ }));
@@ -711,18 +711,57 @@ describe("PubExplorer", () => {
     expect(tokyoMarker).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("clears the selected pub when filters hide it", () => {
-    render(<PubExplorer pubs={pubs} />);
+  it("keeps the selected pub when a search change leaves it in the results", () => {
+    const availablePubs = [pubs[0], { ...pubs[1], status: "open" as const }];
+    render(<PubExplorer pubs={availablePubs} />);
     openResults();
-    const tokyoCard = screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article");
-
-    expect(tokyoCard).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }));
-    expect(tokyoCard).toHaveAttribute("data-selected", "true");
 
-    fireEvent.click(screen.getByRole("button", { name: /件のPubが見つかりました/ }));
+    fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "Tokyo" } });
+
+    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article")).toHaveAttribute(
+      "data-selected",
+      "true",
+    );
+    expect(maplibreMock.markerConstructor.mock.calls[0][0].element).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("keeps the selected pub when a detailed filter leaves it in the results", () => {
+    const availablePubs = [pubs[0], { ...pubs[1], status: "open" as const }];
+    render(<PubExplorer pubs={availablePubs} />);
+    openResults();
+    fireEvent.click(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }));
+
+    openDetailedFilters();
+    fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
+    fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
+    openResults();
+
+    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article")).toHaveAttribute(
+      "data-selected",
+      "true",
+    );
+    expect(maplibreMock.markerConstructor.mock.calls[0][0].element).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("clears the selected pub when filters hide it", async () => {
+    render(<PubExplorer pubs={[pubs[0], { ...pubs[1], status: "open" }]} />);
+    openResults();
+    fireEvent.click(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }));
     openDetailedFilters();
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "大阪府" } });
+
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
+    openResults();
+    expect(screen.getByRole("button", { name: "店舗を選択: Osaka Sample Pub" }).closest("article")).not.toHaveAttribute(
+      "data-selected",
+    );
+
+    openDetailedFilters();
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
     openResults();

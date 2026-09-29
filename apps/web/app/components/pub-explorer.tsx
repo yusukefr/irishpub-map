@@ -93,11 +93,6 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
   const detailedFilterCount = Number(Boolean(selectedPrefecture)) + selectedTags.length + Number(includeClosed);
   const hasMobileCarousel = filteredPubs.length > 0 && !isFiltersExpanded;
 
-  const clearSelectedPub = () => {
-    setSelectedPubId(null);
-    setResultsView("list");
-  };
-
   useEffect(() => {
     if (!selectedPubId || filteredPubs.some((pub) => pub.id === selectedPubId)) {
       return;
@@ -127,7 +122,6 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
     setSelectedPrefecture("");
     setSelectedTags([]);
     setIncludeClosed(false);
-    clearSelectedPub();
   };
 
   useEffect(() => {
@@ -402,7 +396,6 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
             resultsTriggerRef={resultsTriggerRef}
             onQueryChange={(value) => {
               setQuery(value);
-              clearSelectedPub();
             }}
             onRequestCurrentLocation={requestCurrentLocation}
             onToggleFilters={toggleFilters}
@@ -410,17 +403,14 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
             onPrefectureChange={(prefecture) => {
               hasSelectedPrefecture.current = true;
               setSelectedPrefecture(prefecture);
-              clearSelectedPub();
             }}
             onTagToggle={(tag) => {
               setSelectedTags((current) =>
                 current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag],
               );
-              clearSelectedPub();
             }}
             onIncludeClosedChange={(value) => {
               setIncludeClosed(value);
-              clearSelectedPub();
             }}
             onResetFilters={resetDetailedFilters}
             onToggleResults={toggleResults}
