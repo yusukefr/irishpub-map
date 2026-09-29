@@ -66,8 +66,9 @@ for (const locale of ["ja", "en"] as const) {
       }
       for (const button of await page.locator(".pub-map-marker, .maplibregl-ctrl-group button").all()) {
         const box = (await button.boundingBox())!;
-        expect(box.width).toBeGreaterThanOrEqual(44);
-        expect(box.height).toBeGreaterThanOrEqual(44);
+        // CSS上の44pxがサブピクセル計算で僅かに小さく返る環境差を許容します。
+        expect(box.width).toBeGreaterThanOrEqual(43.99);
+        expect(box.height).toBeGreaterThanOrEqual(43.99);
         expect(box.y + box.height).toBeLessThan((await sheet.boundingBox())!.y);
       }
       // 地図panとpinchはSheetの状態を変更しません。
