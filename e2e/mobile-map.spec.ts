@@ -28,9 +28,12 @@ for (const locale of ["ja", "en"] as const) {
         element.scrollLeft = element.scrollWidth;
       });
       await expect.poll(() => carousel.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+      await expect(page.locator('article[data-density="compact"][data-selected="true"]')).toHaveCount(1);
+      await expect(page.locator(".pub-map-marker-selected")).toHaveCount(1);
       await carousel.evaluate((element) => {
         element.scrollLeft = 0;
       });
+      await expect(carousel.locator('article[data-selected="true"]')).toHaveCount(1);
       const pubName = carousel.locator('article [role="heading"]').first();
       const originalName = await pubName.textContent();
       await pubName.evaluate(
@@ -63,8 +66,9 @@ for (const locale of ["ja", "en"] as const) {
       }
       for (const button of await page.locator(".pub-map-marker, .maplibregl-ctrl-group button").all()) {
         const box = (await button.boundingBox())!;
-        expect(box.width).toBeGreaterThanOrEqual(44);
-        expect(box.height).toBeGreaterThanOrEqual(44);
+        // CSS上の44pxがサブピクセル計算で僅かに小さく返る環境差を許容します。
+        expect(box.width).toBeGreaterThanOrEqual(43.99);
+        expect(box.height).toBeGreaterThanOrEqual(43.99);
         expect(box.y + box.height).toBeLessThan((await sheet.boundingBox())!.y);
       }
       // 地図panとpinchはSheetの状態を変更しません。
@@ -85,6 +89,7 @@ for (const locale of ["ja", "en"] as const) {
       await page.locator(".pub-map-marker").first().click();
       await expect(sheet).toHaveAttribute("data-state", "medium");
       await expect(page.locator('.pub-results-panel article[data-selected="true"]')).toHaveCount(1);
+      await expect(page.locator('article[data-density="compact"][data-selected="true"]')).toHaveCount(1);
       await canvas.click({ position: { x: 10, y: 240 } });
       if (width === 390 && locale === "ja") {
         await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", {

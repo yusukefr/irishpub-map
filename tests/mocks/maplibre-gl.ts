@@ -8,6 +8,8 @@ export const maplibreMock = {
   mapOff: vi.fn(),
   mapFitBounds: vi.fn(),
   mapJumpTo: vi.fn(),
+  mapPanTo: vi.fn(),
+  mapGetCenter: vi.fn().mockReturnValue({ lng: 139.767, lat: 35.681 }),
   mapResize: vi.fn(),
   setWorkerUrl: vi.fn(),
   mapGetLayer: vi.fn().mockReturnValue({}),
@@ -45,6 +47,9 @@ export function resetMaplibreMock() {
   maplibreMock.mapOff.mockClear();
   maplibreMock.mapFitBounds.mockClear();
   maplibreMock.mapJumpTo.mockClear();
+  maplibreMock.mapPanTo.mockClear();
+  maplibreMock.mapGetCenter.mockReset();
+  maplibreMock.mapGetCenter.mockReturnValue({ lng: 139.767, lat: 35.681 });
   maplibreMock.mapResize.mockClear();
   maplibreMock.setWorkerUrl.mockClear();
   maplibreMock.mapGetLayer.mockClear();
@@ -99,6 +104,8 @@ export class Map {
   };
   fitBounds = maplibreMock.mapFitBounds;
   jumpTo = maplibreMock.mapJumpTo;
+  panTo = maplibreMock.mapPanTo;
+  getCenter = maplibreMock.mapGetCenter;
   resize = maplibreMock.mapResize;
   getLayer = maplibreMock.mapGetLayer;
   setLayoutProperty = maplibreMock.mapSetLayoutProperty;

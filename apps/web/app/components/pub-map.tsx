@@ -72,6 +72,7 @@ function PubMapCanvas({
   // Style の非同期ロード完了時にも最新のサイト言語を反映します。
   const localeRef = useRef(locale);
   const markersRef = useRef(new globalThis.Map<string, Marker>());
+  const lastMapSelectionIdRef = useRef<string | null | undefined>(undefined);
   const activePopupRef = useRef<Popup | null>(null);
   const currentLocationMarkerRef = useRef<Marker | null>(null);
   // 選択コールバックの変更だけでMapLibreインスタンスを作り直さないようrefで保持します。
@@ -252,6 +253,33 @@ function PubMapCanvas({
       focusMap(map, focusPubs, currentLocation);
     }
   }, [currentLocation, focusPubs]);
+
+  useEffect(() => {
+    if (lastMapSelectionIdRef.current === selectedPubId) {
+      return;
+    }
+
+    lastMapSelectionIdRef.current = selectedPubId;
+    const map = mapRef.current;
+    const selectedPub = pubs.find((pub) => pub.id === selectedPubId);
+
+    if (!map || !selectedPub) {
+      return;
+    }
+
+    const center = map.getCenter();
+
+    if (
+      Math.abs(center.lng - selectedPub.longitude) < 0.000001 &&
+      Math.abs(center.lat - selectedPub.latitude) < 0.000001
+    ) {
+      return;
+    }
+
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    // 選択店舗へ中心だけを移し、利用者が調整したzoom・bearing・pitchを保ちます。
+    map.panTo([selectedPub.longitude, selectedPub.latitude], { duration: reducedMotion ? 0 : 300 });
+  }, [pubs, selectedPubId]);
 
   useEffect(() => {
     markerElementsRef.current.forEach((marker, pubId) => {

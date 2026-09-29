@@ -69,6 +69,23 @@ function mockHoverCapability(canHover: boolean) {
   );
 }
 
+/** reduced-motionだけを有効にし、別のmedia queryは一致しない状態にします。 */
+function mockReducedMotion(enabled: boolean) {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)" && enabled,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  );
+}
+
 function mockWebglContext(context: object | null) {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((contextId: string) => {
     if (contextId === "webgl" || contextId === "experimental-webgl") {
@@ -337,6 +354,31 @@ describe("PubMap", () => {
     expect(tokyoMarker).toHaveClass("pub-map-marker-selected");
     expect(tokyoMarker).toHaveAttribute("aria-pressed", "true");
     expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
+  });
+
+  it("centers the selected pub while preserving map zoom, bearing, and pitch", () => {
+    render(<PubMap pubs={pubs} selectedPubId="osaka-sample" />);
+
+    expect(maplibreMock.mapPanTo).toHaveBeenCalledWith([135.502, 34.693], { duration: 300 });
+    expect(maplibreMock.mapJumpTo).not.toHaveBeenCalled();
+  });
+
+  it("avoids animating selected-pub movement when reduced motion is enabled", () => {
+    mockReducedMotion(true);
+
+    render(<PubMap pubs={pubs} selectedPubId="osaka-sample" />);
+
+    expect(maplibreMock.mapPanTo).toHaveBeenCalledWith([135.502, 34.693], { duration: 0 });
+  });
+
+  it("keeps current-location movement when pubs change without changing the selected pub", () => {
+    const currentLocation = { latitude: 35.658, longitude: 139.701 };
+    const { rerender } = render(<PubMap pubs={pubs} selectedPubId="osaka-sample" />);
+
+    rerender(<PubMap pubs={[...pubs]} currentLocation={currentLocation} selectedPubId="osaka-sample" />);
+
+    expect(maplibreMock.mapPanTo).toHaveBeenCalledTimes(1);
+    expect(maplibreMock.mapJumpTo).toHaveBeenLastCalledWith({ center: [139.701, 35.658], zoom: 12 });
   });
 
   it("updates markers without rebuilding the map when pubs are filtered", () => {
