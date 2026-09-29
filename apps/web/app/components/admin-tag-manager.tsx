@@ -123,18 +123,6 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
           <p className="eyebrow">Master data</p>
           <h1>{t.tagsHeading}</h1>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            if (formDirty && !window.confirm(t.unsavedChanges)) return;
-            setEditing(null);
-            setFormDirty(false);
-            resetFeedback();
-          }}
-          disabled={Boolean(busyAction) || !editing}
-        >
-          {t.addTag}
-        </button>
       </div>
       {!databaseConfigured ? <p className="admin-error">{t.databaseUnavailable}</p> : null}
       {message ? (
@@ -201,6 +189,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
                   if (formDirty && !window.confirm(t.unsavedChanges)) return;
                   setEditing(null);
                   setFormDirty(false);
+                  resetFeedback();
                 }}
               >
                 {t.cancel}
