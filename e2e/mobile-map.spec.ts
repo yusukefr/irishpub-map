@@ -180,6 +180,23 @@ for (const locale of ["ja", "en"] as const) {
         ).toBe(false);
       }
       await results.getByRole("button", { name: t.list.closeResults }).click();
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await carousel.evaluate((element) => {
+        element.scrollLeft = element.scrollWidth;
+      });
+      await expect.poll(() => carousel.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+      const secondCard = carousel.locator("article").nth(1);
+      await expect(secondCard).toHaveAttribute("data-selected", "true");
+      const carouselScrollLeft = await carousel.evaluate((element) => element.scrollLeft);
+      const selectedCardName = await secondCard.locator('[role="heading"]').textContent();
+      await secondCard.getByRole("button", { name: t.list.details, exact: true }).click();
+      await expect(sheet).toHaveAttribute("data-state", "expanded");
+      await expect(back).toBeFocused();
+      await back.click();
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await expect.poll(() => carousel.evaluate((element) => element.scrollLeft)).toBe(carouselScrollLeft);
+      await expect(carousel.locator('article[data-selected="true"]')).toHaveCount(1);
+      await expect(carousel.locator('article[data-selected="true"] [role="heading"]')).toHaveText(selectedCardName!);
       await context.grantPermissions(["geolocation"]);
       await context.setGeolocation({ latitude: 35.681, longitude: 139.767 });
       await page.getByRole("button", { name: t.explorer.currentLocationAction, exact: true }).click();
