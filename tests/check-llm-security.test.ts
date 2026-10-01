@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -86,6 +86,11 @@ describe("LLM security file selection", () => {
     (file) => expect(instructionPathIssue(file)).toBeNull(),
   );
 
+  it("allows an existing Skill but rejects a new Skill in the same directory pattern", () => {
+    expect(instructionPathIssue(".agents/skills/agent-browser/SKILL.md")).toBeNull();
+    expect(instructionPathIssue(".agents/skills/unapproved/SKILL.md")).toBe("SKILL.md is not allowlisted");
+  });
+
   it.each([
     "apps/web/app/example/AGENTS.md",
     "apps/web/app/example/AGENTS.override.md",
@@ -97,6 +102,25 @@ describe("LLM security file selection", () => {
 });
 
 describe("LLM security CLI", () => {
+  it("rejects a new staged Skill in both staged and tracked checks", () => {
+    const directory = mkdtempSync(`${tmpdir()}/llm-security-`);
+    const file = ".agents/skills/unapproved/SKILL.md";
+    try {
+      spawnSync("git", ["init"], { cwd: directory });
+      mkdirSync(resolve(directory, ".agents/skills/unapproved"), { recursive: true });
+      writeFileSync(resolve(directory, file), "# Unapproved Skill\n");
+      spawnSync("git", ["add", file], { cwd: directory });
+
+      for (const mode of ["--staged", "--tracked"]) {
+        const result = spawnSync(process.execPath, [script, mode], { cwd: directory, encoding: "utf8" });
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain(`${file}:1:1: SKILL.md is not allowlisted`);
+      }
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it("rejects a UTF-8 BOM at the start of a staged instruction file", () => {
     const directory = mkdtempSync(`${tmpdir()}/llm-security-`);
     try {

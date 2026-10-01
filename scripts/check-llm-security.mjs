@@ -6,7 +6,21 @@ const ALLOWED_AGENT_FILES = new Set([
   "apps/web/AGENTS.md",
   ".agents/skills/vercel-react-best-practices/AGENTS.md",
 ]);
-const ALLOWED_SKILL_FILE = /^\.agents\/skills\/[^/]+\/SKILL\.md$/;
+const ALLOWED_SKILL_FILES = new Set([
+  ".agents/skills/agent-browser/SKILL.md",
+  ".agents/skills/frontend-design/SKILL.md",
+  ".agents/skills/gh-address-comments/SKILL.md",
+  ".agents/skills/gh-fix-ci/SKILL.md",
+  ".agents/skills/neon-postgres-branches/SKILL.md",
+  ".agents/skills/neon-postgres/SKILL.md",
+  ".agents/skills/neon/SKILL.md",
+  ".agents/skills/next-best-practices/SKILL.md",
+  ".agents/skills/next-cache-components/SKILL.md",
+  ".agents/skills/vercel-deploy/SKILL.md",
+  ".agents/skills/vercel-react-best-practices/SKILL.md",
+  ".agents/skills/web-design-guidelines/SKILL.md",
+  ".agents/skills/web-test-workflow/SKILL.md",
+]);
 const FORBIDDEN_INVISIBLE = /[\u034f\u115f-\u1160\u17b4-\u17b5\u2800\u3164\uffa0\u2028\u2029]/u;
 const VARIATION_SELECTOR = /[\ufe00-\ufe0f\u{e0100}-\u{e01ef}]/u;
 const UNICODE_TAG = /[\u{e0000}-\u{e007f}]/u;
@@ -55,7 +69,7 @@ export function instructionPathIssue(file) {
   const name = file.split("/").at(-1);
   if (name === "AGENTS.override.md") return "AGENTS.override.md is not allowlisted";
   if (name === "AGENTS.md" && !ALLOWED_AGENT_FILES.has(file)) return "AGENTS.md is not allowlisted";
-  if (name === "SKILL.md" && !ALLOWED_SKILL_FILE.test(file)) return "SKILL.md is not allowlisted";
+  if (name === "SKILL.md" && !ALLOWED_SKILL_FILES.has(file)) return "SKILL.md is not allowlisted";
   return null;
 }
 
