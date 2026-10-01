@@ -17,9 +17,18 @@ GitHub ActionsのCI、PR用app version更新、Vercel Analytics / Speed Insights
 
 ## GitHub Actions
 
-CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`で実行されます。Feature branchへのpushでは起動せず、PR更新時は`Lint, Test, Build`（Storybook Buildを含む）のみ実行します。E2EとStorybook browser testsは`main`へのpush後、または手動実行時に実行します。PR中にE2Eを確認する必要があれば、対象branchで`workflow_dispatch`を実行します。
+CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`で実行されます。Feature branchへのpushでは起動しません。変更ファイルは`scripts/classify-ci-changes.mjs`で分類し、比較元を取得できない場合は全検証を実行します。`Lint, Test, Build`というジョブ名は変更内容にかかわらず維持します。
 
-独立した`GitHub Actions Workflow Lint` Workflowでは、`rhysd/actionlint`の固定バージョンを使い、`.github/workflows/*.yml`を静的検査します。`ci.yml`を含むWorkflow全体をPR時に検査するため、CI本体の構文エラーも別Workflowから検出できます。このWorkflowは書き込み権限や通知用Secretを持ちません。
+| 変更内容 | `Lint, Test, Build`で実行する処理 | `main` push後のE2E / Storybook browser tests |
+| --- | --- | --- |
+| Code変更（workflowを含む） | Sensitive data check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | 実行 |
+| `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Sensitive data check、npm ci、OpenAPI lint | 省略 |
+| docs-only | Sensitive data check。npm ciは実行しない | 省略 |
+| `workflow_dispatch` | Code変更と同じFull CI | 実行 |
+
+docs-onlyは`docs/**`（OpenAPIを除く）、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`に限定します。アプリ配下のMarkdownを含む、それ以外のパスはCode変更として扱います。PR中にE2Eを確認する必要があれば、対象branchで`workflow_dispatch`を実行します。
+
+独立した`GitHub Actions Workflow Lint` Workflowは毎回起動しますが、`.github/workflows/**`に変更がある場合、または手動実行時のみGoをセットアップし、`rhysd/actionlint`の固定バージョンでWorkflowを静的検査します。Workflowの変更時には、`ci.yml`自体の構文エラーも別Workflowから検出できます。このWorkflowは書き込み権限や通知用Secretを持ちません。
 
 同じPRまたはbranchで新しいrunが始まると、進行中の古いrunはキャンセルされます。PR更新後は最新HEADの通常CIを確認し、`main`へのmerge後は通常CIとE2Eの両方を確認します。E2E失敗時のPlaywright artifactは引き続き保存します。
 
@@ -34,7 +43,7 @@ Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secret
 
 `Lint, Test, Build`ジョブは従来どおり成功・失敗時にSlackへ通知します。E2Eジョブは失敗時に限り、同じWebhookと、設定されている場合は同じChannelへ通知します。E2E成功時の追加通知はありません。通知にはRepository名、Branch名、GitHub Actions Run URLを含めます。失敗時はRun URLから実行結果を開き、保存されたPlaywright artifactを確認します。
 
-PR用version更新workflowは、必要時に`app-version.json`、rootの`package.json`、`package-lock.json`を同期します。`APP_VERSION_BUMP`が未設定または`patch`ならpatch、`minor`ならminorを更新し、majorは自動更新しません。Vercel buildではrelease dateだけをJST当日に更新します。
+PR用version更新workflowは、docs-only、OpenAPI-only、`.github/**`のみのPRではversionとPR本文のApp Version欄を更新しません。それ以外の変更がある場合、必要に応じて`app-version.json`、rootの`package.json`、`package-lock.json`を同期し、PR本文のApp Version欄も更新します。`APP_VERSION_BUMP`が未設定または`patch`ならpatch、`minor`ならminorを更新し、majorは自動更新しません。Vercel buildではrelease dateだけをJST当日に更新します。
 
 ## API key生成
 

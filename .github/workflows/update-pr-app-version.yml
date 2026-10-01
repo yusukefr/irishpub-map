@@ -26,12 +26,22 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
+      - name: Classify changes
+        id: changes
+        env:
+          CI_EVENT_NAME: pull_request
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/classify-ci-changes.mjs
+
       - name: Setup Node.js
+        if: steps.changes.outputs.version_relevant == 'true'
         uses: actions/setup-node@v7.0.0
         with:
           node-version-file: .nvmrc
 
       - name: Update version in pull request branch
+        if: steps.changes.outputs.version_relevant == 'true'
         id: version-update
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
@@ -58,6 +68,7 @@ jobs:
         run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$HEAD_REF"
 
       - name: Update pull request body
+        if: steps.changes.outputs.version_relevant == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

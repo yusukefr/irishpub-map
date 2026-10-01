@@ -24,11 +24,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Classify changes
+        id: changes
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/classify-ci-changes.mjs
 
       - name: Setup Go for actionlint
+        if: steps.changes.outputs.workflow_changed == 'true'
         uses: actions/setup-go@v6.0.0
         with:
           go-version: "1.26.1"
 
       - name: Lint GitHub Actions workflows
+        if: steps.changes.outputs.workflow_changed == 'true'
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.11
