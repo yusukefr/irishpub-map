@@ -17,6 +17,7 @@
     "update-app-version": "node scripts/update-app-version.mjs",
     "lint": "eslint --config eslint.config.mjs apps/web/app packages/shared/src e2e playwright.config.ts playwright.storybook.config.ts --max-warnings=0",
     "lint:openapi": "redocly lint docs/specs/openapi/openapi.yaml",
+    "generate:chatgpt-actions": "node scripts/generate-chatgpt-actions-schema.mjs",
     "typecheck": "npm run typecheck -w apps/web && npm run typecheck:e2e",
     "typecheck:e2e": "tsc --noEmit --project tsconfig.e2e.json",
     "test": "vitest run --coverage",
