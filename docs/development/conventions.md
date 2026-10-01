@@ -59,6 +59,8 @@ npm run lint
 npm run build
 ```
 
+Agent向け文書を変更した場合は`npm run check:llm-security`を実行します。pre-commit hookはstage済みファイルのGit indexを、CIはGit管理対象全体を検査します。禁止Unicode文字と非NFC文字列は自動修正せず、表示された位置を確認します。`AGENTS.md`、`AGENTS.override.md`、`SKILL.md`の新たな配置はallowlistのレビューが必要です。機密情報の検査は引き続き`npm run check:sensitive-data`が担当します。
+
 依存関係を変更した場合は、追加で `npm audit --omit=dev` を実行します。
 
 ### Neon Migration

@@ -2,3 +2,4 @@
 set -eu
 
 node scripts/check-sensitive-data.mjs --staged
+node scripts/check-llm-security.mjs --staged

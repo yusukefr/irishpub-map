@@ -21,12 +21,14 @@ CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`�
 
 | 変更内容 | `Lint, Test, Build`で実行する処理 | `main` push後のE2E / Storybook browser tests |
 | --- | --- | --- |
-| Code変更（workflowを含む） | Sensitive data check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | 実行 |
-| `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Sensitive data check、npm ci、OpenAPI lint | 省略 |
-| docs-only | Sensitive data check。npm ciは実行しない | 省略 |
+| Code変更（workflowを含む） | Sensitive data check、LLM security check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | 実行 |
+| `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Sensitive data check、LLM security check、npm ci、OpenAPI lint | 省略 |
+| docs-only | Sensitive data check、LLM security check。npm ciは実行しない | 省略 |
 | `workflow_dispatch` | Code変更と同じFull CI | 実行 |
 
 docs-onlyは`docs/**`（OpenAPIを除く）、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`に限定します。アプリ配下のMarkdownを含む、それ以外のパスはCode変更として扱います。PR中にE2Eを確認する必要があれば、対象branchで`workflow_dispatch`を実行します。
+
+LLM security checkはGit管理対象のAgent向け文書を動的に列挙し、禁止Unicode文字、NFC、instruction fileの配置を検査します。pre-commitではstage済みの内容だけを、CIでは管理対象全件を確認します。検出時は自動修正せず、表示されたファイル・位置と内容をレビューします。
 
 独立した`GitHub Actions Workflow Lint` Workflowは毎回起動しますが、`.github/workflows/**`に変更がある場合、または手動実行時のみGoをセットアップし、`rhysd/actionlint`の固定バージョンでWorkflowを静的検査します。Workflowの変更時には、`ci.yml`自体の構文エラーも別Workflowから検出できます。このWorkflowは書き込み権限や通知用Secretを持ちません。
 
