@@ -43,7 +43,7 @@ Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secret
 
 `Lint, Test, Build`ジョブは従来どおり成功・失敗時にSlackへ通知します。E2Eジョブは失敗時に限り、同じWebhookと、設定されている場合は同じChannelへ通知します。E2E成功時の追加通知はありません。通知にはRepository名、Branch名、GitHub Actions Run URLを含めます。失敗時はRun URLから実行結果を開き、保存されたPlaywright artifactを確認します。
 
-PR用version更新workflowは、docs-only、OpenAPI-only、`.github/**`のみのPRではversionを更新しません。それ以外の変更がある場合、必要に応じて`app-version.json`、rootの`package.json`、`package-lock.json`を同期します。`APP_VERSION_BUMP`が未設定または`patch`ならpatch、`minor`ならminorを更新し、majorは自動更新しません。Vercel buildではrelease dateだけをJST当日に更新します。
+PR用version更新workflowは、docs-only、OpenAPI-only、`.github/**`のみのPRではversionとPR本文のApp Version欄を更新しません。それ以外の変更がある場合、必要に応じて`app-version.json`、rootの`package.json`、`package-lock.json`を同期し、PR本文のApp Version欄も更新します。`APP_VERSION_BUMP`が未設定または`patch`ならpatch、`minor`ならminorを更新し、majorは自動更新しません。Vercel buildではrelease dateだけをJST当日に更新します。
 
 ## API key生成
 
