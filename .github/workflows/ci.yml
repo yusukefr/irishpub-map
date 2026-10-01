@@ -21,6 +21,8 @@ jobs:
     name: Lint, Test, Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      code_changed: ${{ steps.changes.outputs.code_changed }}
     env:
       SLACK_CICD_CHANNEL: ${{ vars.SLACK_CICD_CHANNEL }}
       SLACK_CICD_WEBHOOK_URL: ${{ secrets.SLACK_CICD_WEBHOOK_URL }}
@@ -28,35 +30,52 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Classify changes
+        id: changes
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/classify-ci-changes.mjs
 
       - name: Setup Node.js
         uses: actions/setup-node@v7.0.0
         with:
           node-version-file: .nvmrc
-          cache: npm
+          cache: ${{ (steps.changes.outputs.code_changed == 'true' || steps.changes.outputs.openapi_changed == 'true') && 'npm' || '' }}
 
       - name: Install dependencies
+        if: steps.changes.outputs.code_changed == 'true' || steps.changes.outputs.openapi_changed == 'true'
         run: npm ci
 
       - name: Check sensitive data
         run: npm run check:sensitive-data
 
       - name: Format check
+        if: steps.changes.outputs.code_changed == 'true'
         run: npm run format:check
 
       - name: OpenAPI lint
+        if: steps.changes.outputs.code_changed == 'true' || steps.changes.outputs.openapi_changed == 'true'
         run: npm run lint:openapi
 
       - name: Lint
+        if: steps.changes.outputs.code_changed == 'true'
         run: npm run lint
 
       - name: Test
+        if: steps.changes.outputs.code_changed == 'true'
         run: npm test
 
       - name: Build
+        if: steps.changes.outputs.code_changed == 'true'
         run: npm run build
 
       - name: Build Storybook
+        if: steps.changes.outputs.code_changed == 'true'
         run: npm run build-storybook
 
       - name: Notify Slack
@@ -98,7 +117,7 @@ jobs:
 
   e2e:
     name: E2E
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: needs.ci.outputs.code_changed == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: ci
     runs-on: ubuntu-24.04
     timeout-minutes: 15
