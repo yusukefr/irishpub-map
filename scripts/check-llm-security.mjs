@@ -147,7 +147,8 @@ function gitFiles(args) {
 
 function contentFor(file, staged) {
   const bytes = staged ? execFileSync("git", ["show", `:${file}`]) : readFileSync(file);
-  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  // BOMを除去するとファイル先頭の禁止文字 U+FEFF を見逃すため、文字として保持します。
+  return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
 }
 
 function check(mode) {

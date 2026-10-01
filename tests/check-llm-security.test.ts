@@ -97,6 +97,21 @@ describe("LLM security file selection", () => {
 });
 
 describe("LLM security CLI", () => {
+  it("rejects a UTF-8 BOM at the start of a staged instruction file", () => {
+    const directory = mkdtempSync(`${tmpdir()}/llm-security-`);
+    try {
+      spawnSync("git", ["init"], { cwd: directory });
+      writeFileSync(`${directory}/AGENTS.md`, "\uFEFFInstructions\n", "utf8");
+      spawnSync("git", ["add", "AGENTS.md"], { cwd: directory });
+
+      const result = spawnSync(process.execPath, [script, "--staged"], { cwd: directory, encoding: "utf8" });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("AGENTS.md:1:1: Forbidden Unicode character: U+FEFF ZERO WIDTH NO-BREAK SPACE");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it("checks the staged index rather than unstaged worktree changes", () => {
     const directory = mkdtempSync(`${tmpdir()}/llm-security-`);
     try {
