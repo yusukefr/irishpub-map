@@ -52,3 +52,21 @@
   gap: var(--spacing-space-3);
   width: min(100%, 360px);
 }
+.carousel {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  height: 192px;
+  gap: var(--spacing-space-3);
+  padding-inline: var(--spacing-space-3);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline-start: var(--spacing-space-3);
+}
+.carousel > article {
+  flex: 0 0 calc(100% - var(--spacing-space-12));
+  height: 100%;
+  overflow-y: auto;
+  scroll-snap-align: start;
+}

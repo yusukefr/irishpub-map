@@ -78,6 +78,43 @@ for (const suffix of ["desktop-pub-cards", "desktop-pub-cards-english"]) {
   });
 }
 
+for (const locale of ["japanese", "english"] as const) {
+  for (const width of [390, 360] as const) {
+    test(`Mobile carousel PubCards: ${locale} ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto(`/iframe.html?id=design-system-public-ui--mobile-carousel-${locale}-${width}&viewMode=story`);
+      const carousel = page.getByRole("region", { name: locale === "japanese" ? "店舗カード一覧" : "Pub cards" });
+      const cards = carousel.locator('article[data-density="compact"]');
+      await expect(cards).toHaveCount(3);
+      await expect(cards.nth(0)).toHaveAttribute("data-selected", "true");
+      await expect(cards.nth(1)).not.toHaveAttribute("data-selected", "true");
+      await expect(cards.nth(2)).toHaveAttribute("data-status", "closed");
+      await expect(cards.nth(2)).toContainText(locale === "japanese" ? "閉業" : "Closed");
+      await expect(cards.nth(0)).toContainText("320 m");
+      await expect(cards.nth(1)).not.toContainText("320 m");
+      await expect(cards.nth(1)).not.toContainText(
+        locale === "japanese" ? "駅から徒歩5分" : "5 minutes from the station",
+      );
+      expect(await carousel.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      const longName = await cards.nth(1).getByRole("heading").textContent();
+      expect(longName!.length).toBeGreaterThan(locale === "japanese" ? 25 : 50);
+      const select = cards.nth(1).locator("button[aria-pressed]");
+      await select.focus();
+      await expect(select).toHaveCSS("outline-width", "3px");
+      await page.keyboard.press("Enter");
+      await expect(select).toHaveAttribute("aria-pressed", "true");
+      await expect(cards.nth(1)).toHaveAttribute("data-selected", "true");
+      await expect(cards.nth(0)).not.toHaveAttribute("data-selected", "true");
+      const box = (await select.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      const axe = await new AxeBuilder({ page }).include("main").analyze();
+      expect(axe.violations.filter(({ impact }) => impact === "serious" || impact === "critical")).toEqual([]);
+    });
+  }
+}
+
 test("Bottom Sheet: keyboard, content scrolling, focus restoration and reduced motion", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
