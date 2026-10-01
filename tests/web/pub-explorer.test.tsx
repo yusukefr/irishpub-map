@@ -250,7 +250,9 @@ describe("PubExplorer", () => {
     vi.spyOn(carousel.children[1], "getBoundingClientRect").mockReturnValue(new DOMRect(50, 0, 180, 190));
     fireEvent.scroll(carousel);
     await waitFor(() => expect(carousel.children[1]).toHaveAttribute("data-selected", "true"));
-    expect(maplibreMock.markerConstructor.mock.calls[1][0].element).toHaveClass("pub-map-marker-selected");
+    await waitFor(() =>
+      expect(maplibreMock.markerConstructor.mock.calls[1][0].element).toHaveClass("pub-map-marker-selected"),
+    );
     expect(sheet).toHaveAttribute("data-state", "collapsed");
 
     fireEvent.click(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }));
