@@ -50,13 +50,13 @@ Input / Search / BottomSheetはstate・ID・focusを扱うClient Componentです
 
 PubListのカード表示はPubCard、一覧と詳細の状態表示はStatusBadge、Map検索はSearch、タグ操作はFilterChip、現在地操作はButtonを使います。AppHeaderのリンクと言語トリガー、Discover内のカードも共通部品を使います。検索・DB・認証・言語保存の仕様は変更しません。Mapの配置・Panel・Markerは[Map Explorer Pattern](patterns/map-explorer.md)を参照してください。
 
-PubCardの`density="compact"`はDesktop Resultsなど幅の限られた一覧向けです。店舗名・地域・状態の順を維持し、タグと詳細を同じ行に配置します。既定値`comfortable`は既存画面用です。`DesktopPubCards` / `DesktopPubCardsEnglish` Storyで長文と各状態を確認できます。
+PubCardの`density="compact"`はDesktop ResultsとMobile collapsed Carouselなど幅の限られた一覧向けです。店舗名・地域・状態の順を維持し、タグと詳細を同じ行に配置します。既定値`comfortable`は既存画面用です。`DesktopPubCards` / `DesktopPubCardsEnglish` Storyで長文と各状態を確認できます。`MobileCarouselJapanese390` / `MobileCarouselJapanese360` と英語版では、選択・非選択、長い店名、任意metadataなし、閉店を確認できます。
 
 ## Storybookと検証
 
 Mobile Storyは追加addonなしで390px幅に制限した部品例です。実際のviewportとmedia queryの検証は下記Playwrightで行います。
 
-`npm run storybook`で「Design System / Public UI」を開きます。Japanese / English / Mobileの全体例、ButtonStates / SearchStates / FilterChips / PubCards / ContentCards / BottomSheetStatesの部品別Storyがあります。locale controlで日英を切り替え、実ボタンでloading・選択・Sheetの各状態を確認できます。hover / focus / activeはpointerとキーボードで確認します。
+`npm run storybook`で「Design System / Public UI」を開きます。Japanese / English / Mobileの全体例、ButtonStates / SearchStates / FilterChips / PubCards / ContentCards / BottomSheetStatesの部品別StoryとMobile Carouselの日英・390 / 360pxのStoryがあります。locale controlで日英を切り替え、実ボタンでloading・選択・Sheetの各状態を確認できます。hover / focus / activeはpointerとキーボードで確認します。
 
 - `npm test`: 共通部品のラベル、エラー、ref、検索クリア、選択、任意情報、Sheetの操作・キャンセル・focusと既存画面の回帰テスト。既存90%カバレッジ基準を維持。
 - `npm run test:storybook`: 静的Storybookをビルド・配信し、Chromiumで日英 × 1440 / 1280 / 390 / 360px、横overflow、44px操作領域、focus、loading時の幅、axe critical/serious違反、Sheetのタッチ・内部スクロール・reduced-motionを検査。
@@ -68,7 +68,7 @@ Discover のページ構成、長文幅、関連導線、写真利用条件は[D
 
 ## Mobile Map
 
-980px以下では共通BottomSheetを結果一覧・詳細の表示領域に使用します。collapsedでは地図と横スクロールできる店舗カードを表示し、Card選択・件数ボタン・ハンドルからmediumへ、詳細操作からexpandedへ移ります。Carouselのスワイプは選択だけを更新し、Marker選択はcollapsedを維持して対応カードへ選択を同期します。medium / expandedでのMarker選択は既存のSheet状態を保ちます。Carouselの「詳細」から開いた場合、「結果へ戻る」はcollapsedと選択・Carousel位置を復元します。結果一覧から開いた詳細は直前の一覧状態へ戻り、「閉じる」はcollapsedへ戻して検索・条件・選択店舗を維持します。
+980px以下では共通BottomSheetを結果一覧・詳細の表示領域に使用します。collapsedでは地図と横スクロールできる店舗カードを表示し、Card選択・件数ボタン・ハンドルからmediumへ、詳細操作からexpandedへ移ります。Carouselのスワイプは共有選択IDだけを更新し、対応MarkerとMap中心を同期します。Marker選択も同じIDを更新して対応Cardを表示し、collapsedを維持します。同期時はCarouselの不要な再スクロールとfocus移動を避けます。詳細表示にはCardの「詳細」という明示操作が必要です。medium / expandedでのMarker選択は既存のSheet状態を保ちます。Carouselの「詳細」から開いた場合、「結果へ戻る」はcollapsedと選択・Carousel位置を復元します。結果一覧から開いた詳細は直前の一覧状態へ戻り、「閉じる」はcollapsedへ戻して検索・条件・選択店舗を維持します。
 
 ハンドルのクリックは3段階を巡回し、上下ドラッグは1段階、矢印キー・Home / Endでも高さを変更できます。ドラッグ対象は44px以上のハンドルに限定し、結果一覧の内部スクロール・地図pan / pinch・条件行の横スクロールとは分離します。Sheetは非モーダルで、focus trapは設けません。共通BottomSheetの`className`で呼び出し側のMap領域に高さを収めます。
 

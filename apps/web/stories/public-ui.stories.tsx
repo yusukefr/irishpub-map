@@ -289,7 +289,56 @@ function CompactPubs({ locale }: { locale: Locale }) {
   );
 }
 
-function Gallery({ locale = "ja", only = "all" }: { locale?: Locale; only?: string }) {
+function MobileCarouselPubs({ locale, width }: { locale: Locale; width: 360 | 390 }) {
+  const [selected, setSelected] = useState(samplePub.id);
+  const pubs: Pub[] = [
+    samplePub,
+    {
+      ...samplePub,
+      id: "long-name",
+      name:
+        locale === "ja"
+          ? "東京駅から歩いて訪ねる音楽とクラフトビールを楽しめるアイリッシュパブ"
+          : "The Very Long Irish Pub Name for Neighbours and Travellers near the Station",
+    },
+    { ...samplePub, id: "closed", name: locale === "ja" ? "閉店したパブ" : "Closed pub", status: "closed", tags: [] },
+  ];
+  return (
+    <section className={styles.section} aria-label="Mobile pub carousel">
+      <h2>Mobile pub carousel / {width}px</h2>
+      <div
+        className={styles.carousel}
+        role="region"
+        aria-label={getTranslation(locale).list.carouselLabel}
+        style={{ maxWidth: width }}
+      >
+        {pubs.map((pub, index) => (
+          <PubCard
+            key={pub.id}
+            pub={pub}
+            locale={locale}
+            density="compact"
+            selected={selected === pub.id}
+            onSelect={setSelected}
+            onShowDetails={() => undefined}
+            metadata={index === 0 ? (locale === "ja" ? "駅から徒歩5分" : "5 minutes from the station") : undefined}
+            distance={index === 0 ? "320 m" : undefined}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Gallery({
+  locale = "ja",
+  only = "all",
+  carouselWidth = 390,
+}: {
+  locale?: Locale;
+  only?: string;
+  carouselWidth?: 360 | 390;
+}) {
   return (
     <main className={styles.gallery} lang={locale}>
       <h1>Public UI Components</h1>
@@ -313,6 +362,7 @@ function Gallery({ locale = "ja", only = "all" }: { locale?: Locale; only?: stri
       {only === "all" || only === "chip" ? <Chips locale={locale} /> : null}
       {only === "all" || only === "pub" ? <Pubs locale={locale} /> : null}
       {only === "compact-pub" ? <CompactPubs locale={locale} /> : null}
+      {only === "carousel" ? <MobileCarouselPubs locale={locale} width={carouselWidth} /> : null}
       {only === "all" || only === "content" ? <Content locale={locale} /> : null}
       {only === "all" || only === "sheet" ? <MapAndSheet locale={locale} /> : null}
       <p id="story-end">End of component examples</p>
@@ -339,6 +389,10 @@ export const DesktopPubCards: Story = { args: { only: "compact-pub" } };
 export const DesktopPubCardsEnglish: Story = { args: { only: "compact-pub", locale: "en" } };
 export const ContentCards: Story = { args: { only: "content" } };
 export const BottomSheetStates: Story = { args: { only: "sheet" } };
+export const MobileCarouselJapanese390: Story = { args: { only: "carousel", carouselWidth: 390 } };
+export const MobileCarouselJapanese360: Story = { args: { only: "carousel", carouselWidth: 360 } };
+export const MobileCarouselEnglish390: Story = { args: { only: "carousel", locale: "en", carouselWidth: 390 } };
+export const MobileCarouselEnglish360: Story = { args: { only: "carousel", locale: "en", carouselWidth: 360 } };
 export const Mobile: Story = {
   decorators: [
     (Story) => (

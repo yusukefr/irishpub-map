@@ -7,6 +7,11 @@ Playwright E2E visual regression snapshotを、Public UIの構成、密度、情
 | Map、1440×900 | 日本語 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/map-desktop-ja-chromium-linux.png) |
 | Map、1440×900 | English | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/map-desktop-en-chromium-linux.png) |
 | Map、390×844 | 日本語 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/map-mobile-ja-chromium-linux.png) |
+| Map collapsed、390×844 | English | [snapshot](../../../e2e/mobile-map.spec.ts-snapshots/map-mobile-en-chromium-linux.png) |
+| Map Carousel選択後、390×844 | 日本語 | [snapshot](../../../e2e/mobile-map.spec.ts-snapshots/map-mobile-carousel-selected-ja-chromium-linux.png) |
+| Map Carousel選択後、390×844 | English | [snapshot](../../../e2e/mobile-map.spec.ts-snapshots/map-mobile-carousel-selected-en-chromium-linux.png) |
+| Map medium、390×844 | 日本語 | [snapshot](../../../e2e/mobile-map.spec.ts-snapshots/map-mobile-bottom-sheet-medium-chromium-linux.png) |
+| Map expanded、390×844 | 日本語 | [snapshot](../../../e2e/mobile-map.spec.ts-snapshots/map-mobile-bottom-sheet-expanded-chromium-linux.png) |
 | Discover、1440×900 | 日本語 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/discover-desktop-ja-chromium-linux.png) |
 | Discover、1280×900 | English | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/discover-desktop-en-chromium-linux.png) |
 | Discover、390×844 | 日本語 | [snapshot](../../../e2e/visual-regression.spec.ts-snapshots/discover-mobile-ja-chromium-linux.png) |
@@ -14,7 +19,7 @@ Playwright E2E visual regression snapshotを、Public UIの構成、密度、情
 
 外部Map tileは変動を避けるため、Visual Regressionと同じmock styleを使っています。表示する店舗はE2E専用の公開可能なfixtureであり、本番DBの内容やPreview URLを含みません。
 
-Map Mobile英語はVisual RegressionのReference snapshotを持たず、`e2e/mobile-map.spec.ts` の挙動・画面比較で確認します。
+Mobile Mapの初期状態・Carousel選択後・medium・expandedは、`e2e/mobile-map.spec.ts` の画面比較もReferenceとして扱います。360pxの日英表示、低いviewport、横向きは同specの挙動とoverflow検査で確認します。
 
 ## Priority
 

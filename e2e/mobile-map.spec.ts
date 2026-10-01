@@ -3,6 +3,111 @@ import { expect, test } from "@playwright/test";
 import { getTranslation } from "../apps/web/app/lib/i18n";
 import { mockExternalMapStyle } from "./support/page-helpers";
 
+/** CDPのtouch列でCarouselを横へ動かし、scrollLeft代入では拾えないgesture競合を確認します。 */
+async function swipeCarouselLeft(
+  page: import("@playwright/test").Page,
+  context: import("@playwright/test").BrowserContext,
+) {
+  const box = (await page.getByRole("region", { name: /店舗カード一覧|Pub cards/ }).boundingBox())!;
+  const client = await context.newCDPSession(page);
+  const start = { x: box.x + box.width * 0.8, y: box.y + box.height / 2 };
+  await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [start] });
+  for (let step = 1; step <= 10; step += 1) {
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ x: start.x - (box.width * 0.7 * step) / 10, y: start.y }],
+    });
+  }
+  await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+}
+
+for (const locale of ["ja", "en"] as const) {
+  for (const width of [390, 360] as const) {
+    test(`Mobile carousel and marker synchronization ${locale} ${width}`, async ({ context, page }) => {
+      const t = getTranslation(locale);
+      await context.addCookies([{ name: "irishpub-map-locale", value: locale, domain: "localhost", path: "/" }]);
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 800 });
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await mockExternalMapStyle(page);
+      await page.goto("/");
+      const sheet = page.locator("section[data-state]");
+      const carousel = page.getByRole("region", { name: t.list.carouselLabel });
+      const cards = carousel.locator("article");
+      const markers = page.locator(".pub-map-marker");
+      await expect(markers).toHaveCount(2);
+      await markers.first().focus();
+      await page.keyboard.press("Enter");
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await expect(cards.first()).toHaveAttribute("data-selected", "true");
+      await expect(markers.first()).toHaveAttribute("aria-pressed", "true");
+      await expect(markers.first()).toBeFocused();
+      await page.locator(".map-workspace canvas").click({ position: { x: 10, y: 200 } });
+      await expect(page.locator(".maplibregl-popup")).toHaveCount(0);
+      const secondBefore = (await markers.nth(1).boundingBox())!;
+
+      await swipeCarouselLeft(page, context);
+      await expect(cards.nth(1)).toHaveAttribute("data-selected", "true");
+      await expect(cards.nth(1).locator("button[aria-pressed]")).toHaveAttribute("aria-pressed", "true");
+      await expect(markers.nth(1)).toHaveAttribute("aria-pressed", "true");
+      await expect(markers.first()).toHaveAttribute("aria-pressed", "false");
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await expect
+        .poll(async () => {
+          const secondAfter = (await markers.nth(1).boundingBox())!;
+          return Math.abs(secondAfter.x - secondBefore.x) + Math.abs(secondAfter.y - secondBefore.y);
+        })
+        .toBeGreaterThan(20);
+      const map = (await page.locator(".map-canvas").boundingBox())!;
+      await expect
+        .poll(async () => {
+          const marker = (await markers.nth(1).boundingBox())!;
+          return Math.hypot(
+            marker.x + marker.width / 2 - (map.x + map.width / 2),
+            marker.y + marker.height - (map.y + map.height / 2),
+          );
+        })
+        .toBeLessThan(60);
+      if (width === 390) {
+        await expect(page).toHaveScreenshot(`map-mobile-carousel-selected-${locale}.png`, {
+          animations: "disabled",
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
+        });
+      }
+      const axe = await new AxeBuilder({ page }).analyze();
+      expect(axe.violations.filter(({ impact }) => impact === "serious" || impact === "critical")).toEqual([]);
+
+      await markers.first().focus();
+      await page.keyboard.press("Enter");
+      await expect(cards.first()).toHaveAttribute("data-selected", "true");
+      await expect.poll(() => carousel.evaluate((node) => node.scrollLeft)).toBe(0);
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await expect(markers.first()).toBeFocused();
+      await page.waitForTimeout(300);
+      await expect(cards.first()).toHaveAttribute("data-selected", "true");
+      await expect(page.locator('.pub-map-marker[aria-pressed="true"]')).toHaveCount(1);
+
+      await cards.first().locator("button[aria-pressed]").focus();
+      await expect(cards.first().locator("button[aria-pressed]")).toHaveCSS("outline-width", "3px");
+      await page.keyboard.press("Enter");
+      await expect(sheet).toHaveAttribute("data-state", "medium");
+      const resultsScroll = page.locator(".pub-results-scroll");
+      const resultsBox = (await resultsScroll.boundingBox())!;
+      const client = await context.newCDPSession(page);
+      const start = { x: resultsBox.x + resultsBox.width / 2, y: resultsBox.y + resultsBox.height * 0.75 };
+      await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [start] });
+      for (let step = 1; step <= 8; step += 1) {
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{ x: start.x, y: start.y - (resultsBox.height * 0.5 * step) / 8 }],
+        });
+      }
+      await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await expect.poll(() => resultsScroll.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+      await expect(sheet).toHaveAttribute("data-state", "medium");
+    });
+  }
+}
+
 for (const locale of ["ja", "en"] as const) {
   for (const width of [390, 360]) {
     test(`Mobile exploration ${locale} ${width}`, async ({ context, page }) => {
