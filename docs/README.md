@@ -49,7 +49,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Vercel Preview protection | [Vercel Preview Protection](runbooks/vercel-preview-protection.md) | Current。Vercelの現行設定を優先 |
 | Admin access setup | [Admin access](runbooks/admin-access.md) | Current。認証実装と環境変数を優先 |
 | Automation API access | [Automation API access](runbooks/automation-api-access.md) | Current。OpenAPI、認証実装、Route Handlerを優先 |
-| ChatGPT Connector | [ChatGPT Connector](runbooks/chatgpt-connector.md) | Current。OpenAPI と生成スクリプトを優先 |
+| ChatGPT / Codex Plugin | [Plugin / Remote MCP Server](runbooks/chatgpt-connector.md) | Current。MCP Toolのallow list、OAuth認証、Automation API OpenAPI契約を優先 |
 | Release and CI operations | [Release and CI](runbooks/release-operations.md) | Current。GitHub ActionsとVercel設定を優先 |
 | Privacy / Analytics | [Privacy and external transmission](operations/privacy-and-external-transmission.md) | Current。実装とProduction設定を優先 |
 | Map provider | [Map provider](operations/map-provider.md) | Current。OpenFreeMapの現行Policyを優先 |

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "irishpub-map": {
+      "type": "streamable-http",
+      "url": "https://irishpub-map-web.vercel.app/api/mcp"
+    }
+  }
+}

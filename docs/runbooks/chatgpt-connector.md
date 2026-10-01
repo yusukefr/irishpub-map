@@ -1,59 +1,55 @@
-# ChatGPT Connector の設定
+# Irish Pub Map Plugin / Remote MCP Server
 
-Issue #509 の接続レイヤーには ChatGPT の **GPT Actions** を使用します。GPT Actions は OpenAPI と API key の Bearer 認証を設定できます。ChatGPT → GPT Actions → `/api/automation/v1/*` → Automation API が管理操作の経路です。Neon へ直接接続しません。OpenAI の[設定手順](https://help.openai.com/en/articles/9442513-configuring-actions-in-gpts)も参照してください。
+ChatGPT / Codex → [Irish Pub Map Plugin](../../plugins/irishpub-map/plugin.json) → Remote MCP Server → Automation API → Admin Services という経路で管理データを参照します。MCP ServerはDBへ直接接続せず、[Automation API OpenAPI](../specs/openapi/openapi.yaml)を契約のSource of Truthとします。Custom GPT / GPT Actionsは正式なConnector基盤に使用しません。
 
-## 契約と公開操作
+## 配置と公開Tool
 
-[リポジトリの OpenAPI](../specs/openapi/openapi.yaml) が API 契約の Source of Truth です。分割された `$ref` を解決し、許可済み Automation 操作だけを含む単一 JSON を生成します。出力は環境ごとの Server Origin を含むため、Repository へ保存せず、登録時に生成します。生成スクリプトは未審査の Automation 操作が増えた場合に失敗します。
+同じNext.js Applicationの `apps/web/app/api/mcp/route.ts` がstateless Streamable HTTP endpoint `/api/mcp` を提供します。公式MCP SDK v2と `mcp-handler` を利用し、`initialize`、`tools/list`、`tools/call` を処理します。OAuth Protected Resource Metadataは `/.well-known/oauth-protected-resource` で提供します。Vercelへの通常Deploymentで両Routeが公開されます。
 
-```bash
-nvm use
-npm ci
-npm run generate:chatgpt-actions -- --origin 'https://<your-domain>' --output /tmp/irishpub-chatgpt-actions.json
-./node_modules/.bin/redocly lint /tmp/irishpub-chatgpt-actions.json
-```
+#509のallow listは `list_prefectures` のみです。`GET /api/automation/v1/master/prefectures` を呼ぶRead-only Toolで、MCP annotationの `readOnlyHint: true` も設定しています。新しいAutomation API Endpointが増えてもToolは自動公開されません。Pub Delete、Tag Update / Delete、Status Update、Calendar Update、Media Upload / Delete、DB直接操作はTool一覧にありません。Content / Quiz / Pub / Tagの個別Toolは後続Issueで審査します。
 
-`--origin` には対象環境の HTTPS Origin だけを指定します。Path、Query、認証情報は含めません。既存の出力ファイルを上書きしないため、再生成時は新しいファイル名を指定してください。生成物には Admin Calendar、Media、Status 更新、Pub 削除、Tag 更新・削除の操作は含まれません。API の Request / Response / Error / `Idempotency-Key` は元の OpenAPI から継承し、Tool 名と説明のみ ChatGPT 用に補います。
+[Plugin manifest](../../plugins/irishpub-map/plugin.json)と[MCP接続設定](../../plugins/irishpub-map/mcp.json)はProductionの公開Originを指します。Local / Previewで試す際は、対象環境の `/api/mcp` URLをChatGPT / Codexへ直接登録します。環境固有のPreview URLやSecretをRepository、Issue、PRへ記録しません。
 
-## GPT Actions への登録
+## 認証とserver-side設定
 
-1. 対象環境で [Automation API 接続 Runbook](automation-api-access.md#認証と環境設定)に従い、サーバー側の `AUTOMATION_API_TOKEN_SHA256` と `AUTOMATION_API_SCOPES` を設定します。初期疎通では `master:read` だけを許可します。Scope はサーバー側で判定され、GPT Actions 側の説明や OpenAPI の `x-required-scope` は権限を付与しません。
-2. ChatGPT の GPT editor の Actions から新しい Action を作成し、生成した JSON 全体を Schema に貼り付けます。検出された Server が対象の HTTPS Origin で、操作名が `list_prefectures` などになっていることを確認します。Admin Calendar が Action に表示される場合は登録を中止し、生成物を確認します。
-3. Authentication は **API key → Bearer** を選び、Raw Token を GPT Actions の認証設定へ直接入力します。`Bearer ` の接頭辞は認証方式が付与するため、Credential 欄には Token 本体だけを設定します。下記の共通 Instructions を GPT に設定します。Token を GPT の Instructions、通常会話、OpenAPI、ファイル、Issue、PR、ログへ記載しません。
-4. GPT の共有範囲と Action の許可ドメインを確認し、まず非公開の設定で Preview の `list_prefectures` を試します。Preview Deployment Protection を使用する環境では、Automation Bearer とは別の Protection 設定が必要です。詳しくは [Automation API 接続 Runbook](automation-api-access.md#認証と環境設定)を参照してください。
+認証は二段階です。ChatGPT / CodexからMCP ServerへはOAuth 2.1 access token、MCP ServerからAutomation APIへは既存のBearer Tokenを使います。未認証ClientはTool discoveryを含めHTTP `401`で拒否します。MCP利用者の `mcp:read` とAutomation APIの `master:read` は別のScopeです。
 
-初期 Schema には後続 Issue で検証する Write Tool も定義されますが、`master:read` のみの Token では Write Request は `403 forbidden` です。Write Scope の付与前に #510〜#513 の操作フローと検証を完了してください。`POST /content`、`POST /quiz`、`POST /pubs`、`POST /tags` の `Idempotency-Key` は Schema に含まれます。同じ論理的 Retry では同じ Key を使い、別の操作では新しい Key を使います。
+外部OAuth認可サーバーは、PKCE、CIMDまたはDCR、resource indicatorをサポートし、MCP ResourceをAudienceに持つ署名済みJWT access tokenを発行するよう設定します。ServerはIssuer、Audience、JWKS署名、期限、`sub`、`scope`を検証し、許可された管理者Subjectだけを通します。JWT署名はRS256またはES256です。OpenAIの[Plugin認証ガイド](https://developers.openai.com/plugins/build/auth)と[公式MCP認可仕様](https://modelcontextprotocol.io/specification/draft/basic/authorization)に沿って認可サーバーを設定します。認可サーバー自体はこのRepositoryに実装しません。
 
-共通 Instructions の例です。対象 Resource の判断や入力作成に関する指示は、後続 Issue で追加します。
+| server-side環境変数           | 設定内容                                                                |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| `MCP_PUBLIC_ORIGIN`           | MCP Serverの公開HTTPS Origin。LocalではlocalhostのHTTPも可。            |
+| `MCP_OAUTH_ISSUER`            | 認可サーバーmetadataとJWT `iss` に一致するIssuer。                      |
+| `MCP_OAUTH_AUDIENCE`          | JWT `aud` に一致するMCP Resource識別子。通常は公開Origin + `/api/mcp`。 |
+| `MCP_OAUTH_JWKS_URL`          | 認可サーバーのJWKS URI。                                                |
+| `MCP_OAUTH_ALLOWED_SUBJECT`   | 利用を許す管理者本人のJWT `sub`。値は文書やログに残さない。             |
+| `MCP_AUTOMATION_API_ORIGIN`   | 同じ環境のAutomation API HTTPS Origin。LocalではlocalhostのHTTPも可。   |
+| `MCP_AUTOMATION_API_TOKEN`    | MCP Serverだけが保持するRaw Automation Token。                          |
+| `AUTOMATION_API_TOKEN_SHA256` | 既存Automation APIが検証する同じTokenのSHA-256。                        |
+| `AUTOMATION_API_SCOPES`       | 初期版は `master:read` のみ。                                           |
 
-```text
-Use only the listed Irish Pub Map Actions for management operations.
-Before a write, read the relevant resource and master data. Never use a different
-endpoint to work around a permission or validation error.
-Treat errorCode from the API as authoritative. On 401, stop and report that the
-credential needs attention without showing it. On 403, stop and report the missing
-scope. On 422, show fieldErrors or missingFields if present; do not invent values.
-On a conflict, report the existing conflict rather than creating another resource.
-For a retry of the same create request, reuse its Idempotency-Key. Never log or
-repeat Authorization headers, bearer tokens, or credential values in chat.
-```
+Production / PreviewではVercelの対象Environmentにserver-side変数を設定して再Deploymentします。LocalではGit管理外の `apps/web/.env.local` を使います。Raw TokenをChatGPT / Codex、Plugin Instructions、Prompt、通常Chat、OpenAPI、Tool Result、Application Log、Audit Log、Test fixtureへ渡しません。Credentialの生成とServer hashの設定は[Automation API運用Runbook](automation-api-access.md#認証と環境設定)に従います。Preview Deployment Protectionが有効な場合、外部MCP ClientとServer内のAutomation API呼び出しの両方でProtectionの通過条件を確認してください。Server内の呼び出しは既存の `VERCEL_AUTOMATION_BYPASS_SECRET` を利用できます。
 
-## Read-only 疎通確認
+## 接続とread-only疎通
 
-GPT Actions の Test または Preview から `list_prefectures` を呼びます。`GET /api/automation/v1/master/prefectures` の `200` と都道府県一覧を確認します。Production で試す場合も Read だけにします。Raw Token や Authorization Header を Chat、画面記録、Application Log に出さず、実行先と HTTP Status のみ記録します。
+1. `nvm use`、`npm ci`、`npm run dev` でLocal Serverを起動します。対象環境のserver-side設定とOAuth認可サーバーの設定を済ませます。Productionでは通常Deployment後に同じ確認を行います。
+2. MCP Inspectorで対象の `/api/mcp` にStreamable HTTP接続し、OAuth loginを完了します。`initialize` の成功、`tools/list` が `list_prefectures` のみを返すこと、read-only annotationを確認します。
+3. ChatGPTではDeveloper modeを有効にし、PluginsからMCP ServerのHTTPS URLを接続します。CodexではRemote MCP Serverとして同じURLを登録し、OAuth loginを完了します。Plugin packageを利用する場合はこのRepositoryの `plugins/irishpub-map` を登録します。詳しい画面手順はOpenAIの[接続ガイド](https://developers.openai.com/plugins/deploy/connect-chatgpt)を参照してください。
+4. `list_prefectures` を呼び、Automation APIの `200` と都道府県一覧がTool Resultへ返ることを確認します。Productionではread-only操作だけを使います。実行結果を共有する際はSecret、アカウント識別子、環境固有URLを除きます。
 
-| HTTP / `errorCode` | 確認すること |
+OAuth認可サーバー、server-side Secret、接続権限が未設定の場合、実環境の疎通確認は完了していません。`npm test` のMCP Contract TestはMCP protocol、認証拒否、Toolのallow list、Automation API Clientを隔離環境で確認します。
+
+## Error、Rotation、Logging
+
+| 発生箇所 | 確認すること |
 | --- | --- |
-| `401 unauthorized` | Credential 未設定、誤設定、失効、または Server の hash 未設定。Token 値を応答やログに出さず、認証設定を確認する。 |
-| `403 forbidden` | 必要 Scope がない。別操作で権限を迂回せず、サーバーの Scope 設定を確認する。 |
-| `422 validation_error` | `fieldErrors` の対象フィールドと理由に従い入力を直す。Validation を緩和しない。 |
-| `422 publication_requirements_not_met` | `missingFields` に従い、実データを確認して補う。値を推測して埋めない。 |
-| `409 content_conflict` / `quiz_conflict` / `tag_conflict` / `idempotency_conflict` | 既存データまたは同一 Key の Request を確認する。別名の Resource を自動作成しない。 |
+| MCP HTTP `401` | MCP利用者のOAuth未認証・期限切れ。Protected Resource Metadataの認可サーバーを確認する。 |
+| MCP HTTP `403` | MCP `mcp:read` Scope不足。Toolは実行されない。 |
+| Tool Result `401 unauthorized` | MCP ServerからAutomation APIへのCredential未設定・誤設定・失効。OAuthと区別する。 |
+| Tool Result `403 forbidden` | Automation APIの `master:read` Scope不足。別Tool / Endpointへフォールバックしない。 |
+| Tool Result `422 validation_error` / `publication_requirements_not_met` | `fieldErrors` / `missingFields` を確認する。Server Validationを緩和せず、値を捏造しない。 |
+| Tool Result `409 content_conflict` / `quiz_conflict` / `tag_conflict` / `idempotency_conflict` | 競合を報告し、別Resourceを自動生成しない。 |
 
-401 / 403 の負例は Token や Scope を分けた隔離環境で確認します。Write 操作の Error と Retry の統合確認は後続 Issue の範囲です。Connector は Automation API の Error を利用し、別 Endpoint への自動フォールバックや Scope 判定の再実装を行いません。
+Automation API ClientはJSON Errorの既知フィールドだけを返し、Request IDを安全な形式で保持します。Create系Toolのため `Idempotency-Key` を送信できる共通Clientですが、Resource単位のRetry検証は後続Issueで行います。Fetch例外、Authorization Header、Raw Token、OAuth TokenをTool Resultやログへ出しません。MCP独自ログにはSecretを出さず、変更操作の監査は既存のAutomation API Audit Logを使います。
 
-## Token Rotation と Security
-
-[既存の Rotation 手順](automation-api-access.md#token-rotation-と緊急失効)に従って新 Token と hash を生成し、GPT Actions の Bearer Credential を新 Token に更新してから、同じ環境の Server hash を切り替えます。Deployment 後に `list_prefectures` の `200` と旧 Token の `401` を確認します。単一 Token 方式のため切替中の短時間の失敗に注意してください。Raw Token は Credential 以外へ保存しません。
-
-Connector 独自のログは追加しません。変更操作の監査には Automation API の既存 Audit Log を使用します。サーバー側の Scope と Request Validation は常に有効です。ChatGPT へ Neon 接続情報を設定しません。
+Token Rotation時は[Automation APIの手順](automation-api-access.md#token-rotation-と緊急失効)に従い、新しいRaw TokenをMCP Serverの `MCP_AUTOMATION_API_TOKEN`、対応するhashをAutomation APIの `AUTOMATION_API_TOKEN_SHA256` に更新してDeploymentします。その後、`list_prefectures` の成功と旧Tokenの `401` をread-onlyで確認します。OAuthの鍵と管理者Subjectの変更は認可サーバー側とJWKS / server-side設定を同期させます。
