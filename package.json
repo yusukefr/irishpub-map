@@ -1,6 +1,6 @@
 {
   "name": "irishpub-map",
-  "version": "0.1.61",
+  "version": "0.1.62",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -28,6 +28,7 @@
     "build-storybook": "storybook build",
     "prepare": "node scripts/install-git-hooks.mjs",
     "check:sensitive-data": "node scripts/check-sensitive-data.mjs --tracked",
+    "check:llm-security": "node scripts/check-llm-security.mjs --tracked",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -43,7 +44,7 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@vitest/coverage-v8": "^5.0.1",
-    "agent-browser": "^0.36.0",
+    "agent-browser": "0.36.0",
     "jsdom": "^30.1.1",
     "prettier": "^3.9.8",
     "react": "19.3.0",

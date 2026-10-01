@@ -54,6 +54,9 @@ jobs:
       - name: Check sensitive data
         run: npm run check:sensitive-data
 
+      - name: Check LLM security
+        run: npm run check:llm-security
+
       - name: Format check
         if: steps.changes.outputs.code_changed == 'true'
         run: npm run format:check

@@ -12,45 +12,46 @@
 ## Prerequisites
 
 - 別terminalで`npm run dev`を起動している。
+- `npm ci`でRepository内の固定されたCLIをインストールしている。
 - 初回だけChrome for Testingを取得済みである。
 
 ```bash
-npx agent-browser install
+npx --no-install agent-browser install
 ```
 
-Linuxのsystem dependencyが不足する場合だけ、環境のpackage管理者権限を確認して`npx agent-browser install --with-deps`を実行します。Chromeや認証情報をRepositoryへ追加しません。
+Linuxのsystem dependencyが不足する場合だけ、環境のpackage管理者権限を確認して`npx --no-install agent-browser install --with-deps`を実行します。Chromeや認証情報をRepositoryへ追加しません。
 
 ## Procedure
 
 開発サーバーを開き、読み込み完了後にinteractive snapshotを取得します。
 
 ```bash
-npx agent-browser open http://localhost:3000
-npx agent-browser wait --load networkidle
-npx agent-browser snapshot -i
+npx --no-install agent-browser open http://localhost:3000
+npx --no-install agent-browser wait --load networkidle
+npx --no-install agent-browser snapshot -i
 ```
 
 `@eN`形式の参照を使って主要操作を確認します。画面更新後は参照が無効になるため、操作ごとにsnapshotを取り直します。
 
 ```bash
-npx agent-browser fill @e1 "東京"
-npx agent-browser press Enter
-npx agent-browser snapshot -i
+npx --no-install agent-browser fill @e1 "東京"
+npx --no-install agent-browser press Enter
+npx --no-install agent-browser snapshot -i
 ```
 
 DesktopとMobileの目安としてviewportとscreenshotを指定します。
 
 ```bash
-npx agent-browser set viewport 1280 900
-npx agent-browser screenshot /tmp/irishpub-map-desktop.png
-npx agent-browser set viewport 390 844
-npx agent-browser screenshot /tmp/irishpub-map-mobile.png
+npx --no-install agent-browser set viewport 1280 900
+npx --no-install agent-browser screenshot /tmp/irishpub-map-desktop.png
+npx --no-install agent-browser set viewport 390 844
+npx --no-install agent-browser screenshot /tmp/irishpub-map-mobile.png
 ```
 
 確認後はsessionを終了します。
 
 ```bash
-npx agent-browser close
+npx --no-install agent-browser close
 ```
 
 ## Validation
