@@ -93,11 +93,6 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
   const detailedFilterCount = Number(Boolean(selectedPrefecture)) + selectedTags.length + Number(includeClosed);
   const hasMobileCarousel = filteredPubs.length > 0 && !isFiltersExpanded;
 
-  const clearSelectedPub = () => {
-    setSelectedPubId(null);
-    setResultsView("list");
-  };
-
   useEffect(() => {
     if (!selectedPubId || filteredPubs.some((pub) => pub.id === selectedPubId)) {
       return;
@@ -127,7 +122,6 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
     setSelectedPrefecture("");
     setSelectedTags([]);
     setIncludeClosed(false);
-    clearSelectedPub();
   };
 
   useEffect(() => {
@@ -208,6 +202,18 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
     if (isDesktop && !isResultsOpen) {
       setIsResultsOpen(true);
     }
+  };
+
+  const selectMapMarker = (pubId: string) => {
+    if (isDesktop || sheetState !== "collapsed") {
+      selectPub(pubId);
+      return;
+    }
+
+    // 地図を広く使う選択ではSheetを開かず、共有selectionでCarouselだけ追従させます。
+    window.clearTimeout(carouselScrollTimeoutRef.current);
+    setIsFiltersExpanded(false);
+    setSelectedPubId(pubId);
   };
 
   const handleCarouselScroll = () => {
@@ -291,7 +297,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
   };
 
   const showResultDetails = (pubId: string) => {
-    listSheetState.current = sheetState === "collapsed" ? "medium" : sheetState;
+    listSheetState.current = isDesktop && sheetState === "collapsed" ? "medium" : sheetState;
     if (!isDesktop) setSheetState("expanded");
     setSelectedPubId(pubId);
     setResultsView("detail");
@@ -390,7 +396,6 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
             resultsTriggerRef={resultsTriggerRef}
             onQueryChange={(value) => {
               setQuery(value);
-              clearSelectedPub();
             }}
             onRequestCurrentLocation={requestCurrentLocation}
             onToggleFilters={toggleFilters}
@@ -398,17 +403,14 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
             onPrefectureChange={(prefecture) => {
               hasSelectedPrefecture.current = true;
               setSelectedPrefecture(prefecture);
-              clearSelectedPub();
             }}
             onTagToggle={(tag) => {
               setSelectedTags((current) =>
                 current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag],
               );
-              clearSelectedPub();
             }}
             onIncludeClosedChange={(value) => {
               setIncludeClosed(value);
-              clearSelectedPub();
             }}
             onResetFilters={resetDetailedFilters}
             onToggleResults={toggleResults}
@@ -445,6 +447,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
                           locale={locale}
                           selected={selectedPubId === pub.id}
                           onSelect={selectPub}
+                          onShowDetails={showResultDetails}
                         />
                       ))}
                     </div>
@@ -462,7 +465,7 @@ export function PubExplorer({ pubs, locale = DEFAULT_LOCALE, dataLoadFailed = fa
             focusPubs={mapFocusPubs}
             currentLocation={currentLocation}
             selectedPubId={selectedPubId}
-            onSelectPub={selectPub}
+            onSelectPub={selectMapMarker}
             locale={locale}
           />
         </div>

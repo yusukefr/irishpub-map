@@ -87,9 +87,28 @@ for (const locale of ["ja", "en"] as const) {
       });
       await expect(sheet).toHaveAttribute("data-state", "collapsed");
       await page.locator(".pub-map-marker").first().click();
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await expect(page.locator('article[data-density="compact"][data-selected="true"]')).toHaveCount(1);
+      await expect(page.locator(".pub-results-panel")).toHaveCount(0);
+      await carousel
+        .locator('article[data-selected="true"]')
+        .getByRole("button", { name: t.list.details, exact: true })
+        .click();
+      await expect(sheet).toHaveAttribute("data-state", "expanded");
+      const back = page.getByRole("button", { name: new RegExp(t.list.backToResults) });
+      await expect(back).toBeFocused();
+      if (width === 390 && locale === "ja") {
+        await expect(page).toHaveScreenshot("map-mobile-pub-selected.png", {
+          animations: "disabled",
+          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
+        });
+      }
+      await back.click();
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await expect(carousel.locator('article[data-selected="true"]')).toHaveCount(1);
+      await page.locator(".map-result-count").click();
       await expect(sheet).toHaveAttribute("data-state", "medium");
       await expect(page.locator('.pub-results-panel article[data-selected="true"]')).toHaveCount(1);
-      await expect(page.locator('article[data-density="compact"][data-selected="true"]')).toHaveCount(1);
       await canvas.click({ position: { x: 10, y: 240 } });
       if (width === 390 && locale === "ja") {
         await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", {
@@ -103,14 +122,6 @@ for (const locale of ["ja", "en"] as const) {
         .getByRole("button", { name: t.list.details, exact: true })
         .click();
       await expect(sheet).toHaveAttribute("data-state", "expanded");
-      const back = page.getByRole("button", { name: new RegExp(t.list.backToResults) });
-      await expect(back).toBeFocused();
-      if (width === 390 && locale === "ja") {
-        await expect(page).toHaveScreenshot("map-mobile-pub-selected.png", {
-          animations: "disabled",
-          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
-        });
-      }
       await back.click();
       await expect(sheet).toHaveAttribute("data-state", "medium");
       await handle.focus();
@@ -144,7 +155,9 @@ for (const locale of ["ja", "en"] as const) {
         .selectOption(locale === "ja" ? "東京都" : "Tokyo");
       await expect(page.locator(".filter-toggle-count")).toHaveText("1");
       await page.keyboard.press("Escape");
+      await expect(page.locator('article[data-density="compact"][data-selected="true"]')).toHaveCount(1);
       await search.fill("no matching pub");
+      await expect(page.locator('article[data-density="compact"][data-selected="true"]')).toHaveCount(0);
       await handle.click();
       await expect(results.getByRole("heading", { name: t.list.noResults })).toBeVisible();
       await results.getByRole("button", { name: t.explorer.resetFilters }).click();
@@ -167,6 +180,23 @@ for (const locale of ["ja", "en"] as const) {
         ).toBe(false);
       }
       await results.getByRole("button", { name: t.list.closeResults }).click();
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await carousel.evaluate((element) => {
+        element.scrollLeft = element.scrollWidth;
+      });
+      await expect.poll(() => carousel.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+      const secondCard = carousel.locator("article").nth(1);
+      await expect(secondCard).toHaveAttribute("data-selected", "true");
+      const carouselScrollLeft = await carousel.evaluate((element) => element.scrollLeft);
+      const selectedCardName = await secondCard.locator('[role="heading"]').textContent();
+      await secondCard.getByRole("button", { name: t.list.details, exact: true }).click();
+      await expect(sheet).toHaveAttribute("data-state", "expanded");
+      await expect(back).toBeFocused();
+      await back.click();
+      await expect(sheet).toHaveAttribute("data-state", "collapsed");
+      await expect.poll(() => carousel.evaluate((element) => element.scrollLeft)).toBe(carouselScrollLeft);
+      await expect(carousel.locator('article[data-selected="true"]')).toHaveCount(1);
+      await expect(carousel.locator('article[data-selected="true"] [role="heading"]')).toHaveText(selectedCardName!);
       await context.grantPermissions(["geolocation"]);
       await context.setGeolocation({ latitude: 35.681, longitude: 139.767 });
       await page.getByRole("button", { name: t.explorer.currentLocationAction, exact: true }).click();

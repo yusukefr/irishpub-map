@@ -16,7 +16,7 @@ Pub Detailは、結果一覧とMap上の位置関係を失わずに店舗情報�
 
 ## ResultsからDetailへ
 
-PubCardまたはMarkerの選択はMapと一覧のselected stateを同期します。「詳細」は選択とは独立した明示操作です。DesktopではSide Panel内の一覧を詳細へ置き換え、MobileではBottom Sheetを`expanded`へ変更します。遷移時は詳細の「結果へ戻る」へfocusを移し、現在の検索語とFilterを保持します。
+PubCardまたはMarkerの選択はMapと一覧のselected stateを同期します。「詳細」は選択とは独立した明示操作です。DesktopではSide Panel内の一覧を詳細へ置き換え、MobileではBottom Sheetを`expanded`へ変更します。Mobile Carouselから開いた場合も選択を維持し、「結果へ戻る」で`collapsed`のCarouselへ戻します。遷移時は詳細の「結果へ戻る」へfocusを移し、現在の検索語とFilterを保持します。
 
 ## DetailからResultsへ
 
