@@ -35,10 +35,19 @@ describe("MCP OAuth authentication", () => {
     expect(getMcpOAuthConfig()).toBeNull();
   });
 
+  it("keeps the configured issuer string without adding a trailing slash", () => {
+    process.env.MCP_PUBLIC_ORIGIN = "https://example.test";
+    process.env.MCP_OAUTH_ISSUER = "https://issuer.example.test";
+    process.env.MCP_OAUTH_AUDIENCE = "https://example.test/api/mcp";
+    process.env.MCP_OAUTH_JWKS_URL = "https://issuer.example.test/jwks";
+    process.env.MCP_OAUTH_ALLOWED_SUBJECT = "admin-subject";
+    expect(getMcpOAuthConfig()?.issuer).toBe("https://issuer.example.test");
+  });
+
   it("accepts only a signed, current access token for the configured admin and resource", async () => {
     const config: McpOAuthConfig = {
       publicOrigin: "https://example.test",
-      issuer: "https://issuer.example.test/",
+      issuer: "https://issuer.example.test",
       audience: "https://example.test/api/mcp",
       jwksUrl: "https://issuer.example.test/jwks",
       allowedSubject: "admin-subject",
@@ -46,10 +55,10 @@ describe("MCP OAuth authentication", () => {
     const { publicKey, privateKey } = await generateKeyPair("RS256");
     const jwk = await exportJWK(publicKey);
     const keySet = createLocalJWKSet({ keys: [{ ...jwk, kid: "test-key", alg: "RS256" }] });
-    const sign = (subject: string, audience: string) =>
+    const sign = (subject: string, audience: string, issuer = config.issuer) =>
       new SignJWT({ scope: "mcp:read", client_id: "test-client" })
         .setProtectedHeader({ alg: "RS256", kid: "test-key" })
-        .setIssuer(config.issuer)
+        .setIssuer(issuer)
         .setAudience(audience)
         .setSubject(subject)
         .setIssuedAt()
@@ -60,6 +69,13 @@ describe("MCP OAuth authentication", () => {
     expect(accepted?.scopes).toEqual(["mcp:read"]);
     expect(accepted?.clientId).toBe("test-client");
     expect(await verifyMcpAccessToken(await sign("other-subject", config.audience), config, keySet)).toBeUndefined();
+    expect(
+      await verifyMcpAccessToken(
+        await sign(config.allowedSubject, config.audience, `${config.issuer}/`),
+        config,
+        keySet,
+      ),
+    ).toBeUndefined();
     expect(
       await verifyMcpAccessToken(await sign(config.allowedSubject, "other-resource"), config, keySet),
     ).toBeUndefined();

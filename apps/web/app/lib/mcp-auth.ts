@@ -33,16 +33,17 @@ function validUrl(raw: string | undefined, originOnly = false): URL | null {
  */
 export function getMcpOAuthConfig(): McpOAuthConfig | null {
   const publicUrl = validUrl(process.env.MCP_PUBLIC_ORIGIN, true);
-  const issuerUrl = validUrl(process.env.MCP_OAUTH_ISSUER);
+  const issuer = process.env.MCP_OAUTH_ISSUER;
+  const issuerUrl = validUrl(issuer);
   const jwksUrl = validUrl(process.env.MCP_OAUTH_JWKS_URL);
   const audience = process.env.MCP_OAUTH_AUDIENCE;
   const allowedSubject = process.env.MCP_OAUTH_ALLOWED_SUBJECT;
-  if (!publicUrl || !issuerUrl || !jwksUrl || !audience || !allowedSubject) return null;
+  if (!publicUrl || !issuer || !issuerUrl || !jwksUrl || !audience || !allowedSubject) return null;
   // Protected Resource Metadata と JWT 検証で同じ Resource を使う。設定ミスは認証を開かずに拒否する。
   if (audience !== `${publicUrl.origin}/api/mcp`) return null;
   return {
     publicOrigin: publicUrl.origin,
-    issuer: issuerUrl.href,
+    issuer,
     audience,
     jwksUrl: jwksUrl.href,
     allowedSubject,
