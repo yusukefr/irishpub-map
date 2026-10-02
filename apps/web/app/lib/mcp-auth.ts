@@ -38,6 +38,8 @@ export function getMcpOAuthConfig(): McpOAuthConfig | null {
   const audience = process.env.MCP_OAUTH_AUDIENCE;
   const allowedSubject = process.env.MCP_OAUTH_ALLOWED_SUBJECT;
   if (!publicUrl || !issuerUrl || !jwksUrl || !audience || !allowedSubject) return null;
+  // Protected Resource Metadata と JWT 検証で同じ Resource を使う。設定ミスは認証を開かずに拒否する。
+  if (audience !== `${publicUrl.origin}/api/mcp`) return null;
   return {
     publicOrigin: publicUrl.origin,
     issuer: issuerUrl.href,

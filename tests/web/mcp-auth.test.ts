@@ -26,6 +26,15 @@ describe("MCP OAuth authentication", () => {
     expect(getMcpOAuthConfig()).toBeNull();
   });
 
+  it("rejects an audience that differs from the advertised MCP resource", () => {
+    process.env.MCP_PUBLIC_ORIGIN = "https://example.test";
+    process.env.MCP_OAUTH_ISSUER = "https://issuer.example.test/";
+    process.env.MCP_OAUTH_JWKS_URL = "https://issuer.example.test/jwks";
+    process.env.MCP_OAUTH_ALLOWED_SUBJECT = "admin-subject";
+    process.env.MCP_OAUTH_AUDIENCE = "https://another-resource.example.test/api/mcp";
+    expect(getMcpOAuthConfig()).toBeNull();
+  });
+
   it("accepts only a signed, current access token for the configured admin and resource", async () => {
     const config: McpOAuthConfig = {
       publicOrigin: "https://example.test",

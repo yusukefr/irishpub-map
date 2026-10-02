@@ -18,6 +18,8 @@ const envKeys = [
 ] as const;
 const previous = Object.fromEntries(envKeys.map((key) => [key, process.env[key]]));
 let clientToken: string;
+const MODERN_PROTOCOL_VERSION = "2026-07-28";
+const LEGACY_PROTOCOL_VERSION = "2025-06-18";
 
 beforeEach(() => {
   process.env.MCP_PUBLIC_ORIGIN = "https://example.test";
@@ -45,16 +47,42 @@ function createHandler(scopes = ["mcp:read"]) {
   );
 }
 
-function mcpRequest(method: string, params?: Record<string, unknown>, bearer = clientToken): Request {
+function mcpRequest(
+  method: string,
+  params?: Record<string, unknown>,
+  bearer = clientToken,
+  protocolVersion: typeof MODERN_PROTOCOL_VERSION | typeof LEGACY_PROTOCOL_VERSION = MODERN_PROTOCOL_VERSION,
+): Request {
+  const modern = protocolVersion === MODERN_PROTOCOL_VERSION;
   return new Request("https://example.test/api/mcp", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json, text/event-stream",
-      "MCP-Protocol-Version": "2025-06-18",
+      "MCP-Protocol-Version": protocolVersion,
+      ...(modern ? { "Mcp-Method": method } : {}),
+      ...(modern && method === "tools/call" ? { "Mcp-Name": String(params?.name) } : {}),
       ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, ...(params ? { params } : {}) }),
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method,
+      ...(modern
+        ? {
+            params: {
+              ...params,
+              _meta: {
+                "io.modelcontextprotocol/protocolVersion": MODERN_PROTOCOL_VERSION,
+                "io.modelcontextprotocol/clientInfo": { name: "contract-test", version: "1.0.0" },
+                "io.modelcontextprotocol/clientCapabilities": {},
+              },
+            },
+          }
+        : params
+          ? { params }
+          : {}),
+    }),
   });
 }
 
@@ -71,8 +99,19 @@ async function mcpBody(response: Response): Promise<Record<string, unknown>> {
 }
 
 describe("Remote MCP contract", () => {
+  it("fails closed when OAuth audience and protected resource differ", async () => {
+    process.env.MCP_OAUTH_AUDIENCE = "https://another-resource.example.test/api/mcp";
+    const verifyToken = vi.fn();
+    const response = await createAuthenticatedMcpHandler(verifyToken)(mcpRequest("tools/list"));
+    expect(response.status).toBe(503);
+    expect(verifyToken).not.toHaveBeenCalled();
+    expect(getProtectedResource(new Request("https://example.test/.well-known/oauth-protected-resource")).status).toBe(
+      503,
+    );
+  });
+
   it("rejects unauthenticated discovery and keeps OAuth metadata separate", async () => {
-    const response = await createHandler()(mcpRequest("tools/list", undefined, ""));
+    const response = await createHandler()(mcpRequest("server/discover", undefined, ""));
     expect(response.status).toBe(401);
     expect(response.headers.get("WWW-Authenticate")).toContain("resource_metadata");
 
@@ -84,17 +123,11 @@ describe("Remote MCP contract", () => {
     });
   });
 
-  it("supports initialize, lists only the reviewed read-only tool, and calls Automation API", async () => {
+  it("serves 2026-07-28 discovery, the reviewed read-only tool, and an Automation API call", async () => {
     const handler = createHandler();
-    const initialized = await handler(
-      mcpRequest("initialize", {
-        protocolVersion: "2025-06-18",
-        capabilities: {},
-        clientInfo: { name: "contract-test", version: "1.0.0" },
-      }),
-    );
-    expect(initialized.status).toBe(200);
-    expect(await mcpBody(initialized)).toHaveProperty("result");
+    const discovered = await handler(mcpRequest("server/discover"));
+    expect(discovered.status).toBe(200);
+    expect(JSON.stringify((await mcpBody(discovered)).result)).toContain(MODERN_PROTOCOL_VERSION);
 
     const listed = await handler(mcpRequest("tools/list"));
     expect(listed.status).toBe(200);
@@ -113,6 +146,24 @@ describe("Remote MCP contract", () => {
     expect(toolResult.structuredContent).toEqual({ prefectures: [{ code: 13, name: "Tokyo" }] });
     expect(JSON.stringify(toolResult)).not.toContain(process.env.MCP_AUTOMATION_API_TOKEN);
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("still supports the 2025-06-18 initialize handshake", async () => {
+    const handler = createHandler();
+    const initialized = await handler(
+      mcpRequest(
+        "initialize",
+        {
+          protocolVersion: LEGACY_PROTOCOL_VERSION,
+          capabilities: {},
+          clientInfo: { name: "contract-test", version: "1.0.0" },
+        },
+        clientToken,
+        LEGACY_PROTOCOL_VERSION,
+      ),
+    );
+    expect(initialized.status).toBe(200);
+    expect((await mcpBody(initialized)).result).toMatchObject({ protocolVersion: LEGACY_PROTOCOL_VERSION });
   });
 
   it("rejects insufficient MCP scope before an Automation API call", async () => {

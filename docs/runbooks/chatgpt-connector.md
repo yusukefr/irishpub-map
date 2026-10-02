@@ -4,7 +4,7 @@ ChatGPT / Codex → [Irish Pub Map Plugin](../../plugins/irishpub-map/plugin.jso
 
 ## 配置と公開Tool
 
-同じNext.js Applicationの `apps/web/app/api/mcp/route.ts` がstateless Streamable HTTP endpoint `/api/mcp` を提供します。公式MCP SDK v2と `mcp-handler` を利用し、`initialize`、`tools/list`、`tools/call` を処理します。OAuth Protected Resource Metadataは `/.well-known/oauth-protected-resource` で提供します。Vercelへの通常Deploymentで両Routeが公開されます。
+同じNext.js Applicationの `apps/web/app/api/mcp/route.ts` がstateless Streamable HTTP endpoint `/api/mcp` を提供します。公式MCP SDK v2と `mcp-handler` を利用し、現行Protocol `2026-07-28` の `server/discover`、`tools/list`、`tools/call` を処理します。旧Protocolの `initialize` も互換経路として受け付けます。OAuth Protected Resource Metadataは `/.well-known/oauth-protected-resource` で提供します。Vercelへの通常Deploymentで両Routeが公開されます。
 
 #509のallow listは `list_prefectures` のみです。`GET /api/automation/v1/master/prefectures` を呼ぶRead-only Toolで、MCP annotationの `readOnlyHint: true` も設定しています。新しいAutomation API Endpointが増えてもToolは自動公開されません。Pub Delete、Tag Update / Delete、Status Update、Calendar Update、Media Upload / Delete、DB直接操作はTool一覧にありません。Content / Quiz / Pub / Tagの個別Toolは後続Issueで審査します。
 
@@ -14,26 +14,26 @@ ChatGPT / Codex → [Irish Pub Map Plugin](../../plugins/irishpub-map/plugin.jso
 
 認証は二段階です。ChatGPT / CodexからMCP ServerへはOAuth 2.1 access token、MCP ServerからAutomation APIへは既存のBearer Tokenを使います。未認証ClientはTool discoveryを含めHTTP `401`で拒否します。MCP利用者の `mcp:read` とAutomation APIの `master:read` は別のScopeです。
 
-外部OAuth認可サーバーは、PKCE、CIMDまたはDCR、resource indicatorをサポートし、MCP ResourceをAudienceに持つ署名済みJWT access tokenを発行するよう設定します。ServerはIssuer、Audience、JWKS署名、期限、`sub`、`scope`を検証し、許可された管理者Subjectだけを通します。JWT署名はRS256またはES256です。OpenAIの[Plugin認証ガイド](https://developers.openai.com/plugins/build/auth)と[公式MCP認可仕様](https://modelcontextprotocol.io/specification/draft/basic/authorization)に沿って認可サーバーを設定します。認可サーバー自体はこのRepositoryに実装しません。
+外部OAuth認可サーバーは、PKCE、CIMDまたはDCR、resource indicatorをサポートし、MCP ResourceをAudienceに持つ署名済みJWT access tokenを発行するよう設定します。ServerはIssuer、Audience、JWKS署名、期限、`sub`、`scope`を検証し、許可された管理者Subjectだけを通します。JWT署名はRS256またはES256です。OpenAIの[Plugin認証ガイド](https://developers.openai.com/plugins/build/auth)と[公式MCP認可仕様（2026-07-28）](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization)に沿って認可サーバーを設定します。認可サーバー自体はこのRepositoryに実装しません。
 
-| server-side環境変数           | 設定内容                                                                |
-| ----------------------------- | ----------------------------------------------------------------------- |
-| `MCP_PUBLIC_ORIGIN`           | MCP Serverの公開HTTPS Origin。LocalではlocalhostのHTTPも可。            |
-| `MCP_OAUTH_ISSUER`            | 認可サーバーmetadataとJWT `iss` に一致するIssuer。                      |
-| `MCP_OAUTH_AUDIENCE`          | JWT `aud` に一致するMCP Resource識別子。通常は公開Origin + `/api/mcp`。 |
-| `MCP_OAUTH_JWKS_URL`          | 認可サーバーのJWKS URI。                                                |
-| `MCP_OAUTH_ALLOWED_SUBJECT`   | 利用を許す管理者本人のJWT `sub`。値は文書やログに残さない。             |
-| `MCP_AUTOMATION_API_ORIGIN`   | 同じ環境のAutomation API HTTPS Origin。LocalではlocalhostのHTTPも可。   |
-| `MCP_AUTOMATION_API_TOKEN`    | MCP Serverだけが保持するRaw Automation Token。                          |
-| `AUTOMATION_API_TOKEN_SHA256` | 既存Automation APIが検証する同じTokenのSHA-256。                        |
-| `AUTOMATION_API_SCOPES`       | 初期版は `master:read` のみ。                                           |
+| server-side環境変数           | 設定内容                                                                           |
+| ----------------------------- | ---------------------------------------------------------------------------------- |
+| `MCP_PUBLIC_ORIGIN`           | MCP Serverの公開HTTPS Origin。LocalではlocalhostのHTTPも可。                       |
+| `MCP_OAUTH_ISSUER`            | 認可サーバーmetadataとJWT `iss` に一致するIssuer。                                 |
+| `MCP_OAUTH_AUDIENCE`          | JWT `aud` に一致するMCP Resource識別子。公開Origin + `/api/mcp` と完全一致が必須。 |
+| `MCP_OAUTH_JWKS_URL`          | 認可サーバーのJWKS URI。                                                           |
+| `MCP_OAUTH_ALLOWED_SUBJECT`   | 利用を許す管理者本人のJWT `sub`。値は文書やログに残さない。                        |
+| `MCP_AUTOMATION_API_ORIGIN`   | 同じ環境のAutomation API HTTPS Origin。LocalではlocalhostのHTTPも可。              |
+| `MCP_AUTOMATION_API_TOKEN`    | MCP Serverだけが保持するRaw Automation Token。                                     |
+| `AUTOMATION_API_TOKEN_SHA256` | 既存Automation APIが検証する同じTokenのSHA-256。                                   |
+| `AUTOMATION_API_SCOPES`       | 初期版は `master:read` のみ。                                                      |
 
 Production / PreviewではVercelの対象Environmentにserver-side変数を設定して再Deploymentします。LocalではGit管理外の `apps/web/.env.local` を使います。Raw TokenをChatGPT / Codex、Plugin Instructions、Prompt、通常Chat、OpenAPI、Tool Result、Application Log、Audit Log、Test fixtureへ渡しません。Credentialの生成とServer hashの設定は[Automation API運用Runbook](automation-api-access.md#認証と環境設定)に従います。Preview Deployment Protectionが有効な場合、外部MCP ClientとServer内のAutomation API呼び出しの両方でProtectionの通過条件を確認してください。Server内の呼び出しは既存の `VERCEL_AUTOMATION_BYPASS_SECRET` を利用できます。
 
 ## 接続とread-only疎通
 
 1. `nvm use`、`npm ci`、`npm run dev` でLocal Serverを起動します。対象環境のserver-side設定とOAuth認可サーバーの設定を済ませます。Productionでは通常Deployment後に同じ確認を行います。
-2. MCP Inspectorで対象の `/api/mcp` にStreamable HTTP接続し、OAuth loginを完了します。`initialize` の成功、`tools/list` が `list_prefectures` のみを返すこと、read-only annotationを確認します。
+2. MCP Inspectorで対象の `/api/mcp` にStreamable HTTP接続し、OAuth loginを完了します。現行Protocolの `server/discover` の成功、`tools/list` が `list_prefectures` のみを返すこと、read-only annotationを確認します。旧Clientでは `initialize` を確認します。
 3. ChatGPTではDeveloper modeを有効にし、PluginsからMCP ServerのHTTPS URLを接続します。CodexではRemote MCP Serverとして同じURLを登録し、OAuth loginを完了します。Plugin packageを利用する場合はこのRepositoryの `plugins/irishpub-map` を登録します。詳しい画面手順はOpenAIの[接続ガイド](https://developers.openai.com/plugins/deploy/connect-chatgpt)を参照してください。
 4. `list_prefectures` を呼び、Automation APIの `200` と都道府県一覧がTool Resultへ返ることを確認します。Productionではread-only操作だけを使います。実行結果を共有する際はSecret、アカウント識別子、環境固有URLを除きます。
 
