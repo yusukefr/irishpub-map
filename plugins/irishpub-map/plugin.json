@@ -1,0 +1,6 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "irishpub-map",
+  "version": "0.1.0",
+  "description": "Read Irish Pub Map management data through an authenticated MCP server."
+}
