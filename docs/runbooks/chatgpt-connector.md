@@ -4,7 +4,7 @@ ChatGPT / Codex → [Irish Pub Map Plugin](../../plugins/irishpub-map/plugin.jso
 
 ## 配置と公開Tool
 
-同じNext.js Applicationの `apps/web/app/api/mcp/route.ts` がstateless Streamable HTTP endpoint `/api/mcp` を提供します。公式MCP SDK v2と `mcp-handler` を利用し、現行Protocol `2026-07-28` の `server/discover`、`tools/list`、`tools/call` を処理します。旧Protocolの `initialize` も互換経路として受け付けます。OAuth Protected Resource Metadataは `/.well-known/oauth-protected-resource` で提供します。Vercelへの通常Deploymentで両Routeが公開されます。
+同じNext.js Applicationの `apps/web/app/api/mcp/route.ts` がstateless Streamable HTTP endpoint `/api/mcp` を提供します。公式MCP SDK v2と `mcp-handler` を利用し、現行Protocol `2026-07-28` の `server/discover`、`tools/list`、`tools/call` を処理します。旧Protocolの `initialize` も互換経路として受け付けます。OAuth Protected Resource Metadataは `/.well-known/oauth-protected-resource` で提供します。未認証時の `WWW-Authenticate` は公開Origin上のこのMetadata URLを案内し、Metadata内の `resource` は公開Origin + `/api/mcp` を示します。Vercelへの通常Deploymentで両Routeが公開されます。
 
 #509のallow listは `list_prefectures` のみです。`GET /api/automation/v1/master/prefectures` を呼ぶRead-only Toolで、MCP annotationの `readOnlyHint: true` も設定しています。新しいAutomation API Endpointが増えてもToolは自動公開されません。Pub Delete、Tag Update / Delete、Status Update、Calendar Update、Media Upload / Delete、DB直接操作はTool一覧にありません。Content / Quiz / Pub / Tagの個別Toolは後続Issueで審査します。
 
