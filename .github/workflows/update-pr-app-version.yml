@@ -8,8 +8,7 @@ on:
       - synchronize
 
 permissions:
-  actions: write
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
@@ -20,11 +19,12 @@ jobs:
       APP_VERSION_BUMP: ${{ vars.APP_VERSION_BUMP || 'patch' }}
 
     steps:
-      - name: Checkout pull request branch
+      - name: Checkout pull request branch for classification
         uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Classify changes
         id: changes
@@ -34,6 +34,23 @@ jobs:
           CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node scripts/classify-ci-changes.mjs
 
+      - name: Create GitHub App token
+        if: steps.changes.outputs.version_relevant == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          client-id: ${{ vars.APP_VERSION_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_VERSION_GITHUB_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout pull request branch for version update
+        if: steps.changes.outputs.version_relevant == 'true'
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
       - name: Setup Node.js
         if: steps.changes.outputs.version_relevant == 'true'
         uses: actions/setup-node@v7.0.0
@@ -42,13 +59,11 @@ jobs:
 
       - name: Update version in pull request branch
         if: steps.changes.outputs.version_relevant == 'true'
-        id: version-update
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          echo "committed=false" >> "$GITHUB_OUTPUT"
           git fetch origin "$BASE_REF"
           if git diff --quiet "origin/$BASE_REF...HEAD" -- app-version.json; then
             npm run update-app-version
@@ -57,15 +72,7 @@ jobs:
             git add app-version.json package.json package-lock.json
             git commit -m "chore: update app version for PR #$PR_NUMBER"
             git push origin "HEAD:$HEAD_REF"
-            echo "committed=true" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Run CI for updated pull request branch
-        if: steps.version-update.outputs.committed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-        run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$HEAD_REF"
 
       - name: Update pull request body
         if: steps.changes.outputs.version_relevant == 'true'
