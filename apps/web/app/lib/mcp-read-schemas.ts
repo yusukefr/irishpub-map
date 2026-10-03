@@ -2,6 +2,7 @@ import { z } from "zod";
 
 // OpenAPI の GET response で必須の情報を検証し、Tool Result には検証済みフィールドだけを残す。
 const uuid = z.uuid();
+const uniqueUuidArray = z.array(uuid).refine((items) => new Set(items).size === items.length);
 const dateTime = z.iso.datetime({ offset: true });
 const nullableDateTime = dateTime.nullable();
 const prefectureCode = z.number().int().min(1).max(47);
@@ -199,7 +200,7 @@ export const pubResponse = z.object({
       instagramUrl: pubUrl,
       status: status.nullable(),
       translations: z.object({ ja: pubTranslation, en: pubTranslation.nullable() }),
-      tagIds: z.array(uuid),
+      tagIds: uniqueUuidArray,
       updatedAt: dateTime,
     })
     .strict(),

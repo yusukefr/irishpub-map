@@ -426,6 +426,22 @@ describe("Remote MCP contract", () => {
     expect(JSON.stringify(result)).not.toContain(process.env.MCP_AUTOMATION_API_TOKEN);
   });
 
+  it("rejects duplicate pub tag IDs in an Automation API response", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ pub: { ...pubBase, tagIds: [id, id] } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await createHandler()(mcpRequest("tools/call", { name: "get_pub", arguments: { id } }));
+    const result = (await mcpBody(response)).result as Record<string, unknown>;
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toBeUndefined();
+    expect(result.content).toEqual([
+      { type: "text", text: JSON.stringify({ source: "automation_api", status: 502, errorCode: "invalid_response" }) },
+    ]);
+    expect(JSON.stringify(result)).not.toContain(process.env.MCP_AUTOMATION_API_TOKEN);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][1].method).toBe("GET");
+  });
+
   it.each([
     [400, "invalid_request"],
     [401, "unauthorized"],
