@@ -37,6 +37,21 @@ describe("MCP Automation API client", () => {
     expect(JSON.stringify(result)).not.toContain(process.env.MCP_AUTOMATION_API_TOKEN);
   });
 
+  it("encodes GET query values without changing the allowlisted path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ pubs: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    await requestAutomationApi({
+      method: "GET",
+      path: "/api/automation/v1/pubs",
+      query: { name: "Irish & Music", page: "2" },
+    });
+    const [url, options] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe("/api/automation/v1/pubs");
+    expect(url.searchParams.get("name")).toBe("Irish & Music");
+    expect(url.searchParams.get("page")).toBe("2");
+    expect(options.method).toBe("GET");
+  });
+
   it("can pass an Idempotency-Key without exposing it in results", async () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json({ created: true }, { status: 201 }));
     vi.stubGlobal("fetch", fetchMock);
