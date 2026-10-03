@@ -113,9 +113,14 @@ describe("Remote MCP contract", () => {
   it("rejects unauthenticated discovery and keeps OAuth metadata separate", async () => {
     const response = await createHandler()(mcpRequest("server/discover", undefined, ""));
     expect(response.status).toBe(401);
-    expect(response.headers.get("WWW-Authenticate")).toContain("resource_metadata");
+    const metadataUrl = "https://example.test/.well-known/oauth-protected-resource";
+    expect(response.headers.get("WWW-Authenticate")).toContain(`resource_metadata="${metadataUrl}"`);
 
-    const metadata = getProtectedResource(new Request("https://example.test/.well-known/oauth-protected-resource"));
+    const getResponse = await createHandler()(new Request("https://example.test/api/mcp"));
+    expect(getResponse.status).toBe(401);
+    expect(getResponse.headers.get("WWW-Authenticate")).toContain(`resource_metadata="${metadataUrl}"`);
+
+    const metadata = getProtectedResource(new Request(metadataUrl));
     expect(metadata.status).toBe(200);
     expect(await metadata.json()).toMatchObject({
       resource: "https://example.test/api/mcp",

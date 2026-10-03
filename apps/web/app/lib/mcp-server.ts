@@ -28,7 +28,7 @@ export function createAuthenticatedMcpHandler(verifyToken: TokenVerifier = verif
       required: true,
       requiredScopes: MCP_REQUIRED_SCOPES,
       resourceMetadataPath: "/.well-known/oauth-protected-resource",
-      resourceUrl: `${config.publicOrigin}/api/mcp`,
+      resourceUrl: config.publicOrigin,
     });
     return secured(request);
   };
