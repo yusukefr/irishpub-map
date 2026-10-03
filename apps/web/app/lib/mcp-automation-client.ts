@@ -49,6 +49,7 @@ export type AutomationApiResult =
 export type AutomationApiRequest = {
   method: "GET" | "POST" | "PUT" | "PATCH";
   path: string;
+  query?: Record<string, string>;
   body?: unknown;
   idempotencyKey?: string;
 };
@@ -123,6 +124,9 @@ export async function requestAutomationApi(options: AutomationApiRequest): Promi
     target.pathname !== options.path
   ) {
     return { ok: false, status: 400, error: { errorCode: "mcp_invalid_path" } };
+  }
+  if (options.query) {
+    for (const [key, value] of Object.entries(options.query)) target.searchParams.set(key, value);
   }
 
   const headers = new Headers({ Authorization: `Bearer ${token}`, Accept: "application/json" });
