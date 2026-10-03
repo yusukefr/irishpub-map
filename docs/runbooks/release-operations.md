@@ -47,6 +47,18 @@ Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secret
 
 PR用version更新workflowは、docs-only、OpenAPI-only、`.github/**`のみのPRではversionとPR本文のApp Version欄を更新しません。それ以外の変更がある場合、必要に応じて`app-version.json`、rootの`package.json`、`package-lock.json`を同期し、PR本文のApp Version欄も更新します。`APP_VERSION_BUMP`が未設定または`patch`ならpatch、`minor`ならminorを更新し、majorは自動更新しません。Vercel buildではrelease dateだけをJST当日に更新します。
 
+PR用version更新workflowを使う前に、GitHub Appを作成して対象Repositoryだけにインストールします。AppのRepository permissionは`Contents: Read and write`のみを付与します（`Metadata: Read-only`はGitHubが自動付与）。ActionsやPull requestsのApp権限は不要です。RepositoryのSettings → Secrets and variablesで次を設定します。
+
+| 種別              | 名前                                 | 用途                                      |
+| ----------------- | ------------------------------------ | ----------------------------------------- |
+| Actions Variable  | `APP_VERSION_GITHUB_APP_CLIENT_ID`   | 通常PRとDependabot PRで使うAppのClient ID |
+| Actions Secret    | `APP_VERSION_GITHUB_APP_PRIVATE_KEY` | 通常PRで使うAppのPrivate Key              |
+| Dependabot Secret | `APP_VERSION_GITHUB_APP_PRIVATE_KEY` | Dependabot PRで使う同じPrivate Key        |
+
+Dependabot起点のWorkflowではActions Secretが使えないため、同じ名前のDependabot SecretにもPrivate Keyを登録します。Client IDはActions Variableを参照します。Private Keyの実値をログやRepositoryに記録しないでください。Appの権限を変更した場合は、installation側でも変更を承認します。
+
+Workflowは読み取り専用のcheckoutで変更を分類し、version更新が必要な場合だけAppのinstallation tokenを対象Repositoryに限定して取得します。このtokenをversion更新用checkoutとcommitのpushに使用します。PR本文の更新には`contents: read`と`pull-requests: write`だけを許可した`GITHUB_TOKEN`を使用します。Appによるpush後は`pull_request / synchronize`でCIとWorkflow Lintが起動し、version更新workflowは`app-version.json`がPR差分にある場合に追加commitを作成しません。App設定後は通常PRとDependabotのversion更新PRで、Client IDの参照、token生成、更新commit、最新HEADの通常CI、Workflow Lint、追加commitがないこと、承認待ち表示がないことを確認します。
+
 ## API key生成
 
 `IRISHPUB_MAP_API_KEY`を新規作成する場合は、秘密値を標準出力へ表示しないscriptを使います。
