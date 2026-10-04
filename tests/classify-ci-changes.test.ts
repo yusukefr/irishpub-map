@@ -7,6 +7,7 @@ describe("CI change classification", () => {
       codeChanged: false,
       openapiChanged: false,
       workflowChanged: false,
+      releaseRelevant: false,
     });
   });
 
@@ -15,6 +16,7 @@ describe("CI change classification", () => {
       codeChanged: false,
       openapiChanged: true,
       workflowChanged: false,
+      releaseRelevant: false,
     });
   });
 
@@ -23,6 +25,7 @@ describe("CI change classification", () => {
       codeChanged: true,
       openapiChanged: false,
       workflowChanged: false,
+      releaseRelevant: true,
     });
   });
 
@@ -31,11 +34,25 @@ describe("CI change classification", () => {
       codeChanged: true,
       openapiChanged: false,
       workflowChanged: true,
+      releaseRelevant: false,
     });
   });
 
   it("treats a rename from code into docs as a code change when both paths are provided", () => {
     expect(classifyPaths(["apps/web/content/guide.md", "docs/guide.md"]).codeChanged).toBe(true);
+    expect(classifyPaths(["apps/web/content/guide.md", "docs/guide.md"]).releaseRelevant).toBe(true);
+  });
+
+  it("releases production inputs but skips CI, test, and documentation-only changes", () => {
+    expect(classifyPaths(["package.json", "vercel.json", "scripts/validate-production-env.mjs"]).releaseRelevant).toBe(
+      true,
+    );
+    expect(classifyPaths(["packages/shared/src/pub.ts", "e2e/mobile-map.spec.ts"]).releaseRelevant).toBe(true);
+    expect(
+      classifyPaths([".github/workflows/release.yml", "tests/prepare-release.test.ts", "e2e/mobile-map.spec.ts"])
+        .releaseRelevant,
+    ).toBe(false);
+    expect(classifyPaths(["apps/web/AGENTS.md", "docs/specs/openapi/openapi.yaml"]).releaseRelevant).toBe(false);
   });
 
   it("runs full checks when a diff cannot be trusted", () => {
@@ -43,6 +60,7 @@ describe("CI change classification", () => {
       codeChanged: true,
       openapiChanged: true,
       workflowChanged: true,
+      releaseRelevant: false,
     });
     expect(classifyGitChange({ eventName: "push", baseSha: "0".repeat(40), headSha: "a".repeat(40) })).toEqual(
       classifyPaths([]),

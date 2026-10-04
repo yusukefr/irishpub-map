@@ -1,13 +1,18 @@
 name: Production Release
 
 on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+    secrets:
+      VERCEL_TOKEN:
+        required: true
+      VERCEL_ORG_ID:
+        required: true
+      VERCEL_PROJECT_ID:
+        required: true
 
 concurrency:
   group: production-release
@@ -15,33 +20,39 @@ concurrency:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   release:
-    if: >-
-      github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+      RELEASE_SHA: ${{ inputs.sha }}
 
     steps:
       - name: Checkout release commit
         uses: actions/checkout@v7.0.1
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ inputs.sha }}
           fetch-depth: 0
 
       - name: Check current main commit
         id: current
         run: |
           git fetch origin main
-          if [ "$(git rev-parse HEAD)" = "$RELEASE_SHA" ] && [ "$(git rev-parse origin/main)" = "$RELEASE_SHA" ]; then
+          if [ "$RELEASE_SHA" = "$GITHUB_SHA" ] && [ "$(git rev-parse HEAD)" = "$RELEASE_SHA" ] && [ "$(git rev-parse origin/main)" = "$RELEASE_SHA" ]; then
             echo "release=true" >> "$GITHUB_OUTPUT"
           else
             echo "Skipping superseded main commit."
             echo "release=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Setup Node.js
+        if: steps.current.outputs.release == 'true'
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .nvmrc
 
       - name: Check deployment credentials
         if: steps.current.outputs.release == 'true'
@@ -55,12 +66,6 @@ jobs:
             exit 1
           fi
 
-      - name: Setup Node.js
-        if: steps.current.outputs.release == 'true'
-        uses: actions/setup-node@v7.0.0
-        with:
-          node-version-file: .nvmrc
-
       - name: Prepare Vercel CLI
         if: steps.current.outputs.release == 'true'
         env:
@@ -71,16 +76,60 @@ jobs:
           npm install --global vercel@62.2.0
           vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
 
-      - name: Prepare annotated release tag
+      - name: Find saved release artifacts
+        if: steps.current.outputs.release == 'true'
+        id: artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          artifact_names="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" --jq '[.artifacts[].name]')"
+          metadata="$(jq -r 'index("release-metadata") != null' <<< "$artifact_names")"
+          deployed="$(jq -r 'index("release-deployed") != null' <<< "$artifact_names")"
+          if [ "$deployed" = "true" ] && [ "$metadata" != "true" ]; then
+            echo "Deployment marker exists without release metadata." >&2
+            exit 1
+          fi
+          echo "metadata=$metadata" >> "$GITHUB_OUTPUT"
+          echo "deployed=$deployed" >> "$GITHUB_OUTPUT"
+
+      - name: Download saved release metadata
+        if: steps.artifacts.outputs.metadata == 'true'
+        uses: actions/download-artifact@v7.0.0
+        with:
+          name: release-metadata
+          run-id: ${{ github.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/release-candidate
+
+      - name: Prepare release metadata
         if: steps.current.outputs.release == 'true'
         id: metadata
+        env:
+          RELEASE_METADATA_FILE: ${{ runner.temp }}/release-candidate/release-metadata.json
         run: |
-          git config user.name "Release Workflow"
-          git config user.email "release@localhost"
+          mkdir -p "$RUNNER_TEMP/release-candidate"
           node scripts/prepare-release.mjs
 
-      - name: Deploy tagged commit to Vercel Production
-        if: steps.current.outputs.release == 'true'
+      - name: Save release metadata for retry
+        if: steps.current.outputs.release == 'true' && steps.artifacts.outputs.metadata != 'true'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: release-metadata
+          path: ${{ runner.temp }}/release-candidate/release-metadata.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Download successful deployment marker
+        if: steps.artifacts.outputs.deployed == 'true'
+        uses: actions/download-artifact@v7.0.0
+        with:
+          name: release-deployed
+          run-id: ${{ github.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/release-deployed
+
+      - name: Deploy release candidate to Vercel Production
+        if: steps.current.outputs.release == 'true' && steps.artifacts.outputs.deployed != 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -88,12 +137,39 @@ jobs:
           APP_RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
           APP_RELEASE_DATE: ${{ steps.metadata.outputs.released_at }}
           APP_RELEASE_GIT_SHA: ${{ steps.metadata.outputs.git_sha }}
+          RELEASE_METADATA_FILE: ${{ runner.temp }}/release-candidate/release-metadata.json
+          RELEASE_DEPLOYED_FILE: ${{ runner.temp }}/release-deployed/release-deployed.json
         run: |
-          test "$(git rev-parse "${APP_RELEASE_VERSION}^{commit}")" = "$RELEASE_SHA"
+          test "$(git rev-parse HEAD)" = "$APP_RELEASE_GIT_SHA"
           vercel deploy --prod --yes --token "$VERCEL_TOKEN" \
             --build-env "APP_RELEASE_VERSION=$APP_RELEASE_VERSION" \
             --build-env "APP_RELEASE_DATE=$APP_RELEASE_DATE" \
             --build-env "APP_RELEASE_GIT_SHA=$APP_RELEASE_GIT_SHA" \
             --env "APP_RELEASE_VERSION=$APP_RELEASE_VERSION" \
             --env "APP_RELEASE_DATE=$APP_RELEASE_DATE" \
-            --env "APP_RELEASE_GIT_SHA=$APP_RELEASE_GIT_SHA"
+            --env "APP_RELEASE_GIT_SHA=$APP_RELEASE_GIT_SHA" \
+            --meta "releaseVersion=$APP_RELEASE_VERSION" \
+            --meta "releaseDate=$APP_RELEASE_DATE" \
+            --meta "releaseGitSha=$APP_RELEASE_GIT_SHA" > "$RUNNER_TEMP/production-deployment-url"
+          vercel inspect "$(cat "$RUNNER_TEMP/production-deployment-url")" --wait --token "$VERCEL_TOKEN" > /dev/null
+          mkdir -p "$RUNNER_TEMP/release-deployed"
+          cp "$RELEASE_METADATA_FILE" "$RELEASE_DEPLOYED_FILE"
+
+      - name: Save successful deployment marker
+        if: steps.current.outputs.release == 'true' && steps.artifacts.outputs.deployed != 'true'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: release-deployed
+          path: ${{ runner.temp }}/release-deployed/release-deployed.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Finalize annotated release tag
+        if: steps.current.outputs.release == 'true'
+        env:
+          RELEASE_METADATA_FILE: ${{ runner.temp }}/release-candidate/release-metadata.json
+          RELEASE_DEPLOYED_FILE: ${{ runner.temp }}/release-deployed/release-deployed.json
+        run: |
+          git config user.name "Release Workflow"
+          git config user.email "release@localhost"
+          node scripts/finalize-release.mjs

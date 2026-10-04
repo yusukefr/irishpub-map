@@ -11,7 +11,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
@@ -23,6 +23,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       code_changed: ${{ steps.changes.outputs.code_changed }}
+      release_relevant: ${{ steps.changes.outputs.release_relevant }}
     env:
       SLACK_CICD_CHANNEL: ${{ vars.SLACK_CICD_CHANNEL }}
       SLACK_CICD_WEBHOOK_URL: ${{ secrets.SLACK_CICD_WEBHOOK_URL }}
@@ -186,3 +187,21 @@ jobs:
           with urllib.request.urlopen(request, timeout=10) as response:
               response.read()
           PY
+
+  release:
+    name: Production Release
+    if: >-
+      github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.outputs.release_relevant == 'true' && needs.e2e.result == 'success'
+    needs:
+      - ci
+      - e2e
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/release.yml
+    with:
+      sha: ${{ github.sha }}
+    secrets:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

@@ -2,11 +2,12 @@ import { execFileSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 
 const DOCS_ROOT_FILES = new Set(["README.md", "AGENTS.md", "LICENSE"]);
+const RELEASE_ROOT_FILES = new Set(["package.json", "package-lock.json", "vercel.json", ".nvmrc", ".npmrc"]);
 
 /**
  * 変更ファイルの用途を分類する。未知のパスは検証の対象にする。
  * @param {string[]} paths Git差分に含まれる旧・新両方のパス
- * @returns {{codeChanged: boolean, openapiChanged: boolean, workflowChanged: boolean}}
+ * @returns {{codeChanged: boolean, openapiChanged: boolean, workflowChanged: boolean, releaseRelevant: boolean}}
  */
 export function classifyPaths(paths) {
   if (paths.length === 0) return fullChange();
@@ -15,6 +16,7 @@ export function classifyPaths(paths) {
     codeChanged: false,
     openapiChanged: false,
     workflowChanged: false,
+    releaseRelevant: false,
   };
 
   for (const path of paths) {
@@ -25,9 +27,20 @@ export function classifyPaths(paths) {
     }
 
     if (path.startsWith(".github/workflows/")) result.workflowChanged = true;
+    if (isReleaseRelevantPath(path)) result.releaseRelevant = true;
   }
 
   return result;
+}
+
+function isReleaseRelevantPath(path) {
+  if (path === "apps/web/AGENTS.md") return false;
+  return (
+    path.startsWith("apps/") ||
+    path.startsWith("packages/") ||
+    RELEASE_ROOT_FILES.has(path) ||
+    path === "scripts/validate-production-env.mjs"
+  );
 }
 
 function isDocsOnlyPath(path) {
@@ -44,6 +57,7 @@ function fullChange() {
     codeChanged: true,
     openapiChanged: true,
     workflowChanged: true,
+    releaseRelevant: false,
   };
 }
 
@@ -82,6 +96,7 @@ if (process.argv[1]?.endsWith("classify-ci-changes.mjs")) {
     `code_changed=${result.codeChanged}`,
     `openapi_changed=${result.openapiChanged}`,
     `workflow_changed=${result.workflowChanged}`,
+    `release_relevant=${result.releaseRelevant}`,
   ].join("\n");
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `${output}\n`);
   process.stdout.write(`${output}\n`);

@@ -1,6 +1,6 @@
 # 通常デプロイ
 
-Irish Pub MapはVercelへデプロイします。PRでは従来どおりPreview Deploymentを作成し、`main`へのmerge後はGitHub ActionsのCI成功を待ってRelease WorkflowからProductionへdeployします。この文書は通常のPreview / Productionフローだけを扱います。障害対応や管理操作は[Runbooks](../README.md#documentation-router)を参照してください。
+Irish Pub MapはVercelへデプロイします。PRでは従来どおりPreview Deploymentを作成し、`main`へのmerge後はGitHub ActionsのCIとE2Eが成功し、Release対象の変更がある場合にRelease WorkflowからProductionへdeployします。この文書は通常のPreview / Productionフローだけを扱います。障害対応や管理操作は[Runbooks](../README.md#documentation-router)を参照してください。
 
 ## Vercelプロジェクト設定
 
@@ -42,7 +42,7 @@ Automation利用時は `node scripts/generate-automation-token.mjs` を対話端
 1. 作業ブランチで必要な検証を実行し、Pull Requestを作成する。
 2. VercelのPreview DeploymentとGitHub ActionsのCIを確認する。
 3. baseline TagとRelease用Secretの[移行前設定](../runbooks/release-operations.md#移行前の設定)を確認してから、review後にPRを`main`へmergeする。
-4. `main`のCI成功後、Release Workflowがannotated Tagを作成し、同じSHAをVercel Productionへdeployしたことを確認する。
+4. `main`のCI・E2E成功後、Release対象の変更があれば、Release Workflowが候補metadataでVercel Productionへdeployし、成功後に同じSHAへannotated Tagを作成したことを確認する。docs-onlyなどRelease対象外の変更ではdeployとTag作成を行わない。
 5. VercelのProduction DeploymentがReadyになり、Production Domainへ反映されたことを確認する。
 6. 必要に応じて主要画面と公開APIを確認する。Productionの秘密値、Preview URL、管理者情報を出力しない。
 

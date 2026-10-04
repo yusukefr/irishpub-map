@@ -1,8 +1,9 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { finalizeRelease } from "../scripts/finalize-release.mjs";
 import {
   assertTagTarget,
   compareReleaseTags,
@@ -39,7 +40,7 @@ afterEach(() => {
 });
 
 describe("prepare-release", () => {
-  it("increments the baseline tag and reuses its version and date on retry", () => {
+  it("creates no tag before deployment and finalizes the same metadata after success", () => {
     const work = createRepository();
     git(work, "tag", "-a", "v0.1.64", "-m", "Release v0.1.64\n2026-10-03 12:00 JST");
     git(work, "push", "origin", "refs/tags/v0.1.64");
@@ -48,19 +49,68 @@ describe("prepare-release", () => {
     const sha = git(work, "rev-parse", "HEAD");
     git(work, "push", "origin", "main");
 
-    const first = prepareRelease({ cwd: work, sha, now: new Date("2026-10-04T03:42:59Z") });
-    const retry = prepareRelease({ cwd: work, sha, now: new Date("2026-10-05T03:42:00Z") });
+    const metadataFile = join(work, "release-metadata.json");
+    const deployedFile = join(work, "release-deployed.json");
+    const first = prepareRelease({ cwd: work, sha, now: new Date("2026-10-04T03:42:59Z"), metadataFile });
+    const retry = prepareRelease({ cwd: work, sha, now: new Date("2026-10-05T03:42:00Z"), metadataFile });
 
     expect(first).toEqual({ version: "v0.1.65", releasedAt: "2026-10-04T12:42:00+09:00", gitSha: sha });
     expect(retry).toEqual(first);
+    expect(git(work, "tag", "--list", "v*")).toBe("v0.1.64");
+    expect(() => finalizeRelease({ cwd: work, sha, metadataFile, deployedFile })).toThrow("ENOENT");
+    expect(git(work, "tag", "--list", "v*")).toBe("v0.1.64");
+
+    copyFileSync(metadataFile, deployedFile);
+    expect(finalizeRelease({ cwd: work, sha, metadataFile, deployedFile })).toEqual(first);
+    expect(finalizeRelease({ cwd: work, sha, metadataFile, deployedFile })).toEqual(first);
     expect(git(work, "rev-parse", "v0.1.65^{commit}")).toBe(sha);
     expect(git(work, "tag", "--list", "v*").split("\n")).toEqual(["v0.1.64", "v0.1.65"]);
+  });
+
+  it("can push the same tag after a post-deployment push failure", () => {
+    const work = createRepository();
+    git(work, "tag", "-a", "v0.1.64", "-m", "Release v0.1.64\n2026-10-03 12:00 JST");
+    git(work, "push", "origin", "refs/tags/v0.1.64");
+    writeFileSync(join(work, "marker.txt"), "next release\n");
+    git(work, "commit", "-am", "next release");
+    const sha = git(work, "rev-parse", "HEAD");
+    const metadataFile = join(work, "release-metadata.json");
+    const deployedFile = join(work, "release-deployed.json");
+    const release = prepareRelease({ cwd: work, sha, metadataFile });
+    copyFileSync(metadataFile, deployedFile);
+
+    const hook = join(work, "..", "remote.git", "hooks", "pre-receive");
+    writeFileSync(hook, "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+    expect(() => finalizeRelease({ cwd: work, sha, metadataFile, deployedFile })).toThrow();
+    expect(git(work, "ls-remote", "--tags", "origin", "refs/tags/v0.1.65")).toBe("");
+
+    rmSync(hook);
+    expect(finalizeRelease({ cwd: work, sha, metadataFile, deployedFile })).toEqual(release);
+    expect(git(work, "ls-remote", "--tags", "origin", "refs/tags/v0.1.65^{}")).toContain(sha);
+    expect(existsSync(metadataFile)).toBe(true);
   });
 
   it("refuses to release without an annotated baseline tag", () => {
     const work = createRepository();
     const sha = git(work, "rev-parse", "HEAD");
     expect(() => prepareRelease({ cwd: work, sha })).toThrow("baseline release tag");
+  });
+
+  it("refuses a mismatched deployment marker and another tag on the release commit", () => {
+    const work = createRepository();
+    git(work, "tag", "-a", "v0.1.64", "-m", "Release v0.1.64\n2026-10-03 12:00 JST");
+    git(work, "push", "origin", "refs/tags/v0.1.64");
+    writeFileSync(join(work, "marker.txt"), "next release\n");
+    git(work, "commit", "-am", "next release");
+    const sha = git(work, "rev-parse", "HEAD");
+    const metadataFile = join(work, "release-metadata.json");
+    const deployedFile = join(work, "release-deployed.json");
+    const candidate = prepareRelease({ cwd: work, sha, metadataFile });
+    writeFileSync(deployedFile, `${JSON.stringify({ ...candidate, releasedAt: "2026-10-05T12:42:00+09:00" })}\n`);
+    expect(() => finalizeRelease({ cwd: work, sha, metadataFile, deployedFile })).toThrow("Deployment marker");
+    copyFileSync(metadataFile, deployedFile);
+    git(work, "tag", "-a", "v0.1.66", "-m", "Release v0.1.66\n2026-10-04 12:42 JST");
+    expect(() => finalizeRelease({ cwd: work, sha, metadataFile, deployedFile })).toThrow("different release tag");
   });
 
   it("rejects another SHA, invalid tag metadata, and orders versions numerically", () => {

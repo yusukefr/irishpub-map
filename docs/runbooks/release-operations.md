@@ -32,7 +32,7 @@ LLM security checkはGit管理対象のAgent向け文書を動的に列挙し、
 
 独立した`GitHub Actions Workflow Lint` Workflowは毎回起動しますが、`.github/workflows/**`に変更がある場合、または手動実行時のみGoをセットアップし、`rhysd/actionlint`の固定バージョンでWorkflowを静的検査します。Workflowの変更時には、`ci.yml`自体の構文エラーも別Workflowから検出できます。このWorkflowは書き込み権限や通知用Secretを持ちません。
 
-同じPRまたはbranchで新しいrunが始まると、進行中の古いrunはキャンセルされます。PR更新後は最新HEADの通常CIを確認し、`main`へのmerge後は通常CIとE2Eの両方を確認します。E2E失敗時のPlaywright artifactは引き続き保存します。
+同じPRで新しいrunが始まると、進行中の古いrunはキャンセルされます。`main`のrunはProduction Releaseまで続くため、後続pushではキャンセルしません。PR更新後は最新HEADの通常CIを確認し、`main`へのmerge後は通常CIとE2Eの両方を確認します。E2E失敗時のPlaywright artifactは引き続き保存します。
 
 PR作成・更新後は`scripts/verify-pr-ci.sh --pr <番号>`で最新HEADの`Lint, Test, Build`を確認します。checkが未作成なら最大90秒待ち、`queued`や`in_progress`なら既存checkの完了を待ちます。待機中にPRのHEADが変わった場合は中止するため、コマンドを再実行します。成功は正常終了、失敗・キャンセル・待機のタイムアウトはエラーになります。check未作成時のfallbackも必要なら`--dispatch`を付けます。この場合も90秒待ってcheckが作成されないときだけ`workflow_dispatch`で手動CIを起動し、対象PRのHEAD SHAと一致するrunを待ちます。通常CIの失敗時は原因を確認し、fallbackを自動起動しません。
 
@@ -47,9 +47,27 @@ Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secret
 
 ## Production Release
 
-PRや`main`へVersion更新専用commitは作りません。`main`へのpushを対象にした`CI` Workflowが成功すると、`Production Release` Workflowが同じSHAを対象に動きます。`production-release` concurrencyで直列化し、実行時点の`origin/main`とCI対象SHAが異なる場合は古いReleaseをskipします。直近のannotated SemVer Tag（`vX.Y.Z`）からpatchを採番し、そのTagが指すcommitをcheckoutしたままVercel CLIでProductionへdeployします。rootの`package.json`と`package-lock.json`のVersionはnpm metadataとして扱い、Releaseのたびに書き換えません。
+PRや`main`へVersion更新専用commitは作りません。`main`へのpushでCIとE2Eが成功し、変更に`release_relevant=true`が含まれる場合だけ、CIから`Production Release` reusable workflowを呼びます。対象は`apps/**`（`apps/web/AGENTS.md`を除く）、`packages/**`、rootの`package.json` / `package-lock.json` / `vercel.json` / `.nvmrc` / `.npmrc`、Production環境検証scriptです。docs-only、OpenAPI、workflow、test、E2Eのみの変更はProductionへdeployせず、VersionとTagも進めません。差分を判定できない場合は全検証を行いますが、Releaseは保留します。`production-release` concurrencyで直列化し、実行時点の`origin/main`とCI対象SHAが異なる場合は古いReleaseをskipします。rootの`package.json`と`package-lock.json`のVersionはnpm metadataとして扱い、Releaseのたびに書き換えません。
 
-Release WorkflowはVercel CLIの準備後、Deployment開始直前に`YYYY-MM-DD HH:mm JST`を確定します。Tag messageに`Release vX.Y.Z`とその日時を記録し、Deploymentのbuild/runtimeへ`APP_RELEASE_VERSION`、`APP_RELEASE_DATE`（`YYYY-MM-DDTHH:mm:00+09:00`）、`APP_RELEASE_GIT_SHA`（full SHA）を渡します。Public FooterにはVersionと日時のみ、認証済みAdminには短縮SHAも表示します。Tag作成後にDeploymentが失敗した場合、Productionの現行Deploymentは維持されます。Workflowの再実行は同一SHAのTagと日時を再利用し、新しいVersionを採番しません。Tagが異なるSHAを指す場合や、より新しいReleaseが存在する場合は停止します。
+Release Workflowは直近のannotated SemVer Tag（`vX.Y.Z`）から次のpatch Versionを決め、Deployment開始前に`YYYY-MM-DD HH:mm JST`、full SHAとともに候補metadataをartifactへ保存します。このSHAをcheckoutしたソースへ、候補の`APP_RELEASE_VERSION`、`APP_RELEASE_DATE`（`YYYY-MM-DDTHH:mm:00+09:00`）、`APP_RELEASE_GIT_SHA`をbuild/runtime変数として渡します。Vercel Production Deploymentの成功を確認して成功markerを保存した後、初めて同じSHAのannotated Tagを作成・pushします。Tag messageには`Release vX.Y.Z`と候補日時を記録します。Public FooterにはVersionと日時のみ、認証済みAdminには短縮SHAも表示します。Deploymentが失敗した場合はTagを作らず、再実行では保存済みの候補metadataを再利用します。Tag pushが失敗した場合も、再実行は成功markerを確認してDeploymentを省略し、同じTagを再試行します。Tagが異なるSHAを指す場合や、より新しいReleaseが存在する場合は停止します。
+
+### Production成功後にTag pushだけ失敗した場合
+
+次のReleaseを進める前に、このReleaseを復旧します。CI runの`release-metadata`と`release-deployed` artifactを取得し、両方に同じVersion / `releasedAt` / full `gitSha`が保存されていること、Vercel Productionがその値で成功していることを確認します。同じrunを再実行できる場合はReleaseジョブを再実行します。成功markerがあるため再deployせず、保存済み候補からTag pushを再試行します。
+
+手動復旧が必要な場合は、artifactを作業用の安全な一時ディレクトリへ展開し、対象SHAをcheckoutした作業ツリーで以下を実行します。`RELEASE_METADATA_FILE`は`release-metadata.json`、`RELEASE_DEPLOYED_FILE`は`release-deployed.json`を指定します。両ファイルが失われた場合は、VercelのProduction Deploymentに紐づくVersion、JST日時、full SHAを確認し、両ファイルへ同じJSONを復元してから実行します。
+
+```bash
+git fetch origin --tags
+git rev-parse HEAD
+RELEASE_SHA="$PRODUCTION_SHA" \
+  RELEASE_METADATA_FILE="$RELEASE_METADATA_FILE" \
+  RELEASE_DEPLOYED_FILE="$RELEASE_DEPLOYED_FILE" \
+  node scripts/finalize-release.mjs
+git ls-remote --tags origin "refs/tags/$RELEASE_VERSION^{}"
+```
+
+Tagが既に異なるSHAや日時を指す場合、または後続Tagがある場合は上書きせず停止します。復旧時に新しいVersionや日時を採番しません。
 
 ### 移行前の設定
 

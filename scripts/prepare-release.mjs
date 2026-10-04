@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const RELEASE_TAG = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -20,6 +20,15 @@ export function compareReleaseTags(left, right) {
     if (leftParts[index] !== rightParts[index]) return leftParts[index] - rightParts[index];
   }
   return 0;
+}
+
+/** 最新Tagから次のpatch Versionを決めます。 */
+export function nextPatchTag(latest) {
+  const parts = RELEASE_TAG.exec(latest)?.slice(1).map(Number);
+  if (!parts?.every(Number.isSafeInteger) || !Number.isSafeInteger(parts[2] + 1)) {
+    throw new Error("The latest release version cannot be incremented safely.");
+  }
+  return `v${parts[0]}.${parts[1]}.${parts[2] + 1}`;
 }
 
 /** Release Workflowが確定する日時をJSTの分単位へ丸めます。 */
@@ -58,8 +67,25 @@ export function assertTagTarget(tag, expectedSha, actualSha) {
   if (actualSha !== expectedSha) throw new Error(`Release tag ${tag} points to a different commit.`);
 }
 
-/** Git TagをRelease Versionの正として採番し、同じSHAへの再実行では既存Tagを使います。 */
-export function prepareRelease({ cwd = process.cwd(), sha, now = new Date(), outputFile } = {}) {
+/** Artifactから候補metadataを読み、日時・Version・full SHAを検証します。 */
+export function readReleaseMetadata(metadataFile) {
+  const release = JSON.parse(readFileSync(metadataFile, "utf8"));
+  if (
+    !RELEASE_TAG.test(release.version) ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\+09:00$/.test(release.releasedAt) ||
+    !/^[0-9a-f]{40}$/i.test(release.gitSha)
+  ) {
+    throw new Error("Invalid release metadata.");
+  }
+  const display = `${release.releasedAt.slice(0, 10)} ${release.releasedAt.slice(11, 16)} JST`;
+  if (releaseDateFromTag(release.version, `Release ${release.version}\n${display}`).iso !== release.releasedAt) {
+    throw new Error("Invalid release date.");
+  }
+  return { version: release.version, releasedAt: release.releasedAt, gitSha: release.gitSha };
+}
+
+/** Tagを作成せずRelease候補を確定し、同じWorkflow runではartifactのmetadataを再利用します。 */
+export function prepareRelease({ cwd = process.cwd(), sha, now = new Date(), outputFile, metadataFile } = {}) {
   if (!/^[0-9a-f]{40}$/i.test(sha ?? "")) throw new Error("A full release commit SHA is required.");
   assertTagTarget("HEAD", sha, git(cwd, "rev-parse", "HEAD"));
   git(cwd, "fetch", "--tags", "origin");
@@ -90,23 +116,31 @@ export function prepareRelease({ cwd = process.cwd(), sha, now = new Date(), out
     if (git(cwd, "cat-file", "-t", `refs/tags/${latest}`) !== "tag") {
       throw new Error(`Release tag ${latest} must be annotated.`);
     }
-    const [major, minor, patch] = RELEASE_TAG.exec(latest).slice(1).map(Number);
-    if (![major, minor, patch].every(Number.isSafeInteger) || !Number.isSafeInteger(patch + 1)) {
-      throw new Error("The latest release version cannot be incremented safely.");
-    }
-    version = `v${major}.${minor}.${patch + 1}`;
+    version = nextPatchTag(latest);
     date = formatReleaseDate(now);
-    git(cwd, "tag", "-a", version, "-m", `Release ${version}\n${date.display}`);
-    git(cwd, "push", "origin", `refs/tags/${version}`);
   }
 
-  assertTagTarget(version, sha, git(cwd, "rev-parse", `${version}^{commit}`));
-  const output = `version=${version}\nreleased_at=${date.iso}\ngit_sha=${sha}\n`;
+  const candidate = { version, releasedAt: date.iso, gitSha: sha };
+  const release = metadataFile && existsSync(metadataFile) ? readReleaseMetadata(metadataFile) : candidate;
+  if (
+    release.version !== candidate.version ||
+    release.gitSha !== sha ||
+    (existing.length && release.releasedAt !== date.iso)
+  ) {
+    throw new Error("Stored release metadata does not match the current release candidate.");
+  }
+  if (metadataFile && !existsSync(metadataFile))
+    writeFileSync(metadataFile, `${JSON.stringify(release)}\n`, { flag: "wx" });
+  const output = `version=${release.version}\nreleased_at=${release.releasedAt}\ngit_sha=${sha}\n`;
   if (outputFile) appendFileSync(outputFile, output);
-  return { version, releasedAt: date.iso, gitSha: sha };
+  return release;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const release = prepareRelease({ sha: process.env.RELEASE_SHA, outputFile: process.env.GITHUB_OUTPUT });
+  const release = prepareRelease({
+    sha: process.env.RELEASE_SHA,
+    outputFile: process.env.GITHUB_OUTPUT,
+    metadataFile: process.env.RELEASE_METADATA_FILE,
+  });
   console.log(`Prepared ${release.version} for ${release.gitSha}.`);
 }
