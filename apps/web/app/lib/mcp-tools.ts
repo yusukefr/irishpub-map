@@ -14,10 +14,12 @@ import {
   tagsResponse,
 } from "./mcp-read-schemas";
 import {
+  contentCreateResponse,
   contentPublicationInput,
   contentPublicationResponse,
   contentWrite,
   idempotencyKey,
+  quizCreateResponse,
   quizPublicationInput,
   quizPublicationResponse,
   quizWrite,
@@ -52,7 +54,7 @@ const readOnlyAnnotations = {
 const createAnnotations = {
   readOnlyHint: false,
   destructiveHint: false,
-  idempotentHint: false,
+  idempotentHint: true,
   openWorldHint: false,
 } as const;
 const mutationAnnotations = {
@@ -62,10 +64,12 @@ const mutationAnnotations = {
   openWorldHint: false,
 } as const;
 // Automation API の成功本文に含まれない監査用 Header を MCP 結果へ添える。
-const contentWriteResponse = contentResponse.extend({ requestId: z.uuid().optional() });
-const quizWriteResponse = quizResponse.extend({ requestId: z.uuid().optional() });
-const contentPublicationWriteResponse = contentPublicationResponse.extend({ requestId: z.uuid().optional() });
-const quizPublicationWriteResponse = quizPublicationResponse.extend({ requestId: z.uuid().optional() });
+const contentCreateToolResponse = contentCreateResponse.extend({ requestId: z.uuid() });
+const contentWriteResponse = contentResponse.extend({ requestId: z.uuid() });
+const quizCreateToolResponse = quizCreateResponse.extend({ requestId: z.uuid() });
+const quizWriteResponse = quizResponse.extend({ requestId: z.uuid() });
+const contentPublicationWriteResponse = contentPublicationResponse.extend({ requestId: z.uuid() });
+const quizPublicationWriteResponse = quizPublicationResponse.extend({ requestId: z.uuid() });
 const emptyInput = z.object({}).strict();
 const uuidId = z.object({ id: z.uuid() }).strict();
 const quizId = z
@@ -104,19 +108,23 @@ function errorResult(result: Extract<AutomationApiResult, { ok: false }>) {
 async function automationResult(options: AutomationApiRequest, schema: z.ZodType) {
   const result = await requestAutomationApi(options);
   if (!result.ok) return errorResult(result);
+  const requestId = z.uuid().safeParse(result.requestId);
   const parsed = schema.safeParse(result.data);
   if (!parsed.success) {
     return errorResult({
       ok: false,
       status: 502,
       error: { errorCode: "invalid_response" },
-      requestId: result.requestId,
+      requestId: requestId.success ? requestId.data : undefined,
     });
   }
-  const data =
-    options.method !== "GET" && result.requestId && parsed.data && typeof parsed.data === "object"
-      ? { ...parsed.data, requestId: result.requestId }
-      : parsed.data;
+  if (options.method === "GET") {
+    return { content: [{ type: "text" as const, text: JSON.stringify(parsed.data) }], structuredContent: parsed.data };
+  }
+  if (!requestId.success || !parsed.data || typeof parsed.data !== "object" || Array.isArray(parsed.data)) {
+    return errorResult({ ok: false, status: 502, error: { errorCode: "invalid_response" } });
+  }
+  const data = { ...parsed.data, requestId: requestId.data };
   return { content: [{ type: "text" as const, text: JSON.stringify(data) }], structuredContent: data };
 }
 
@@ -278,13 +286,13 @@ export function registerMcpTools(server: McpServer): void {
       description:
         "Write operation. Creates a new content draft through the Automation API with content:create scope. Call list_content first to check existing content. Requires idempotencyKey for safe retries: reuse the same key and payload if the result is unknown. Does not publish, update, or delete existing content. Call get_content with the returned ID after creation to verify the saved draft.",
       inputSchema: contentWrite.extend({ idempotencyKey }),
-      outputSchema: contentWriteResponse,
+      outputSchema: contentCreateToolResponse,
       annotations: createAnnotations,
     },
     async ({ idempotencyKey: key, ...body }) =>
       automationResult(
         { method: "POST", path: "/api/automation/v1/content", body, idempotencyKey: key },
-        contentResponse,
+        contentCreateResponse,
       ),
   );
 
@@ -326,11 +334,14 @@ export function registerMcpTools(server: McpServer): void {
       description:
         "Write operation. Creates a new quiz draft through the Automation API with quiz:create scope; incomplete drafts with 0–4 choices are allowed. Call list_quizzes first to check for duplicates. Requires idempotencyKey for safe retries: reuse the same key and payload if the result is unknown. Does not publish, update, or delete existing quizzes. Call get_quiz with the returned ID after creation to verify the saved draft.",
       inputSchema: quizWrite.extend({ idempotencyKey }),
-      outputSchema: quizWriteResponse,
+      outputSchema: quizCreateToolResponse,
       annotations: createAnnotations,
     },
     async ({ idempotencyKey: key, ...body }) =>
-      automationResult({ method: "POST", path: "/api/automation/v1/quiz", body, idempotencyKey: key }, quizResponse),
+      automationResult(
+        { method: "POST", path: "/api/automation/v1/quiz", body, idempotencyKey: key },
+        quizCreateResponse,
+      ),
   );
 
   server.registerTool(

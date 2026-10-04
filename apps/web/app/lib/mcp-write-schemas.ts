@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { contentResponse, quizResponse } from "./mcp-read-schemas";
 
 // OpenAPI の Write input だけを通し、GET に含まれる server-managed field は受け付けない。
 const uuid = z.uuid();
@@ -27,6 +28,9 @@ export const contentWrite = z
   .strict();
 
 export const contentPublicationInput = z.object({ status: z.enum(["draft", "published"]) }).strict();
+export const contentCreateResponse = contentResponse.extend({
+  content: contentResponse.shape.content.extend({ status: z.literal("draft"), publishedAt: z.null() }),
+});
 export const contentPublicationResponse = z
   .object({
     publication: z
@@ -93,6 +97,9 @@ export const quizWrite = z
   .strict();
 
 export const quizPublicationInput = z.object({ isPublished: z.boolean() }).strict();
+export const quizCreateResponse = quizResponse.extend({
+  question: quizResponse.shape.question.extend({ isPublished: z.literal(false) }),
+});
 export const quizPublicationResponse = z
   .object({ publication: z.object({ id: z.string(), isPublished: z.boolean(), unchanged: z.boolean() }).strict() })
   .strict();

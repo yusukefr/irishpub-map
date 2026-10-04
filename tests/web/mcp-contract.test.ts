@@ -245,6 +245,7 @@ describe("Remote MCP contract", () => {
       expect(tool.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: index % 3 !== 0,
+        idempotentHint: true,
         openWorldHint: false,
       });
       expect(tool.description).toContain(writeScopes[index]);
@@ -594,8 +595,82 @@ describe("Remote MCP contract", () => {
     }
   });
 
+  it("rejects every write success when X-Request-Id is missing or malformed", async () => {
+    const cases = [
+      ["create_content", { idempotencyKey: "content-1", ...contentWrite }, contentDetail],
+      ["update_content", { id, ...contentWrite }, contentDetail],
+      [
+        "set_content_publication",
+        { id, status: "draft" },
+        { publication: { id, status: "draft", unchanged: true, publishedAt: null } },
+      ],
+      ["create_quiz", { idempotencyKey: "quiz-1", ...quizWrite }, quizDetail],
+      ["update_quiz", { id: "sample-quiz", ...quizWrite }, quizDetail],
+      [
+        "set_quiz_publication",
+        { id: "sample-quiz", isPublished: false },
+        { publication: { id: "sample-quiz", isPublished: false, unchanged: true } },
+      ],
+    ] as const;
+    const handler = createHandler();
+    for (const [name, args, body] of cases) {
+      for (const header of [undefined, "-".repeat(36)]) {
+        const fetchMock = vi
+          .fn()
+          .mockResolvedValue(Response.json(body, { headers: header ? { "X-Request-Id": header } : {} }));
+        vi.stubGlobal("fetch", fetchMock);
+        const result = (await mcpBody(await handler(mcpRequest("tools/call", { name, arguments: args }))))
+          .result as Record<string, unknown>;
+        expect(result.isError, name).toBe(true);
+        expect(result.structuredContent, name).toBeUndefined();
+        expect(JSON.parse((result.content as Array<{ text: string }>)[0].text), name).toMatchObject({
+          status: 502,
+          errorCode: "invalid_response",
+        });
+        expect(fetchMock, name).toHaveBeenCalledOnce();
+      }
+    }
+  });
+
+  it("rejects create responses that are not drafts", async () => {
+    const cases = [
+      [
+        "create_content",
+        { idempotencyKey: "content-1", ...contentWrite },
+        { content: { ...contentDetail.content, status: "published", publishedAt: timestamp } },
+      ],
+      [
+        "create_content",
+        { idempotencyKey: "content-2", ...contentWrite },
+        { content: { ...contentDetail.content, publishedAt: timestamp } },
+      ],
+      [
+        "create_quiz",
+        { idempotencyKey: "quiz-1", ...quizWrite },
+        { question: { ...quizDetail.question, isPublished: true } },
+      ],
+    ] as const;
+    const handler = createHandler();
+    for (const [name, args, body] of cases) {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(Response.json(body, { status: 201, headers: { "X-Request-Id": id } }));
+      vi.stubGlobal("fetch", fetchMock);
+      const result = (await mcpBody(await handler(mcpRequest("tools/call", { name, arguments: args }))))
+        .result as Record<string, unknown>;
+      expect(result.isError, name).toBe(true);
+      expect(result.structuredContent, name).toBeUndefined();
+      expect(JSON.stringify(result), name).toContain("invalid_response");
+      expect(fetchMock, name).toHaveBeenCalledOnce();
+    }
+  });
+
   it("accepts an incomplete quiz draft and rejects server-managed fields before a write", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(Response.json({ question: { ...quizDetail.question, choices: [] } }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({ question: { ...quizDetail.question, choices: [] } }, { headers: { "X-Request-Id": id } }),
+      );
     vi.stubGlobal("fetch", fetchMock);
     const handler = createHandler();
     const draft = (
@@ -633,8 +708,8 @@ describe("Remote MCP contract", () => {
     const handler = createHandler();
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(Response.json(contentDetail, { status: 201 }))
-      .mockResolvedValueOnce(Response.json(contentDetail, { status: 201 }))
+      .mockResolvedValueOnce(Response.json(contentDetail, { status: 201, headers: { "X-Request-Id": id } }))
+      .mockResolvedValueOnce(Response.json(contentDetail, { status: 201, headers: { "X-Request-Id": id } }))
       .mockResolvedValueOnce(Response.json({ errorCode: "idempotency_conflict" }, { status: 409 }))
       .mockResolvedValueOnce(Response.json({ errorCode: "idempotency_in_progress" }, { status: 409 }))
       .mockResolvedValueOnce(
@@ -679,7 +754,9 @@ describe("Remote MCP contract", () => {
   });
 
   it("reuses the quiz create key and body on a retry", async () => {
-    const fetchMock = vi.fn().mockImplementation(() => Response.json(quizDetail, { status: 201 }));
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() => Response.json(quizDetail, { status: 201, headers: { "X-Request-Id": id } }));
     vi.stubGlobal("fetch", fetchMock);
     const handler = createHandler();
     const args = { idempotencyKey: "quiz-same-intent", ...quizWrite };
@@ -687,7 +764,7 @@ describe("Remote MCP contract", () => {
       const result = (await mcpBody(await handler(mcpRequest("tools/call", { name: "create_quiz", arguments: args }))))
         .result as Record<string, unknown>;
       expect(result.isError).not.toBe(true);
-      expect(result.structuredContent).toEqual(quizDetail);
+      expect(result.structuredContent).toEqual({ ...quizDetail, requestId: id });
     }
     expect(fetchMock).toHaveBeenCalledTimes(2);
     for (const [, init] of fetchMock.mock.calls) {
@@ -708,7 +785,7 @@ describe("Remote MCP contract", () => {
     const fetchMock = vi.fn().mockImplementation((_url: URL, init: RequestInit) => {
       if (init.method === "GET") return Response.json(saved);
       saved = after;
-      return Response.json(after);
+      return Response.json(after, { headers: { "X-Request-Id": id } });
     });
     vi.stubGlobal("fetch", fetchMock);
     const handler = createHandler();
@@ -722,7 +799,7 @@ describe("Remote MCP contract", () => {
         await handler(mcpRequest("tools/call", { name: "update_content", arguments: { id, ...contentWrite } })),
       )
     ).result as Record<string, unknown>;
-    expect(updated.structuredContent).toEqual(after);
+    expect(updated.structuredContent).toEqual({ ...after, requestId: id });
     const readBack = (
       await mcpBody(await handler(mcpRequest("tools/call", { name: "get_content", arguments: { id } })))
     ).result as Record<string, unknown>;
@@ -733,7 +810,11 @@ describe("Remote MCP contract", () => {
 
   it("fails closed on invalid write responses and preserves API errors without a fallback write", async () => {
     const handler = createHandler();
-    const fetchMock = vi.fn().mockResolvedValue(Response.json({ content: { id, status: "draft" } }, { status: 201 }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({ content: { id, status: "draft" } }, { status: 201, headers: { "X-Request-Id": id } }),
+      );
     vi.stubGlobal("fetch", fetchMock);
     const invalid = (
       await mcpBody(

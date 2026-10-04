@@ -27,11 +27,11 @@ allow listはRead 10件とContent / Quiz Write 6件の計16件です。Read Tool
 | `update_quiz` | PUT `/quiz/:id` | `quiz:update` | 編集可能なQuiz全体Snapshotを置換 |
 | `set_quiz_publication` | PATCH `/quiz/:id/publication` | `quiz:publish` | `isPublished` を `false` / `true` に変更 |
 
-Createは `readOnlyHint: false` / `destructiveHint: false`、UpdateとPublicationは `readOnlyHint: false` / `destructiveHint: true` です。全Write Toolは `openWorldHint: false` です。これらのannotationはClientへのHintであり、承認や認可の強制ではありません。
+Createは `readOnlyHint: false` / `destructiveHint: false` / `idempotentHint: true`、UpdateとPublicationは `readOnlyHint: false` / `destructiveHint: true` です。全Write Toolは `openWorldHint: false` です。Createの冪等性は同じ `idempotencyKey` とPayloadを再利用した場合に成立します。これらのannotationはClientへのHintであり、承認や認可の強制ではありません。
 
 各Pathには `/api/automation/v1` が付きます。ContentとQuizの一覧にPaginationやFilterはありません。`list_pubs` のみ `name`（最大100文字）、`prefecture`（1～47）、`municipality`（6桁・対応する都道府県が必要）、`status`（`open` / `temporarily_closed` / `closed` / `unknown`）、`tag`（UUID）、`published`（boolean）、`page`（1～100000）を受け付けます。複数FilterはAND条件で、Page SizeはServer固定の50です。応答の `page`、`pageSize`、`total` を確認して次ページを取得します。独自の `limit`、`offset`、`query`、`search` はありません。
 
-Master Dataは毎回Automation APIから取得し、MCP Serverには複製しません。成功時は応答Schemaを検証し、ID、公開状態、タグ、自治体コード、Paginationを `structuredContent` とtextに維持します。Write成功時は監査照合用の `X-Request-Id` を `requestId` として両Resultへ添えます。契約に合わない応答は `502 invalid_response` として安全に失敗します。Pub Delete、Tag Update / Delete、Status Update、Calendar Update、Media Upload / Delete、DB直接操作、およびPub / Tag Write Toolは公開しません。
+Master Dataは毎回Automation APIから取得し、MCP Serverには複製しません。成功時は応答Schemaを検証し、ID、公開状態、タグ、自治体コード、Paginationを `structuredContent` とtextに維持します。Write成功時は監査照合用の `X-Request-Id` を必須とし、`requestId` として両Resultへ添えます。欠落または不正な形式は `502 invalid_response` として扱います。Create応答はContentの `status: draft` / `publishedAt: null`、Quizの `isPublished: false` も検証します。Pub Delete、Tag Update / Delete、Status Update、Calendar Update、Media Upload / Delete、DB直接操作、およびPub / Tag Write Toolは公開しません。
 
 [Plugin manifest](../../plugins/irishpub-map/plugin.json)と[MCP接続設定](../../plugins/irishpub-map/mcp.json)はProductionの公開Originを指します。Local / Previewで試す際は、対象環境の `/api/mcp` URLをChatGPT / Codexへ直接登録します。環境固有のPreview URLやSecretをRepository、Issue、PRへ記録しません。
 
