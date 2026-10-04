@@ -23,7 +23,7 @@ CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`�
 | --- | --- | --- |
 | Code変更（workflowを含む） | Sensitive data check、LLM security check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | 実行 |
 | `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Sensitive data check、LLM security check、npm ci、OpenAPI lint | 省略 |
-| docs-only | Sensitive data check、LLM security check。npm ciは実行しない | 未Releaseのアプリ変更があれば実行。それ以外は省略 |
+| docs-only | 通常はSensitive data check、LLM security checkのみ。`main` push時に未Releaseのアプリ変更があればCode変更と同じFull CI | 未Releaseのアプリ変更があれば実行。それ以外は省略 |
 | `workflow_dispatch` | Code変更と同じFull CI | 実行 |
 
 docs-onlyは`docs/**`（OpenAPIを除く）、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`に限定します。アプリ配下のMarkdownを含む、それ以外のパスはCode変更として扱います。PR中にE2Eを確認する必要があれば、対象branchで`workflow_dispatch`を実行します。
@@ -47,13 +47,13 @@ Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secret
 
 ## Production Release
 
-PRや`main`へVersion更新専用commitは作りません。`main`へのpushで、最新のannotated Production SemVer Tagから現在のHEADまでにProduction成果物へ影響する未Release変更があり、CIとE2Eが成功した場合だけ、CIから`Production Release` reusable workflowを呼びます。この累積差分で`release_relevant`を決めるため、直前のpushがdocs-onlyでも未Releaseのアプリ変更が残っていればE2EとReleaseを実行します。PRの分類は従来のPR差分を使います。対象は`apps/**`（`apps/web/AGENTS.md`を除く）、`packages/**`、rootの`package.json` / `package-lock.json` / `vercel.json` / `.nvmrc` / `.npmrc`、Production環境検証scriptです。累積差分がdocs-only、OpenAPI、workflow、test、E2EのみならProductionへdeployせず、VersionとTagも進めません。比較元が取得できない場合は全検証を行い、baseline Tagがないなど累積Release判定ができない場合はCIを失敗させます。`production-release` concurrencyで直列化し、実行時点の`origin/main`とCI対象SHAが異なる場合は古いReleaseをskipします。Release Workflow開始時にも最新Tagから対象SHAまでを再判定し、先行Releaseで対象変更が既に含まれた場合はdeployせず終了します。rootの`package.json`と`package-lock.json`のVersionはnpm metadataとして扱い、Releaseのたびに書き換えません。
+PRや`main`へVersion更新専用commitは作りません。`main`へのpushで、最新のannotated Production SemVer Tagから現在のHEADまでにProduction成果物へ影響する未Release変更があり、Full CIとE2Eが成功した場合だけ、CIから`Production Release` reusable workflowを呼びます。この累積差分で`release_relevant`を決めるため、直前のpushがdocs-onlyでも未Releaseのアプリ変更が残っていればFull CI、E2E、Releaseを実行します。PRの分類は従来のPR差分を使います。対象は`apps/**`（`apps/web/AGENTS.md`を除く）、`packages/**`、rootの`package.json` / `package-lock.json` / `vercel.json` / `.nvmrc` / `.npmrc`、Production環境検証scriptです。累積差分がdocs-only、OpenAPI、workflow、test、E2EのみならProductionへdeployせず、VersionとTagも進めません。比較元が取得できない場合は全検証を行い、baseline Tagがないなど累積Release判定ができない場合はCIを失敗させます。`production-release` concurrencyで直列化し、実行時点の`origin/main`とCI対象SHAが異なる場合は古いReleaseをskipします。Release Workflow開始時にも最新Tagから対象SHAまでを再判定し、先行Releaseで対象変更が既に含まれた場合はdeployせず終了します。rootの`package.json`と`package-lock.json`のVersionはnpm metadataとして扱い、Releaseのたびに書き換えません。
 
-Release Workflowは直近のannotated SemVer Tag（`vX.Y.Z`）から次のpatch Versionを決め、Deployment開始前に`YYYY-MM-DD HH:mm JST`、full SHAとともに候補metadataをartifactへ保存します。このSHAをcheckoutしたソースへ、候補の`APP_RELEASE_VERSION`、`APP_RELEASE_DATE`（`YYYY-MM-DDTHH:mm:00+09:00`）、`APP_RELEASE_GIT_SHA`をbuild/runtime変数として渡します。Vercel Production Deploymentの成功を確認して成功markerを保存した後、初めて同じSHAのannotated Tagを作成・pushします。Tag messageには`Release vX.Y.Z`と候補日時を記録します。Public FooterにはVersionと日時のみ、認証済みAdminには短縮SHAも表示します。Deploymentが失敗した場合はTagを作らず、再実行では保存済みの候補metadataを再利用します。Tag pushが失敗した場合も、再実行は成功markerを確認してDeploymentを省略し、同じTagを再試行します。Tagが異なるSHAを指す場合や、より新しいReleaseが存在する場合は停止します。
+Release Workflowは新規Releaseの開始前に、Vercel ProjectのProduction aliasが指す現行Deploymentを取得し、その`releaseVersion` / `releaseDate` / `releaseGitSha`を最新のannotated SemVer Tag（`vX.Y.Z`）のVersion / Tag message日時 / 対象full SHAと照合します。Production aliasが特定できない、複数のDeploymentを指す、metadataが欠ける、APIが失敗する、値が一致しない場合はdeploy前に停止します。照合後に最新Tagから次のpatch Versionを決め、Deployment開始前に`YYYY-MM-DD HH:mm JST`、full SHAとともに候補metadataをartifactへ保存します。このSHAをcheckoutしたソースへ、候補の`APP_RELEASE_VERSION`、`APP_RELEASE_DATE`（`YYYY-MM-DDTHH:mm:00+09:00`）、`APP_RELEASE_GIT_SHA`をbuild/runtime変数として渡します。Vercel Production Deploymentの成功を確認して成功markerを保存した後、初めて同じSHAのannotated Tagを作成・pushします。Tag messageには`Release vX.Y.Z`と候補日時を記録します。Public FooterにはVersionと日時のみ、認証済みAdminには短縮SHAも表示します。Deploymentが失敗した場合はTagを作らず、再実行では保存済みの候補metadataを再利用します。Tag pushが失敗した場合も、再実行は成功markerを確認して現行Productionと保存済み候補を照合し、Deploymentを省略して同じTagを再試行します。Tagが異なるSHAを指す場合や、より新しいReleaseが存在する場合は停止します。
 
 ### Production成功後にTag pushだけ失敗した場合
 
-次のReleaseを進める前に、このReleaseを復旧します。CI runの`release-metadata`と`release-deployed` artifactを取得し、両方に同じVersion / `releasedAt` / full `gitSha`が保存されていること、Vercel Productionがその値で成功していることを確認します。同じrunを再実行できる場合はReleaseジョブを再実行します。成功markerがあるため再deployせず、保存済み候補からTag pushを再試行します。
+次のReleaseを進める前に、このReleaseのTagを復旧します。復旧までは次のProduction Releaseを停止し、Versionを採番し直して回避しません。現行Production aliasが指すDeploymentの`releaseVersion` / `releaseDate` / `releaseGitSha`、CI runの`release-metadata`と`release-deployed` artifact内のVersion / `releasedAt` / full `gitSha`、最新TagのVersion / message日時 / 対象SHAを比較します。両artifactは同じ候補で、現行Productionの３項目とも一致し、候補が最新Tagの次patch Versionである必要があります。同じrunを再実行できる場合はReleaseジョブを再実行します。成功markerがあるため再deployせず、保存済み候補からTag pushを再試行します。
 
 手動復旧が必要な場合は、artifactを作業用の安全な一時ディレクトリへ展開し、対象SHAをcheckoutした作業ツリーで以下を実行します。`RELEASE_METADATA_FILE`は`release-metadata.json`、`RELEASE_DEPLOYED_FILE`は`release-deployed.json`を指定します。両ファイルが失われた場合は、VercelのProduction Deploymentに紐づくVersion、JST日時、full SHAを確認し、両ファイルへ同じJSONを復元してから実行します。
 
@@ -73,7 +73,7 @@ Tagが既に異なるSHAや日時を指す場合、または後続Tagがある�
 
 この方式を含むPRをmergeする前に、GitHub Actions Secret `VERCEL_TOKEN`、`VERCEL_ORG_ID`、`VERCEL_PROJECT_ID`を設定します。値はVercelの対象Projectに限定し、Repositoryやログへ記録しません。`vercel.json`は`main`のGit自動Deploymentだけを無効化し、PR Previewは維持します。Release Workflowは[Vercel CLIのsource deployment](https://vercel.com/docs/cli/deploy)を使うため、Tag対象SHAのcheckout済みソースとRelease metadataを一緒にbuildします。
 
-初回Release前に、現在のProduction Deploymentのcommit SHA、表示Version、Deployment時刻をVercel側で確認し、そのcommitへannotated baseline Tagを作成します。Git管理の旧Versionや`main`の最新SHAをProductionの代用にしません。Tag messageは`Release vX.Y.Z`と`YYYY-MM-DD HH:mm JST`の2行です。以下の変数には確認済みの値を設定してから実行します。
+初回Release前に、現在のProduction Deploymentのcommit SHA、表示Version、Deployment時刻をVercel側で確認し、そのcommitへannotated baseline Tagを作成します。既存のProduction Deploymentに３つの`--meta`値がない場合、このPRのRelease事前照合は失敗します。merge前に、確認済みProductionのVersion / JST日時 / full SHAをmetadataとして持つProduction Deploymentを用意し、現行Production aliasの指すDeploymentでその３項目を確認してから、同じ値のbaseline Tagを作成します。Productionへの変更手順と結果は別途レビューし、値の推測やTagだけの先行作成はしません。Git管理の旧Versionや`main`の最新SHAをProductionの代用にしません。Tag messageは`Release vX.Y.Z`と`YYYY-MM-DD HH:mm JST`の2行です。以下の変数には確認済みの値を設定してから実行します。
 
 ```bash
 git fetch origin --tags
@@ -83,7 +83,7 @@ git push origin "refs/tags/$BASELINE_TAG"
 git rev-parse "${BASELINE_TAG}^{commit}"
 ```
 
-`BASELINE_TAG`は実際のProduction表示Version（例: `v0.1.64`）、`PRODUCTION_RELEASED_AT`は確認したDeployment時刻をJSTの分単位で指定します。既存Tagの有無と対象SHAを事前に確認し、異なるcommitを指すTagは上書きしません。baseline Tag、3つのSecret、Previewの動作を確認できるまでmergeしません。
+`BASELINE_TAG`は実際のProduction表示Version（例: `v0.1.64`）、`PRODUCTION_RELEASED_AT`は確認したDeployment時刻をJSTの分単位で指定します。既存Tagの有無と対象SHAを事前に確認し、異なるcommitを指すTagは上書きしません。baseline Tag、現行Productionの３つのmetadata、3つのSecret、Previewの動作を確認できるまでmergeしません。
 
 ### Release後の確認
 

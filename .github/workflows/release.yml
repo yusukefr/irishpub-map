@@ -112,6 +112,25 @@ jobs:
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/release-candidate
 
+      - name: Download successful deployment marker
+        if: steps.artifacts.outputs.deployed == 'true'
+        uses: actions/download-artifact@v7.0.0
+        with:
+          name: release-deployed
+          run-id: ${{ github.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/release-deployed
+
+      - name: Verify current Production release
+        if: steps.relevance.outputs.release_relevant == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          RELEASE_METADATA_FILE: ${{ runner.temp }}/release-candidate/release-metadata.json
+          RELEASE_DEPLOYED_FILE: ${{ runner.temp }}/release-deployed/release-deployed.json
+        run: node scripts/verify-production-release.mjs
+
       - name: Prepare release metadata
         if: steps.relevance.outputs.release_relevant == 'true'
         id: metadata
@@ -129,15 +148,6 @@ jobs:
           path: ${{ runner.temp }}/release-candidate/release-metadata.json
           if-no-files-found: error
           retention-days: 30
-
-      - name: Download successful deployment marker
-        if: steps.artifacts.outputs.deployed == 'true'
-        uses: actions/download-artifact@v7.0.0
-        with:
-          name: release-deployed
-          run-id: ${{ github.run_id }}
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/release-deployed
 
       - name: Deploy release candidate to Vercel Production
         if: steps.relevance.outputs.release_relevant == 'true' && steps.artifacts.outputs.deployed != 'true'

@@ -23,6 +23,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       code_changed: ${{ steps.changes.outputs.code_changed }}
+      full_ci: ${{ steps.changes.outputs.full_ci }}
       release_relevant: ${{ steps.changes.outputs.release_relevant }}
     env:
       SLACK_CICD_CHANNEL: ${{ vars.SLACK_CICD_CHANNEL }}
@@ -48,10 +49,10 @@ jobs:
         uses: actions/setup-node@v7.0.0
         with:
           node-version-file: .nvmrc
-          cache: ${{ (steps.changes.outputs.code_changed == 'true' || steps.changes.outputs.openapi_changed == 'true') && 'npm' || '' }}
+          cache: ${{ (steps.changes.outputs.full_ci == 'true' || steps.changes.outputs.openapi_changed == 'true') && 'npm' || '' }}
 
       - name: Install dependencies
-        if: steps.changes.outputs.code_changed == 'true' || steps.changes.outputs.openapi_changed == 'true'
+        if: steps.changes.outputs.full_ci == 'true' || steps.changes.outputs.openapi_changed == 'true'
         run: npm ci
 
       - name: Check sensitive data
@@ -61,27 +62,27 @@ jobs:
         run: npm run check:llm-security
 
       - name: Format check
-        if: steps.changes.outputs.code_changed == 'true'
+        if: steps.changes.outputs.full_ci == 'true'
         run: npm run format:check
 
       - name: OpenAPI lint
-        if: steps.changes.outputs.code_changed == 'true' || steps.changes.outputs.openapi_changed == 'true'
+        if: steps.changes.outputs.full_ci == 'true' || steps.changes.outputs.openapi_changed == 'true'
         run: npm run lint:openapi
 
       - name: Lint
-        if: steps.changes.outputs.code_changed == 'true'
+        if: steps.changes.outputs.full_ci == 'true'
         run: npm run lint
 
       - name: Test
-        if: steps.changes.outputs.code_changed == 'true'
+        if: steps.changes.outputs.full_ci == 'true'
         run: npm test
 
       - name: Build
-        if: steps.changes.outputs.code_changed == 'true'
+        if: steps.changes.outputs.full_ci == 'true'
         run: npm run build
 
       - name: Build Storybook
-        if: steps.changes.outputs.code_changed == 'true'
+        if: steps.changes.outputs.full_ci == 'true'
         run: npm run build-storybook
 
       - name: Notify Slack
@@ -123,7 +124,7 @@ jobs:
 
   e2e:
     name: E2E
-    if: (github.event_name == 'push' && (needs.ci.outputs.code_changed == 'true' || needs.ci.outputs.release_relevant == 'true')) || (github.event_name == 'workflow_dispatch' && needs.ci.outputs.code_changed == 'true')
+    if: needs.ci.outputs.full_ci == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: ci
     runs-on: ubuntu-24.04
     timeout-minutes: 15

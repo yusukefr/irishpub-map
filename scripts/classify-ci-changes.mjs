@@ -107,6 +107,11 @@ function fullChange() {
   };
 }
 
+/** mainの未Release変更もFull CIで検証し、PRでは従来の変更分類を維持します。 */
+export function shouldRunFullCi(result, eventName) {
+  return result.codeChanged || (eventName === "push" && result.releaseRelevant);
+}
+
 /**
  * 比較元を取得できない場合は全検証を実行する。renameの旧パスも評価する。
  * @param {{eventName: string, baseSha: string, headSha: string, cwd?: string}} event
@@ -140,6 +145,7 @@ if (process.argv[1]?.endsWith("classify-ci-changes.mjs")) {
   });
   const output = [
     `code_changed=${result.codeChanged}`,
+    `full_ci=${shouldRunFullCi(result, process.env.CI_EVENT_NAME)}`,
     `openapi_changed=${result.openapiChanged}`,
     `workflow_changed=${result.workflowChanged}`,
     `release_relevant=${result.releaseRelevant}`,

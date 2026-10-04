@@ -3,7 +3,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { classifyGitChange, classifyPaths, classifyReleaseChanges } from "../scripts/classify-ci-changes.mjs";
+import {
+  classifyGitChange,
+  classifyPaths,
+  classifyReleaseChanges,
+  shouldRunFullCi,
+} from "../scripts/classify-ci-changes.mjs";
 
 function git(cwd: string, ...args: string[]) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -61,6 +66,14 @@ describe("CI change classification", () => {
         .releaseRelevant,
     ).toBe(false);
     expect(classifyPaths(["apps/web/AGENTS.md", "docs/specs/openapi/openapi.yaml"]).releaseRelevant).toBe(false);
+  });
+
+  it("runs full main CI for unreleased app changes carried by a docs-only push", () => {
+    const pendingRelease = { codeChanged: false, releaseRelevant: true };
+    expect(shouldRunFullCi(pendingRelease, "push")).toBe(true);
+    expect(shouldRunFullCi(pendingRelease, "pull_request")).toBe(false);
+    expect(shouldRunFullCi({ codeChanged: false, releaseRelevant: false }, "push")).toBe(false);
+    expect(shouldRunFullCi({ codeChanged: true, releaseRelevant: false }, "pull_request")).toBe(true);
   });
 
   it("runs full checks when a diff cannot be trusted", () => {
