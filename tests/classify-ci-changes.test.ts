@@ -7,16 +7,14 @@ describe("CI change classification", () => {
       codeChanged: false,
       openapiChanged: false,
       workflowChanged: false,
-      versionRelevant: false,
     });
   });
 
-  it("runs OpenAPI lint without app builds or a version bump", () => {
+  it("runs OpenAPI lint without app builds", () => {
     expect(classifyPaths(["docs/specs/openapi/openapi.yaml", "docs/specs/api.md"])).toEqual({
       codeChanged: false,
       openapiChanged: true,
       workflowChanged: false,
-      versionRelevant: false,
     });
   });
 
@@ -25,16 +23,14 @@ describe("CI change classification", () => {
       codeChanged: true,
       openapiChanged: false,
       workflowChanged: false,
-      versionRelevant: true,
     });
   });
 
-  it("lints workflow changes without bumping the app version", () => {
+  it("lints workflow changes", () => {
     expect(classifyPaths([".github/workflows/ci.yml"])).toEqual({
       codeChanged: true,
       openapiChanged: false,
       workflowChanged: true,
-      versionRelevant: false,
     });
   });
 
@@ -47,7 +43,6 @@ describe("CI change classification", () => {
       codeChanged: true,
       openapiChanged: true,
       workflowChanged: true,
-      versionRelevant: true,
     });
     expect(classifyGitChange({ eventName: "push", baseSha: "0".repeat(40), headSha: "a".repeat(40) })).toEqual(
       classifyPaths([]),

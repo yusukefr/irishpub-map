@@ -4,9 +4,9 @@ import { appendFileSync } from "node:fs";
 const DOCS_ROOT_FILES = new Set(["README.md", "AGENTS.md", "LICENSE"]);
 
 /**
- * 変更ファイルの用途を分類する。未知のパスは検証とversion更新の対象にする。
+ * 変更ファイルの用途を分類する。未知のパスは検証の対象にする。
  * @param {string[]} paths Git差分に含まれる旧・新両方のパス
- * @returns {{codeChanged: boolean, openapiChanged: boolean, workflowChanged: boolean, versionRelevant: boolean}}
+ * @returns {{codeChanged: boolean, openapiChanged: boolean, workflowChanged: boolean}}
  */
 export function classifyPaths(paths) {
   if (paths.length === 0) return fullChange();
@@ -15,7 +15,6 @@ export function classifyPaths(paths) {
     codeChanged: false,
     openapiChanged: false,
     workflowChanged: false,
-    versionRelevant: false,
   };
 
   for (const path of paths) {
@@ -26,9 +25,6 @@ export function classifyPaths(paths) {
     }
 
     if (path.startsWith(".github/workflows/")) result.workflowChanged = true;
-    if (!isDocsOnlyPath(path) && !path.startsWith("docs/specs/openapi/") && !path.startsWith(".github/")) {
-      result.versionRelevant = true;
-    }
   }
 
   return result;
@@ -48,7 +44,6 @@ function fullChange() {
     codeChanged: true,
     openapiChanged: true,
     workflowChanged: true,
-    versionRelevant: true,
   };
 }
 
@@ -87,7 +82,6 @@ if (process.argv[1]?.endsWith("classify-ci-changes.mjs")) {
     `code_changed=${result.codeChanged}`,
     `openapi_changed=${result.openapiChanged}`,
     `workflow_changed=${result.workflowChanged}`,
-    `version_relevant=${result.versionRelevant}`,
   ].join("\n");
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `${output}\n`);
   process.stdout.write(`${output}\n`);

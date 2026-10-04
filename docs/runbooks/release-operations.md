@@ -2,11 +2,11 @@
 
 ## Purpose
 
-GitHub ActionsのCI、PR用app version更新、Vercel Analytics / Speed Insights、API key生成など、通常デプロイ以外のリリース運用を確認します。
+GitHub ActionsのCI、Git Tagを正とするProduction Release、Vercel Analytics / Speed Insights、API key生成など、通常デプロイ以外のリリース運用を確認します。
 
 ## When to use
 
-- CI通知、PR version更新、Required Status Checkを確認するとき
+- CI通知、Production Release、Required Status Checkを確認するとき
 - API keyを生成またはローテーションするとき
 - Vercel Analytics / Speed Insightsを有効化・再開するとき
 
@@ -45,7 +45,31 @@ Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secret
 
 `Lint, Test, Build`ジョブは従来どおり成功・失敗時にSlackへ通知します。E2Eジョブは失敗時に限り、同じWebhookと、設定されている場合は同じChannelへ通知します。E2E成功時の追加通知はありません。通知にはRepository名、Branch名、GitHub Actions Run URLを含めます。失敗時はRun URLから実行結果を開き、保存されたPlaywright artifactを確認します。
 
-PR用version更新workflowは、docs-only、OpenAPI-only、`.github/**`のみのPRではversionとPR本文のApp Version欄を更新しません。それ以外の変更がある場合、必要に応じて`app-version.json`、rootの`package.json`、`package-lock.json`を同期し、PR本文のApp Version欄も更新します。`APP_VERSION_BUMP`が未設定または`patch`ならpatch、`minor`ならminorを更新し、majorは自動更新しません。Vercel buildではrelease dateだけをJST当日に更新します。
+## Production Release
+
+PRや`main`へVersion更新専用commitは作りません。`main`へのpushを対象にした`CI` Workflowが成功すると、`Production Release` Workflowが同じSHAを対象に動きます。`production-release` concurrencyで直列化し、実行時点の`origin/main`とCI対象SHAが異なる場合は古いReleaseをskipします。直近のannotated SemVer Tag（`vX.Y.Z`）からpatchを採番し、そのTagが指すcommitをcheckoutしたままVercel CLIでProductionへdeployします。rootの`package.json`と`package-lock.json`のVersionはnpm metadataとして扱い、Releaseのたびに書き換えません。
+
+Release WorkflowはVercel CLIの準備後、Deployment開始直前に`YYYY-MM-DD HH:mm JST`を確定します。Tag messageに`Release vX.Y.Z`とその日時を記録し、Deploymentのbuild/runtimeへ`APP_RELEASE_VERSION`、`APP_RELEASE_DATE`（`YYYY-MM-DDTHH:mm:00+09:00`）、`APP_RELEASE_GIT_SHA`（full SHA）を渡します。Public FooterにはVersionと日時のみ、認証済みAdminには短縮SHAも表示します。Tag作成後にDeploymentが失敗した場合、Productionの現行Deploymentは維持されます。Workflowの再実行は同一SHAのTagと日時を再利用し、新しいVersionを採番しません。Tagが異なるSHAを指す場合や、より新しいReleaseが存在する場合は停止します。
+
+### 移行前の設定
+
+この方式を含むPRをmergeする前に、GitHub Actions Secret `VERCEL_TOKEN`、`VERCEL_ORG_ID`、`VERCEL_PROJECT_ID`を設定します。値はVercelの対象Projectに限定し、Repositoryやログへ記録しません。`vercel.json`は`main`のGit自動Deploymentだけを無効化し、PR Previewは維持します。Release Workflowは[Vercel CLIのsource deployment](https://vercel.com/docs/cli/deploy)を使うため、Tag対象SHAのcheckout済みソースとRelease metadataを一緒にbuildします。
+
+初回Release前に、現在のProduction Deploymentのcommit SHA、表示Version、Deployment時刻をVercel側で確認し、そのcommitへannotated baseline Tagを作成します。Git管理の旧Versionや`main`の最新SHAをProductionの代用にしません。Tag messageは`Release vX.Y.Z`と`YYYY-MM-DD HH:mm JST`の2行です。以下の変数には確認済みの値を設定してから実行します。
+
+```bash
+git fetch origin --tags
+git cat-file -e "${PRODUCTION_SHA}^{commit}"
+git tag -a "$BASELINE_TAG" "$PRODUCTION_SHA" -m "Release $BASELINE_TAG"$'\n'"$PRODUCTION_RELEASED_AT"
+git push origin "refs/tags/$BASELINE_TAG"
+git rev-parse "${BASELINE_TAG}^{commit}"
+```
+
+`BASELINE_TAG`は実際のProduction表示Version（例: `v0.1.64`）、`PRODUCTION_RELEASED_AT`は確認したDeployment時刻をJSTの分単位で指定します。既存Tagの有無と対象SHAを事前に確認し、異なるcommitを指すTagは上書きしません。baseline Tag、3つのSecret、Previewの動作を確認できるまでmergeしません。
+
+### Release後の確認
+
+`main`のCIとE2E、Release Workflow、Tagの対象SHA、VercelのProduction DeploymentがReadyであることを確認します。ProductionのPublic FooterのVersion・JST日時がTag messageと一致し、AdminのSHAがTag対象commitと一致することを確認します。Localはmetadata未設定時にDevelopmentを表示し、Previewはmetadataの有無にかかわらずPreviewを表示します。Local/PreviewはRelease Tagを作りません。Version更新専用のGitHub App、Actions Secret、Dependabot Secretは不要です。
 
 ## API key生成
 

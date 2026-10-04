@@ -38,6 +38,13 @@
 - トップページはHeader / Map / compact Footerで構成するMap専用のViewport Shellとし、`100dvh`を基準に地図領域を確保します。Search / Filter / 現在地操作 / 結果件数はMap上のオーバーレイ、店舗一覧はDesktopではMap横のPanel、狭いViewportではMap内のBottom Sheetで表示します。
 - `/privacy` と管理画面は通常のDocument Flowを維持し、Map専用のViewport制約を適用しません。
 
+### Release情報
+
+- ProductionのVersionはGit Tag（`vX.Y.Z`）、Release日時はRelease Workflowが確定したJSTの分単位、Git SHAはTag対象commitを正とします。PRとPreviewでは新しいRelease Versionを採番しません。
+- Public Footerは日本語・英語ともVersionと`YYYY-MM-DD HH:mm JST`を表示し、Git SHAは表示しません。Mapのcompact Footerでも日時を表示します。
+- 認証済み管理画面ではVersion、Release日時、Git Commitの先頭12文字を表示します。full SHAはRelease metadataとして保持します。
+- metadataがないLocal/PreviewはDevelopment/Previewのfallbackを表示し、Productionのmetadata欠落はbuild時に拒否します。
+
 ### 管理画面
 
 - `/admin/login` で管理者がログインする
