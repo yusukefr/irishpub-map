@@ -42,11 +42,11 @@ export function parseProductionHostnames(value) {
       .map((hostname) => hostname.trim())
       .filter(Boolean) ?? [];
   if (
-    hostnames.length < 3 ||
+    hostnames.length < 1 ||
     new Set(hostnames).size !== hostnames.length ||
     hostnames.some((hostname) => !validHostname(hostname))
   ) {
-    throw new Error("At least three distinct Production hostnames are required.");
+    throw new Error("At least one distinct Production hostname is required.");
   }
   return hostnames;
 }
@@ -104,6 +104,44 @@ function vercelOptions({ token, orgId, projectId, hostnames, fetchImpl }) {
   return { options: { token, orgId, fetchImpl }, productionHostnames: parseProductionHostnames(hostnames) };
 }
 
+/**
+ * 全hostnameが同じ旧Deploymentを指す間だけ、candidateへの切替を待ちます。
+ * 分岐・API失敗・metadata不一致は再試行せず、marker作成前に停止します。
+ * @param {object} options 検証対象と待機条件。now/sleepは時間を進めるテストで差し替えます。
+ * @returns {Promise<object>} 公開を確認したRelease metadataとDeployment ID。
+ */
+export async function waitForPublishedCandidate({
+  candidateId,
+  expected,
+  token,
+  orgId,
+  projectId,
+  hostnames,
+  fetchImpl = fetch,
+  now = Date.now,
+  sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
+  timeoutMs = 90_000,
+  intervalMs = 5_000,
+} = {}) {
+  if (typeof candidateId !== "string" || !candidateId) throw new Error("Candidate deployment ID is required.");
+  if (!Number.isFinite(timeoutMs) || timeoutMs < 0 || !Number.isFinite(intervalMs) || intervalMs <= 0) {
+    throw new Error("Invalid Production hostname polling interval or timeout.");
+  }
+  const { options, productionHostnames } = vercelOptions({ token, orgId, projectId, hostnames, fetchImpl });
+  const deadline = now() + timeoutMs;
+  while (true) {
+    const deploymentId = await currentProductionDeploymentId(productionHostnames, projectId, options);
+    if (deploymentId === candidateId) {
+      const current = await vercelJson(`/v13/deployments/${encodeURIComponent(deploymentId)}`, options);
+      assertProductionMatches(current, deploymentId, expected);
+      return { expected, deploymentId };
+    }
+    const remaining = deadline - now();
+    if (remaining <= 0) throw new Error("Production hostnames did not switch to the candidate before timeout.");
+    await sleep(Math.min(intervalMs, remaining));
+  }
+}
+
 /** 新規Releaseは最新Tag、Tag push再試行は保存済み候補と現行Productionを照合します。 */
 export async function verifyProductionRelease({
   cwd = process.cwd(),
@@ -151,6 +189,10 @@ export async function verifyPublishedCandidate({
   projectId,
   hostnames,
   fetchImpl = fetch,
+  now,
+  sleep,
+  timeoutMs,
+  intervalMs,
 } = {}) {
   if (!metadataFile || !candidateDeploymentFile) throw new Error("Candidate metadata and deployment URL are required.");
   const expected = readReleaseMetadata(metadataFile);
@@ -168,15 +210,23 @@ export async function verifyPublishedCandidate({
   ) {
     throw new Error("Invalid candidate deployment URL.");
   }
-  const { options, productionHostnames } = vercelOptions({ token, orgId, projectId, hostnames, fetchImpl });
+  const { options } = vercelOptions({ token, orgId, projectId, hostnames, fetchImpl });
   const candidate = await vercelJson(`/v13/deployments/${encodeURIComponent(candidateUrl.hostname)}`, options);
   if (typeof candidate?.id !== "string" || !candidate.id) throw new Error("Candidate deployment ID is missing.");
   assertProductionMatches(candidate, candidate.id, expected);
-  const deploymentId = await currentProductionDeploymentId(productionHostnames, projectId, options);
-  if (deploymentId !== candidate.id) throw new Error("Production hostnames do not point to the candidate deployment.");
-  const current = await vercelJson(`/v13/deployments/${encodeURIComponent(deploymentId)}`, options);
-  assertProductionMatches(current, deploymentId, expected);
-  return { expected, deploymentId };
+  return waitForPublishedCandidate({
+    candidateId: candidate.id,
+    expected,
+    token,
+    orgId,
+    projectId,
+    hostnames,
+    fetchImpl,
+    now,
+    sleep,
+    timeoutMs,
+    intervalMs,
+  });
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
