@@ -54,7 +54,7 @@ const readOnlyAnnotations = {
 const createAnnotations = {
   readOnlyHint: false,
   destructiveHint: false,
-  idempotentHint: true,
+  idempotentHint: false,
   openWorldHint: false,
 } as const;
 const mutationAnnotations = {
@@ -284,7 +284,7 @@ export function registerMcpTools(server: McpServer): void {
     {
       title: "Create content draft",
       description:
-        "Write operation. Creates a new content draft through the Automation API with content:create scope. Call list_content first to check existing content. Requires idempotencyKey for safe retries: reuse the same key and payload if the result is unknown. Does not publish, update, or delete existing content. Call get_content with the returned ID after creation to verify the saved draft.",
+        "Write operation. Creates a new content draft through the Automation API with content:create scope. Call list_content first to check existing content. Requires idempotencyKey for safe retries: reuse the same key and payload within 24 hours if the result is unknown. Does not publish, update, or delete existing content. Call get_content with the returned ID after creation to verify the saved draft.",
       inputSchema: contentWrite.extend({ idempotencyKey }),
       outputSchema: contentCreateToolResponse,
       annotations: createAnnotations,
@@ -332,7 +332,7 @@ export function registerMcpTools(server: McpServer): void {
     {
       title: "Create quiz draft",
       description:
-        "Write operation. Creates a new quiz draft through the Automation API with quiz:create scope; incomplete drafts with 0–4 choices are allowed. Call list_quizzes first to check for duplicates. Requires idempotencyKey for safe retries: reuse the same key and payload if the result is unknown. Does not publish, update, or delete existing quizzes. Call get_quiz with the returned ID after creation to verify the saved draft.",
+        "Write operation. Creates a new quiz draft through the Automation API with quiz:create scope; incomplete drafts with 0–4 choices are allowed. Call list_quizzes first to check for duplicates. Requires idempotencyKey for safe retries: reuse the same key and payload within 24 hours if the result is unknown. Does not publish, update, or delete existing quizzes. Call get_quiz with the returned ID after creation to verify the saved draft.",
       inputSchema: quizWrite.extend({ idempotencyKey }),
       outputSchema: quizCreateToolResponse,
       annotations: createAnnotations,

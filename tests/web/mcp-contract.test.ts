@@ -245,7 +245,7 @@ describe("Remote MCP contract", () => {
       expect(tool.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: index % 3 !== 0,
-        idempotentHint: true,
+        idempotentHint: index % 3 !== 0,
         openWorldHint: false,
       });
       expect(tool.description).toContain(writeScopes[index]);

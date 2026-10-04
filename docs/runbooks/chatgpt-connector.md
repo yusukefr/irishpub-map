@@ -27,7 +27,7 @@ allow listはRead 10件とContent / Quiz Write 6件の計16件です。Read Tool
 | `update_quiz` | PUT `/quiz/:id` | `quiz:update` | 編集可能なQuiz全体Snapshotを置換 |
 | `set_quiz_publication` | PATCH `/quiz/:id/publication` | `quiz:publish` | `isPublished` を `false` / `true` に変更 |
 
-Createは `readOnlyHint: false` / `destructiveHint: false` / `idempotentHint: true`、UpdateとPublicationは `readOnlyHint: false` / `destructiveHint: true` です。全Write Toolは `openWorldHint: false` です。Createの冪等性は同じ `idempotencyKey` とPayloadを再利用した場合に成立します。これらのannotationはClientへのHintであり、承認や認可の強制ではありません。
+Createは `readOnlyHint: false` / `destructiveHint: false` / `idempotentHint: false`、UpdateとPublicationは `readOnlyHint: false` / `destructiveHint: true` です。全Write Toolは `openWorldHint: false` です。Createで同じ `idempotencyKey` とPayloadを使った安全な再試行は、成功結果の保持期間である24時間内に限られます。期限後の同じ引数での再実行は新しいResourceを作成し得るため、Createを恒久的に冪等とは扱いません。これらのannotationはClientへのHintであり、承認や認可の強制ではありません。
 
 各Pathには `/api/automation/v1` が付きます。ContentとQuizの一覧にPaginationやFilterはありません。`list_pubs` のみ `name`（最大100文字）、`prefecture`（1～47）、`municipality`（6桁・対応する都道府県が必要）、`status`（`open` / `temporarily_closed` / `closed` / `unknown`）、`tag`（UUID）、`published`（boolean）、`page`（1～100000）を受け付けます。複数FilterはAND条件で、Page SizeはServer固定の50です。応答の `page`、`pageSize`、`total` を確認して次ページを取得します。独自の `limit`、`offset`、`query`、`search` はありません。
 
@@ -69,7 +69,7 @@ Content Write本文は `kind`、`slug`、`category`、`heroImageAssetId`、`tran
 
 Quiz Write本文は `category`、`specialDate`、`correctChoiceId`、`sourceUrl`、`relatedContentId`、`imageAssetId`、`translations`、`choices` から構成します。Draftでは0～4択や未完成翻訳を許容します。`id`、`isPublished`、`image`、時刻、Choiceの `sortOrder` は送りません。Choice配列順からServerが `sortOrder` を決めます。Publish時はCategory、日英のQuestion / Explanation / Source Label、HTTPS Source URL、完成した4択とその一つを指す `correctChoiceId`、画像がある場合は日英Alt Textが必要です。要件の判定はAutomation APIを正とし、不足値を作りません。
 
-Create Toolの `idempotencyKey` は業務データではなくConnector制御値です。新しい論理Createごとに1～128文字のKeyを生成し、MCP Serverが `Idempotency-Key` Headerへ移します。空文字・前後空白・制御文字は不可です。同じ処理の結果が不明な場合は同じPayloadとKeyで再試行します。`idempotency_in_progress` では時間をおいて同じKeyで再試行し、新しいKeyで重複作成しません。
+Create Toolの `idempotencyKey` は業務データではなくConnector制御値です。新しい論理Createごとに1～128文字のKeyを生成し、MCP Serverが `Idempotency-Key` Headerへ移します。空文字・前後空白・制御文字は不可です。同じ処理の結果が不明な場合は、成功結果の24時間の保持期間内に同じPayloadとKeyで再試行します。24時間以上経過した場合は自動再試行せず、一覧と詳細で作成済みか確認します。`idempotency_in_progress` では時間をおいて同じKeyで再試行し、新しいKeyで重複作成しません。
 
 ## 接続と疎通
 
