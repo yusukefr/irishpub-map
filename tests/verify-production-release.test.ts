@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { prepareRelease } from "../scripts/prepare-release.mjs";
 import {
   parseProductionHostnames,
+  resolveProductionDeployments,
   verifyProductionRelease,
   verifyPublishedCandidate,
   waitForPublishedCandidate,
@@ -14,6 +15,7 @@ import {
 const directories: string[] = [];
 const projectId = "prj_example";
 const deploymentId = "dpl_example";
+const previousDeploymentId = "dpl_previous";
 const hostnames = "production.example.com,stable.example.com";
 const hostnameList = hostnames.split(",");
 const candidateHostname = "candidate.example.vercel.app";
@@ -106,7 +108,11 @@ describe("Production release preflight", () => {
         hostnames,
         fetchImpl: vercel.fetchImpl,
       }),
-    ).resolves.toEqual({ expected: { ...baseline, gitSha: baselineSha }, retry: false });
+    ).resolves.toEqual({
+      expected: { ...baseline, gitSha: baselineSha },
+      retry: false,
+      previousDeploymentId: deploymentId,
+    });
   });
 
   it.each(["releaseVersion", "releaseDate", "releaseGitSha"])(
@@ -175,7 +181,11 @@ describe("Production release preflight", () => {
       hostnames,
       fetchImpl: vercel.fetchImpl,
     };
-    await expect(verifyProductionRelease(options)).resolves.toEqual({ expected: candidate, retry: true });
+    await expect(verifyProductionRelease(options)).resolves.toEqual({
+      expected: candidate,
+      retry: true,
+      previousDeploymentId: deploymentId,
+    });
     writeFileSync(deployedFile, JSON.stringify({ ...candidate, gitSha: "a".repeat(40) }));
     await expect(verifyProductionRelease(options)).rejects.toThrow("Stored deployment marker");
   });
@@ -191,6 +201,7 @@ describe("Production release preflight", () => {
       sha,
       metadataFile,
       candidateDeploymentFile,
+      previousDeploymentId,
       token: "test-token",
       orgId: "team_example",
       projectId,
@@ -209,19 +220,20 @@ describe("Production release preflight", () => {
 
     vercel.aliases[hostnameList[0]].deploymentId = "dpl_other";
     vercel.aliases[hostnameList[0]].deployment.id = "dpl_other";
-    await expect(verifyPublishedCandidate(options)).rejects.toThrow("different deployments");
+    await expect(verifyPublishedCandidate(options)).rejects.toThrow("unexpected deployment");
 
-    pointAllHostnamesTo(vercel, "dpl_previous");
+    pointAllHostnamesTo(vercel, previousDeploymentId);
     await expect(verifyPublishedCandidate(options)).rejects.toThrow("did not switch to the candidate");
   });
 
   it("waits for all Production hostnames to switch to the candidate", async () => {
     const expected = { ...baseline, gitSha: "a".repeat(40) };
     const vercel = fakeVercel(expected);
-    pointAllHostnamesTo(vercel, "dpl_previous");
+    pointAllHostnamesTo(vercel, previousDeploymentId);
     let currentTime = 0;
     let waits = 0;
     const options = {
+      previousDeploymentId,
       candidateId: deploymentId,
       expected,
       token: "test-token",
@@ -242,14 +254,52 @@ describe("Production release preflight", () => {
     expect(waits).toBe(2);
   });
 
-  it("fails closed when Production hostnames never switch before timeout", async () => {
+  it("keeps polling while previous and candidate deployments are mixed", async () => {
     const expected = { ...baseline, gitSha: "a".repeat(40) };
     const vercel = fakeVercel(expected);
-    pointAllHostnamesTo(vercel, "dpl_previous");
+    vercel.aliases[hostnameList[0]].deploymentId = previousDeploymentId;
+    vercel.aliases[hostnameList[0]].deployment.id = previousDeploymentId;
+    await expect(
+      resolveProductionDeployments(hostnameList, projectId, {
+        token: "test-token",
+        orgId: "team_example",
+        fetchImpl: vercel.fetchImpl,
+      }),
+    ).resolves.toEqual({ [hostnameList[0]]: previousDeploymentId, [hostnameList[1]]: deploymentId });
     let currentTime = 0;
     let waits = 0;
     await expect(
       waitForPublishedCandidate({
+        previousDeploymentId,
+        candidateId: deploymentId,
+        expected,
+        token: "test-token",
+        orgId: "team_example",
+        projectId,
+        hostnames,
+        fetchImpl: vercel.fetchImpl,
+        now: () => currentTime,
+        sleep: async (milliseconds: number) => {
+          currentTime += milliseconds;
+          waits += 1;
+          pointAllHostnamesTo(vercel, deploymentId);
+        },
+        timeoutMs: 10,
+        intervalMs: 5,
+      }),
+    ).resolves.toEqual({ expected, deploymentId });
+    expect(waits).toBe(1);
+  });
+
+  it("fails closed when Production hostnames never switch before timeout", async () => {
+    const expected = { ...baseline, gitSha: "a".repeat(40) };
+    const vercel = fakeVercel(expected);
+    pointAllHostnamesTo(vercel, previousDeploymentId);
+    let currentTime = 0;
+    let waits = 0;
+    await expect(
+      waitForPublishedCandidate({
+        previousDeploymentId,
         candidateId: deploymentId,
         expected,
         token: "test-token",
@@ -269,11 +319,12 @@ describe("Production release preflight", () => {
     expect(waits).toBe(2);
   });
 
-  it("stops immediately for split hostnames, metadata mismatch, or API failure", async () => {
+  it("stops immediately for an unknown deployment, metadata mismatch, or API failure", async () => {
     const expected = { ...baseline, gitSha: "a".repeat(40) };
     const vercel = fakeVercel(expected);
     let waits = 0;
     const options = {
+      previousDeploymentId,
       candidateId: deploymentId,
       expected,
       token: "test-token",
@@ -288,9 +339,9 @@ describe("Production release preflight", () => {
       timeoutMs: 10,
       intervalMs: 5,
     };
-    vercel.aliases[hostnameList[0]].deploymentId = "dpl_previous";
-    vercel.aliases[hostnameList[0]].deployment.id = "dpl_previous";
-    await expect(waitForPublishedCandidate(options)).rejects.toThrow("different deployments");
+    vercel.aliases[hostnameList[0]].deploymentId = "dpl_unexpected";
+    vercel.aliases[hostnameList[0]].deployment.id = "dpl_unexpected";
+    await expect(waitForPublishedCandidate(options)).rejects.toThrow("unexpected deployment");
     pointAllHostnamesTo(vercel, deploymentId);
     vercel.deployment.meta.releaseDate = "mismatch";
     await expect(waitForPublishedCandidate(options)).rejects.toThrow("does not match");
@@ -303,5 +354,23 @@ describe("Production release preflight", () => {
       }),
     ).rejects.toThrow("Vercel API request failed");
     expect(waits).toBe(0);
+  });
+
+  it("requires a distinct previous deployment ID before polling", async () => {
+    const expected = { ...baseline, gitSha: "a".repeat(40) };
+    const vercel = fakeVercel(expected);
+    const options = {
+      candidateId: deploymentId,
+      expected,
+      token: "test-token",
+      orgId: "team_example",
+      projectId,
+      hostnames,
+      fetchImpl: vercel.fetchImpl,
+    };
+    await expect(waitForPublishedCandidate(options)).rejects.toThrow("distinct previous deployment ID");
+    await expect(waitForPublishedCandidate({ ...options, previousDeploymentId: deploymentId })).rejects.toThrow(
+      "distinct previous deployment ID",
+    );
   });
 });

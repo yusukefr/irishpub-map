@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { compareReleaseTags, nextPatchTag, readReleaseMetadata, releaseDateFromTag } from "./prepare-release.mjs";
 
@@ -74,9 +74,15 @@ async function vercelJson(path, { token, orgId, fetchImpl }) {
   return response.json();
 }
 
-/** 各hostnameを実際のAlias APIで解決し、全てが同じProject/Deploymentを指すことを要求します。 */
-export async function currentProductionDeploymentId(hostnames, projectId, options) {
-  const ids = await Promise.all(
+/**
+ * 各hostnameのAliasを検証し、Project内の参照先Deployment IDを個別に返します。
+ * @param {string[]} hostnames 設定済みのProduction hostname。
+ * @param {string} projectId 対象Project ID。
+ * @param {object} options Vercel APIの認証とfetch実装。
+ * @returns {Promise<Record<string, string>>} hostnameごとのDeployment ID。
+ */
+export async function resolveProductionDeployments(hostnames, projectId, options) {
+  const entries = await Promise.all(
     hostnames.map(async (hostname) => {
       const alias = await vercelJson(
         `/v4/aliases/${encodeURIComponent(hostname)}?projectId=${encodeURIComponent(projectId)}`,
@@ -92,9 +98,21 @@ export async function currentProductionDeploymentId(hostnames, projectId, option
       ) {
         throw new Error("Production hostname could not be resolved to the expected project deployment.");
       }
-      return alias.deploymentId;
+      return [hostname, alias.deploymentId];
     }),
   );
+  return Object.fromEntries(entries);
+}
+
+/**
+ * deploy前に全hostnameが同じProject/Deploymentを指すことを要求します。
+ * @param {string[]} hostnames 設定済みのProduction hostname。
+ * @param {string} projectId 対象Project ID。
+ * @param {object} options Vercel APIの認証とfetch実装。
+ * @returns {Promise<string>} 全hostnameが指すDeployment ID。
+ */
+export async function currentProductionDeploymentId(hostnames, projectId, options) {
+  const ids = Object.values(await resolveProductionDeployments(hostnames, projectId, options));
   if (new Set(ids).size !== 1) throw new Error("Production hostnames point to different deployments.");
   return ids[0];
 }
@@ -105,12 +123,13 @@ function vercelOptions({ token, orgId, projectId, hostnames, fetchImpl }) {
 }
 
 /**
- * 全hostnameが同じ旧Deploymentを指す間だけ、candidateへの切替を待ちます。
- * 分岐・API失敗・metadata不一致は再試行せず、marker作成前に停止します。
+ * 旧Deploymentとcandidateへの参照が混在する間、全hostnameの切替を待ちます。
+ * 第三のDeployment・API失敗・metadata不一致は再試行せず、marker作成前に停止します。
  * @param {object} options 検証対象と待機条件。now/sleepは時間を進めるテストで差し替えます。
  * @returns {Promise<object>} 公開を確認したRelease metadataとDeployment ID。
  */
 export async function waitForPublishedCandidate({
+  previousDeploymentId,
   candidateId,
   expected,
   token,
@@ -124,17 +143,23 @@ export async function waitForPublishedCandidate({
   intervalMs = 5_000,
 } = {}) {
   if (typeof candidateId !== "string" || !candidateId) throw new Error("Candidate deployment ID is required.");
+  if (typeof previousDeploymentId !== "string" || !previousDeploymentId || previousDeploymentId === candidateId) {
+    throw new Error("A distinct previous deployment ID is required.");
+  }
   if (!Number.isFinite(timeoutMs) || timeoutMs < 0 || !Number.isFinite(intervalMs) || intervalMs <= 0) {
     throw new Error("Invalid Production hostname polling interval or timeout.");
   }
   const { options, productionHostnames } = vercelOptions({ token, orgId, projectId, hostnames, fetchImpl });
   const deadline = now() + timeoutMs;
   while (true) {
-    const deploymentId = await currentProductionDeploymentId(productionHostnames, projectId, options);
-    if (deploymentId === candidateId) {
-      const current = await vercelJson(`/v13/deployments/${encodeURIComponent(deploymentId)}`, options);
-      assertProductionMatches(current, deploymentId, expected);
-      return { expected, deploymentId };
+    const deploymentIds = Object.values(await resolveProductionDeployments(productionHostnames, projectId, options));
+    if (deploymentIds.some((id) => id !== previousDeploymentId && id !== candidateId)) {
+      throw new Error("Production hostname points to an unexpected deployment.");
+    }
+    if (deploymentIds.every((id) => id === candidateId)) {
+      const current = await vercelJson(`/v13/deployments/${encodeURIComponent(candidateId)}`, options);
+      assertProductionMatches(current, candidateId, expected);
+      return { expected, deploymentId: candidateId };
     }
     const remaining = deadline - now();
     if (remaining <= 0) throw new Error("Production hostnames did not switch to the candidate before timeout.");
@@ -142,7 +167,7 @@ export async function waitForPublishedCandidate({
   }
 }
 
-/** 新規Releaseは最新Tag、Tag push再試行は保存済み候補と現行Productionを照合します。 */
+/** 新規Releaseは最新Tag、Tag push再試行は保存済み候補と現行Productionを照合し、旧Deployment IDを返します。 */
 export async function verifyProductionRelease({
   cwd = process.cwd(),
   sha,
@@ -176,14 +201,15 @@ export async function verifyProductionRelease({
   const deploymentId = await currentProductionDeploymentId(productionHostnames, projectId, options);
   const deployment = await vercelJson(`/v13/deployments/${encodeURIComponent(deploymentId)}`, options);
   assertProductionMatches(deployment, deploymentId, expected);
-  return { expected, retry };
+  return { expected, retry, previousDeploymentId: deploymentId };
 }
 
-/** CandidateのREADY状態と現行Production hostnameへの公開を確認してからmarkerを許可します。 */
+/** CandidateのREADY状態と、保存済み旧IDからのProduction公開を確認してからmarkerを許可します。 */
 export async function verifyPublishedCandidate({
   sha,
   metadataFile,
   candidateDeploymentFile,
+  previousDeploymentId,
   token,
   orgId,
   projectId,
@@ -215,6 +241,7 @@ export async function verifyPublishedCandidate({
   if (typeof candidate?.id !== "string" || !candidate.id) throw new Error("Candidate deployment ID is missing.");
   assertProductionMatches(candidate, candidate.id, expected);
   return waitForPublishedCandidate({
+    previousDeploymentId,
     candidateId: candidate.id,
     expected,
     token,
@@ -238,8 +265,21 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     projectId: process.env.VERCEL_PROJECT_ID,
     hostnames: process.env.VERCEL_PRODUCTION_HOSTNAMES,
   };
-  const result = process.env.CANDIDATE_DEPLOYMENT_FILE
-    ? await verifyPublishedCandidate({ ...common, candidateDeploymentFile: process.env.CANDIDATE_DEPLOYMENT_FILE })
-    : await verifyProductionRelease({ ...common, deployedFile: process.env.RELEASE_DEPLOYED_FILE });
+  let result;
+  if (process.env.CANDIDATE_DEPLOYMENT_FILE) {
+    if (!process.env.PREVIOUS_DEPLOYMENT_FILE || !existsSync(process.env.PREVIOUS_DEPLOYMENT_FILE)) {
+      throw new Error("Previous deployment ID file is required.");
+    }
+    result = await verifyPublishedCandidate({
+      ...common,
+      candidateDeploymentFile: process.env.CANDIDATE_DEPLOYMENT_FILE,
+      previousDeploymentId: readFileSync(process.env.PREVIOUS_DEPLOYMENT_FILE, "utf8").trim(),
+    });
+  } else {
+    result = await verifyProductionRelease({ ...common, deployedFile: process.env.RELEASE_DEPLOYED_FILE });
+    if (process.env.PREVIOUS_DEPLOYMENT_FILE) {
+      writeFileSync(process.env.PREVIOUS_DEPLOYMENT_FILE, result.previousDeploymentId, { flag: "wx", mode: 0o600 });
+    }
+  }
   console.log(`Verified current Production for ${result.expected.version}.`);
 }
