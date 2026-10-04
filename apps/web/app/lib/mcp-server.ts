@@ -12,6 +12,8 @@ type TokenVerifier = Parameters<typeof withMcpAuth>[1];
 export function createAuthenticatedMcpHandler(verifyToken: TokenVerifier = verifyMcpRequest) {
   const mcpHandler = createMcpHandler(registerMcpTools, {
     serverInfo: { name: "irishpub-map", version: "1.0.0" },
+    instructions:
+      "For Content or Quiz creation, list resources first and create drafts only. Generate one idempotencyKey per logical create; reuse the same key and payload within 24 hours for uncertain results. Before update or publication, call get_content or get_quiz, show the target and exact before/after changes, and obtain explicit user confirmation. After every write, call the matching get tool to verify saved values. Never publish during draft creation, invent missing data, or retry a failed create with a new key.",
     verboseLogs: false,
   });
 
