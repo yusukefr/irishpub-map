@@ -40,7 +40,7 @@
 
 ### Release情報
 
-- ProductionのVersionは成功済みProduction Deploymentに対応するGit Tag（`vX.Y.Z`）、Release日時はDeployment前にRelease Workflowが確定したJSTの分単位、Git SHAはTag対象commitを正とします。TagはProduction成功後に作成します。PR、Preview、docs-onlyなどRelease対象外の変更では新しいRelease Versionを採番しません。
+- ProductionのVersionは成功済みProduction Deploymentに対応するGit Tag（`vX.Y.Z`）、Release日時はDeployment前にRelease Workflowが確定したJSTの分単位、Git SHAはTag対象commitを正とします。TagはProduction成功後に作成します。PR、Preview、最新Production Tagからの累積差分がdocs-onlyなどRelease対象外のみの場合は新しいRelease Versionを採番しません。
 - Public Footerは日本語・英語ともVersionと`YYYY-MM-DD HH:mm JST`を表示し、Git SHAは表示しません。Mapのcompact Footerでも日時を表示します。
 - 認証済み管理画面ではVersion、Release日時、Git Commitの先頭12文字を表示します。full SHAはRelease metadataとして保持します。
 - metadataがないLocal/PreviewはDevelopment/Previewのfallbackを表示し、Productionのmetadata欠落はbuild時に拒否します。

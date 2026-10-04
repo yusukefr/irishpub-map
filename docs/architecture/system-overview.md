@@ -2,7 +2,7 @@
 
 ## 概要
 
-Irish Pub Map は、Vercel 上の Next.js アプリとして動作します。公開画面はサーバー側で店舗データを取得し、ブラウザでは MapLibre GL JS により地図と店舗一覧を表示します。トップページ `/` はHeader / Map workspace / compact FooterのViewport Shellとして構成し、Privacyや管理画面とはレイアウト境界を分けます。管理画面は Cookie ベースの管理者セッションで保護し、Neon Postgres が設定されている場合に店舗データを永続化します。Productionは`main`のCI・E2E成功とRelease対象変更を条件に同じcommitをVercelへdeployし、成功後にannotated Git Tagを作成します。
+Irish Pub Map は、Vercel 上の Next.js アプリとして動作します。公開画面はサーバー側で店舗データを取得し、ブラウザでは MapLibre GL JS により地図と店舗一覧を表示します。トップページ `/` はHeader / Map workspace / compact FooterのViewport Shellとして構成し、Privacyや管理画面とはレイアウト境界を分けます。管理画面は Cookie ベースの管理者セッションで保護し、Neon Postgres が設定されている場合に店舗データを永続化します。Productionは`main`のCI・E2E成功と最新Production Tagからの未Release変更を条件に同じcommitをVercelへdeployし、成功後にannotated Git Tagを作成します。
 
 ```mermaid
 flowchart TB

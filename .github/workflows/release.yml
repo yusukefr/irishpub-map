@@ -54,8 +54,19 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Check deployment credentials
+      - name: Recheck unreleased production changes
         if: steps.current.outputs.release == 'true'
+        id: relevance
+        env:
+          CI_EVENT_NAME: push
+          CI_BASE_SHA: ${{ github.event.before }}
+          CI_HEAD_SHA: ${{ inputs.sha }}
+        run: |
+          git fetch --tags origin
+          node scripts/classify-ci-changes.mjs
+
+      - name: Check deployment credentials
+        if: steps.relevance.outputs.release_relevant == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -67,7 +78,7 @@ jobs:
           fi
 
       - name: Prepare Vercel CLI
-        if: steps.current.outputs.release == 'true'
+        if: steps.relevance.outputs.release_relevant == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -77,7 +88,7 @@ jobs:
           vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
 
       - name: Find saved release artifacts
-        if: steps.current.outputs.release == 'true'
+        if: steps.relevance.outputs.release_relevant == 'true'
         id: artifacts
         env:
           GH_TOKEN: ${{ github.token }}
@@ -102,7 +113,7 @@ jobs:
           path: ${{ runner.temp }}/release-candidate
 
       - name: Prepare release metadata
-        if: steps.current.outputs.release == 'true'
+        if: steps.relevance.outputs.release_relevant == 'true'
         id: metadata
         env:
           RELEASE_METADATA_FILE: ${{ runner.temp }}/release-candidate/release-metadata.json
@@ -111,7 +122,7 @@ jobs:
           node scripts/prepare-release.mjs
 
       - name: Save release metadata for retry
-        if: steps.current.outputs.release == 'true' && steps.artifacts.outputs.metadata != 'true'
+        if: steps.relevance.outputs.release_relevant == 'true' && steps.artifacts.outputs.metadata != 'true'
         uses: actions/upload-artifact@v7.0.1
         with:
           name: release-metadata
@@ -129,7 +140,7 @@ jobs:
           path: ${{ runner.temp }}/release-deployed
 
       - name: Deploy release candidate to Vercel Production
-        if: steps.current.outputs.release == 'true' && steps.artifacts.outputs.deployed != 'true'
+        if: steps.relevance.outputs.release_relevant == 'true' && steps.artifacts.outputs.deployed != 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -156,7 +167,7 @@ jobs:
           cp "$RELEASE_METADATA_FILE" "$RELEASE_DEPLOYED_FILE"
 
       - name: Save successful deployment marker
-        if: steps.current.outputs.release == 'true' && steps.artifacts.outputs.deployed != 'true'
+        if: steps.relevance.outputs.release_relevant == 'true' && steps.artifacts.outputs.deployed != 'true'
         uses: actions/upload-artifact@v7.0.1
         with:
           name: release-deployed
@@ -165,7 +176,7 @@ jobs:
           retention-days: 30
 
       - name: Finalize annotated release tag
-        if: steps.current.outputs.release == 'true'
+        if: steps.relevance.outputs.release_relevant == 'true'
         env:
           RELEASE_METADATA_FILE: ${{ runner.temp }}/release-candidate/release-metadata.json
           RELEASE_DEPLOYED_FILE: ${{ runner.temp }}/release-deployed/release-deployed.json

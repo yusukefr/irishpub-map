@@ -40,7 +40,9 @@ jobs:
           CI_EVENT_NAME: ${{ github.event_name }}
           CI_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
           CI_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-        run: node scripts/classify-ci-changes.mjs
+        run: |
+          if [ "$CI_EVENT_NAME" = "push" ]; then git fetch --tags origin; fi
+          node scripts/classify-ci-changes.mjs
 
       - name: Setup Node.js
         uses: actions/setup-node@v7.0.0
@@ -121,7 +123,7 @@ jobs:
 
   e2e:
     name: E2E
-    if: needs.ci.outputs.code_changed == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: (github.event_name == 'push' && (needs.ci.outputs.code_changed == 'true' || needs.ci.outputs.release_relevant == 'true')) || (github.event_name == 'workflow_dispatch' && needs.ci.outputs.code_changed == 'true')
     needs: ci
     runs-on: ubuntu-24.04
     timeout-minutes: 15

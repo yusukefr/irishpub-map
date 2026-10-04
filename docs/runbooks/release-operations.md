@@ -23,7 +23,7 @@ CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`�
 | --- | --- | --- |
 | Code変更（workflowを含む） | Sensitive data check、LLM security check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | 実行 |
 | `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Sensitive data check、LLM security check、npm ci、OpenAPI lint | 省略 |
-| docs-only | Sensitive data check、LLM security check。npm ciは実行しない | 省略 |
+| docs-only | Sensitive data check、LLM security check。npm ciは実行しない | 未Releaseのアプリ変更があれば実行。それ以外は省略 |
 | `workflow_dispatch` | Code変更と同じFull CI | 実行 |
 
 docs-onlyは`docs/**`（OpenAPIを除く）、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`に限定します。アプリ配下のMarkdownを含む、それ以外のパスはCode変更として扱います。PR中にE2Eを確認する必要があれば、対象branchで`workflow_dispatch`を実行します。
@@ -47,7 +47,7 @@ Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secret
 
 ## Production Release
 
-PRや`main`へVersion更新専用commitは作りません。`main`へのpushでCIとE2Eが成功し、変更に`release_relevant=true`が含まれる場合だけ、CIから`Production Release` reusable workflowを呼びます。対象は`apps/**`（`apps/web/AGENTS.md`を除く）、`packages/**`、rootの`package.json` / `package-lock.json` / `vercel.json` / `.nvmrc` / `.npmrc`、Production環境検証scriptです。docs-only、OpenAPI、workflow、test、E2Eのみの変更はProductionへdeployせず、VersionとTagも進めません。差分を判定できない場合は全検証を行いますが、Releaseは保留します。`production-release` concurrencyで直列化し、実行時点の`origin/main`とCI対象SHAが異なる場合は古いReleaseをskipします。rootの`package.json`と`package-lock.json`のVersionはnpm metadataとして扱い、Releaseのたびに書き換えません。
+PRや`main`へVersion更新専用commitは作りません。`main`へのpushで、最新のannotated Production SemVer Tagから現在のHEADまでにProduction成果物へ影響する未Release変更があり、CIとE2Eが成功した場合だけ、CIから`Production Release` reusable workflowを呼びます。この累積差分で`release_relevant`を決めるため、直前のpushがdocs-onlyでも未Releaseのアプリ変更が残っていればE2EとReleaseを実行します。PRの分類は従来のPR差分を使います。対象は`apps/**`（`apps/web/AGENTS.md`を除く）、`packages/**`、rootの`package.json` / `package-lock.json` / `vercel.json` / `.nvmrc` / `.npmrc`、Production環境検証scriptです。累積差分がdocs-only、OpenAPI、workflow、test、E2EのみならProductionへdeployせず、VersionとTagも進めません。比較元が取得できない場合は全検証を行い、baseline Tagがないなど累積Release判定ができない場合はCIを失敗させます。`production-release` concurrencyで直列化し、実行時点の`origin/main`とCI対象SHAが異なる場合は古いReleaseをskipします。Release Workflow開始時にも最新Tagから対象SHAまでを再判定し、先行Releaseで対象変更が既に含まれた場合はdeployせず終了します。rootの`package.json`と`package-lock.json`のVersionはnpm metadataとして扱い、Releaseのたびに書き換えません。
 
 Release Workflowは直近のannotated SemVer Tag（`vX.Y.Z`）から次のpatch Versionを決め、Deployment開始前に`YYYY-MM-DD HH:mm JST`、full SHAとともに候補metadataをartifactへ保存します。このSHAをcheckoutしたソースへ、候補の`APP_RELEASE_VERSION`、`APP_RELEASE_DATE`（`YYYY-MM-DDTHH:mm:00+09:00`）、`APP_RELEASE_GIT_SHA`をbuild/runtime変数として渡します。Vercel Production Deploymentの成功を確認して成功markerを保存した後、初めて同じSHAのannotated Tagを作成・pushします。Tag messageには`Release vX.Y.Z`と候補日時を記録します。Public FooterにはVersionと日時のみ、認証済みAdminには短縮SHAも表示します。Deploymentが失敗した場合はTagを作らず、再実行では保存済みの候補metadataを再利用します。Tag pushが失敗した場合も、再実行は成功markerを確認してDeploymentを省略し、同じTagを再試行します。Tagが異なるSHAを指す場合や、より新しいReleaseが存在する場合は停止します。
 
