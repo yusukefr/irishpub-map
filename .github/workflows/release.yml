@@ -71,9 +71,10 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_PRODUCTION_HOSTNAMES: ${{ vars.VERCEL_PRODUCTION_HOSTNAMES }}
         run: |
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
-            echo "Production deployment credentials are not configured." >&2
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ] || [ -z "$VERCEL_PRODUCTION_HOSTNAMES" ]; then
+            echo "Production deployment credentials or hostnames are not configured." >&2
             exit 1
           fi
 
@@ -127,6 +128,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_PRODUCTION_HOSTNAMES: ${{ vars.VERCEL_PRODUCTION_HOSTNAMES }}
           RELEASE_METADATA_FILE: ${{ runner.temp }}/release-candidate/release-metadata.json
           RELEASE_DEPLOYED_FILE: ${{ runner.temp }}/release-deployed/release-deployed.json
         run: node scripts/verify-production-release.mjs
@@ -155,11 +157,13 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_PRODUCTION_HOSTNAMES: ${{ vars.VERCEL_PRODUCTION_HOSTNAMES }}
           APP_RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
           APP_RELEASE_DATE: ${{ steps.metadata.outputs.released_at }}
           APP_RELEASE_GIT_SHA: ${{ steps.metadata.outputs.git_sha }}
           RELEASE_METADATA_FILE: ${{ runner.temp }}/release-candidate/release-metadata.json
           RELEASE_DEPLOYED_FILE: ${{ runner.temp }}/release-deployed/release-deployed.json
+          CANDIDATE_DEPLOYMENT_FILE: ${{ runner.temp }}/production-deployment-url
         run: |
           test "$(git rev-parse HEAD)" = "$APP_RELEASE_GIT_SHA"
           vercel deploy --prod --yes --token "$VERCEL_TOKEN" \
@@ -173,6 +177,7 @@ jobs:
             --meta "releaseDate=$APP_RELEASE_DATE" \
             --meta "releaseGitSha=$APP_RELEASE_GIT_SHA" > "$RUNNER_TEMP/production-deployment-url"
           vercel inspect "$(cat "$RUNNER_TEMP/production-deployment-url")" --wait --token "$VERCEL_TOKEN" > /dev/null
+          node scripts/verify-production-release.mjs
           mkdir -p "$RUNNER_TEMP/release-deployed"
           cp "$RELEASE_METADATA_FILE" "$RELEASE_DEPLOYED_FILE"
 
