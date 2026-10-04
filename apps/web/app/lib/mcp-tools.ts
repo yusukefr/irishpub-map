@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
-import { requestAutomationApi, type AutomationApiResult } from "./mcp-automation-client";
+import { requestAutomationApi, type AutomationApiRequest, type AutomationApiResult } from "./mcp-automation-client";
 import {
   contentListResponse,
   contentResponse,
@@ -13,8 +13,17 @@ import {
   statusesResponse,
   tagsResponse,
 } from "./mcp-read-schemas";
+import {
+  contentPublicationInput,
+  contentPublicationResponse,
+  contentWrite,
+  idempotencyKey,
+  quizPublicationInput,
+  quizPublicationResponse,
+  quizWrite,
+} from "./mcp-write-schemas";
 
-/** #510 で審査した Read-only Tool 名です。新しい Endpoint は自動公開しません。 */
+/** 審査済みの MCP Tool 名です。新しい Endpoint は自動公開しません。 */
 export const MCP_TOOL_ALLOW_LIST = [
   "list_prefectures",
   "list_municipalities",
@@ -26,6 +35,12 @@ export const MCP_TOOL_ALLOW_LIST = [
   "get_quiz",
   "list_pubs",
   "get_pub",
+  "create_content",
+  "update_content",
+  "set_content_publication",
+  "create_quiz",
+  "update_quiz",
+  "set_quiz_publication",
 ] as const;
 
 const readOnlyAnnotations = {
@@ -34,6 +49,23 @@ const readOnlyAnnotations = {
   idempotentHint: true,
   openWorldHint: false,
 } as const;
+const createAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: false,
+} as const;
+const mutationAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: true,
+  openWorldHint: false,
+} as const;
+// Automation API の成功本文に含まれない監査用 Header を MCP 結果へ添える。
+const contentWriteResponse = contentResponse.extend({ requestId: z.uuid().optional() });
+const quizWriteResponse = quizResponse.extend({ requestId: z.uuid().optional() });
+const contentPublicationWriteResponse = contentPublicationResponse.extend({ requestId: z.uuid().optional() });
+const quizPublicationWriteResponse = quizPublicationResponse.extend({ requestId: z.uuid().optional() });
 const emptyInput = z.object({}).strict();
 const uuidId = z.object({ id: z.uuid() }).strict();
 const quizId = z
@@ -69,8 +101,8 @@ function errorResult(result: Extract<AutomationApiResult, { ok: false }>) {
   return { isError: true, content: [{ type: "text" as const, text: JSON.stringify(detail) }] };
 }
 
-async function readResult(path: string, schema: z.ZodType, query?: Record<string, string>) {
-  const result = await requestAutomationApi({ method: "GET", path, query });
+async function automationResult(options: AutomationApiRequest, schema: z.ZodType) {
+  const result = await requestAutomationApi(options);
   if (!result.ok) return errorResult(result);
   const parsed = schema.safeParse(result.data);
   if (!parsed.success) {
@@ -81,10 +113,15 @@ async function readResult(path: string, schema: z.ZodType, query?: Record<string
       requestId: result.requestId,
     });
   }
-  return {
-    content: [{ type: "text" as const, text: JSON.stringify(parsed.data) }],
-    structuredContent: parsed.data,
-  };
+  const data =
+    options.method !== "GET" && result.requestId && parsed.data && typeof parsed.data === "object"
+      ? { ...parsed.data, requestId: result.requestId }
+      : parsed.data;
+  return { content: [{ type: "text" as const, text: JSON.stringify(data) }], structuredContent: data };
+}
+
+async function readResult(path: string, schema: z.ZodType, query?: Record<string, string>) {
+  return automationResult({ method: "GET", path, query }, schema);
 }
 
 function description(target: string, scope: string, purpose: string): string {
@@ -232,5 +269,98 @@ export function registerMcpTools(server: McpServer): void {
       annotations: readOnlyAnnotations,
     },
     async ({ id }) => readResult(`/api/automation/v1/pubs/${id}`, pubResponse),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[10],
+    {
+      title: "Create content draft",
+      description:
+        "Write operation. Creates a new content draft through the Automation API with content:create scope. Call list_content first to check existing content. Requires idempotencyKey for safe retries: reuse the same key and payload if the result is unknown. Does not publish, update, or delete existing content. Call get_content with the returned ID after creation to verify the saved draft.",
+      inputSchema: contentWrite.extend({ idempotencyKey }),
+      outputSchema: contentWriteResponse,
+      annotations: createAnnotations,
+    },
+    async ({ idempotencyKey: key, ...body }) =>
+      automationResult(
+        { method: "POST", path: "/api/automation/v1/content", body, idempotencyKey: key },
+        contentResponse,
+      ),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[11],
+    {
+      title: "Update content",
+      description:
+        "Write operation. Replaces all editable fields of existing content through the Automation API with content:update scope. Call get_content first, construct only the five ContentWrite fields, show current values and changes, and obtain explicit user confirmation before calling. Preserves publication state; does not create, publish, or delete. Call get_content again after updating to verify saved values.",
+      inputSchema: contentWrite.extend({ id: z.uuid() }),
+      outputSchema: contentWriteResponse,
+      annotations: mutationAnnotations,
+    },
+    async ({ id, ...body }) =>
+      automationResult({ method: "PUT", path: `/api/automation/v1/content/${id}`, body }, contentResponse),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[12],
+    {
+      title: "Set content publication",
+      description:
+        "Write operation. Changes only the publication state of existing content through the Automation API with content:publish scope. Call get_content first, show the current and requested status, and obtain explicit user confirmation before calling. Publishing must satisfy Automation API requirements. Does not create, edit content fields, or delete. Call get_content again after the change to verify publication state.",
+      inputSchema: contentPublicationInput.extend({ id: z.uuid() }),
+      outputSchema: contentPublicationWriteResponse,
+      annotations: mutationAnnotations,
+    },
+    async ({ id, status }) =>
+      automationResult(
+        { method: "PATCH", path: `/api/automation/v1/content/${id}/publication`, body: { status } },
+        contentPublicationResponse,
+      ),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[13],
+    {
+      title: "Create quiz draft",
+      description:
+        "Write operation. Creates a new quiz draft through the Automation API with quiz:create scope; incomplete drafts with 0–4 choices are allowed. Call list_quizzes first to check for duplicates. Requires idempotencyKey for safe retries: reuse the same key and payload if the result is unknown. Does not publish, update, or delete existing quizzes. Call get_quiz with the returned ID after creation to verify the saved draft.",
+      inputSchema: quizWrite.extend({ idempotencyKey }),
+      outputSchema: quizWriteResponse,
+      annotations: createAnnotations,
+    },
+    async ({ idempotencyKey: key, ...body }) =>
+      automationResult({ method: "POST", path: "/api/automation/v1/quiz", body, idempotencyKey: key }, quizResponse),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[14],
+    {
+      title: "Update quiz",
+      description:
+        "Write operation. Replaces editable fields of an existing quiz through the Automation API with quiz:update scope. Call get_quiz first, construct a QuizWrite snapshot without server-managed fields or choice sortOrder, show current values and changes, and obtain explicit user confirmation before calling. Choice array order determines sortOrder. Preserves publication state; does not create, publish, or delete. Call get_quiz again after updating to verify saved values.",
+      inputSchema: quizWrite.extend({ id: quizId.shape.id }),
+      outputSchema: quizWriteResponse,
+      annotations: mutationAnnotations,
+    },
+    async ({ id, ...body }) =>
+      automationResult({ method: "PUT", path: `/api/automation/v1/quiz/${id}`, body }, quizResponse),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[15],
+    {
+      title: "Set quiz publication",
+      description:
+        "Write operation. Changes only the publication state of an existing quiz through the Automation API with quiz:publish scope. Call get_quiz first, show the current and requested isPublished state, and obtain explicit user confirmation before calling. Publishing must satisfy Automation API requirements, including four complete choices. Does not create, edit quiz fields, or delete. Call get_quiz again after the change to verify publication state.",
+      inputSchema: quizPublicationInput.extend({ id: quizId.shape.id }),
+      outputSchema: quizPublicationWriteResponse,
+      annotations: mutationAnnotations,
+    },
+    async ({ id, isPublished }) =>
+      automationResult(
+        { method: "PATCH", path: `/api/automation/v1/quiz/${id}/publication`, body: { isPublished } },
+        quizPublicationResponse,
+      ),
   );
 }

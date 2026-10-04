@@ -59,6 +59,38 @@ const pubBase = {
   tagIds: [id],
   updatedAt: timestamp,
 };
+const contentWrite = {
+  kind: "story",
+  slug: "sample",
+  category: "history",
+  heroImageAssetId: null,
+  translations: {
+    ja: { title: "記事", summary: "概要", bodyMarkdown: "本文", heroImageAlt: "", heroImageCaption: "" },
+    en: { title: "Story", summary: "Summary", bodyMarkdown: "Body", heroImageAlt: "", heroImageCaption: "" },
+  },
+};
+const contentDetail = { content: { ...contentBase, ...contentWrite, heroImage: null } };
+const quizWrite = {
+  category: null,
+  specialDate: null,
+  correctChoiceId: null,
+  sourceUrl: null,
+  relatedContentId: null,
+  imageAssetId: null,
+  translations: {
+    ja: { question: "質問", explanation: "説明", sourceLabel: "出典", imageAlt: "", imageCaption: "" },
+    en: { question: "Question", explanation: "Explanation", sourceLabel: "Source", imageAlt: "", imageCaption: "" },
+  },
+  choices: [{ id: "first", translations: { ja: "一", en: "One" } }],
+};
+const quizDetail = {
+  question: {
+    ...quizBase,
+    ...quizWrite,
+    image: null,
+    choices: [{ ...quizWrite.choices[0], sortOrder: 0 }],
+  },
+};
 
 beforeEach(() => {
   process.env.MCP_PUBLIC_ORIGIN = "https://example.test";
@@ -167,7 +199,7 @@ describe("Remote MCP contract", () => {
     });
   });
 
-  it("serves 2026-07-28 discovery, the reviewed read-only tools, and an Automation API call", async () => {
+  it("serves 2026-07-28 discovery, the reviewed tools, and an Automation API call", async () => {
     const handler = createHandler();
     const discovered = await handler(mcpRequest("server/discover"));
     expect(discovered.status).toBe(200);
@@ -178,7 +210,7 @@ describe("Remote MCP contract", () => {
     const listResult = (await mcpBody(listed)).result as { tools: Array<Record<string, unknown>> };
     expect(listResult.tools.map((tool) => tool.name)).toEqual([...MCP_TOOL_ALLOW_LIST]);
     expect(new Set(listResult.tools.map((tool) => tool.name)).size).toBe(listResult.tools.length);
-    expect(listResult.tools).toHaveLength(10);
+    expect(listResult.tools).toHaveLength(16);
     const scopes = [
       "master:read",
       "master:read",
@@ -191,7 +223,7 @@ describe("Remote MCP contract", () => {
       "pubs:read",
       "pubs:read",
     ];
-    for (const [index, tool] of listResult.tools.entries()) {
+    for (const [index, tool] of listResult.tools.slice(0, 10).entries()) {
       expect(tool.annotations).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
@@ -200,6 +232,26 @@ describe("Remote MCP contract", () => {
       });
       expect(tool.description).toContain(scopes[index]);
       expect(tool.description).toContain("Read-only");
+    }
+    const writeScopes = [
+      "content:create",
+      "content:update",
+      "content:publish",
+      "quiz:create",
+      "quiz:update",
+      "quiz:publish",
+    ];
+    for (const [index, tool] of listResult.tools.slice(10).entries()) {
+      expect(tool.annotations).toMatchObject({
+        readOnlyHint: false,
+        destructiveHint: index % 3 !== 0,
+        openWorldHint: false,
+      });
+      expect(tool.description).toContain(writeScopes[index]);
+      expect(tool.description).toContain(index % 3 === 0 ? "list_" : "get_");
+      expect(tool.description).toContain(index % 3 === 0 ? "idempotencyKey" : "explicit user confirmation");
+      expect(tool.description).toContain("after");
+      expect(tool.description).toContain("delete");
     }
 
     const fetchMock = vi.fn().mockResolvedValue(Response.json({ prefectures: [{ code: 13, name: "Tokyo" }] }));
@@ -227,7 +279,12 @@ describe("Remote MCP contract", () => {
       ),
     );
     expect(initialized.status).toBe(200);
-    expect((await mcpBody(initialized)).result).toMatchObject({ protocolVersion: LEGACY_PROTOCOL_VERSION });
+    const initializedResult = (await mcpBody(initialized)).result;
+    expect(initializedResult).toMatchObject({ protocolVersion: LEGACY_PROTOCOL_VERSION });
+    const instructions = JSON.stringify(initializedResult);
+    expect(instructions).toContain("explicit user confirmation");
+    expect(instructions).toContain("After every write");
+    expect(instructions).toContain("same key and payload");
   });
 
   it("rejects insufficient MCP scope before an Automation API call", async () => {
@@ -442,6 +499,297 @@ describe("Remote MCP contract", () => {
     expect(fetchMock.mock.calls[0][1].method).toBe("GET");
   });
 
+  it("maps all six write tools to reviewed methods and bodies, with validated results and audit request IDs", async () => {
+    const cases = [
+      {
+        name: "create_content",
+        args: { idempotencyKey: "content-intent-1", ...contentWrite },
+        method: "POST",
+        path: "/content",
+        body: contentWrite,
+        response: contentDetail,
+        key: "content-intent-1",
+      },
+      {
+        name: "update_content",
+        args: { id, ...contentWrite },
+        method: "PUT",
+        path: `/content/${id}`,
+        body: contentWrite,
+        response: contentDetail,
+      },
+      {
+        name: "set_content_publication",
+        args: { id, status: "published" },
+        method: "PATCH",
+        path: `/content/${id}/publication`,
+        body: { status: "published" },
+        response: { publication: { id, status: "published", unchanged: false, publishedAt: timestamp } },
+      },
+      {
+        name: "set_content_publication",
+        args: { id, status: "draft" },
+        method: "PATCH",
+        path: `/content/${id}/publication`,
+        body: { status: "draft" },
+        response: { publication: { id, status: "draft", unchanged: false, publishedAt: null } },
+      },
+      {
+        name: "create_quiz",
+        args: { idempotencyKey: "quiz-intent-1", ...quizWrite },
+        method: "POST",
+        path: "/quiz",
+        body: quizWrite,
+        response: quizDetail,
+        key: "quiz-intent-1",
+      },
+      {
+        name: "update_quiz",
+        args: { id: "sample-quiz", ...quizWrite },
+        method: "PUT",
+        path: "/quiz/sample-quiz",
+        body: quizWrite,
+        response: quizDetail,
+      },
+      {
+        name: "set_quiz_publication",
+        args: { id: "sample-quiz", isPublished: true },
+        method: "PATCH",
+        path: "/quiz/sample-quiz/publication",
+        body: { isPublished: true },
+        response: { publication: { id: "sample-quiz", isPublished: true, unchanged: false } },
+      },
+      {
+        name: "set_quiz_publication",
+        args: { id: "sample-quiz", isPublished: false },
+        method: "PATCH",
+        path: "/quiz/sample-quiz/publication",
+        body: { isPublished: false },
+        response: { publication: { id: "sample-quiz", isPublished: false, unchanged: false } },
+      },
+    ];
+    const handler = createHandler();
+    for (const item of cases) {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(item.response, { status: item.method === "POST" ? 201 : 200, headers: { "X-Request-Id": id } }),
+        );
+      vi.stubGlobal("fetch", fetchMock);
+      const response = await handler(mcpRequest("tools/call", { name: item.name, arguments: item.args }));
+      const result = (await mcpBody(response)).result as Record<string, unknown>;
+      const expected = { ...item.response, requestId: id };
+      expect(result.isError, item.name).not.toBe(true);
+      expect(result.structuredContent, item.name).toEqual(expected);
+      expect(JSON.parse((result.content as Array<{ text: string }>)[0].text), item.name).toEqual(expected);
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+      const headers = init.headers as Headers;
+      expect(url.pathname, item.name).toBe(`/api/automation/v1${item.path}`);
+      expect(init.method, item.name).toBe(item.method);
+      expect(JSON.parse(String(init.body)), item.name).toEqual(item.body);
+      expect(headers.get("Idempotency-Key"), item.name).toBe(item.key ?? null);
+      expect(headers.get("Content-Type"), item.name).toBe("application/json");
+      expect(JSON.stringify(result)).not.toContain(process.env.MCP_AUTOMATION_API_TOKEN);
+    }
+  });
+
+  it("accepts an incomplete quiz draft and rejects server-managed fields before a write", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ question: { ...quizDetail.question, choices: [] } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const handler = createHandler();
+    const draft = (
+      await mcpBody(
+        await handler(
+          mcpRequest("tools/call", {
+            name: "create_quiz",
+            arguments: { idempotencyKey: "draft-1", choices: [] },
+          }),
+        ),
+      )
+    ).result as Record<string, unknown>;
+    expect(draft.isError).not.toBe(true);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ choices: [] });
+
+    for (const [name, args] of [
+      ["create_content", { idempotencyKey: "bad", ...contentWrite, status: "published" }],
+      ["update_content", { id, ...contentWrite, publishedAt: timestamp }],
+      ["create_quiz", { idempotencyKey: "bad", ...quizWrite, isPublished: true }],
+      ["update_quiz", { id: "sample-quiz", ...quizWrite, choices: [{ ...quizWrite.choices[0], sortOrder: 0 }] }],
+      ["set_content_publication", { id, isPublished: true }],
+      ["set_quiz_publication", { id: "sample-quiz", status: "published" }],
+      ["create_content", { idempotencyKey: " leading-space", ...contentWrite }],
+      ["create_quiz", { idempotencyKey: "", ...quizWrite }],
+    ] as const) {
+      const result = (await mcpBody(await handler(mcpRequest("tools/call", { name, arguments: args }))))
+        .result as Record<string, unknown>;
+      expect(result.isError, name).toBe(true);
+    }
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("keeps a create key across an identical retry and preserves conflict and publication errors", async () => {
+    const handler = createHandler();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json(contentDetail, { status: 201 }))
+      .mockResolvedValueOnce(Response.json(contentDetail, { status: 201 }))
+      .mockResolvedValueOnce(Response.json({ errorCode: "idempotency_conflict" }, { status: 409 }))
+      .mockResolvedValueOnce(Response.json({ errorCode: "idempotency_in_progress" }, { status: 409 }))
+      .mockResolvedValueOnce(
+        Response.json(
+          {
+            errorCode: "publication_requirements_not_met",
+            missingFields: ["en.title"],
+            secret: process.env.MCP_AUTOMATION_API_TOKEN,
+          },
+          { status: 422 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const createArgs = { idempotencyKey: "same-intent", ...contentWrite };
+    for (let index = 0; index < 4; index++) {
+      const result = (
+        await mcpBody(await handler(mcpRequest("tools/call", { name: "create_content", arguments: createArgs })))
+      ).result as Record<string, unknown>;
+      expect(result.isError).toBe(index > 1 ? true : undefined);
+      if (index > 1)
+        expect(JSON.stringify(result)).toContain(index === 2 ? "idempotency_conflict" : "idempotency_in_progress");
+    }
+    const publication = (
+      await mcpBody(
+        await handler(
+          mcpRequest("tools/call", {
+            name: "set_content_publication",
+            arguments: { id, status: "published" },
+          }),
+        ),
+      )
+    ).result as Record<string, unknown>;
+    expect(publication.isError).toBe(true);
+    expect(JSON.stringify(publication)).toContain("en.title");
+    expect(JSON.stringify(publication)).not.toContain(process.env.MCP_AUTOMATION_API_TOKEN);
+    expect(
+      fetchMock.mock.calls.slice(0, 4).map(([, init]) => (init.headers as Headers).get("Idempotency-Key")),
+    ).toEqual(Array(4).fill("same-intent"));
+    expect(fetchMock.mock.calls.slice(0, 4).map(([, init]) => init.body)).toEqual(
+      Array(4).fill(JSON.stringify(contentWrite)),
+    );
+  });
+
+  it("reuses the quiz create key and body on a retry", async () => {
+    const fetchMock = vi.fn().mockImplementation(() => Response.json(quizDetail, { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const handler = createHandler();
+    const args = { idempotencyKey: "quiz-same-intent", ...quizWrite };
+    for (let index = 0; index < 2; index++) {
+      const result = (await mcpBody(await handler(mcpRequest("tools/call", { name: "create_quiz", arguments: args }))))
+        .result as Record<string, unknown>;
+      expect(result.isError).not.toBe(true);
+      expect(result.structuredContent).toEqual(quizDetail);
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const [, init] of fetchMock.mock.calls) {
+      expect((init.headers as Headers).get("Idempotency-Key")).toBe("quiz-same-intent");
+      expect(JSON.parse(init.body)).toEqual(quizWrite);
+    }
+  });
+
+  it("supports detail read, confirmed update, and detail read-back without changing publication", async () => {
+    const before = {
+      content: {
+        ...contentDetail.content,
+        translations: { ...contentWrite.translations, ja: { ...contentWrite.translations.ja, title: "変更前" } },
+      },
+    };
+    const after = contentDetail;
+    let saved = before;
+    const fetchMock = vi.fn().mockImplementation((_url: URL, init: RequestInit) => {
+      if (init.method === "GET") return Response.json(saved);
+      saved = after;
+      return Response.json(after);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const handler = createHandler();
+    const readBefore = (
+      await mcpBody(await handler(mcpRequest("tools/call", { name: "get_content", arguments: { id } })))
+    ).result as Record<string, unknown>;
+    expect(readBefore.structuredContent).toEqual(before);
+    // 実運用では差分提示と明示的なユーザー確認を、この呼び出しの前にClientが行う。
+    const updated = (
+      await mcpBody(
+        await handler(mcpRequest("tools/call", { name: "update_content", arguments: { id, ...contentWrite } })),
+      )
+    ).result as Record<string, unknown>;
+    expect(updated.structuredContent).toEqual(after);
+    const readBack = (
+      await mcpBody(await handler(mcpRequest("tools/call", { name: "get_content", arguments: { id } })))
+    ).result as Record<string, unknown>;
+    expect(readBack.structuredContent).toEqual(after);
+    expect(after.content.status).toBe(before.content.status);
+    expect(fetchMock.mock.calls.map(([, init]) => init.method)).toEqual(["GET", "PUT", "GET"]);
+  });
+
+  it("fails closed on invalid write responses and preserves API errors without a fallback write", async () => {
+    const handler = createHandler();
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ content: { id, status: "draft" } }, { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const invalid = (
+      await mcpBody(
+        await handler(
+          mcpRequest("tools/call", {
+            name: "create_content",
+            arguments: { idempotencyKey: "intent-1", ...contentWrite },
+          }),
+        ),
+      )
+    ).result as Record<string, unknown>;
+    expect(invalid.isError).toBe(true);
+    expect(invalid.structuredContent).toBeUndefined();
+    expect(JSON.stringify(invalid)).toContain("invalid_response");
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    [400, "invalid_request"],
+    [401, "unauthorized"],
+    [403, "forbidden"],
+    [404, "content_not_found"],
+    [409, "content_conflict"],
+    [415, "invalid_content_type"],
+    [422, "validation_error"],
+    [503, "database_unavailable"],
+    [500, "internal_error"],
+  ])("preserves safe write errors for HTTP %i", async (status, errorCode) => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { errorCode, fieldErrors: { slug: "invalid_format" }, secret: process.env.MCP_AUTOMATION_API_TOKEN },
+          { status, headers: { "X-Request-Id": id } },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const result = (
+      await mcpBody(
+        await createHandler()(
+          mcpRequest("tools/call", {
+            name: "update_content",
+            arguments: { id, ...contentWrite },
+          }),
+        ),
+      )
+    ).result as Record<string, unknown>;
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toBeUndefined();
+    expect(JSON.stringify(result)).toContain(errorCode);
+    expect(JSON.stringify(result)).toContain(id);
+    expect(JSON.stringify(result)).not.toContain(process.env.MCP_AUTOMATION_API_TOKEN);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][1].method).toBe("PUT");
+  });
+
   it.each([
     [400, "invalid_request"],
     [401, "unauthorized"],
@@ -490,6 +838,26 @@ describe("Remote MCP contract", () => {
       "get_quiz",
       "list_pubs",
       "get_pub",
+      "create_content",
+      "update_content",
+      "set_content_publication",
+      "create_quiz",
+      "update_quiz",
+      "set_quiz_publication",
     ]);
+    for (const [file, section, path, method, scope] of [
+      ["automation-content.yaml", "Collection", "content", "post", "content:create"],
+      ["automation-content.yaml", "Item", "content/{id}", "put", "content:update"],
+      ["automation-content.yaml", "Publication", "content/{id}/publication", "patch", "content:publish"],
+      ["automation-quiz.yaml", "Collection", "quiz", "post", "quiz:create"],
+      ["automation-quiz.yaml", "Item", "quiz/{id}", "put", "quiz:update"],
+      ["automation-quiz.yaml", "Publication", "quiz/{id}/publication", "patch", "quiz:publish"],
+    ]) {
+      const operations = readFileSync(resolve(import.meta.dirname, `../../docs/specs/openapi/paths/${file}`), "utf8");
+      expect(openapi).toContain(`/api/automation/v1/${path}:`);
+      expect(operations).toMatch(
+        new RegExp(`^${section}:[\\s\\S]*?  ${method}:[\\s\\S]*?x-required-scope: ${scope}`, "m"),
+      );
+    }
   });
 });
