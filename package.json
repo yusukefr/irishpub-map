@@ -14,7 +14,6 @@
     "check:database-schema": "node scripts/generate-database-schema.mjs --check",
     "export-municipality-csv": "node scripts/export-municipality-codes.mjs",
     "validate:production-env": "node scripts/validate-production-env.mjs",
-    "update-app-version": "node scripts/update-app-version.mjs",
     "lint": "eslint --config eslint.config.mjs apps/web/app packages/shared/src e2e playwright.config.ts playwright.storybook.config.ts --max-warnings=0",
     "lint:openapi": "redocly lint docs/specs/openapi/openapi.yaml",
     "typecheck": "npm run typecheck -w apps/web && npm run typecheck:e2e",

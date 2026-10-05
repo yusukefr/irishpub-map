@@ -1,22 +1,22 @@
 # 通常デプロイ
 
-Irish Pub MapはVercelへデプロイします。`main`がProduction Branchであり、`main`へmergeされた変更がProduction Deploymentになります。この文書は通常のPreview / Productionフローだけを扱います。障害対応や管理操作は[Runbooks](../README.md#documentation-router)を参照してください。
+Irish Pub MapはVercelへデプロイします。PRでは従来どおりPreview Deploymentを作成し、`main`へのmerge後はGitHub ActionsのCIとE2Eが成功し、最新Production Tagから現在のHEADまでに未Releaseのアプリ変更がある場合にRelease WorkflowからProductionへdeployします。この文書は通常のPreview / Productionフローだけを扱います。障害対応や管理操作は[Runbooks](../README.md#documentation-router)を参照してください。
 
 ## Vercelプロジェクト設定
 
 Next.jsアプリは`apps/web`にありますが、VercelのRoot Directoryはリポジトリroot（`.`）です。設定はrootの`vercel.json`と一致させます。
 
-| 項目              | 値                                                                                              |
-| ----------------- | ----------------------------------------------------------------------------------------------- |
-| Framework Preset  | Next.js                                                                                         |
-| Root Directory    | `.`                                                                                             |
-| Install Command   | `npm ci`                                                                                        |
-| Build Command     | `npm run validate:production-env && npm run update-app-version -- --date-only && npm run build` |
-| Output Directory  | `apps/web/.next`                                                                                |
-| Production Branch | `main`                                                                                          |
-| Node.js Version   | 24.x                                                                                            |
+| 項目              | 値                                                 |
+| ----------------- | -------------------------------------------------- |
+| Framework Preset  | Next.js                                            |
+| Root Directory    | `.`                                                |
+| Install Command   | `npm ci`                                           |
+| Build Command     | `npm run validate:production-env && npm run build` |
+| Output Directory  | `apps/web/.next`                                   |
+| Production Branch | `main`                                             |
+| Node.js Version   | 24.x                                               |
 
-Production URLとカスタムDomainはVercel Project Settingsで管理します。Preview URLを文書、Issue、PRへ記録しません。
+Production URLとカスタムDomainはVercel Project Settingsで管理します。Preview URLを文書、Issue、PRへ記録しません。 `vercel.json`の`git.deploymentEnabled.main=false`で`main`のGit自動Deploymentを止め、PR branchのPreview Deploymentは維持します。ProductionはRelease WorkflowのVercel CLIだけから作成します。
 
 ## 環境変数
 
@@ -33,7 +33,7 @@ Production / Previewの対象を明示して、Vercel ProjectのEnvironment Vari
 | `AUTOMATION_API_SCOPES`           | 利用時     | 利用時           | Automationに許可するScope一覧    |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | 不要       | Protection使用時 | Previewのserver-side fetch用     |
 
-Productionで`IRISHPUB_MAP_API_KEY`が未設定の場合、buildは失敗します。`DATABASE_URL`未設定時は店舗・公開Guideを0件として扱い、書き込みは行いません。Preview DBは[Neon Preview DB運用](../runbooks/neon-preview-branch.md)に従います。
+Productionで`IRISHPUB_MAP_API_KEY`が未設定の場合、buildは失敗します。`DATABASE_URL`未設定時は店舗・公開Guideを0件として扱い、書き込みは行いません。Preview DBは[Neon Preview DB運用](../runbooks/neon-preview-branch.md)に従います。Release WorkflowはProduction build/runtimeへ`APP_RELEASE_VERSION`、`APP_RELEASE_DATE`、`APP_RELEASE_GIT_SHA`を渡します。Production buildはこれらが欠ける場合も失敗します。Projectの固定Environment VariableとしてVersionを登録しません。
 
 Automation利用時は `node scripts/generate-automation-token.mjs` を対話端末で実行し、32 byteの乱数から生成されたRaw Tokenを外部Connectorへ、SHA-256だけをServerの `AUTOMATION_API_TOKEN_SHA256` へ設定します。`AUTOMATION_API_SCOPES` は許可するScopeをカンマ区切りで設定します。Local / Preview / ProductionでTokenとScopeを別々に管理し、Raw TokenやhashをRepository、Issue、PR、ログへ記録しません。未設定ならAutomation認証は拒否されます。環境別設定、Scope、Rotation、失効、疎通確認は[Automation API Runbook](../runbooks/automation-api-access.md)、Endpoint契約は[OpenAPI定義](../specs/openapi/openapi.yaml)を参照してください。
 
@@ -41,9 +41,10 @@ Automation利用時は `node scripts/generate-automation-token.mjs` を対話端
 
 1. 作業ブランチで必要な検証を実行し、Pull Requestを作成する。
 2. VercelのPreview DeploymentとGitHub ActionsのCIを確認する。
-3. review後にPRを`main`へmergeする。
-4. VercelのProduction DeploymentがReadyになり、Production Domainへ反映されたことを確認する。
-5. 必要に応じて主要画面と公開APIを確認する。Productionの秘密値、Preview URL、管理者情報を出力しない。
+3. baseline TagとRelease用Secretの[移行前設定](../runbooks/release-operations.md#移行前の設定)を確認してから、review後にPRを`main`へmergeする。
+4. `main`のCI・E2E成功後、最新Production Tagからの累積差分にRelease対象の変更があれば、Release Workflowがdeploy直前に再判定し、候補metadataでVercel Productionへdeployして成功後に同じSHAへannotated Tagを作成したことを確認する。累積差分がdocs-onlyなどRelease対象外のみならdeployとTag作成を行わない。
+5. VercelのProduction DeploymentがReadyになり、Production Domainへ反映されたことを確認する。
+6. 必要に応じて主要画面と公開APIを確認する。Productionの秘密値、Preview URL、管理者情報を出力しない。
 
 ## Quiz Data Migrationの履歴
 
