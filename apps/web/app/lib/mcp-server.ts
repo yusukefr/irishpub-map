@@ -13,7 +13,7 @@ export function createAuthenticatedMcpHandler(verifyToken: TokenVerifier = verif
   const mcpHandler = createMcpHandler(registerMcpTools, {
     serverInfo: { name: "irishpub-map", version: "1.0.0" },
     instructions:
-      "For Content or Quiz creation, list resources first and create drafts only. Generate one idempotencyKey per logical create; reuse the same key and payload within 24 hours for uncertain results. Before update or publication, call get_content or get_quiz, show the target and exact before/after changes, and obtain explicit user confirmation. After every write, call the matching get tool to verify saved values. Never publish during draft creation, invent missing data, or retry a failed create with a new key.",
+      "Before Content, Quiz, Pub, or Tag creation, list existing resources; check pub and tag duplicates and read current master data before pub creation. Create Content and Quiz drafts and unpublished Pubs only. Generate one idempotencyKey per logical create; reuse the same key and payload within 24 hours for uncertain results. Before update or publication, call the matching get tool, show the target and exact before/after changes, and obtain explicit user confirmation. After every write, read back the resource with its get tool, or list_tags for a new tag. Never publish during draft creation, invent missing data, or retry a failed create with a new key.",
     verboseLogs: false,
   });
 

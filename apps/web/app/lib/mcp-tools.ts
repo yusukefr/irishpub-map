@@ -19,10 +19,16 @@ import {
   contentPublicationResponse,
   contentWrite,
   idempotencyKey,
+  pubCreateResponse,
+  pubPublicationInput,
+  pubPublicationResponse,
+  pubWrite,
   quizCreateResponse,
   quizPublicationInput,
   quizPublicationResponse,
   quizWrite,
+  tagResponse,
+  tagWrite,
 } from "./mcp-write-schemas";
 
 /** 審査済みの MCP Tool 名です。新しい Endpoint は自動公開しません。 */
@@ -43,6 +49,10 @@ export const MCP_TOOL_ALLOW_LIST = [
   "create_quiz",
   "update_quiz",
   "set_quiz_publication",
+  "create_pub",
+  "update_pub",
+  "set_pub_publication",
+  "create_tag",
 ] as const;
 
 const readOnlyAnnotations = {
@@ -70,6 +80,10 @@ const quizCreateToolResponse = quizCreateResponse.extend({ requestId: z.uuid() }
 const quizWriteResponse = quizResponse.extend({ requestId: z.uuid() });
 const contentPublicationWriteResponse = contentPublicationResponse.extend({ requestId: z.uuid() });
 const quizPublicationWriteResponse = quizPublicationResponse.extend({ requestId: z.uuid() });
+const pubCreateToolResponse = pubCreateResponse.extend({ requestId: z.uuid() });
+const pubWriteResponse = pubResponse.extend({ requestId: z.uuid() });
+const pubPublicationWriteResponse = pubPublicationResponse.extend({ requestId: z.uuid() });
+const tagCreateToolResponse = tagResponse.extend({ requestId: z.uuid() });
 const emptyInput = z.object({}).strict();
 const uuidId = z.object({ id: z.uuid() }).strict();
 const quizId = z
@@ -373,5 +387,67 @@ export function registerMcpTools(server: McpServer): void {
         { method: "PATCH", path: `/api/automation/v1/quiz/${id}/publication`, body: { isPublished } },
         quizPublicationResponse,
       ),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[16],
+    {
+      title: "Create unpublished pub",
+      description:
+        "Write operation. Creates an unpublished pub through the Automation API with pubs:create scope. Call list_pubs first and do not create when the same pub exists or duplicates are ambiguous. Read current prefectures, municipalities, statuses, and tags before using their codes, keys, or IDs. A draft requires a Japanese name; other draft fields may be null and tagIds may be empty. Requires idempotencyKey: reuse the same key and payload within 24 hours for an uncertain result. Does not publish, update, or delete. Call get_pub with the returned ID after creation to verify the saved draft.",
+      inputSchema: pubWrite.extend({ idempotencyKey }),
+      outputSchema: pubCreateToolResponse,
+      annotations: createAnnotations,
+    },
+    async ({ idempotencyKey: key, ...body }) =>
+      automationResult(
+        { method: "POST", path: "/api/automation/v1/pubs", body, idempotencyKey: key },
+        pubCreateResponse,
+      ),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[17],
+    {
+      title: "Update pub",
+      description:
+        "Write operation. Replaces all editable fields of an existing pub through the Automation API with pubs:update scope. Call get_pub first, show the target and exact before/after changes, and obtain explicit user confirmation. Send only the PubWrite snapshot, never id, isPublished, or updatedAt from GET; refresh master data and tags when relevant. Preserves publication state and does not create or delete. Call get_pub again after updating to verify saved values.",
+      inputSchema: pubWrite.extend({ id: z.uuid() }),
+      outputSchema: pubWriteResponse,
+      annotations: mutationAnnotations,
+    },
+    async ({ id, ...body }) =>
+      automationResult({ method: "PUT", path: `/api/automation/v1/pubs/${id}`, body }, pubResponse),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[18],
+    {
+      title: "Set pub publication",
+      description:
+        "Write operation. Changes only an existing pub's isPublished state through the Automation API with pubs:publish scope. Call get_pub first, show the current and requested state, and obtain explicit user confirmation. The Automation API checks publication requirements and reports missingFields. Does not create, edit pub fields, or delete. Call get_pub again after the change to verify publication state.",
+      inputSchema: pubPublicationInput.extend({ id: z.uuid() }),
+      outputSchema: pubPublicationWriteResponse,
+      annotations: mutationAnnotations,
+    },
+    async ({ id, isPublished }) =>
+      automationResult(
+        { method: "PATCH", path: `/api/automation/v1/pubs/${id}/publication`, body: { isPublished } },
+        pubPublicationResponse,
+      ),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[19],
+    {
+      title: "Create tag",
+      description:
+        "Write operation. Creates a reusable tag through the Automation API with tag:create scope. Call list_tags first and compare keys and translations; use an existing tag when it represents the same attribute, and do not create when equivalence is ambiguous. Requires a Japanese translation and idempotencyKey: reuse the same key and payload within 24 hours for an uncertain result. Does not update or delete tags. Call list_tags after creation to verify the new ID and translations.",
+      inputSchema: tagWrite.extend({ idempotencyKey }),
+      outputSchema: tagCreateToolResponse,
+      annotations: createAnnotations,
+    },
+    async ({ idempotencyKey: key, ...body }) =>
+      automationResult({ method: "POST", path: "/api/automation/v1/tags", body, idempotencyKey: key }, tagResponse),
   );
 }

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { contentResponse, quizResponse } from "./mcp-read-schemas";
+import { contentResponse, pubResponse, quizResponse, tagsResponse } from "./mcp-read-schemas";
 
 // OpenAPI の Write input だけを通し、GET に含まれる server-managed field は受け付けない。
 const uuid = z.uuid();
@@ -103,6 +103,26 @@ export const quizCreateResponse = quizResponse.extend({
 export const quizPublicationResponse = z
   .object({ publication: z.object({ id: z.string(), isPublished: z.boolean(), unchanged: z.boolean() }).strict() })
   .strict();
+
+export const pubWrite = pubResponse.shape.pub.omit({ id: true, isPublished: true, updatedAt: true });
+export const pubCreateResponse = pubResponse.extend({
+  pub: pubResponse.shape.pub.extend({ isPublished: z.literal(false) }),
+});
+export const pubPublicationInput = z.object({ isPublished: z.boolean() }).strict();
+export const pubPublicationResponse = z
+  .object({ publication: z.object({ id: uuid, isPublished: z.boolean(), unchanged: z.boolean() }).strict() })
+  .strict();
+
+export const tagWrite = z
+  .object({
+    key: z
+      .string()
+      .max(64)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    translations: z.object({ ja: z.string().max(100), en: z.string().max(100).optional() }).strict(),
+  })
+  .strict();
+export const tagResponse = z.object({ tag: tagsResponse.shape.tags.element }).strict();
 
 export const idempotencyKey = z
   .string()
