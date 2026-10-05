@@ -1,4 +1,5 @@
 import { AdminNavigation } from "../../components/admin-navigation";
+import { AdminReleaseInfo } from "../../components/admin-release-info";
 import { isAdminConfigured } from "../../lib/admin-auth";
 import { requireAdminSession } from "../../lib/admin-server";
 import { getTranslation } from "../../lib/i18n";
@@ -34,6 +35,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           <p className="admin-brand">Admin</p>
         </div>
         <AdminNavigation locale={locale} />
+        <AdminReleaseInfo locale={locale} />
       </header>
       <main className="admin-content">{children}</main>
     </div>

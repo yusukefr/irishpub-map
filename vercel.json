@@ -1,7 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
+  "git": {
+    "deploymentEnabled": {
+      "main": false
+    }
+  },
   "installCommand": "npm ci",
-  "buildCommand": "npm run validate:production-env && npm run update-app-version -- --date-only && npm run build",
+  "buildCommand": "npm run validate:production-env && npm run build",
   "outputDirectory": "apps/web/.next"
 }
