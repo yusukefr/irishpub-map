@@ -37,7 +37,7 @@ jobs:
 
       - name: Setup Go for actionlint
         if: steps.changes.outputs.workflow_changed == 'true'
-        uses: actions/setup-go@v6.0.0
+        uses: actions/setup-go@v7.0.0
         with:
           go-version: "1.26.1"
 
