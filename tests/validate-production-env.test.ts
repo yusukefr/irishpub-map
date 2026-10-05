@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isProductionApiKeyConfigured,
   isProductionEnvironment,
+  isProductionReleaseConfigured,
   validateProductionEnvironment,
 } from "../scripts/validate-production-env.mjs";
 
@@ -12,12 +13,25 @@ describe("validate-production-env", () => {
     expect(isProductionEnvironment({})).toBe(false);
   });
 
-  it("requires a non-empty API key only in Production", () => {
+  const release = {
+    APP_RELEASE_VERSION: "v0.1.65",
+    APP_RELEASE_DATE: "2026-10-04T12:42:00+09:00",
+    APP_RELEASE_GIT_SHA: "a".repeat(40),
+  };
+
+  it("requires the API key and complete release metadata only in Production", () => {
     expect(isProductionApiKeyConfigured({ VERCEL_ENV: "production", IRISHPUB_MAP_API_KEY: "  " })).toBe(false);
     expect(validateProductionEnvironment({ VERCEL_ENV: "production" })).toBe(false);
-    expect(validateProductionEnvironment({ VERCEL_ENV: "production", IRISHPUB_MAP_API_KEY: "test-only-api-key" })).toBe(
-      true,
-    );
+    expect(isProductionReleaseConfigured(release)).toBe(true);
+    expect(
+      validateProductionEnvironment({
+        VERCEL_ENV: "production",
+        IRISHPUB_MAP_API_KEY: "test-only-api-key",
+        ...release,
+      }),
+    ).toBe(true);
+    expect(isProductionReleaseConfigured({ ...release, APP_RELEASE_DATE: "2026-10-04T12:42:01+09:00" })).toBe(false);
+    expect(isProductionReleaseConfigured({ ...release, APP_RELEASE_GIT_SHA: "invalid" })).toBe(false);
     expect(validateProductionEnvironment({ VERCEL_ENV: "preview" })).toBe(true);
     expect(validateProductionEnvironment({})).toBe(true);
   });
