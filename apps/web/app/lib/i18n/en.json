@@ -195,7 +195,10 @@
   },
   "footer": {
     "ariaLabel": "App version information",
-    "releaseDate": "Release date {date} (JST)",
+    "releaseDate": "Released {date}",
+    "releaseDateCompact": "{date}",
+    "development": "Development",
+    "preview": "Preview",
     "privacyPolicy": "Privacy policy"
   },
   "privacy": {
@@ -498,6 +501,11 @@
     "configurationDescription": "Set the administrator environment variables.",
     "heading": "Pub management",
     "navigationLabel": "Admin features",
+    "releaseInfoHeading": "Release Information",
+    "releaseVersion": "Version",
+    "releaseDate": "Release Date",
+    "releaseCommit": "Git Commit",
+    "releaseUnavailable": "-",
     "navPubs": "Pubs",
     "navContent": "Content",
     "navMedia": "Media",
