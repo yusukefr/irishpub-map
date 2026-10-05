@@ -104,7 +104,33 @@ export const quizPublicationResponse = z
   .object({ publication: z.object({ id: z.string(), isPublished: z.boolean(), unchanged: z.boolean() }).strict() })
   .strict();
 
-export const pubWrite = pubResponse.shape.pub.omit({ id: true, isPublished: true, updatedAt: true });
+const pubRequiredText = z.string().trim().min(1);
+const pubOptionalText = z.string().nullable();
+const pubTranslation = z
+  .object({ name: pubRequiredText, nameReading: pubOptionalText, address: pubOptionalText })
+  .strict();
+const pubEnglishTranslation = pubTranslation.extend({ address: pubRequiredText });
+const pubUrl = z
+  .url()
+  .regex(/^https?:\/\//i)
+  .nullable();
+export const pubWrite = z
+  .object({
+    prefectureCode: z.number().int().min(1).max(47).nullable(),
+    municipalityCode: z
+      .string()
+      .regex(/^\d{6}$/)
+      .nullable(),
+    latitude: z.number().min(-90).max(90).nullable(),
+    longitude: z.number().min(-180).max(180).nullable(),
+    websiteUrl: pubUrl,
+    googleMapsUrl: pubUrl,
+    instagramUrl: pubUrl,
+    status: z.enum(["open", "temporarily_closed", "closed", "unknown"]).nullable(),
+    translations: z.object({ ja: pubTranslation, en: pubEnglishTranslation.nullable() }).strict(),
+    tagIds: z.array(uuid).refine((ids) => new Set(ids).size === ids.length),
+  })
+  .strict();
 export const pubCreateResponse = pubResponse.extend({
   pub: pubResponse.shape.pub.extend({ isPublished: z.literal(false) }),
 });
@@ -119,7 +145,7 @@ export const tagWrite = z
       .string()
       .max(64)
       .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-    translations: z.object({ ja: z.string().max(100), en: z.string().max(100).optional() }).strict(),
+    translations: z.object({ ja: z.string().trim().min(1).max(100), en: z.string().max(100).optional() }).strict(),
   })
   .strict();
 export const tagResponse = z.object({ tag: tagsResponse.shape.tags.element }).strict();

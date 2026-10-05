@@ -580,8 +580,38 @@ describe("Remote MCP contract", () => {
       ["create_pub", { idempotencyKey: "intent", ...pubWrite, isPublished: true }],
       ["update_pub", { id, ...pubWrite, updatedAt: timestamp }],
       ["update_pub", { id, ...pubWrite, status: 1 }],
+      [
+        "create_pub",
+        {
+          idempotencyKey: "intent",
+          ...pubWrite,
+          translations: { ja: { name: "", nameReading: null, address: null }, en: null },
+        },
+      ],
+      [
+        "update_pub",
+        { id, ...pubWrite, translations: { ja: { name: "   ", nameReading: null, address: null }, en: null } },
+      ],
+      [
+        "create_pub",
+        {
+          idempotencyKey: "intent",
+          ...pubWrite,
+          translations: { ja: pubBase.translations.ja, en: { name: "Pub", nameReading: null, address: null } },
+        },
+      ],
+      [
+        "update_pub",
+        {
+          id,
+          ...pubWrite,
+          translations: { ja: pubBase.translations.ja, en: { name: "Pub", nameReading: null, address: "   " } },
+        },
+      ],
       ["create_tag", { idempotencyKey: "intent", ...tagWrite, pubCount: 0 }],
       ["create_tag", { idempotencyKey: "intent", key: "Invalid Key", translations: { ja: "タグ" } }],
+      ["create_tag", { idempotencyKey: "intent", key: "food", translations: { ja: "" } }],
+      ["create_tag", { idempotencyKey: "intent", key: "food", translations: { ja: "   " } }],
       ["set_pub_publication", { id, status: "published" }],
     ] as const) {
       const result = (await mcpBody(await handler(mcpRequest("tools/call", { name, arguments: args }))))
@@ -793,6 +823,10 @@ describe("Remote MCP contract", () => {
         { id: "sample-quiz", isPublished: false },
         { publication: { id: "sample-quiz", isPublished: false, unchanged: true } },
       ],
+      ["create_pub", { idempotencyKey: "pub-1", ...pubWrite }, pubDetail],
+      ["update_pub", { id, ...pubWrite }, pubDetail],
+      ["set_pub_publication", { id, isPublished: false }, { publication: { id, isPublished: false, unchanged: true } }],
+      ["create_tag", { idempotencyKey: "tag-1", ...tagWrite }, tagDetail],
     ] as const;
     const handler = createHandler();
     for (const [name, args, body] of cases) {

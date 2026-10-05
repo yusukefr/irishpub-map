@@ -42,7 +42,7 @@ TagTranslations:
   type: object
   required: [ja]
   properties:
-    ja: { type: string, maxLength: 100 }
+    ja: { type: string, minLength: 1, maxLength: 100, pattern: '\S' }
     en: { type: string, maxLength: 100 }
 TagWrite:
   type: object
@@ -301,16 +301,22 @@ PubTranslation:
   type: object
   required: [name, nameReading, address]
   properties:
-    name: { type: string }
+    name: { type: string, minLength: 1, pattern: '\S' }
     nameReading: { type: [string, "null"] }
     address: { type: [string, "null"] }
+PubEnglishTranslation:
+  allOf:
+    - $ref: "#/PubTranslation"
+    - type: object
+      properties:
+        address: { type: string, minLength: 1, pattern: '\S' }
 PubTranslations:
   type: object
   required: [ja, en]
   properties:
     ja: { $ref: "#/PubTranslation" }
     en:
-      anyOf: [{ $ref: "#/PubTranslation" }, { type: "null" }]
+      anyOf: [{ $ref: "#/PubEnglishTranslation" }, { type: "null" }]
 PubWrite:
   type: object
   additionalProperties: false
