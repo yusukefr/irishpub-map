@@ -111,6 +111,57 @@ describe("Production release preflight", () => {
     ).resolves.toEqual({
       expected: { ...baseline, gitSha: baselineSha },
       retry: false,
+      recovered: false,
+      previousDeploymentId: deploymentId,
+    });
+  });
+
+  it("recovers a published candidate when metadata exists but the deployment marker was not saved", async () => {
+    const { work, sha } = createRepository();
+    const metadataFile = join(work, "release-metadata.json");
+    const candidate = prepareRelease({ cwd: work, sha, now: new Date("2026-10-04T03:42:00Z"), metadataFile });
+    const vercel = fakeVercel(candidate);
+
+    await expect(
+      verifyProductionRelease({
+        cwd: work,
+        sha,
+        metadataFile,
+        token: "test-token",
+        orgId: "team_example",
+        projectId,
+        hostnames,
+        fetchImpl: vercel.fetchImpl,
+      }),
+    ).resolves.toEqual({
+      expected: candidate,
+      retry: false,
+      recovered: true,
+      previousDeploymentId: deploymentId,
+    });
+  });
+
+  it("reuses saved metadata for redeploy when Production still matches the latest tag", async () => {
+    const { work, sha, baselineSha } = createRepository();
+    const metadataFile = join(work, "release-metadata.json");
+    prepareRelease({ cwd: work, sha, now: new Date("2026-10-04T03:42:00Z"), metadataFile });
+    const vercel = fakeVercel({ ...baseline, gitSha: baselineSha });
+
+    await expect(
+      verifyProductionRelease({
+        cwd: work,
+        sha,
+        metadataFile,
+        token: "test-token",
+        orgId: "team_example",
+        projectId,
+        hostnames,
+        fetchImpl: vercel.fetchImpl,
+      }),
+    ).resolves.toEqual({
+      expected: { ...baseline, gitSha: baselineSha },
+      retry: false,
+      recovered: false,
       previousDeploymentId: deploymentId,
     });
   });
@@ -184,6 +235,7 @@ describe("Production release preflight", () => {
     await expect(verifyProductionRelease(options)).resolves.toEqual({
       expected: candidate,
       retry: true,
+      recovered: false,
       previousDeploymentId: deploymentId,
     });
     writeFileSync(deployedFile, JSON.stringify({ ...candidate, gitSha: "a".repeat(40) }));

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { compareReleaseTags, nextPatchTag, readReleaseMetadata, releaseDateFromTag } from "./prepare-release.mjs";
 
@@ -167,7 +167,10 @@ export async function waitForPublishedCandidate({
   }
 }
 
-/** 新規Releaseは最新Tag、Tag push再試行は保存済み候補と現行Productionを照合し、旧Deployment IDを返します。 */
+/**
+ * 新規Releaseは最新Tag、再試行は保存済み候補と現行Productionを照合します。
+ * metadata保存後・marker保存前にProduction公開だけ成功した場合は、candidateを復旧対象として返します。
+ */
 export async function verifyProductionRelease({
   cwd = process.cwd(),
   sha,
@@ -182,26 +185,43 @@ export async function verifyProductionRelease({
   if (!/^[0-9a-f]{40}$/i.test(sha ?? "")) throw new Error("A full release SHA is required.");
   if (git(cwd, "rev-parse", "HEAD") !== sha) throw new Error("Release SHA does not match HEAD.");
   const latest = latestTaggedRelease(cwd);
+  const hasMetadata = Boolean(metadataFile && existsSync(metadataFile));
   const retry = Boolean(deployedFile && existsSync(deployedFile));
-  if (retry && (!metadataFile || !existsSync(metadataFile))) {
+  if (retry && !hasMetadata) {
     throw new Error("Deployment marker exists without release metadata.");
   }
-  const expected = retry ? readReleaseMetadata(metadataFile) : latest;
+
+  const candidate = hasMetadata ? readReleaseMetadata(metadataFile) : null;
+  if (candidate && (candidate.gitSha !== sha || candidate.version !== nextPatchTag(latest.version))) {
+    throw new Error("Stored release metadata does not match the next release candidate.");
+  }
   if (retry) {
     const deployed = readReleaseMetadata(deployedFile);
-    if (
-      JSON.stringify(expected) !== JSON.stringify(deployed) ||
-      expected.gitSha !== sha ||
-      expected.version !== nextPatchTag(latest.version)
-    ) {
+    if (JSON.stringify(candidate) !== JSON.stringify(deployed)) {
       throw new Error("Stored deployment marker does not match the next release candidate.");
     }
   }
+
   const { options, productionHostnames } = vercelOptions({ token, orgId, projectId, hostnames, fetchImpl });
   const deploymentId = await currentProductionDeploymentId(productionHostnames, projectId, options);
   const deployment = await vercelJson(`/v13/deployments/${encodeURIComponent(deploymentId)}`, options);
-  assertProductionMatches(deployment, deploymentId, expected);
-  return { expected, retry, previousDeploymentId: deploymentId };
+
+  if (retry) {
+    assertProductionMatches(deployment, deploymentId, candidate);
+    return { expected: candidate, retry: true, recovered: false, previousDeploymentId: deploymentId };
+  }
+
+  if (candidate) {
+    try {
+      assertProductionMatches(deployment, deploymentId, candidate);
+      return { expected: candidate, retry: false, recovered: true, previousDeploymentId: deploymentId };
+    } catch {
+      // Productionがまだlatest Tagなら、保存済みcandidateを同じVersion/日時で再deployできます。
+    }
+  }
+
+  assertProductionMatches(deployment, deploymentId, latest);
+  return { expected: latest, retry: false, recovered: false, previousDeploymentId: deploymentId };
 }
 
 /** CandidateのREADY状態と、保存済み旧IDからのProduction公開を確認してからmarkerを許可します。 */
@@ -277,6 +297,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     });
   } else {
     result = await verifyProductionRelease({ ...common, deployedFile: process.env.RELEASE_DEPLOYED_FILE });
+    if (process.env.GITHUB_OUTPUT) {
+      appendFileSync(process.env.GITHUB_OUTPUT, `recovered=${result.recovered ? "true" : "false"}\n`);
+    }
     if (process.env.PREVIOUS_DEPLOYMENT_FILE) {
       writeFileSync(process.env.PREVIOUS_DEPLOYMENT_FILE, result.previousDeploymentId, { flag: "wx", mode: 0o600 });
     }

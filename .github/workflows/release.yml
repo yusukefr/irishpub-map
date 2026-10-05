@@ -124,6 +124,7 @@ jobs:
 
       - name: Verify current Production release
         if: steps.relevance.outputs.release_relevant == 'true'
+        id: production
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -133,6 +134,15 @@ jobs:
           RELEASE_DEPLOYED_FILE: ${{ runner.temp }}/release-deployed/release-deployed.json
           PREVIOUS_DEPLOYMENT_FILE: ${{ runner.temp }}/previous-deployment-id
         run: node scripts/verify-production-release.mjs
+
+      - name: Recover successful deployment marker
+        if: steps.relevance.outputs.release_relevant == 'true' && steps.artifacts.outputs.metadata == 'true' && steps.artifacts.outputs.deployed != 'true' && steps.production.outputs.recovered == 'true'
+        env:
+          RELEASE_METADATA_FILE: ${{ runner.temp }}/release-candidate/release-metadata.json
+          RELEASE_DEPLOYED_FILE: ${{ runner.temp }}/release-deployed/release-deployed.json
+        run: |
+          mkdir -p "$RUNNER_TEMP/release-deployed"
+          cp "$RELEASE_METADATA_FILE" "$RELEASE_DEPLOYED_FILE"
 
       - name: Prepare release metadata
         if: steps.relevance.outputs.release_relevant == 'true'
@@ -153,7 +163,8 @@ jobs:
           retention-days: 30
 
       - name: Deploy release candidate to Vercel Production
-        if: steps.relevance.outputs.release_relevant == 'true' && steps.artifacts.outputs.deployed != 'true'
+        if: steps.relevance.outputs.release_relevant == 'true' && steps.artifacts.outputs.deployed != 'true' && steps.production.outputs.recovered != 'true'
+        id: deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -178,7 +189,6 @@ jobs:
             --meta "releaseVersion=$APP_RELEASE_VERSION" \
             --meta "releaseDate=$APP_RELEASE_DATE" \
             --meta "releaseGitSha=$APP_RELEASE_GIT_SHA" > "$RUNNER_TEMP/production-deployment-url"
-          vercel inspect "$(cat "$RUNNER_TEMP/production-deployment-url")" --wait --token "$VERCEL_TOKEN" > /dev/null
           node scripts/verify-production-release.mjs
           mkdir -p "$RUNNER_TEMP/release-deployed"
           cp "$RELEASE_METADATA_FILE" "$RELEASE_DEPLOYED_FILE"
