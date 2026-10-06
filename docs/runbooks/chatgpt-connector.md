@@ -60,13 +60,13 @@ Master Dataは毎回Automation APIから取得し、MCP Serverには複製しま
 ### Auth0の手動再構築
 
 1. Auth0 DashboardでProduction用Tenantを作成し、管理方針に合うRegionとEnvironment分類を選ぶ。Tenant Domainを控え、OpenID Configurationの `issuer` と `jwks_uri` を確認する。`issuer` は末尾の `/` を含め、発行されるJWTの `iss` と完全一致させる。
-2. Applications → APIsでMCP用APIを作成する。Identifierには[公開MCP URL](../../plugins/irishpub-map/mcp.json)の `/api/mcp` までを指定し、Signing AlgorithmはRS256、Permissionは `mcp:read` とする。APIのSettings → Application Access Policyで、第三者ApplicationのUser-delegated Accessには `mcp:read` のみを許可し、Client AccessはUnauthorizedにする。Client Credentialsで管理Toolを使える設定にしない。
+2. Applications → APIsでMCP用APIを作成する。Identifierには[公開MCP URL](../../plugins/irishpub-map/mcp.json)の `/api/mcp` までを指定し、Signing AlgorithmはRS256、Permissionは `mcp:read` とする。DCRで作成されるThird-party Applicationは登録時に個別のAPI権限を設定できないため、MCP APIのSettings → Default Permissions for Third Party Appsで、User-delegated AccessをAuthorized、許可Scopeを `mcp:read` のみに設定する。Client AccessはUnauthorizedのままとし、Client Credentialsで管理Toolを使える設定にしない。
 3. Tenant Settings → AdvancedでDynamic Client Registrationを有効にする。同じ画面でResource Parameter Compatibility Profileを有効にし、MCP Clientが送る `resource` をMCP APIのAudienceとして扱えることを確認する。DCRで登録されたApplicationのConnectionと権限を後で確認する。CIMDへ切り替える場合はChatGPTとCodexで別途接続を検証する。
-4. Authentication → DatabaseでMCP管理者専用Connectionを作成する。Email / Password Loginを使用し、Disable Sign Upsを有効にする。UsernameやPhoneを使わない構成なら有効化しない。第三者ApplicationのLogin画面にConnectionが出ない場合は、当該ConnectionをDomain LevelへPromoteするか、Applicationへの割当を確認する。管理用途に不要なConnectionを公開しない。
+4. Authentication → DatabaseでMCP管理者専用Connectionを作成する。Email / Password Loginを使用し、Disable Sign Upsを有効にする。UsernameやPhoneを使わない構成なら有効化しない。DCRで作成されるThird-party Applicationの通常Loginに利用できるよう、ConnectionのSettingsでPromote Connection to Domain Levelを有効にする。Domain Level ConnectionはTenant内のThird-party Applicationすべてから利用可能になるため、管理用途に不要なConnectionを昇格させない。
 5. User Managementで専用Connectionに管理者Userを作成する。User ProfileのUser IDがJWTの `sub` に対応することを確認し、その値をserver-sideの `MCP_OAUTH_ALLOWED_SUBJECT` に設定する。User ID、Password、Tokenの実値を文書、Issue、PR、通常ログへ記録しない。
 6. Auth0のOpenID Configurationにある `issuer` と `jwks_uri` をそれぞれ `MCP_OAUTH_ISSUER`、`MCP_OAUTH_JWKS_URL` に設定する。`MCP_OAUTH_AUDIENCE` はAPI IdentifierとProtected Resource Metadataの `resource` に完全一致させる。JWTの署名、Issuer、Audience、期限、発行時刻、Subject、`mcp:read` はMCP側でも検証する。
 
-Auth0の画面や設定名が変わった場合は、[Dynamic Client Registration](https://auth0.com/docs/get-started/applications/dynamic-client-registration)、[API Access Policy](https://auth0.com/blog/developers-guide-api-access-policies-auth0/)、[Resource Parameter Compatibility Profile](https://support.auth0.com/center/s/article/mcp-audience-error-with-auth0)を確認する。
+Auth0の画面や設定名が変わった場合は、[Dynamic Client Registration](https://auth0.com/docs/get-started/applications/dynamic-client-registration)、[Third-party Applicationの権限とConnection](https://auth0.com/docs/get-started/applications/third-party-applications/configure-third-party-applications)、[Domain Level Connection](https://auth0.com/docs/authenticate/identity-providers/promote-connections-to-domain-level)、[Resource Parameter Compatibility Profile](https://support.auth0.com/center/s/article/mcp-audience-error-with-auth0)を確認する。
 
 ### Vercelの手動設定
 
@@ -135,7 +135,7 @@ OAuth認可サーバー、server-side Secret、接続権限が未設定の場合
 | MCP HTTP `401` | MCP利用者のOAuth未認証・期限切れ。Protected Resource Metadataの認可サーバーを確認する。 |
 | MCP HTTP `403` | MCP `mcp:read` Scope不足。Toolは実行されない。 |
 | Metadata `404`、または `WWW-Authenticate` のURLが違う | 公開Origin、`/.well-known/oauth-protected-resource`、`MCP_PUBLIC_ORIGIN`、再Deploymentを確認する。`/api/mcp/.well-known/` は使わない。 |
-| OAuth Login失敗、管理者Connectionが表示されない | DCR、User-delegated Accessの `mcp:read`、Client Access、専用Database Connectionの割当またはDomain Level設定、Disable Sign Upsを確認する。 |
+| OAuth Login失敗、管理者Connectionが表示されない | DCR、Default Permissions for Third Party AppsのUser-delegated Access（`mcp:read`）とClient Access（Unauthorized）、専用Database ConnectionのDomain Level設定、Disable Sign Upsを確認する。 |
 | Issuer / Audience / Subject不一致 | Auth0 OpenID Configurationの `issuer`、API Identifier、User ProfileのUser IDと、対応するMCP server-side設定を照合する。実値をログや共有文書へ貼らない。 |
 | JWKS取得失敗、署名検証失敗 | OpenID Configurationの `jwks_uri`、到達性、RS256署名設定、鍵rotation後の再Deploymentを確認する。 |
 | OAuth成功後にToolが表示されない | `mcp:read`、MCP `tools/list`、PluginのMCP URL、未認証時の401 challenge、allow listを順に確認する。 |
