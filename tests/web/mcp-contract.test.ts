@@ -59,6 +59,12 @@ const pubBase = {
   tagIds: [id],
   updatedAt: timestamp,
 };
+const pubWrite = Object.fromEntries(
+  Object.entries(pubBase).filter(([key]) => !["id", "isPublished", "updatedAt"].includes(key)),
+);
+const pubDetail = { pub: pubBase };
+const tagWrite = { key: "live-music", translations: { ja: "ライブ音楽", en: "Live music" } };
+const tagDetail = { tag: { id, ...tagWrite, pubCount: 0 } };
 const contentWrite = {
   kind: "story",
   slug: "sample",
@@ -210,7 +216,7 @@ describe("Remote MCP contract", () => {
     const listResult = (await mcpBody(listed)).result as { tools: Array<Record<string, unknown>> };
     expect(listResult.tools.map((tool) => tool.name)).toEqual([...MCP_TOOL_ALLOW_LIST]);
     expect(new Set(listResult.tools.map((tool) => tool.name)).size).toBe(listResult.tools.length);
-    expect(listResult.tools).toHaveLength(16);
+    expect(listResult.tools).toHaveLength(20);
     const scopes = [
       "master:read",
       "master:read",
@@ -240,17 +246,22 @@ describe("Remote MCP contract", () => {
       "quiz:create",
       "quiz:update",
       "quiz:publish",
+      "pubs:create",
+      "pubs:update",
+      "pubs:publish",
+      "tag:create",
     ];
     for (const [index, tool] of listResult.tools.slice(10).entries()) {
+      const create = [0, 3, 6, 9].includes(index);
       expect(tool.annotations).toMatchObject({
         readOnlyHint: false,
-        destructiveHint: index % 3 !== 0,
-        idempotentHint: index % 3 !== 0,
+        destructiveHint: !create,
+        idempotentHint: !create,
         openWorldHint: false,
       });
       expect(tool.description).toContain(writeScopes[index]);
-      expect(tool.description).toContain(index % 3 === 0 ? "list_" : "get_");
-      expect(tool.description).toContain(index % 3 === 0 ? "idempotencyKey" : "explicit user confirmation");
+      expect(tool.description).toContain(create ? "list_" : "get_");
+      expect(tool.description).toContain(create ? "idempotencyKey" : "explicit user confirmation");
       expect(tool.description).toContain("after");
       expect(tool.description).toContain("delete");
     }
@@ -500,7 +511,208 @@ describe("Remote MCP contract", () => {
     expect(fetchMock.mock.calls[0][1].method).toBe("GET");
   });
 
-  it("maps all six write tools to reviewed methods and bodies, with validated results and audit request IDs", async () => {
+  it("maps Pub and Tag writes to reviewed endpoints and keeps server-managed fields out of bodies", async () => {
+    const cases = [
+      {
+        name: "create_pub",
+        args: { idempotencyKey: "pub-intent-1", ...pubWrite },
+        method: "POST",
+        path: "/pubs",
+        body: pubWrite,
+        response: pubDetail,
+        key: "pub-intent-1",
+      },
+      {
+        name: "update_pub",
+        args: { id, ...pubWrite },
+        method: "PUT",
+        path: `/pubs/${id}`,
+        body: pubWrite,
+        response: pubDetail,
+      },
+      ...[true, false].map((isPublished) => ({
+        name: "set_pub_publication",
+        args: { id, isPublished },
+        method: "PATCH",
+        path: `/pubs/${id}/publication`,
+        body: { isPublished },
+        response: { publication: { id, isPublished, unchanged: false } },
+      })),
+      {
+        name: "create_tag",
+        args: { idempotencyKey: "tag-intent-1", ...tagWrite },
+        method: "POST",
+        path: "/tags",
+        body: tagWrite,
+        response: tagDetail,
+        key: "tag-intent-1",
+      },
+    ];
+    const handler = createHandler();
+    for (const item of cases) {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(item.response, { status: item.method === "POST" ? 201 : 200, headers: { "X-Request-Id": id } }),
+        );
+      vi.stubGlobal("fetch", fetchMock);
+      const result = (await mcpBody(await handler(mcpRequest("tools/call", { name: item.name, arguments: item.args }))))
+        .result as Record<string, unknown>;
+      const expected = { ...item.response, requestId: id };
+      expect(result.structuredContent, item.name).toEqual(expected);
+      expect(JSON.parse((result.content as Array<{ text: string }>)[0].text), item.name).toEqual(expected);
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+      const headers = init.headers as Headers;
+      expect(url.pathname, item.name).toBe(`/api/automation/v1${item.path}`);
+      expect(init.method, item.name).toBe(item.method);
+      expect(JSON.parse(String(init.body)), item.name).toEqual(item.body);
+      expect(headers.get("Idempotency-Key"), item.name).toBe(item.key ?? null);
+      expect(JSON.stringify(result)).not.toContain(process.env.MCP_AUTOMATION_API_TOKEN);
+    }
+  });
+
+  it("rejects Pub and Tag server-managed inputs and invalid write responses", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const handler = createHandler();
+    for (const [name, args] of [
+      ["create_pub", { idempotencyKey: "intent", ...pubWrite, isPublished: true }],
+      ["update_pub", { id, ...pubWrite, updatedAt: timestamp }],
+      ["update_pub", { id, ...pubWrite, status: 1 }],
+      [
+        "create_pub",
+        {
+          idempotencyKey: "intent",
+          ...pubWrite,
+          translations: { ja: { name: "", nameReading: null, address: null }, en: null },
+        },
+      ],
+      [
+        "update_pub",
+        { id, ...pubWrite, translations: { ja: { name: "   ", nameReading: null, address: null }, en: null } },
+      ],
+      [
+        "create_pub",
+        {
+          idempotencyKey: "intent",
+          ...pubWrite,
+          translations: { ja: pubBase.translations.ja, en: { name: "Pub", nameReading: null, address: null } },
+        },
+      ],
+      [
+        "update_pub",
+        {
+          id,
+          ...pubWrite,
+          translations: { ja: pubBase.translations.ja, en: { name: "Pub", nameReading: null, address: "   " } },
+        },
+      ],
+      ["create_tag", { idempotencyKey: "intent", ...tagWrite, pubCount: 0 }],
+      ["create_tag", { idempotencyKey: "intent", key: "Invalid Key", translations: { ja: "タグ" } }],
+      ["create_tag", { idempotencyKey: "intent", key: "food", translations: { ja: "" } }],
+      ["create_tag", { idempotencyKey: "intent", key: "food", translations: { ja: "   " } }],
+      ["set_pub_publication", { id, status: "published" }],
+    ] as const) {
+      const result = (await mcpBody(await handler(mcpRequest("tools/call", { name, arguments: args }))))
+        .result as Record<string, unknown>;
+      expect(result.isError, name).toBe(true);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    for (const [name, args, body] of [
+      ["create_pub", { idempotencyKey: "intent", ...pubWrite }, { pub: { ...pubBase, isPublished: true } }],
+      ["create_tag", { idempotencyKey: "intent", ...tagWrite }, { tag: { ...tagDetail.tag, id: "invalid" } }],
+    ] as const) {
+      fetchMock.mockResolvedValueOnce(Response.json(body, { status: 201, headers: { "X-Request-Id": id } }));
+      const result = (await mcpBody(await handler(mcpRequest("tools/call", { name, arguments: args }))))
+        .result as Record<string, unknown>;
+      expect(result.isError, name).toBe(true);
+      expect(JSON.stringify(result)).toContain("invalid_response");
+    }
+  });
+
+  it("accepts a minimal unpublished Pub draft and preserves Create keys on retries", async () => {
+    const draftWrite = {
+      prefectureCode: null,
+      municipalityCode: null,
+      latitude: null,
+      longitude: null,
+      websiteUrl: null,
+      googleMapsUrl: null,
+      instagramUrl: null,
+      status: null,
+      translations: { ja: { name: "パブ", nameReading: null, address: null }, en: null },
+      tagIds: [],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json(
+          { pub: { ...draftWrite, id, isPublished: false, updatedAt: timestamp } },
+          {
+            status: 201,
+            headers: { "X-Request-Id": id },
+          },
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json(
+          { pub: { ...draftWrite, id, isPublished: false, updatedAt: timestamp } },
+          {
+            status: 201,
+            headers: { "X-Request-Id": id },
+          },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const handler = createHandler();
+    const args = { idempotencyKey: "same-pub-intent", ...draftWrite };
+    for (let index = 0; index < 2; index++) {
+      const result = (await mcpBody(await handler(mcpRequest("tools/call", { name: "create_pub", arguments: args }))))
+        .result as Record<string, unknown>;
+      expect(result.isError).not.toBe(true);
+      expect(result.structuredContent).toMatchObject({ pub: { isPublished: false }, requestId: id });
+    }
+    expect(fetchMock.mock.calls.map(([, init]) => (init.headers as Headers).get("Idempotency-Key"))).toEqual([
+      "same-pub-intent",
+      "same-pub-intent",
+    ]);
+    expect(fetchMock.mock.calls.map(([, init]) => JSON.parse(String(init.body)))).toEqual([draftWrite, draftWrite]);
+  });
+
+  it("preserves Pub and Tag conflict details without a fallback write", async () => {
+    const cases = [
+      ["create_pub", { idempotencyKey: "pub-1", ...pubWrite }, 409, "validation_error", { tagIds: "invalid_format" }],
+      ["create_tag", { idempotencyKey: "tag-1", ...tagWrite }, 409, "tag_conflict", {}],
+      ["create_tag", { idempotencyKey: "tag-1", ...tagWrite }, 409, "idempotency_in_progress", {}],
+      ["update_pub", { id, ...pubWrite }, 404, "pub_not_found", {}],
+      ["set_pub_publication", { id, isPublished: true }, 422, "publication_requirements_not_met", {}],
+    ] as const;
+    const handler = createHandler();
+    for (const [name, args, status, errorCode, fieldErrors] of cases) {
+      const fetchMock = vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            errorCode,
+            fieldErrors,
+            missingFields: ["address"],
+            secret: process.env.MCP_AUTOMATION_API_TOKEN,
+          },
+          { status, headers: { "X-Request-Id": id } },
+        ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const result = (await mcpBody(await handler(mcpRequest("tools/call", { name, arguments: args }))))
+        .result as Record<string, unknown>;
+      expect(result.isError).toBe(true);
+      expect(JSON.stringify(result)).toContain(errorCode);
+      expect(JSON.stringify(result)).not.toContain(process.env.MCP_AUTOMATION_API_TOKEN);
+      expect(fetchMock).toHaveBeenCalledOnce();
+    }
+  });
+
+  it("maps all six Content and Quiz write tools to reviewed methods and bodies", async () => {
     const cases = [
       {
         name: "create_content",
@@ -611,6 +823,10 @@ describe("Remote MCP contract", () => {
         { id: "sample-quiz", isPublished: false },
         { publication: { id: "sample-quiz", isPublished: false, unchanged: true } },
       ],
+      ["create_pub", { idempotencyKey: "pub-1", ...pubWrite }, pubDetail],
+      ["update_pub", { id, ...pubWrite }, pubDetail],
+      ["set_pub_publication", { id, isPublished: false }, { publication: { id, isPublished: false, unchanged: true } }],
+      ["create_tag", { idempotencyKey: "tag-1", ...tagWrite }, tagDetail],
     ] as const;
     const handler = createHandler();
     for (const [name, args, body] of cases) {
@@ -925,6 +1141,10 @@ describe("Remote MCP contract", () => {
       "create_quiz",
       "update_quiz",
       "set_quiz_publication",
+      "create_pub",
+      "update_pub",
+      "set_pub_publication",
+      "create_tag",
     ]);
     for (const [file, section, path, method, scope] of [
       ["automation-content.yaml", "Collection", "content", "post", "content:create"],
@@ -933,6 +1153,10 @@ describe("Remote MCP contract", () => {
       ["automation-quiz.yaml", "Collection", "quiz", "post", "quiz:create"],
       ["automation-quiz.yaml", "Item", "quiz/{id}", "put", "quiz:update"],
       ["automation-quiz.yaml", "Publication", "quiz/{id}/publication", "patch", "quiz:publish"],
+      ["automation-pubs.yaml", "Collection", "pubs", "post", "pubs:create"],
+      ["automation-pubs.yaml", "Item", "pubs/{id}", "put", "pubs:update"],
+      ["automation-pubs.yaml", "Publication", "pubs/{id}/publication", "patch", "pubs:publish"],
+      ["automation-master.yaml", "TagCollection", "tags", "post", "tag:create"],
     ]) {
       const operations = readFileSync(resolve(import.meta.dirname, `../../docs/specs/openapi/paths/${file}`), "utf8");
       expect(openapi).toContain(`/api/automation/v1/${path}:`);
