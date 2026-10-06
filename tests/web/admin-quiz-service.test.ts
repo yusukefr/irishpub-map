@@ -22,12 +22,13 @@ import {
   changeAdminQuizPublication,
   createAdminQuiz,
   getQuizPublicationMissingFields,
+  readAdminQuiz,
   updateAdminQuiz,
 } from "../../apps/web/app/lib/admin-quiz-service";
 const guideId = "550e8400-e29b-41d4-a716-446655440001";
 const imageAssetId = "550e8400-e29b-41d4-a716-446655440009";
 const question: AdminQuizQuestion = {
-  id: "history-question-001",
+  id: "11111111-1111-4111-8111-000000000001",
   category: "history",
   specialDate: { month: 2, day: 29 },
   correctChoiceId: "choice-1",
@@ -81,7 +82,7 @@ beforeEach(() => {
 });
 describe("admin quiz service", () => {
   it("normalizes valid draft input and generates sort order from array order", async () => {
-    await expect(createAdminQuiz({ ...payload, id: "legacy-question" })).resolves.toEqual(question);
+    await expect(createAdminQuiz(payload)).resolves.toEqual(question);
     expect(mocks.insertAdminQuizQuestion).toHaveBeenCalledWith(
       expect.stringMatching(/^[0-9a-f-]{36}$/iu),
       expect.objectContaining({
@@ -100,6 +101,16 @@ describe("admin quiz service", () => {
   ])("rejects invalid write input: %o", async (change) => {
     await expect(createAdminQuiz({ ...payload, ...change })).rejects.toMatchObject({ code: "validation" });
     expect(mocks.insertAdminQuizQuestion).not.toHaveBeenCalled();
+  });
+  it("rejects a client-supplied Question ID in the write body", async () => {
+    await expect(createAdminQuiz({ ...payload, id: question.id })).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { id: "immutable" },
+    });
+    await expect(updateAdminQuiz(question.id, { ...payload, id: question.id })).rejects.toMatchObject({
+      code: "validation",
+      fieldErrors: { id: "immutable" },
+    });
   });
   it("rejects a related story or missing guide", async () => {
     mocks.getAdminContent.mockResolvedValue({ kind: "story" });
@@ -216,16 +227,20 @@ describe("admin quiz service", () => {
       }),
     ).toEqual([]);
   });
-  it("maps duplicate Question IDs to a conflict", async () => {
-    mocks.insertAdminQuizQuestion.mockRejectedValue({ code: "23505" });
-    await expect(createAdminQuiz(payload)).rejects.toMatchObject({
-      code: "conflict",
+  it("accepts a reserved UUID for automation retry and rejects a non-UUID", async () => {
+    await expect(createAdminQuiz(payload, question.id)).resolves.toEqual(question);
+    expect(mocks.insertAdminQuizQuestion).toHaveBeenCalledWith(question.id, expect.anything());
+    await expect(createAdminQuiz(payload, "legacy-question")).rejects.toMatchObject({
+      code: "validation",
       fieldErrors: { id: "invalid_format" },
     });
   });
-  it("keeps legacy Question IDs readable during the UUID migration", async () => {
-    await expect(updateAdminQuiz("legacy-question", payload)).resolves.toEqual(question);
-    expect(mocks.replaceAdminQuizQuestion).toHaveBeenCalledWith("legacy-question", expect.anything());
+  it("rejects legacy Question IDs before reading or updating", async () => {
+    await expect(readAdminQuiz("legacy-question")).rejects.toMatchObject({ code: "validation" });
+    await expect(updateAdminQuiz("legacy-question", payload)).rejects.toMatchObject({ code: "validation" });
+    await expect(changeAdminQuizPublication("legacy-question", true)).rejects.toMatchObject({ code: "validation" });
+    expect(mocks.getAdminQuizQuestion).not.toHaveBeenCalled();
+    expect(mocks.replaceAdminQuizQuestion).not.toHaveBeenCalled();
   });
   it("reports invalid publication state without blaming the Question ID", async () => {
     await expect(changeAdminQuizPublication(question.id, "true" as boolean)).rejects.toMatchObject({

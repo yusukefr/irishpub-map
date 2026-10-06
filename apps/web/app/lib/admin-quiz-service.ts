@@ -14,10 +14,9 @@ import {
 } from "./quiz/repository";
 import {
   isQuizCategory,
-  isQuizId,
+  isQuizQuestionId,
   isQuizChoiceId,
   QUIZ_CHOICE_ID_MAX_LENGTH,
-  QUIZ_ID_MAX_LENGTH,
   QUIZ_IMAGE_ALT_MAX_LENGTH,
   QUIZ_IMAGE_CAPTION_MAX_LENGTH,
   type AdminQuizChoice,
@@ -55,6 +54,7 @@ export async function readAdminQuizList(): Promise<readonly AdminQuizListItem[]>
  * @returns {Promise<AdminQuizQuestion>} 作成されたQuiz。
  */
 export async function createAdminQuiz(value: unknown, id: string = randomUUID()): Promise<AdminQuizQuestion> {
+  if (!isQuizQuestionId(id)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
   const input = await parseWriteInput(value);
   try {
     await insertAdminQuizQuestion(id, input);
@@ -72,7 +72,7 @@ export async function createAdminQuiz(value: unknown, id: string = randomUUID())
  * @returns {Promise<AdminQuizQuestion>} 指定Question。
  */
 export async function readAdminQuiz(id: string): Promise<AdminQuizQuestion> {
-  if (!isQuizId(id, QUIZ_ID_MAX_LENGTH)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
+  if (!isQuizQuestionId(id)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
   const question = await getAdminQuizQuestion(id);
   if (!question) throw new AdminQuizServiceError("not_found");
   return question;
@@ -84,7 +84,7 @@ export async function readAdminQuiz(id: string): Promise<AdminQuizQuestion> {
  * @returns {Promise<AdminQuizQuestion>} 更新されたQuiz。
  */
 export async function updateAdminQuiz(id: string, value: unknown): Promise<AdminQuizQuestion> {
-  if (!isQuizId(id, QUIZ_ID_MAX_LENGTH)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
+  if (!isQuizQuestionId(id)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
   const input = await parseWriteInput(value);
   let result;
   try {
@@ -110,7 +110,7 @@ export async function changeAdminQuizPublication(
   id: string,
   isPublished: boolean,
 ): Promise<AdminQuizPublicationResult> {
-  if (!isQuizId(id, QUIZ_ID_MAX_LENGTH)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
+  if (!isQuizQuestionId(id)) throw new AdminQuizServiceError("validation", { id: "invalid_format" });
   if (typeof isPublished !== "boolean") throw new AdminQuizServiceError("validation");
   const current = await readAdminQuiz(id);
   if (isPublished) {
@@ -129,6 +129,7 @@ export async function changeAdminQuizPublication(
 async function parseWriteInput(value: unknown): Promise<AdminQuizWriteInput> {
   const source = asRecord(value);
   const fieldErrors: FieldErrors = {};
+  if ("id" in source) fieldErrors.id = "immutable";
   const input = {
     category: parseCategory(source.category, fieldErrors),
     specialDate: parseSpecialDate(source.specialDate, fieldErrors),

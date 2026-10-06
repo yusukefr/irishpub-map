@@ -37,7 +37,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.requireAdminSession.mockResolvedValue(undefined);
   mocks.readAdminQuizList.mockResolvedValue([]);
-  mocks.readAdminQuiz.mockResolvedValue({ id: "history-question-001" });
+  mocks.readAdminQuiz.mockResolvedValue({ id: "11111111-1111-4111-8111-000000000001" });
   mocks.isQuizDatabaseConfigured.mockReturnValue(true);
   mocks.readAdminContentList.mockResolvedValue([]);
 });
@@ -45,7 +45,7 @@ describe("Admin Quiz pages", () => {
   it("renders the list and edit link after authentication", async () => {
     mocks.readAdminQuizList.mockResolvedValue([
       {
-        id: "history-question-001",
+        id: "11111111-1111-4111-8111-000000000001",
         category: "history",
         specialDate: null,
         isPublished: false,
@@ -63,12 +63,15 @@ describe("Admin Quiz pages", () => {
     expect(mocks.requireAdminSession).toHaveBeenCalled();
     expect(screen.getByRole("heading", { name: "Quiz管理" })).toBeInTheDocument();
     expect(screen.getByText("下書き")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "編集" })).toHaveAttribute("href", "/admin/quiz/history-question-001");
+    expect(screen.getByRole("link", { name: "編集" })).toHaveAttribute(
+      "href",
+      "/admin/quiz/11111111-1111-4111-8111-000000000001",
+    );
   });
   it("passes new and existing questions to the shared editor", async () => {
     render(await NewAdminQuizPage());
     expect(screen.getByText("new quiz")).toBeInTheDocument();
-    render(await EditAdminQuizPage({ params: Promise.resolve({ id: "history-question-001" }) }));
-    expect(screen.getByText("history-question-001")).toBeInTheDocument();
+    render(await EditAdminQuizPage({ params: Promise.resolve({ id: "11111111-1111-4111-8111-000000000001" }) }));
+    expect(screen.getByText("11111111-1111-4111-8111-000000000001")).toBeInTheDocument();
   });
 });

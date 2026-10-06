@@ -101,7 +101,7 @@ export const quizCreateResponse = quizResponse.extend({
   question: quizResponse.shape.question.extend({ isPublished: z.literal(false) }),
 });
 export const quizPublicationResponse = z
-  .object({ publication: z.object({ id: z.string(), isPublished: z.boolean(), unchanged: z.boolean() }).strict() })
+  .object({ publication: z.object({ id: uuid, isPublished: z.boolean(), unchanged: z.boolean() }).strict() })
   .strict();
 
 const pubRequiredText = z.string().trim().min(1);

@@ -19,7 +19,7 @@ tags:
   - name: Automation Content
     description: Create draft, verify, then publish through a separate request.
   - name: Automation Quiz
-    description: Create draft, verify, then publish through a separate request.
+    description: Create a draft with a server-generated Question UUID, verify, then publish through a separate request.
   - name: Automation Pubs
     description: Search duplicates, create unpublished, verify, then publish. No delete endpoint.
 paths:

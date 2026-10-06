@@ -13,10 +13,9 @@ export const QUIZ_CATEGORIES = [
   "history",
 ] as const;
 
-/** 管理画面で入力できるQuestion IDの最大文字数です。 */
-export const QUIZ_ID_MAX_LENGTH = 100;
 /** 管理画面で入力できるChoice IDの最大文字数です。 */
 export const QUIZ_CHOICE_ID_MAX_LENGTH = 60;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 /** 問題画像のLocale別代替テキストの最大文字数です。 */
 export const QUIZ_IMAGE_ALT_MAX_LENGTH = 500;
 /** 問題画像のLocale別キャプションの最大文字数です。 */
@@ -133,13 +132,12 @@ export function isQuizCategory(value: string): value is QuizCategory {
 }
 
 /**
- * 移行期間中のQuestion IDであるkebab-caseまたはUUIDか判定します。
+ * Question IDがUUIDか判定します。
  * @param value 判定対象。
- * @param maxLength 最大文字数。
- * @returns {boolean} 許可形式の場合はtrue。
+ * @returns {boolean} UUIDの場合はtrue。
  */
-export function isQuizId(value: string, maxLength = QUIZ_ID_MAX_LENGTH) {
-  return value.length <= maxLength && /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(value);
+export function isQuizQuestionId(value: string) {
+  return UUID_PATTERN.test(value);
 }
 
 /**
@@ -149,5 +147,5 @@ export function isQuizId(value: string, maxLength = QUIZ_ID_MAX_LENGTH) {
  * @returns {boolean} 許可形式の場合はtrue。
  */
 export function isQuizChoiceId(value: string, maxLength = QUIZ_CHOICE_ID_MAX_LENGTH) {
-  return isQuizId(value, maxLength);
+  return value.length <= maxLength && /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(value);
 }

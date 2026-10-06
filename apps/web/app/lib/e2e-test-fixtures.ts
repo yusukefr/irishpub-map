@@ -193,7 +193,7 @@ const contentDefinitions: AdminContent[] = [
 ];
 const quizDefinitions: AdminQuizQuestion[] = [
   {
-    id: "e2e-draft-question",
+    id: "11111111-1111-4111-8111-000000000003",
     category: null,
     specialDate: null,
     correctChoiceId: null,
@@ -211,7 +211,7 @@ const quizDefinitions: AdminQuizQuestion[] = [
     updatedAt: UPDATED_AT,
   },
   {
-    id: "e2e-published-question",
+    id: "11111111-1111-4111-8111-000000000002",
     category: "history",
     specialDate: { month: 3, day: 17 },
     correctChoiceId: "choice-1",

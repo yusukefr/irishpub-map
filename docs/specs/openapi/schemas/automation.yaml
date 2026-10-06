@@ -229,7 +229,7 @@ Quiz:
       updatedAt,
     ]
   properties:
-    id: { type: string, maxLength: 100 }
+    id: { $ref: "#/Uuid" }
     category: { $ref: "#/QuizCategory" }
     specialDate: { $ref: "#/QuizWrite/properties/specialDate" }
     correctChoiceId: { $ref: "#/QuizWrite/properties/correctChoiceId" }
@@ -270,7 +270,7 @@ QuizListItem:
       choiceCount,
     ]
   properties:
-    id: { type: string }
+    id: { $ref: "#/Uuid" }
     category: { $ref: "#/QuizCategory" }
     specialDate: { $ref: "#/QuizWrite/properties/specialDate" }
     correctChoiceId: { $ref: "#/QuizWrite/properties/correctChoiceId" }
@@ -293,7 +293,7 @@ BooleanPublication:
   type: object
   required: [id, isPublished, unchanged]
   properties:
-    id: { type: string }
+    id: { $ref: "#/Uuid" }
     isPublished: { type: boolean }
     unchanged: { type: boolean }
 

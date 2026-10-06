@@ -5,6 +5,80 @@
 
 This document records the physical schema in PostgreSQL `public`: tables, columns, constraints (including foreign keys), and indexes.
 
+## automation_audit_logs
+
+### Columns
+
+| Column          | Type                       | Nullable | Default |
+| --------------- | -------------------------- | -------- | ------- |
+| `id`            | `uuid`                     | no       | —       |
+| `request_id`    | `uuid`                     | no       | —       |
+| `scope`         | `text`                     | no       | —       |
+| `method`        | `text`                     | no       | —       |
+| `path`          | `text`                     | no       | —       |
+| `resource_type` | `text`                     | no       | —       |
+| `resource_id`   | `text`                     | yes      | —       |
+| `action`        | `text`                     | no       | —       |
+| `result`        | `text`                     | no       | —       |
+| `status_code`   | `integer`                  | no       | —       |
+| `created_at`    | `timestamp with time zone` | no       | `now()` |
+
+### Constraints
+
+| Name                                        | Type        | Definition                                                                                         |
+| ------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------- |
+| `automation_audit_logs_action_check`        | CHECK       | `CHECK (action = ANY (ARRAY['create'::text, 'update'::text, 'publish'::text, 'unpublish'::text]))` |
+| `automation_audit_logs_pkey`                | PRIMARY KEY | `PRIMARY KEY (id)`                                                                                 |
+| `automation_audit_logs_resource_type_check` | CHECK       | `CHECK (resource_type = ANY (ARRAY['content'::text, 'quiz'::text, 'pub'::text, 'tag'::text]))`     |
+| `automation_audit_logs_result_check`        | CHECK       | `CHECK (result = ANY (ARRAY['success'::text, 'failure'::text]))`                                   |
+| `automation_audit_logs_status_code_check`   | CHECK       | `CHECK (status_code >= 100 AND status_code <= 599)`                                                |
+
+### Indexes
+
+| Name                                   | Definition                                                                                                                 |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `automation_audit_logs_created_at_idx` | `CREATE INDEX automation_audit_logs_created_at_idx ON public.automation_audit_logs USING btree (created_at DESC)`          |
+| `automation_audit_logs_pkey`           | `CREATE UNIQUE INDEX automation_audit_logs_pkey ON public.automation_audit_logs USING btree (id)`                          |
+| `automation_audit_logs_request_id_idx` | `CREATE INDEX automation_audit_logs_request_id_idx ON public.automation_audit_logs USING btree (request_id)`               |
+| `automation_audit_logs_resource_idx`   | `CREATE INDEX automation_audit_logs_resource_idx ON public.automation_audit_logs USING btree (resource_type, resource_id)` |
+
+## automation_idempotency_keys
+
+### Columns
+
+| Column          | Type                       | Nullable | Default                          |
+| --------------- | -------------------------- | -------- | -------------------------------- |
+| `id`            | `uuid`                     | no       | —                                |
+| `key_hash`      | `character`                | no       | —                                |
+| `request_hash`  | `character`                | no       | —                                |
+| `method`        | `text`                     | no       | —                                |
+| `path`          | `text`                     | no       | —                                |
+| `resource_type` | `text`                     | no       | —                                |
+| `resource_id`   | `text`                     | no       | —                                |
+| `status`        | `text`                     | no       | `'pending'::text`                |
+| `status_code`   | `integer`                  | yes      | —                                |
+| `response_body` | `jsonb`                    | yes      | —                                |
+| `created_at`    | `timestamp with time zone` | no       | `now()`                          |
+| `expires_at`    | `timestamp with time zone` | no       | `(now() + '24:00:00'::interval)` |
+
+### Constraints
+
+| Name                                              | Type        | Definition                                                                                                                                                                                     |
+| ------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `automation_idempotency_keys_key_hash_key`        | UNIQUE      | `UNIQUE (key_hash)`                                                                                                                                                                            |
+| `automation_idempotency_keys_pkey`                | PRIMARY KEY | `PRIMARY KEY (id)`                                                                                                                                                                             |
+| `automation_idempotency_keys_resource_type_check` | CHECK       | `CHECK (resource_type = ANY (ARRAY['content'::text, 'quiz'::text, 'pub'::text, 'tag'::text]))`                                                                                                 |
+| `automation_idempotency_keys_status_check`        | CHECK       | `CHECK (status = ANY (ARRAY['pending'::text, 'completed'::text]))`                                                                                                                             |
+| `automation_idempotency_response_check`           | CHECK       | `CHECK (status = 'pending'::text AND status_code IS NULL AND response_body IS NULL OR status = 'completed'::text AND status_code >= 200 AND status_code <= 299 AND response_body IS NOT NULL)` |
+
+### Indexes
+
+| Name                                         | Definition                                                                                                                                                  |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `automation_idempotency_keys_expires_at_idx` | `CREATE INDEX automation_idempotency_keys_expires_at_idx ON public.automation_idempotency_keys USING btree (expires_at) WHERE (status = 'completed'::text)` |
+| `automation_idempotency_keys_key_hash_key`   | `CREATE UNIQUE INDEX automation_idempotency_keys_key_hash_key ON public.automation_idempotency_keys USING btree (key_hash)`                                 |
+| `automation_idempotency_keys_pkey`           | `CREATE UNIQUE INDEX automation_idempotency_keys_pkey ON public.automation_idempotency_keys USING btree (id)`                                               |
+
 ## calendar_event_translations
 
 ### Columns
@@ -425,11 +499,11 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 | Column        | Type                       | Nullable | Default |
 | ------------- | -------------------------- | -------- | ------- |
-| `question_id` | `text`                     | no       | —       |
 | `choice_id`   | `text`                     | no       | —       |
 | `locale`      | `text`                     | no       | —       |
 | `label`       | `text`                     | no       | —       |
 | `updated_at`  | `timestamp with time zone` | no       | `now()` |
+| `question_id` | `uuid`                     | no       | —       |
 
 ### Constraints
 
@@ -451,11 +525,11 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 | Column        | Type                       | Nullable | Default |
 | ------------- | -------------------------- | -------- | ------- |
-| `question_id` | `text`                     | no       | —       |
 | `id`          | `text`                     | no       | —       |
 | `sort_order`  | `smallint`                 | no       | —       |
 | `created_at`  | `timestamp with time zone` | no       | `now()` |
 | `updated_at`  | `timestamp with time zone` | no       | `now()` |
+| `question_id` | `uuid`                     | no       | —       |
 
 ### Constraints
 
@@ -480,7 +554,6 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 | Column          | Type                       | Nullable | Default    |
 | --------------- | -------------------------- | -------- | ---------- |
-| `question_id`   | `text`                     | no       | —          |
 | `locale`        | `text`                     | no       | —          |
 | `question`      | `text`                     | no       | —          |
 | `explanation`   | `text`                     | no       | —          |
@@ -488,6 +561,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | `updated_at`    | `timestamp with time zone` | no       | `now()`    |
 | `image_alt`     | `text`                     | no       | `''::text` |
 | `image_caption` | `text`                     | no       | `''::text` |
+| `question_id`   | `uuid`                     | no       | —          |
 
 ### Constraints
 
@@ -511,7 +585,6 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 | Column               | Type                       | Nullable | Default |
 | -------------------- | -------------------------- | -------- | ------- |
-| `id`                 | `text`                     | no       | —       |
 | `category`           | `text`                     | yes      | —       |
 | `special_month`      | `smallint`                 | yes      | —       |
 | `special_day`        | `smallint`                 | yes      | —       |
@@ -522,6 +595,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | `created_at`         | `timestamp with time zone` | no       | `now()` |
 | `updated_at`         | `timestamp with time zone` | no       | `now()` |
 | `image_asset_id`     | `uuid`                     | yes      | —       |
+| `id`                 | `uuid`                     | no       | —       |
 
 ### Constraints
 
@@ -530,7 +604,6 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | `quiz_questions_category_check`          | CHECK       | `CHECK (category IS NULL OR btrim(category) <> ''::text)`                                                                                                                                                                                                                         |
 | `quiz_questions_correct_choice_fkey`     | FOREIGN KEY | `FOREIGN KEY (id, correct_choice_id) REFERENCES quiz_choices(question_id, id) DEFERRABLE INITIALLY DEFERRED`                                                                                                                                                                      |
 | `quiz_questions_correct_choice_id_check` | CHECK       | `CHECK (correct_choice_id IS NULL OR btrim(correct_choice_id) <> ''::text)`                                                                                                                                                                                                       |
-| `quiz_questions_id_check`                | CHECK       | `CHECK (btrim(id) <> ''::text)`                                                                                                                                                                                                                                                   |
 | `quiz_questions_image_asset_id_fkey`     | FOREIGN KEY | `FOREIGN KEY (image_asset_id) REFERENCES media_assets(id) ON DELETE SET NULL`                                                                                                                                                                                                     |
 | `quiz_questions_pkey`                    | PRIMARY KEY | `PRIMARY KEY (id)`                                                                                                                                                                                                                                                                |
 | `quiz_questions_related_content_id_fkey` | FOREIGN KEY | `FOREIGN KEY (related_content_id) REFERENCES content_entries(id) ON DELETE SET NULL`                                                                                                                                                                                              |

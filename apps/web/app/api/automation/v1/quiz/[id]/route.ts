@@ -4,7 +4,7 @@ import { getAutomationApiAuthorizationError } from "../../../../../lib/automatio
 import { handleAutomationMutation } from "../../../../../lib/automation-reliability";
 import { readAdminQuiz, updateAdminQuiz } from "../../../../../lib/admin-quiz-service";
 import { isQuizDatabaseConfigured } from "../../../../../lib/quiz/repository";
-import { isQuizId } from "../../../../../lib/quiz/types";
+import { isQuizQuestionId } from "../../../../../lib/quiz/types";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -19,7 +19,7 @@ export async function GET(request: Request, context: Context) {
   if (authorizationError) return authorizationError;
   if (!isQuizDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
   const { id } = await context.params;
-  if (!isQuizId(id)) return adminApiErrorResponse("invalid_request", 400);
+  if (!isQuizQuestionId(id)) return adminApiErrorResponse("invalid_request", 400);
   try {
     return Response.json({ question: await readAdminQuiz(id) });
   } catch (error) {
@@ -38,7 +38,7 @@ export async function PUT(request: Request, context: Context) {
   return handleAutomationMutation(request, {
     scope: "quiz:update",
     resourceType: "quiz",
-    resourceId: isQuizId(id) ? id : null,
+    resourceId: isQuizQuestionId(id) ? id : null,
     execute: () => update(request, context),
   });
 }
@@ -48,7 +48,7 @@ async function update(request: Request, context: Context) {
   if (authorizationError) return authorizationError;
   if (!isQuizDatabaseConfigured()) return adminApiErrorResponse("database_unavailable", 503);
   const { id } = await context.params;
-  if (!isQuizId(id)) return adminApiErrorResponse("invalid_request", 400);
+  if (!isQuizQuestionId(id)) return adminApiErrorResponse("invalid_request", 400);
   const contentTypeError = getAdminJsonContentTypeError(request);
   if (contentTypeError) return contentTypeError;
   let body: unknown;

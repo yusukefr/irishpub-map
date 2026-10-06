@@ -181,7 +181,7 @@ Draftではkind・slug・categoryを `null`、翻訳文言を空文字にでき�
 
 ### Automation Quiz管理
 
-Quiz APIは既存のQuiz Service、Validation、Repository、管理API Error Contractを再利用します。Scopeは操作ごとに分離され、一覧・詳細取得は `quiz:read`、Draft作成は `quiz:create`、全体Snapshot更新は `quiz:update`、公開状態変更は `quiz:publish` を要求します。Scope間の権限継承はありません。
+Quiz APIは既存のQuiz Service、Validation、Repository、管理API Error Contractを再利用します。Question IDはServer生成UUIDで、`:id` を持つRouteはUUIDのみ受け付けます。Automation Createの冪等性処理では再試行に備えて同じUUIDを使用します。Scopeは操作ごとに分離され、一覧・詳細取得は `quiz:read`、Draft作成は `quiz:create`、全体Snapshot更新は `quiz:update`、公開状態変更は `quiz:publish` を要求します。Scope間の権限継承はありません。
 
 | メソッド | パス | 成功時 | 主な失敗時 |
 | --- | --- | --- | --- |
@@ -297,7 +297,7 @@ Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`tran
 
 営業ステータス管理APIの固定key、日英表示名、transaction更新は[管理ステータス仕様](status-management.md)を参照してください。更新本文は必須の `nameJa` と任意の `nameEn` だけを利用し、余分な `key` は更新対象にしません。
 
-Quiz管理APIの `POST` と `PUT` は、カテゴリ、特別日、関連Guide UUID、日英翻訳、0〜4件のChoice、正解、HTTPSの情報源URLを含む全体Snapshotを受け付けます。Question IDは `POST` でServerがUUIDを生成し、Request Bodyでは受け付けません。UUID移行の完了までは `GET`、`PUT`、公開状態変更で既存のkebab-case IDも受け付けます。`PUT` はURLのIDを対象にし、Request BodyからIDを変更できません。Choice IDはQuestion内で一意なkebab-caseです。通常のテキストはTrimして保存し、IDの空白は正規化せず入力エラーにします。Choice Requestに `sortOrder` は含めず、配列順を利用します。関連ContentはGuideだけを選択でき、Publishedの更新は公開条件を満たさない場合に拒否します。画像付きQuizのSnapshotには `imageAssetId` と日英の `imageAlt` / `imageCaption` を含め、画像を維持する更新では値を引き継ぎます。公開時はカテゴリ、日英すべての問題文・解説・情報源ラベル、HTTPS情報源URL、4件のChoiceと各日英ラベル、正解、妥当な特別日を検証し、画像を含む場合は日英の代替テキストも必須です。`imageCaption` は任意です。`DELETE` とChoice単位のサブAPIは提供しません。
+Quiz管理APIの `POST` と `PUT` は、カテゴリ、特別日、関連Guide UUID、日英翻訳、0〜4件のChoice、正解、HTTPSの情報源URLを含む全体Snapshotを受け付けます。Question IDは `POST` でServerがUUIDを生成し、Request Bodyでは受け付けません。`GET`、`PUT`、公開状態変更のURLはUUIDのみ受け付け、旧kebab-case Question IDは `400 invalid_request` です。`PUT` はURLのIDを対象にし、Request BodyからIDを変更できません。Choice IDはQuestion内で一意なkebab-caseです。通常のテキストはTrimして保存し、IDの空白は正規化せず入力エラーにします。Choice Requestに `sortOrder` は含めず、配列順を利用します。関連ContentはGuideだけを選択でき、Publishedの更新は公開条件を満たさない場合に拒否します。画像付きQuizのSnapshotには `imageAssetId` と日英の `imageAlt` / `imageCaption` を含め、画像を維持する更新では値を引き継ぎます。公開時はカテゴリ、日英すべての問題文・解説・情報源ラベル、HTTPS情報源URL、4件のChoiceと各日英ラベル、正解、妥当な特別日を検証し、画像を含む場合は日英の代替テキストも必須です。`imageCaption` は任意です。`DELETE` とChoice単位のサブAPIは提供しません。
 
 Media Asset APIは管理者専用です。`POST /api/admin/media` は同一Originの `multipart/form-data` で `file` 1件だけを受け付けます。JPEG、PNG、WebPの実データをSharpで検証し、4 MiB、縦横8192px、総画素数4000万を上限とします。GIF、AVIF、SVG、アニメーション画像、動画、形式・拡張子の偽装は拒否します。成功時は `201` と `media` DTOを返し、Blobへの保存に失敗すると `503 media_storage_unavailable` または一般化した内部エラーを返します。Blob保存後にDB登録が失敗した場合はBlobを削除して補償します。
 

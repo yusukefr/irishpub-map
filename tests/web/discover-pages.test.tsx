@@ -130,7 +130,7 @@ beforeEach(() => {
   });
   pageMocks.isDataSourceConfigured.mockReset().mockReturnValue(true);
   pageMocks.getDailyPublishedQuiz.mockReset().mockResolvedValue({
-    id: "e2e-published-question",
+    id: "11111111-1111-4111-8111-000000000002",
     category: "history",
     question: "Today's question",
     choices: ["one", "two", "three", "four"].map((id) => ({ id, label: id })),

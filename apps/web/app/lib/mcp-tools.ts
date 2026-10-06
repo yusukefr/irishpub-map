@@ -86,14 +86,7 @@ const pubPublicationWriteResponse = pubPublicationResponse.extend({ requestId: z
 const tagCreateToolResponse = tagResponse.extend({ requestId: z.uuid() });
 const emptyInput = z.object({}).strict();
 const uuidId = z.object({ id: z.uuid() }).strict();
-const quizId = z
-  .object({
-    id: z
-      .string()
-      .max(100)
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  })
-  .strict();
+const quizId = uuidId;
 const pubFilters = z
   .object({
     name: z.string().max(100).optional(),

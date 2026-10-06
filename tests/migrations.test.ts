@@ -229,6 +229,29 @@ describe("editorial content hero image migration", () => {
 });
 
 describe("quiz database migration", () => {
+  it("maps legacy Question IDs atomically and verifies UUID references", async () => {
+    const upSql = await readMigration("018_convert_quiz_question_ids_to_uuid_up.sql");
+    const verifySql = await readMigration("018_convert_quiz_question_ids_to_uuid_verify.sql");
+
+    expect(upSql).toContain("CREATE TEMP TABLE quiz_question_id_map");
+    expect(upSql).toContain("THEN id::uuid");
+    expect(upSql).toContain("ELSE gen_random_uuid()");
+    expect(upSql.match(/ADD COLUMN (?:id_uuid|question_id_uuid) UUID/g)).toHaveLength(4);
+    expect(upSql).toContain("quiz question ID mapping is incomplete");
+    expect(upSql).toContain("quiz row counts changed during migration");
+    expect(upSql).toContain("DEFERRABLE INITIALLY DEFERRED");
+    expect(upSql).toContain("VALUES ('018_convert_quiz_question_ids_to_uuid')");
+    expect(upSql.trimEnd().endsWith("COMMIT;")).toBe(true);
+
+    expect(verifySql).toContain("data_type = 'uuid'");
+    expect(verifySql).toContain("q.correct_choice_id IS NOT NULL");
+    expect(verifySql).toContain("pg_get_constraintdef(oid)");
+    expect(verifySql).toContain("condeferrable");
+    expect(verifySql).toContain("condeferred");
+    expect(verifySql).toContain("quiz_questions_related_content_id_idx");
+    expect(verifySql).toContain("quiz_questions_image_asset_id_idx");
+  });
+
   it("adds optional question images and verifies references and translation limits", async () => {
     const upSql = await readMigration("016_add_quiz_question_image_up.sql");
     const verifySql = await readMigration("016_add_quiz_question_image_verify.sql");
