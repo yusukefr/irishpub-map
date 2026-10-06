@@ -2,8 +2,10 @@
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from "jose";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET as getProtectedResource } from "../../apps/web/app/.well-known/oauth-protected-resource/route";
+import { verifyMcpAccessToken, type McpOAuthConfig } from "../../apps/web/app/lib/mcp-auth";
 import { createAuthenticatedMcpHandler } from "../../apps/web/app/lib/mcp-server";
 import { MCP_TOOL_ALLOW_LIST } from "../../apps/web/app/lib/mcp-tools";
 
@@ -305,6 +307,55 @@ describe("Remote MCP contract", () => {
     const response = await createHandler([])(mcpRequest("tools/call", { name: "list_prefectures", arguments: {} }));
     expect(response.status).toBe(403);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("checks a signed OAuth JWT through the MCP handler before calling Automation API", async () => {
+    const { publicKey, privateKey } = await generateKeyPair("RS256");
+    const keySet = createLocalJWKSet({
+      keys: [{ ...(await exportJWK(publicKey)), kid: "integration-key", alg: "RS256" }],
+    });
+    const config: McpOAuthConfig = {
+      publicOrigin: process.env.MCP_PUBLIC_ORIGIN!,
+      issuer: process.env.MCP_OAUTH_ISSUER!,
+      audience: process.env.MCP_OAUTH_AUDIENCE!,
+      jwksUrl: process.env.MCP_OAUTH_JWKS_URL!,
+      allowedSubject: process.env.MCP_OAUTH_ALLOWED_SUBJECT!,
+    };
+    const now = Math.floor(Date.now() / 1000);
+    const token = (subject: string, scope: string, issuedAt = now) =>
+      new SignJWT({ scope, client_id: "integration-client" })
+        .setProtectedHeader({ alg: "RS256", kid: "integration-key" })
+        .setIssuer(config.issuer)
+        .setAudience(config.audience)
+        .setSubject(subject)
+        .setIssuedAt(issuedAt)
+        .setExpirationTime(now + 600)
+        .sign(privateKey);
+    const handler = createAuthenticatedMcpHandler(async (_request, bearer) =>
+      bearer ? verifyMcpAccessToken(bearer, config, keySet) : undefined,
+    );
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ prefectures: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    for (const denied of [
+      await token("other-subject", "mcp:read"),
+      await token(config.allowedSubject, "mcp:read", now + 300),
+    ]) {
+      expect((await handler(mcpRequest("server/discover", undefined, denied))).status).toBe(401);
+    }
+    const missingScope = await token(config.allowedSubject, "other:scope");
+    expect((await handler(mcpRequest("tools/list", undefined, missingScope))).status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const accepted = await token(config.allowedSubject, "mcp:read");
+    expect((await handler(mcpRequest("server/discover", undefined, accepted))).status).toBe(200);
+    const called = await handler(mcpRequest("tools/call", { name: "list_prefectures", arguments: {} }, accepted));
+    expect(called.status).toBe(200);
+    const result = (await mcpBody(called)).result as Record<string, unknown>;
+    expect(result.structuredContent).toEqual({ prefectures: [] });
+    expect(JSON.stringify(result)).not.toContain(accepted);
+    expect(JSON.stringify(result)).not.toContain(config.allowedSubject);
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 
   it("returns Automation API errors as tool errors without forwarding secrets", async () => {

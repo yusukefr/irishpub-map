@@ -57,6 +57,28 @@ Master Dataは毎回Automation APIから取得し、MCP Serverには複製しま
 | `AUTOMATION_API_TOKEN_SHA256` | 既存Automation APIが検証する同じTokenのSHA-256。 |
 | `AUTOMATION_API_SCOPES` | Readには `master:read,content:read,quiz:read,pubs:read`。Content / Quiz Writeには `content:create,content:update,content:publish,quiz:create,quiz:update,quiz:publish`、Pub / Tag Writeには `pubs:create,pubs:update,pubs:publish,tag:create` を対象環境で追加。既存Scopeの和集合を維持する。 |
 
+### Auth0の手動再構築
+
+1. Auth0 DashboardでProduction用Tenantを作成し、管理方針に合うRegionとEnvironment分類を選ぶ。Tenant Domainを控え、OpenID Configurationの `issuer` と `jwks_uri` を確認する。`issuer` は末尾の `/` を含め、発行されるJWTの `iss` と完全一致させる。
+2. Applications → APIsでMCP用APIを作成する。Identifierには[公開MCP URL](../../plugins/irishpub-map/mcp.json)の `/api/mcp` までを指定し、Signing AlgorithmはRS256、Permissionは `mcp:read` とする。APIのSettings → Application Access Policyで、第三者ApplicationのUser-delegated Accessには `mcp:read` のみを許可し、Client AccessはUnauthorizedにする。Client Credentialsで管理Toolを使える設定にしない。
+3. Tenant Settings → AdvancedでDynamic Client Registrationを有効にする。同じ画面でResource Parameter Compatibility Profileを有効にし、MCP Clientが送る `resource` をMCP APIのAudienceとして扱えることを確認する。DCRで登録されたApplicationのConnectionと権限を後で確認する。CIMDへ切り替える場合はChatGPTとCodexで別途接続を検証する。
+4. Authentication → DatabaseでMCP管理者専用Connectionを作成する。Email / Password Loginを使用し、Disable Sign Upsを有効にする。UsernameやPhoneを使わない構成なら有効化しない。第三者ApplicationのLogin画面にConnectionが出ない場合は、当該ConnectionをDomain LevelへPromoteするか、Applicationへの割当を確認する。管理用途に不要なConnectionを公開しない。
+5. User Managementで専用Connectionに管理者Userを作成する。User ProfileのUser IDがJWTの `sub` に対応することを確認し、その値をserver-sideの `MCP_OAUTH_ALLOWED_SUBJECT` に設定する。User ID、Password、Tokenの実値を文書、Issue、PR、通常ログへ記録しない。
+6. Auth0のOpenID Configurationにある `issuer` と `jwks_uri` をそれぞれ `MCP_OAUTH_ISSUER`、`MCP_OAUTH_JWKS_URL` に設定する。`MCP_OAUTH_AUDIENCE` はAPI IdentifierとProtected Resource Metadataの `resource` に完全一致させる。JWTの署名、Issuer、Audience、期限、発行時刻、Subject、`mcp:read` はMCP側でも検証する。
+
+Auth0の画面や設定名が変わった場合は、[Dynamic Client Registration](https://auth0.com/docs/get-started/applications/dynamic-client-registration)、[API Access Policy](https://auth0.com/blog/developers-guide-api-access-policies-auth0/)、[Resource Parameter Compatibility Profile](https://support.auth0.com/center/s/article/mcp-audience-error-with-auth0)を確認する。
+
+### Vercelの手動設定
+
+1. Vercel Dashboardで対象Projectを開き、Settings → Environment Variablesへ進む。Production Environmentを選び、表の9変数を設定する。`MCP_PUBLIC_ORIGIN` と `MCP_AUTOMATION_API_ORIGIN` はProduction ApplicationのHTTPS Originのみ、`MCP_OAUTH_AUDIENCE` はそのOrigin + `/api/mcp` とする。
+2. `MCP_OAUTH_ISSUER` と `MCP_OAUTH_JWKS_URL` はAuth0のOpenID Configurationから、`MCP_OAUTH_ALLOWED_SUBJECT` は管理者User Profileから取得する。OAuth系の値をPreview用Auth0設定と混ぜない。
+3. [Automation API Token運用手順](automation-api-access.md#認証と環境設定)の `scripts/generate-automation-token.mjs` が出力するRaw Tokenを `MCP_AUTOMATION_API_TOKEN`、対応するSHA-256 hashを `AUTOMATION_API_TOKEN_SHA256` に設定する。詳細な生成・rotation・緊急失効手順は同Runbookを正とする。
+4. `AUTOMATION_API_SCOPES` は利用するToolに必要なScopeだけを設定する。Read-only確認時は `master:read,content:read,quiz:read,pubs:read`。全Write Toolを有効にするときは `content:create,content:update,content:publish,quiz:create,quiz:update,quiz:publish,pubs:create,pubs:update,pubs:publish,tag:create` を追加する。Auth0側のOAuth Scopeは引き続き `mcp:read` のみとする。
+5. Shared Environment Variablesを利用するときは、対象ProjectへのLink、対象Environment、Project固有値による上書きを確認する。MCP専用値は可能な限りProject単位で管理し、Production CredentialをPreviewへ流用しない。
+6. OAuth変数、Token、hash、Scopeの変更後は対象Environmentを再Deploymentする。既存Deploymentに設定変更が即時反映されるとは扱わない。Deployment後にMetadata、未認証 `401` challenge、OAuth Login、Read-only Toolの順で確認する。
+
+設定値の実体はこのRunbook、Issue、PR、画面共有へ転記しない。[Vercel Environment Variables](https://vercel.com/docs/environment-variables)と[Shared Environment Variables](https://vercel.com/docs/environment-variables/shared-environment-variables)を画面変更時の参照先とする。
+
 Production / PreviewではVercelの対象Environmentにserver-side変数を設定して再Deploymentします。LocalではGit管理外の `apps/web/.env.local` を使います。Raw TokenをChatGPT / Codex、Plugin Instructions、Prompt、通常Chat、OpenAPI、Tool Result、Application Log、Audit Log、Test fixtureへ渡しません。Credentialの生成とServer hashの設定は[Automation API運用Runbook](automation-api-access.md#認証と環境設定)に従います。Preview Deployment Protectionが有効な場合、外部MCP ClientとServer内のAutomation API呼び出しの両方でProtectionの通過条件を確認してください。Server内の呼び出しは既存の `VERCEL_AUTOMATION_BYPASS_SECRET` を利用できます。
 
 Write有効化の順序は、実装とContract / Security Test → 安全なPreview / Test環境でのScope追加と統合確認 → PR Merge → Production有効化時の必要なWrite Scope追加と再Deploymentです。既存Read Scopeを削らず、Write Tool実装前にProductionへWrite Scopeを先行付与しません。Auth0側へ `mcp:write` 等は追加しません。Productionの実データへのWriteをテスト目的だけで実行しません。
@@ -98,6 +120,12 @@ Pub / Tag Createの `idempotencyKey` は上記と同様、本文でなく `Idemp
 4. Productionでは `list_prefectures`、`list_municipalities`、`list_tags`、`list_pub_statuses`、`list_content`、`list_quizzes`、`list_pubs` を呼び、各200と `structuredContent` を確認します。既存Resourceがあれば一覧のIDで `get_content`、`get_quiz`、`get_pub` を確認します。疎通用Resourceは作成せず、データ変更がないことを確認します。実行結果を共有する際はSecret、アカウント識別子、環境固有URLを除きます。
 5. Write統合確認は安全な非Production環境で、Content / QuizのDraft Create、Update、Publish / Unpublishに加え、Pubの重複確認、既存Tag利用と必要な新規Tag作成、Pubの非公開Create、Update、Publish / Unpublish、各Read-backを実施します。Automation API Audit Logの `request_id` とTool Resultの `requestId` を照合します。Audit参照UI / APIはないため、権限を持つ運用者が対象環境のNeon SQL Editor等で `request_id` または `resource_type` / `resource_id` を条件に確認します。
 
+### Production read-only確認の記録
+
+接続に使う管理者本人がChatGPTとCodexのそれぞれでOAuth Loginを行い、`server/discover`、`tools/list`、上記Read Toolの `tools/call` を確認します。`tools/list` は審査済み20 Toolとannotationだけを返すことを確認します。Read応答の `structuredContent`、必要なAutomation API Scope、データ変更がないことも確認します。ProductionでWrite Toolをテスト目的だけで実行しません。
+
+完了記録には確認日、Deploymentの識別情報、Client種別、対象Tool名、成功・失敗、データ変更なし、Secret非露出のみを残します。Token、Subject、Password、Response本文、Preview URLを転記しません。未実施項目は成功扱いにせず、接続権限や隔離環境など不足している前提と後続の確認担当を記録します。
+
 OAuth認可サーバー、server-side Secret、接続権限が未設定の場合、実環境の疎通確認は完了していません。`npm test` のMCP Contract TestはMCP protocol、認証拒否、Toolのallow list、Automation API Clientを隔離環境で確認します。
 
 ## Error、Rotation、Logging
@@ -106,6 +134,11 @@ OAuth認可サーバー、server-side Secret、接続権限が未設定の場合
 | --- | --- |
 | MCP HTTP `401` | MCP利用者のOAuth未認証・期限切れ。Protected Resource Metadataの認可サーバーを確認する。 |
 | MCP HTTP `403` | MCP `mcp:read` Scope不足。Toolは実行されない。 |
+| Metadata `404`、または `WWW-Authenticate` のURLが違う | 公開Origin、`/.well-known/oauth-protected-resource`、`MCP_PUBLIC_ORIGIN`、再Deploymentを確認する。`/api/mcp/.well-known/` は使わない。 |
+| OAuth Login失敗、管理者Connectionが表示されない | DCR、User-delegated Accessの `mcp:read`、Client Access、専用Database Connectionの割当またはDomain Level設定、Disable Sign Upsを確認する。 |
+| Issuer / Audience / Subject不一致 | Auth0 OpenID Configurationの `issuer`、API Identifier、User ProfileのUser IDと、対応するMCP server-side設定を照合する。実値をログや共有文書へ貼らない。 |
+| JWKS取得失敗、署名検証失敗 | OpenID Configurationの `jwks_uri`、到達性、RS256署名設定、鍵rotation後の再Deploymentを確認する。 |
+| OAuth成功後にToolが表示されない | `mcp:read`、MCP `tools/list`、PluginのMCP URL、未認証時の401 challenge、allow listを順に確認する。 |
 | Tool Result `401 unauthorized` | MCP ServerからAutomation APIへのCredential未設定・誤設定・失効。OAuthと区別する。 |
 | Tool Result `400 invalid_prefecture_code` / `invalid_request` | 入力値、Pub Filterと都道府県・自治体の整合性を確認する。 |
 | Tool Result `403 forbidden` | Automation APIの対象Resource別Read / Write Scope不足。別Tool / Endpointへフォールバックしない。 |
@@ -119,6 +152,7 @@ OAuth認可サーバー、server-side Secret、接続権限が未設定の場合
 | Tool Result `503 database_unavailable` | DB利用不可。Quiz一覧はDB未設定時にも503となり、空配列へ変換しない。 |
 | Tool Result `502 invalid_response` | Automation APIの成功応答がOpenAPI契約と一致しない。値を補完しない。 |
 | Tool Result `500 internal_error` | Automation API側の障害。別Endpointへフォールバックしない。 |
+| Productionだけ失敗 | Productionに設定した9変数の存在、Shared Environment VariableのProject Link、PreviewとのCredential分離、設定変更後のProduction再Deploymentを確認する。値は表示しない。 |
 
 Automation API ClientはJSON Errorの既知フィールドだけを返し、Request IDを安全な形式で保持します。Fetch例外、Authorization Header、Raw Token、OAuth TokenをTool Resultやログへ出しません。MCP独自ログにはSecretを出さず、変更操作の監査は既存のAutomation API Audit Logを使います。AuditにはResource、Action、Result、Scope、Method、HTTP Status、Request ID等が記録され、SecretやRequest / Response本文は記録しません。Readと認証失敗、同一Create成功結果のRetryは監査行を追加しません。詳細は[Automation API運用Runbook](automation-api-access.md#audit-log)を参照してください。
 
