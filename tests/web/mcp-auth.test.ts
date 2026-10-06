@@ -79,5 +79,37 @@ describe("MCP OAuth authentication", () => {
     expect(
       await verifyMcpAccessToken(await sign(config.allowedSubject, "other-resource"), config, keySet),
     ).toBeUndefined();
+
+    const now = Math.floor(Date.now() / 1000);
+    const futureIssued = await new SignJWT({ scope: "mcp:read" })
+      .setProtectedHeader({ alg: "RS256", kid: "test-key" })
+      .setIssuer(config.issuer)
+      .setAudience(config.audience)
+      .setSubject(config.allowedSubject)
+      .setIssuedAt(now + 300)
+      .setExpirationTime(now + 600)
+      .sign(privateKey);
+    expect(await verifyMcpAccessToken(futureIssued, config, keySet)).toBeUndefined();
+
+    const expired = await new SignJWT({ scope: "mcp:read" })
+      .setProtectedHeader({ alg: "RS256", kid: "test-key" })
+      .setIssuer(config.issuer)
+      .setAudience(config.audience)
+      .setSubject(config.allowedSubject)
+      .setIssuedAt(now - 600)
+      .setExpirationTime(now - 60)
+      .sign(privateKey);
+    expect(await verifyMcpAccessToken(expired, config, keySet)).toBeUndefined();
+
+    const { privateKey: wrongKey } = await generateKeyPair("RS256");
+    const wrongSignature = await new SignJWT({ scope: "mcp:read" })
+      .setProtectedHeader({ alg: "RS256", kid: "test-key" })
+      .setIssuer(config.issuer)
+      .setAudience(config.audience)
+      .setSubject(config.allowedSubject)
+      .setIssuedAt(now)
+      .setExpirationTime(now + 300)
+      .sign(wrongKey);
+    expect(await verifyMcpAccessToken(wrongSignature, config, keySet)).toBeUndefined();
   });
 });

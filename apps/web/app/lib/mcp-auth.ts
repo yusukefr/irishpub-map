@@ -2,6 +2,7 @@ import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
 import type { AuthInfo } from "@modelcontextprotocol/server";
 
 const MCP_READ_SCOPE = "mcp:read";
+const ISSUED_AT_CLOCK_SKEW_SECONDS = 60;
 
 /** OAuth 認可サーバーと MCP Resource の検証に必要な server-side 設定です。 */
 export type McpOAuthConfig = {
@@ -69,6 +70,9 @@ export async function verifyMcpAccessToken(
       requiredClaims: ["exp", "iat", "sub"],
       algorithms: ["RS256", "ES256"],
     });
+    // jose は iat の存在と形式を検証するが、maxTokenAge 未指定では未来の発行時刻を拒否しない。
+    if (typeof payload.iat !== "number" || payload.iat > Math.floor(Date.now() / 1000) + ISSUED_AT_CLOCK_SKEW_SECONDS)
+      return undefined;
     if (payload.sub !== config.allowedSubject) return undefined;
     const scopes = typeof payload.scope === "string" ? payload.scope.split(/\s+/).filter(Boolean) : [];
     const clientId =
