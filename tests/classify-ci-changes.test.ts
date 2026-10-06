@@ -77,6 +77,11 @@ describe("CI change classification", () => {
       "tests/e2e/future.spec.ts",
       "playwright.config.ts",
       "playwright.storybook.config.ts",
+      "packages/shared/src/tag.ts",
+      "packages/shared/src/locale.ts",
+      "packages/shared/src/prefecture.ts",
+      "packages/shared/src/pub.ts",
+      "packages/shared/package.json",
     ]) {
       expect(classifyPaths([path]).e2eRelevant, path).toBe(true);
     }
@@ -87,7 +92,6 @@ describe("CI change classification", () => {
       "apps/web/app/api/pubs/route.ts",
       "apps/web/app/lib/pub-repository.ts",
       "apps/web/app/lib/admin-pub-service.ts",
-      "packages/shared/src/pub.ts",
       "tests/pub-repository.test.ts",
       "docs/runbooks/release-operations.md",
       "apps/web/AGENTS.md",
@@ -99,8 +103,10 @@ describe("CI change classification", () => {
 
   it("runs E2E for UI PRs, main pushes, and explicit manual requests", () => {
     const ui = classifyPaths(["apps/web/app/components/pub-map.tsx"]);
+    const shared = classifyPaths(["packages/shared/src/tag.ts"]);
     const backend = classifyPaths(["apps/web/app/api/pubs/route.ts"]);
     expect(shouldRunE2e(ui, { eventName: "pull_request", ref: "refs/pull/553/merge" })).toBe(true);
+    expect(shouldRunE2e(shared, { eventName: "pull_request", ref: "refs/pull/553/merge" })).toBe(true);
     expect(shouldRunE2e(backend, { eventName: "pull_request", ref: "refs/pull/553/merge" })).toBe(false);
     expect(shouldRunE2e(classifyPaths(["README.md"]), { eventName: "pull_request" })).toBe(false);
     expect(shouldRunE2e(backend, { eventName: "push", ref: "refs/heads/main" })).toBe(true);

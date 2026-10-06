@@ -26,7 +26,7 @@ CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`�
 | docs-only | Sensitive data check、LLM security checkのみ | 省略 |
 | `workflow_dispatch` | Code変更と同じFull CI | デフォルトで省略。`run_e2e=true`の場合だけ実行 |
 
-docs-onlyは`docs/**`（OpenAPIを除く）、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`に限定します。アプリ配下のMarkdownを含む、それ以外のパスはCode変更として扱います。PRのE2E対象はWebの画面・コンポーネント・スタイル・静的素材・StorybookとPlaywrightのテスト・設定です。API routeや明確なserver専用処理だけの変更は対象外です。比較元を取得できないPRは安全側でE2Eを実行します。手動でE2Eを確認する場合は対象branchの`workflow_dispatch`で`run_e2e`を指定します。
+docs-onlyは`docs/**`（OpenAPIを除く）、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`に限定します。アプリ配下のMarkdownを含む、それ以外のパスはCode変更として扱います。PRのE2E対象はWebの画面・コンポーネント・スタイル・静的素材・`packages/shared/**`・StorybookとPlaywrightのテスト・設定です。API routeや明確なserver専用処理だけの変更は対象外です。比較元を取得できないPRは安全側でE2Eを実行します。手動でE2Eを確認する場合は対象branchの`workflow_dispatch`で`run_e2e`を指定します。
 
 `main`へのpushでは変更分類にかかわらずE2EとStorybook browser testsを実行します。未Releaseのアプリ変更があるdocs-only pushでは従来どおりFull CIも実行します。Production ReleaseはFull CIとE2Eの成功を引き続き条件とします。
 

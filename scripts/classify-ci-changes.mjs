@@ -64,6 +64,7 @@ function isE2eRelevantPath(path) {
   if (path.startsWith("e2e/") || path.startsWith("tests/e2e/") || path.startsWith(".storybook/")) return true;
   if (/^playwright(?:\.[^/]+)?\.config\.[cm]?[jt]s$/.test(path)) return true;
   if (path === "package.json" || path === "package-lock.json") return true;
+  if (path.startsWith("packages/shared/")) return true;
   if (["apps/web/AGENTS.md", "apps/web/CLAUDE.md"].includes(path) || path.startsWith("apps/web/app/api/")) return false;
   if (path.startsWith("apps/web/app/lib/") && isServerOnlyWebLibPath(path)) return false;
   return path.startsWith("apps/web/");
