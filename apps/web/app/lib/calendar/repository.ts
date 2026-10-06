@@ -103,35 +103,44 @@ export async function getAdminCalendarEvent(id: string): Promise<AdminCalendarEv
 }
 
 /**
- * Event本体と日英翻訳を同一Transactionで作成します。
- * @param id
+ * DB生成IDを共有し、Event本体と日英翻訳を同一Transactionで作成します。
  * @param input
- * @returns 保存完了時に解決するPromise。
+ * @returns DBが生成したEvent ID。
  */
-export async function insertCalendarEvent(id: string, input: AdminCalendarWriteInput): Promise<void> {
+export async function insertCalendarEvent(input: AdminCalendarWriteInput): Promise<string> {
   rejectE2ETestMutation();
-  requiredId(id);
   validateWriteInput(input);
   const sql = getRequiredSql();
-  await sql.transaction((transaction) => [
+  const results = (await sql.transaction((transaction) => [
     transactionQuery(transaction, "LOCK TABLE calendar_events IN SHARE ROW EXCLUSIVE MODE", []),
     transactionQuery(
       transaction,
-      "INSERT INTO calendar_events " +
-        "(id, category, date_rule, is_public_holiday, featured, aliases, source, sort_order) " +
-        "VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM calendar_events))",
+      "WITH inserted_event AS (" +
+        "INSERT INTO calendar_events " +
+        "(category, date_rule, is_public_holiday, featured, aliases, source, sort_order) " +
+        "VALUES ($1, $2::jsonb, $3, $4, $5, $6, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM calendar_events)) " +
+        "RETURNING id), inserted_translations AS (" +
+        "INSERT INTO calendar_event_translations (event_id, locale, name, description) " +
+        "SELECT inserted_event.id, translation.locale, translation.name, translation.description " +
+        "FROM inserted_event CROSS JOIN (VALUES ('ja'::text, $7::text, $8::text), ('en'::text, $9::text, $10::text)) " +
+        "AS translation(locale, name, description) RETURNING event_id) " +
+        "SELECT id FROM inserted_event WHERE (SELECT COUNT(*) FROM inserted_translations) = 2",
       [
-        id,
         input.category,
         input.dateRule === null ? null : JSON.stringify(serializeDateRule(input.dateRule)),
         input.isPublicHoliday,
         input.featured,
         [...input.aliases],
         input.source,
+        input.translations.ja.name,
+        input.translations.ja.description,
+        input.translations.en.name,
+        input.translations.en.description,
       ],
     ),
-    ...translationQueries(transaction, id, input),
-  ]);
+  ])) as unknown as DbRow[][];
+  if (results[1].length !== 1) throw invalidDatabaseCalendar();
+  return requiredId(results[1][0].id);
 }
 
 /**

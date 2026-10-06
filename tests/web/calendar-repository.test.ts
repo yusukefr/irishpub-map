@@ -159,6 +159,23 @@ describe("calendar public repository", () => {
 });
 
 describe("calendar admin repository", () => {
+  it.each(["event-one", "8acbc777-5160-4f1d-8284-6db05f89485d"])(
+    "既存IDとUUIDの双方で参照・更新・公開・削除できる: %s",
+    async (id) => {
+      mocks.responses = [[adminRow({ id })]];
+      await expect(getAdminCalendarEvent(id)).resolves.toMatchObject({ id });
+
+      mocks.responses = [[{ id, is_published: false }], [{ id }], [], []];
+      await expect(updateCalendarEvent(id, writeInput)).resolves.toBe("updated");
+
+      mocks.responses = [[{ id, is_published: false }], [{ id, is_published: true }]];
+      await expect(setCalendarEventPublication(id, true)).resolves.toMatchObject({ id, isPublished: true });
+
+      mocks.responses = [[{ id, is_published: false }]];
+      await expect(deleteCalendarEvent(id)).resolves.toEqual({ id, wasPublished: false });
+    },
+  );
+
   it("Draftを含む一覧と詳細を取得する", async () => {
     mocks.responses = [[adminRow()], [adminRow({ is_published: true })]];
 
@@ -172,22 +189,38 @@ describe("calendar admin repository", () => {
     });
   });
 
-  it("Eventと日英翻訳を同一transactionで作成し、曜日をDB用JSONへ変換する", async () => {
-    mocks.responses = [[], [], [], []];
+  it("DB生成IDをEventと日英翻訳で共有し、同一transactionで作成する", async () => {
+    const generatedId = "8acbc777-5160-4f1d-8284-6db05f89485d";
+    mocks.responses = [[], [{ id: generatedId }]];
 
-    await insertCalendarEvent("event-one", writeInput);
+    await expect(insertCalendarEvent(writeInput)).resolves.toBe(generatedId);
 
     expect(mocks.transactionCount).toBe(1);
-    expect(mocks.queries).toHaveLength(4);
+    expect(mocks.queries).toHaveLength(2);
+    expect(mocks.queries[0].text).toContain("LOCK TABLE calendar_events IN SHARE ROW EXCLUSIVE MODE");
     expect(mocks.queries[1].text).toContain("INSERT INTO calendar_events");
+    expect(mocks.queries[1].text).toContain(
+      "(category, date_rule, is_public_holiday, featured, aliases, source, sort_order)",
+    );
+    expect(mocks.queries[1].text).toContain("RETURNING id");
+    expect(mocks.queries[1].text).toContain("INSERT INTO calendar_event_translations");
+    expect(mocks.queries[1].text).toContain("SELECT inserted_event.id");
+    expect(mocks.queries[1].text).toContain("COUNT(*) FROM inserted_translations");
     expect(mocks.queries[1].values).toContain(
       JSON.stringify({ type: "nth_weekday", month: 3, weekday: "monday", nth: 2 }),
     );
-    expect(mocks.queries[2].text).toContain("calendar_event_translations");
-    expect(mocks.queries[2].text).toContain("$1, $2, $3, $4 WHERE $5 = TRUE");
-    expect(mocks.queries[2].text).toContain("event.id = $1");
-    expect(mocks.queries[2].values).toEqual(["event-one", "ja", "イベント", "説明", true]);
-    expect(mocks.queries[3].values).toEqual(["event-one", "en", "Event", "Description", true]);
+    expect(mocks.queries[1].values).toEqual([
+      "culture",
+      JSON.stringify({ type: "nth_weekday", month: 3, weekday: "monday", nth: 2 }),
+      false,
+      true,
+      ["Example"],
+      "https://example.com/calendar",
+      "イベント",
+      "説明",
+      "Event",
+      "Description",
+    ]);
   });
 
   it("Published Eventの不完全更新をtransaction内でブロックする", async () => {
@@ -221,8 +254,6 @@ describe("calendar admin repository", () => {
     await expect(deleteCalendarEvent("event-one")).resolves.toEqual({ id: "event-one", wasPublished: false });
 
     process.env.E2E_TEST_MODE = "1";
-    await expect(insertCalendarEvent("event-one", writeInput)).rejects.toThrow(
-      "Mutations are disabled in E2E test mode.",
-    );
+    await expect(insertCalendarEvent(writeInput)).rejects.toThrow("Mutations are disabled in E2E test mode.");
   });
 });
