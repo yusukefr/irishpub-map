@@ -13,7 +13,7 @@ test("Quiz一覧からDraft保存、Choice操作、Publishを確認する", asyn
   await page.getByRole("group", { name: "日本語" }).getByLabel("問題文").fill("E2E 更新Quiz");
   await page.getByRole("group", { name: "選択肢" }).getByRole("button", { name: "選択肢を追加" }).click();
   const updated = {
-    id: "e2e-draft-question",
+    id: "11111111-1111-4111-8111-000000000003",
     category: null,
     specialDate: null,
     correctChoiceId: null,
@@ -30,7 +30,7 @@ test("Quiz一覧からDraft保存、Choice操作、Publishを確認する", asyn
     createdAt: "2026-01-15T12:00:00.000Z",
     updatedAt: "2026-01-15T12:00:00.000Z",
   };
-  await page.route("**/api/admin/quiz/e2e-draft-question", async (route) => {
+  await page.route("**/api/admin/quiz/11111111-1111-4111-8111-000000000003", async (route) => {
     if (route.request().method() === "PUT")
       await route.fulfill({ contentType: "application/json", json: { question: updated } });
     else await route.continue();
@@ -80,7 +80,7 @@ test("Quiz新規作成ではQuestion IDを入力せずServer生成UUIDへ遷移�
 });
 
 test("Quiz Editorで画像を選択し、日英の説明を保存して解除できる", async ({ page }) => {
-  await loginAsE2EAdmin(page, "/admin/quiz/e2e-draft-question");
+  await loginAsE2EAdmin(page, "/admin/quiz/11111111-1111-4111-8111-000000000003");
   await page.getByRole("button", { name: "画像を選択" }).click();
   const dialog = page.getByRole("dialog", { name: "画像を選択" });
   await expect(dialog).toBeVisible();
@@ -94,9 +94,10 @@ test("Quiz Editorで画像を選択し、日英の説明を保存して解除で
   await japanese.getByLabel("問題画像のキャプション").fill("画像の説明");
 
   const requestPromise = page.waitForRequest(
-    (request) => request.url().endsWith("/api/admin/quiz/e2e-draft-question") && request.method() === "PUT",
+    (request) =>
+      request.url().endsWith("/api/admin/quiz/11111111-1111-4111-8111-000000000003") && request.method() === "PUT",
   );
-  await page.route("**/api/admin/quiz/e2e-draft-question", async (route) => {
+  await page.route("**/api/admin/quiz/11111111-1111-4111-8111-000000000003", async (route) => {
     if (route.request().method() !== "PUT") return route.continue();
     const body = route.request().postDataJSON();
     await route.fulfill({
@@ -104,7 +105,7 @@ test("Quiz Editorで画像を選択し、日英の説明を保存して解除で
       json: {
         question: {
           ...body,
-          id: "e2e-draft-question",
+          id: "11111111-1111-4111-8111-000000000003",
           image: E2E_TEST_DATA.media.landscape,
           isPublished: false,
           choices: [],

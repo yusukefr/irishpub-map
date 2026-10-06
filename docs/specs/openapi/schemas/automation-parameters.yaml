@@ -20,8 +20,7 @@ QuizId:
   name: id
   in: path
   required: true
-  description: Existing kebab-case ID or a server-generated UUID.
-  schema: { type: string, maxLength: 100, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+  schema: { $ref: "./automation.yaml#/Uuid" }
 PubId:
   name: id
   in: path

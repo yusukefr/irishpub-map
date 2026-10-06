@@ -8,6 +8,8 @@ import { GET as getProtectedResource } from "../../apps/web/app/.well-known/oaut
 import { verifyMcpAccessToken, type McpOAuthConfig } from "../../apps/web/app/lib/mcp-auth";
 import { createAuthenticatedMcpHandler } from "../../apps/web/app/lib/mcp-server";
 import { MCP_TOOL_ALLOW_LIST } from "../../apps/web/app/lib/mcp-tools";
+import { quizListResponse, quizResponse } from "../../apps/web/app/lib/mcp-read-schemas";
+import { quizPublicationResponse } from "../../apps/web/app/lib/mcp-write-schemas";
 
 const envKeys = [
   "MCP_PUBLIC_ORIGIN",
@@ -35,7 +37,7 @@ const contentBase = {
   updatedAt: timestamp,
 };
 const quizBase = {
-  id: "sample-quiz",
+  id: "11111111-1111-4111-8111-000000000006",
   category: null,
   specialDate: null,
   correctChoiceId: null,
@@ -430,8 +432,8 @@ describe("Remote MCP contract", () => {
       },
       {
         name: "get_quiz",
-        args: { id: "sample-quiz" },
-        path: "/quiz/sample-quiz",
+        args: { id: "11111111-1111-4111-8111-000000000006" },
+        path: "/quiz/11111111-1111-4111-8111-000000000006",
         data: {
           question: {
             ...quizBase,
@@ -809,27 +811,27 @@ describe("Remote MCP contract", () => {
       },
       {
         name: "update_quiz",
-        args: { id: "sample-quiz", ...quizWrite },
+        args: { id: "11111111-1111-4111-8111-000000000006", ...quizWrite },
         method: "PUT",
-        path: "/quiz/sample-quiz",
+        path: "/quiz/11111111-1111-4111-8111-000000000006",
         body: quizWrite,
         response: quizDetail,
       },
       {
         name: "set_quiz_publication",
-        args: { id: "sample-quiz", isPublished: true },
+        args: { id: "11111111-1111-4111-8111-000000000006", isPublished: true },
         method: "PATCH",
-        path: "/quiz/sample-quiz/publication",
+        path: "/quiz/11111111-1111-4111-8111-000000000006/publication",
         body: { isPublished: true },
-        response: { publication: { id: "sample-quiz", isPublished: true, unchanged: false } },
+        response: { publication: { id: "11111111-1111-4111-8111-000000000006", isPublished: true, unchanged: false } },
       },
       {
         name: "set_quiz_publication",
-        args: { id: "sample-quiz", isPublished: false },
+        args: { id: "11111111-1111-4111-8111-000000000006", isPublished: false },
         method: "PATCH",
-        path: "/quiz/sample-quiz/publication",
+        path: "/quiz/11111111-1111-4111-8111-000000000006/publication",
         body: { isPublished: false },
-        response: { publication: { id: "sample-quiz", isPublished: false, unchanged: false } },
+        response: { publication: { id: "11111111-1111-4111-8111-000000000006", isPublished: false, unchanged: false } },
       },
     ];
     const handler = createHandler();
@@ -868,11 +870,11 @@ describe("Remote MCP contract", () => {
         { publication: { id, status: "draft", unchanged: true, publishedAt: null } },
       ],
       ["create_quiz", { idempotencyKey: "quiz-1", ...quizWrite }, quizDetail],
-      ["update_quiz", { id: "sample-quiz", ...quizWrite }, quizDetail],
+      ["update_quiz", { id: "11111111-1111-4111-8111-000000000006", ...quizWrite }, quizDetail],
       [
         "set_quiz_publication",
-        { id: "sample-quiz", isPublished: false },
-        { publication: { id: "sample-quiz", isPublished: false, unchanged: true } },
+        { id: "11111111-1111-4111-8111-000000000006", isPublished: false },
+        { publication: { id: "11111111-1111-4111-8111-000000000006", isPublished: false, unchanged: true } },
       ],
       ["create_pub", { idempotencyKey: "pub-1", ...pubWrite }, pubDetail],
       ["update_pub", { id, ...pubWrite }, pubDetail],
@@ -958,9 +960,16 @@ describe("Remote MCP contract", () => {
       ["create_content", { idempotencyKey: "bad", ...contentWrite, status: "published" }],
       ["update_content", { id, ...contentWrite, publishedAt: timestamp }],
       ["create_quiz", { idempotencyKey: "bad", ...quizWrite, isPublished: true }],
-      ["update_quiz", { id: "sample-quiz", ...quizWrite, choices: [{ ...quizWrite.choices[0], sortOrder: 0 }] }],
+      [
+        "update_quiz",
+        {
+          id: "11111111-1111-4111-8111-000000000006",
+          ...quizWrite,
+          choices: [{ ...quizWrite.choices[0], sortOrder: 0 }],
+        },
+      ],
       ["set_content_publication", { id, isPublished: true }],
-      ["set_quiz_publication", { id: "sample-quiz", status: "published" }],
+      ["set_quiz_publication", { id: "11111111-1111-4111-8111-000000000006", status: "published" }],
       ["create_content", { idempotencyKey: " leading-space", ...contentWrite }],
       ["create_quiz", { idempotencyKey: "", ...quizWrite }],
     ] as const) {
@@ -969,6 +978,32 @@ describe("Remote MCP contract", () => {
       expect(result.isError, name).toBe(true);
     }
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("rejects legacy Question IDs in Quiz tool input and responses", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const handler = createHandler();
+    for (const [name, args] of [
+      ["get_quiz", { id: "legacy-question" }],
+      ["update_quiz", { id: "legacy-question", ...quizWrite }],
+      ["set_quiz_publication", { id: "legacy-question", isPublished: true }],
+    ] as const) {
+      const result = (await mcpBody(await handler(mcpRequest("tools/call", { name, arguments: args }))))
+        .result as Record<string, unknown>;
+      expect(result.isError, name).toBe(true);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(quizResponse.safeParse({ question: { ...quizDetail.question, id: "legacy-question" } }).success).toBe(false);
+    expect(
+      quizListResponse.safeParse({
+        questions: [{ ...quizBase, id: "legacy-question", questionJa: "", questionEn: "", choiceCount: 0 }],
+      }).success,
+    ).toBe(false);
+    expect(
+      quizPublicationResponse.safeParse({ publication: { id: "legacy-question", isPublished: true, unchanged: false } })
+        .success,
+    ).toBe(false);
   });
 
   it("keeps a create key across an identical retry and preserves conflict and publication errors", async () => {

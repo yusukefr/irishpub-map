@@ -10,7 +10,7 @@ vi.mock("../../apps/web/app/(content)/discover/quiz/actions", () => ({
 import { QuizCard, type QuizLabels, type QuizQuestionView } from "../../apps/web/app/(content)/discover/quiz/quiz-card";
 
 const question = {
-  id: "irish-sports-gaelic-games-001",
+  id: "11111111-1111-4111-8111-000000000007",
   category: { icon: "🏑", label: "アイルランドのスポーツ" },
   question: "次のうち、Gaelic Gamesに含まれる競技はどれですか？",
   image: null,

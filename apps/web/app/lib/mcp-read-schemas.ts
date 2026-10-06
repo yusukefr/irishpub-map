@@ -102,7 +102,7 @@ export const contentResponse = z.object({
 });
 
 const quizBase = z.object({
-  id: z.string().max(100),
+  id: uuid,
   category: quizCategory,
   specialDate,
   correctChoiceId: z.string().max(60).nullable(),

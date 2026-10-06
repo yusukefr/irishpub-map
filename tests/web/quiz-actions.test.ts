@@ -11,6 +11,7 @@ vi.mock("../../apps/web/app/lib/quiz/repository", () => ({
 }));
 
 import { submitQuizAnswer } from "../../apps/web/app/(content)/discover/quiz/actions";
+const questionId = "11111111-1111-4111-8111-000000000007";
 
 const result = {
   status: "correct",
@@ -28,15 +29,15 @@ beforeEach(() => {
 
 describe("submitQuizAnswer", () => {
   it("Server側でLocaleを決定し、Published Quiz Repositoryの結果を返す", async () => {
-    await expect(submitQuizAnswer("question", "correct")).resolves.toBe(result);
-    expect(actionMocks.gradePublishedQuizAnswer).toHaveBeenCalledWith("question", "correct", "en");
+    await expect(submitQuizAnswer(questionId, "correct")).resolves.toBe(result);
+    expect(actionMocks.gradePublishedQuizAnswer).toHaveBeenCalledWith(questionId, "correct", "en");
   });
 
   it("Repositoryの採点結果をそのまま返し、追加のContent取得を行わない", async () => {
     const resultWithoutGuide = { ...result, relatedGuide: undefined };
     actionMocks.gradePublishedQuizAnswer.mockResolvedValue(resultWithoutGuide);
 
-    await expect(submitQuizAnswer("question", "correct")).resolves.toBe(resultWithoutGuide);
+    await expect(submitQuizAnswer(questionId, "correct")).resolves.toBe(resultWithoutGuide);
   });
 
   it("文字列ではない入力を採点前に拒否する", async () => {
@@ -48,10 +49,11 @@ describe("submitQuizAnswer", () => {
   });
 
   it.each([
-    ["Question ID", "INVALID_ID", "correct"],
-    ["Choice ID", "question", "INVALID_ID"],
-  ])("%sの形式を採点前に検証する", async (_label, questionId, choiceId) => {
-    await expect(submitQuizAnswer(questionId, choiceId)).rejects.toThrow("Invalid quiz answer");
+    ["legacy Question ID", "legacy-question", "correct"],
+    ["invalid UUID", "INVALID_ID", "correct"],
+    ["Choice ID", questionId, "INVALID_ID"],
+  ])("%sの形式を採点前に検証する", async (_label, invalidQuestionId, choiceId) => {
+    await expect(submitQuizAnswer(invalidQuestionId, choiceId)).rejects.toThrow("Invalid quiz answer");
     expect(actionMocks.getRequestLocale).not.toHaveBeenCalled();
     expect(actionMocks.gradePublishedQuizAnswer).not.toHaveBeenCalled();
   });

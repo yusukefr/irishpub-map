@@ -49,7 +49,7 @@ function request(method: string, scopes: string, body?: unknown) {
   });
 }
 
-const context = { params: Promise.resolve({ id: "history-question" }) };
+const context = { params: Promise.resolve({ id: "11111111-1111-4111-8111-000000000005" }) };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -57,11 +57,15 @@ beforeEach(() => {
   process.env.AUTOMATION_API_SCOPES = "quiz:read,quiz:create,quiz:update,quiz:publish";
   process.env.DATABASE_URL = "postgres://test-only";
   mocks.isQuizDatabaseConfigured.mockReturnValue(true);
-  mocks.readAdminQuizList.mockResolvedValue([{ id: "history-question", isPublished: false }]);
-  mocks.readAdminQuiz.mockResolvedValue({ id: "history-question", isPublished: false });
-  mocks.createAdminQuiz.mockResolvedValue({ id: "server-generated-id", isPublished: false });
-  mocks.updateAdminQuiz.mockResolvedValue({ id: "history-question", isPublished: false });
-  mocks.changeAdminQuizPublication.mockResolvedValue({ id: "history-question", isPublished: true, unchanged: false });
+  mocks.readAdminQuizList.mockResolvedValue([{ id: "11111111-1111-4111-8111-000000000005", isPublished: false }]);
+  mocks.readAdminQuiz.mockResolvedValue({ id: "11111111-1111-4111-8111-000000000005", isPublished: false });
+  mocks.createAdminQuiz.mockResolvedValue({ id: "550e8400-e29b-41d4-a716-446655440001", isPublished: false });
+  mocks.updateAdminQuiz.mockResolvedValue({ id: "11111111-1111-4111-8111-000000000005", isPublished: false });
+  mocks.changeAdminQuizPublication.mockResolvedValue({
+    id: "11111111-1111-4111-8111-000000000005",
+    isPublished: true,
+    unchanged: false,
+  });
 });
 
 afterEach(() => {
@@ -79,12 +83,16 @@ describe("automation quiz routes", () => {
   it("returns the admin quiz list and detail through quiz:read", async () => {
     const list = await getQuizList(request("GET", "quiz:read"));
     expect(list.status).toBe(200);
-    await expect(list.json()).resolves.toEqual({ questions: [{ id: "history-question", isPublished: false }] });
+    await expect(list.json()).resolves.toEqual({
+      questions: [{ id: "11111111-1111-4111-8111-000000000005", isPublished: false }],
+    });
 
     const detail = await getQuiz(request("GET", "quiz:read"), context);
     expect(detail.status).toBe(200);
-    await expect(detail.json()).resolves.toEqual({ question: { id: "history-question", isPublished: false } });
-    expect(mocks.readAdminQuiz).toHaveBeenCalledWith("history-question");
+    await expect(detail.json()).resolves.toEqual({
+      question: { id: "11111111-1111-4111-8111-000000000005", isPublished: false },
+    });
+    expect(mocks.readAdminQuiz).toHaveBeenCalledWith("11111111-1111-4111-8111-000000000005");
   });
 
   it("returns database_unavailable instead of an empty list when the database is not configured", async () => {
@@ -101,7 +109,9 @@ describe("automation quiz routes", () => {
     const payload = { category: "history", translations: { ja: {}, en: {} }, choices: [] };
     const response = await createQuiz(request("POST", "quiz:create", payload));
     expect(response.status).toBe(201);
-    await expect(response.json()).resolves.toEqual({ question: { id: "server-generated-id", isPublished: false } });
+    await expect(response.json()).resolves.toEqual({
+      question: { id: "550e8400-e29b-41d4-a716-446655440001", isPublished: false },
+    });
     expect(mocks.createAdminQuiz).toHaveBeenCalledWith(payload, "550e8400-e29b-41d4-a716-446655440001");
   });
 
@@ -109,17 +119,19 @@ describe("automation quiz routes", () => {
     const payload = { category: "history", translations: { ja: {}, en: {} }, choices: [] };
     const response = await updateQuiz(request("PUT", "quiz:update", payload), context);
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ question: { id: "history-question", isPublished: false } });
-    expect(mocks.updateAdminQuiz).toHaveBeenCalledWith("history-question", payload);
+    await expect(response.json()).resolves.toEqual({
+      question: { id: "11111111-1111-4111-8111-000000000005", isPublished: false },
+    });
+    expect(mocks.updateAdminQuiz).toHaveBeenCalledWith("11111111-1111-4111-8111-000000000005", payload);
   });
 
   it("accepts only a boolean isPublished field for publication changes", async () => {
     const response = await changePublication(request("PATCH", "quiz:publish", { isPublished: true }), context);
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      publication: { id: "history-question", isPublished: true, unchanged: false },
+      publication: { id: "11111111-1111-4111-8111-000000000005", isPublished: true, unchanged: false },
     });
-    expect(mocks.changeAdminQuizPublication).toHaveBeenCalledWith("history-question", true);
+    expect(mocks.changeAdminQuizPublication).toHaveBeenCalledWith("11111111-1111-4111-8111-000000000005", true);
 
     const extraField = await changePublication(
       request("PATCH", "quiz:publish", { isPublished: true, id: "chosen-by-client" }),
@@ -130,6 +142,22 @@ describe("automation quiz routes", () => {
 
     const nonBoolean = await changePublication(request("PATCH", "quiz:publish", { isPublished: "true" }), context);
     expect(nonBoolean.status).toBe(422);
+  });
+
+  it("rejects legacy Question IDs on every item route", async () => {
+    const legacy = { params: Promise.resolve({ id: "legacy-question" }) };
+    const payload = { category: "history", translations: { ja: {}, en: {} }, choices: [] };
+    for (const response of [
+      await getQuiz(request("GET", "quiz:read"), legacy),
+      await updateQuiz(request("PUT", "quiz:update", payload), legacy),
+      await changePublication(request("PATCH", "quiz:publish", { isPublished: true }), legacy),
+    ]) {
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({ errorCode: "invalid_request" });
+    }
+    expect(mocks.readAdminQuiz).not.toHaveBeenCalled();
+    expect(mocks.updateAdminQuiz).not.toHaveBeenCalled();
+    expect(mocks.changeAdminQuizPublication).not.toHaveBeenCalled();
   });
 
   it.each([

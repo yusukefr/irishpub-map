@@ -39,7 +39,7 @@ vi.mock("../../apps/web/app/components/media/media-picker", () => ({
 }));
 vi.stubGlobal("fetch", fetchMock);
 const question: AdminQuizQuestion = {
-  id: "history-question-001",
+  id: "11111111-1111-4111-8111-000000000001",
   category: "history",
   specialDate: { month: 3, day: 17 },
   correctChoiceId: "choice-1",
@@ -172,7 +172,7 @@ describe("AdminQuizEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "公開する" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Quizを公開しました。");
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/admin/quiz/history-question-001/publication",
+      "/api/admin/quiz/11111111-1111-4111-8111-000000000001/publication",
       expect.objectContaining({ method: "PATCH" }),
     );
   });
@@ -267,7 +267,7 @@ describe("AdminQuizEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "下書きを保存" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/admin/quiz/history-question-001",
+      "/api/admin/quiz/11111111-1111-4111-8111-000000000001",
       expect.objectContaining({ method: "PUT" }),
     );
   });

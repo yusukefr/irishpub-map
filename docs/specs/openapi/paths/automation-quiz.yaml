@@ -20,7 +20,7 @@ Collection:
     tags: [Automation Quiz]
     operationId: createAutomationQuiz
     summary: Create a quiz draft
-    description: "Required server-side scope: `quiz:create`. Always creates a draft with a server-generated ID. Draft allows 0–4 choices; a correctChoiceId, both locales, HTTPS sourceUrl, and exactly four complete choices are required before publishing. `Idempotency-Key` is mandatory. Invalid/missing keys return 400; reused keys with different input or while processing return `409 idempotency_conflict` or `409 idempotency_in_progress`."
+    description: "Required server-side scope: `quiz:create`. Always creates a draft with a server-generated UUID; the client cannot supply a Question ID. Draft allows 0–4 choices; a correctChoiceId, both locales, HTTPS sourceUrl, and exactly four complete choices are required before publishing. `Idempotency-Key` is mandatory. Invalid/missing keys return 400; reused keys with different input or while processing return `409 idempotency_conflict` or `409 idempotency_in_progress`."
     x-required-scope: quiz:create
     security: [{ AutomationBearer: [] }]
     parameters:
@@ -54,7 +54,7 @@ Item:
     tags: [Automation Quiz]
     operationId: getAutomationQuiz
     summary: Get quiz detail
-    description: "Required server-side scope: `quiz:read`. Invalid ID returns `400 invalid_request`; missing ID returns `404 quiz_not_found`. GET includes server-managed choice sortOrder and cannot be sent verbatim to PUT."
+    description: "Required server-side scope: `quiz:read`. Question ID must be a UUID; invalid ID returns `400 invalid_request`, and missing ID returns `404 quiz_not_found`. GET includes server-managed choice sortOrder and cannot be sent verbatim to PUT."
     x-required-scope: quiz:read
     security: [{ AutomationBearer: [] }]
     responses:

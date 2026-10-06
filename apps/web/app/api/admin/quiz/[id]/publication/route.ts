@@ -6,7 +6,7 @@ import {
 import { adminQuizServiceErrorResponse } from "../../../../../lib/admin-quiz-api";
 import { changeAdminQuizPublication } from "../../../../../lib/admin-quiz-service";
 import { isQuizDatabaseConfigured } from "../../../../../lib/quiz/repository";
-import { isQuizId } from "../../../../../lib/quiz/types";
+import { isQuizQuestionId } from "../../../../../lib/quiz/types";
 type Context = { params: Promise<{ id: string }> };
 /**
  * Quizの公開状態を変更します。
@@ -21,7 +21,7 @@ export async function PATCH(request: Request, context: Context) {
   const contentTypeError = getAdminJsonContentTypeError(request);
   if (contentTypeError) return contentTypeError;
   const { id } = await context.params;
-  if (!isQuizId(id)) return adminApiErrorResponse("invalid_request", 400);
+  if (!isQuizQuestionId(id)) return adminApiErrorResponse("invalid_request", 400);
   let body: unknown;
   try {
     body = await request.json();
