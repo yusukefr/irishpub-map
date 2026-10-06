@@ -32,7 +32,7 @@ function isAncestor(cwd, ancestor, descendant) {
 /**
  * 変更ファイルの用途を分類する。未知のパスは検証の対象にする。
  * @param {string[]} paths Git差分に含まれる旧・新両方のパス
- * @returns {{codeChanged: boolean, openapiChanged: boolean, workflowChanged: boolean, releaseRelevant: boolean}}
+ * @returns {{codeChanged: boolean, openapiChanged: boolean, workflowChanged: boolean, releaseRelevant: boolean, e2eRelevant: boolean}}
  */
 export function classifyPaths(paths) {
   if (paths.length === 0) return fullChange();
@@ -42,6 +42,7 @@ export function classifyPaths(paths) {
     openapiChanged: false,
     workflowChanged: false,
     releaseRelevant: false,
+    e2eRelevant: false,
   };
 
   for (const path of paths) {
@@ -53,9 +54,28 @@ export function classifyPaths(paths) {
 
     if (path.startsWith(".github/workflows/")) result.workflowChanged = true;
     if (isReleaseRelevantPath(path)) result.releaseRelevant = true;
+    if (isE2eRelevantPath(path)) result.e2eRelevant = true;
   }
 
   return result;
+}
+
+function isE2eRelevantPath(path) {
+  if (path.startsWith("e2e/") || path.startsWith("tests/e2e/") || path.startsWith(".storybook/")) return true;
+  if (/^playwright(?:\.[^/]+)?\.config\.[cm]?[jt]s$/.test(path)) return true;
+  if (path === "package.json" || path === "package-lock.json") return true;
+  if (["apps/web/AGENTS.md", "apps/web/CLAUDE.md"].includes(path) || path.startsWith("apps/web/app/api/")) return false;
+  if (path.startsWith("apps/web/app/lib/") && isServerOnlyWebLibPath(path)) return false;
+  return path.startsWith("apps/web/");
+}
+
+function isServerOnlyWebLibPath(path) {
+  // Web libの新しいUI補助ファイルはE2E対象にし、用途が明確なserver側だけ除外する。
+  return (
+    /^apps\/web\/app\/lib\/(?:admin-server|[^/]+-repository|[^/]+-service|[^/]+-auth|(?:automation|mcp)-[^/]+)\.[cm]?[jt]s$/.test(
+      path,
+    ) || /^apps\/web\/app\/lib\/(?:calendar|content|media|quiz)\/(?:repository|service|storage)\.[cm]?[jt]s$/.test(path)
+  );
 }
 
 function isReleaseRelevantPath(path) {
@@ -104,12 +124,27 @@ function fullChange() {
     openapiChanged: true,
     workflowChanged: true,
     releaseRelevant: false,
+    e2eRelevant: true,
   };
 }
 
 /** mainの未Release変更もFull CIで検証し、PRでは従来の変更分類を維持します。 */
 export function shouldRunFullCi(result, eventName) {
   return result.codeChanged || (eventName === "push" && result.releaseRelevant);
+}
+
+/**
+ * E2EとStorybook browser testsを同じjobで実行する条件を一箇所で決めます。
+ * @param {{e2eRelevant: boolean}} result 変更分類
+ * @param {{eventName: string, ref?: string, runE2eInput?: string}} event GitHub Actionsのイベントと手動入力
+ * @returns {boolean} E2E jobの実行要否
+ */
+export function shouldRunE2e(result, { eventName, ref, runE2eInput = "false" }) {
+  return (
+    (eventName === "push" && ref === "refs/heads/main") ||
+    (eventName === "pull_request" && result.e2eRelevant) ||
+    (eventName === "workflow_dispatch" && runE2eInput === "true")
+  );
 }
 
 /**
@@ -149,6 +184,12 @@ if (process.argv[1]?.endsWith("classify-ci-changes.mjs")) {
     `openapi_changed=${result.openapiChanged}`,
     `workflow_changed=${result.workflowChanged}`,
     `release_relevant=${result.releaseRelevant}`,
+    `e2e_relevant=${result.e2eRelevant}`,
+    `run_e2e=${shouldRunE2e(result, {
+      eventName: process.env.CI_EVENT_NAME,
+      ref: process.env.CI_REF,
+      runE2eInput: process.env.CI_RUN_E2E,
+    })}`,
   ].join("\n");
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `${output}\n`);
   process.stdout.write(`${output}\n`);

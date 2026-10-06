@@ -19,14 +19,16 @@ GitHub ActionsのCI、Git Tagを正とするProduction Release、Vercel Analytic
 
 CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`で実行されます。Feature branchへのpushでは起動しません。変更ファイルは`scripts/classify-ci-changes.mjs`で分類し、比較元を取得できない場合は全検証を実行します。`Lint, Test, Build`というジョブ名は変更内容にかかわらず維持します。
 
-| 変更内容 | `Lint, Test, Build`で実行する処理 | `main` push後のE2E / Storybook browser tests |
+| 変更内容 | `Lint, Test, Build`で実行する処理 | PRのE2E / Storybook browser tests |
 | --- | --- | --- |
-| Code変更（workflowを含む） | Sensitive data check、LLM security check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | 実行 |
+| Code変更（workflowを含む） | Sensitive data check、LLM security check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | UI / E2E関連変更があれば実行 |
 | `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Sensitive data check、LLM security check、npm ci、OpenAPI lint | 省略 |
-| docs-only | 通常はSensitive data check、LLM security checkのみ。`main` push時に未Releaseのアプリ変更があればCode変更と同じFull CI | 未Releaseのアプリ変更があれば実行。それ以外は省略 |
-| `workflow_dispatch` | Code変更と同じFull CI | 実行 |
+| docs-only | Sensitive data check、LLM security checkのみ | 省略 |
+| `workflow_dispatch` | Code変更と同じFull CI | デフォルトで省略。`run_e2e=true`の場合だけ実行 |
 
-docs-onlyは`docs/**`（OpenAPIを除く）、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`に限定します。アプリ配下のMarkdownを含む、それ以外のパスはCode変更として扱います。PR中にE2Eを確認する必要があれば、対象branchで`workflow_dispatch`を実行します。
+docs-onlyは`docs/**`（OpenAPIを除く）、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`に限定します。アプリ配下のMarkdownを含む、それ以外のパスはCode変更として扱います。PRのE2E対象はWebの画面・コンポーネント・スタイル・静的素材・StorybookとPlaywrightのテスト・設定です。API routeや明確なserver専用処理だけの変更は対象外です。比較元を取得できないPRは安全側でE2Eを実行します。手動でE2Eを確認する場合は対象branchの`workflow_dispatch`で`run_e2e`を指定します。
+
+`main`へのpushでは変更分類にかかわらずE2EとStorybook browser testsを実行します。未Releaseのアプリ変更があるdocs-only pushでは従来どおりFull CIも実行します。Production ReleaseはFull CIとE2Eの成功を引き続き条件とします。
 
 LLM security checkはGit管理対象のAgent向け文書を動的に列挙し、禁止Unicode文字、NFC、instruction fileの配置を検査します。pre-commitではstage済みの内容だけを、CIでは管理対象全件を確認します。検出時は自動修正せず、表示されたファイル・位置と内容をレビューします。
 

@@ -7,6 +7,7 @@ import {
   classifyGitChange,
   classifyPaths,
   classifyReleaseChanges,
+  shouldRunE2e,
   shouldRunFullCi,
 } from "../scripts/classify-ci-changes.mjs";
 
@@ -21,6 +22,7 @@ describe("CI change classification", () => {
       openapiChanged: false,
       workflowChanged: false,
       releaseRelevant: false,
+      e2eRelevant: false,
     });
   });
 
@@ -30,6 +32,7 @@ describe("CI change classification", () => {
       openapiChanged: true,
       workflowChanged: false,
       releaseRelevant: false,
+      e2eRelevant: false,
     });
   });
 
@@ -39,6 +42,7 @@ describe("CI change classification", () => {
       openapiChanged: false,
       workflowChanged: false,
       releaseRelevant: true,
+      e2eRelevant: true,
     });
   });
 
@@ -48,12 +52,61 @@ describe("CI change classification", () => {
       openapiChanged: false,
       workflowChanged: true,
       releaseRelevant: false,
+      e2eRelevant: false,
     });
   });
 
   it("treats a rename from code into docs as a code change when both paths are provided", () => {
     expect(classifyPaths(["apps/web/content/guide.md", "docs/guide.md"]).codeChanged).toBe(true);
     expect(classifyPaths(["apps/web/content/guide.md", "docs/guide.md"]).releaseRelevant).toBe(true);
+  });
+
+  it("runs E2E for UI, Storybook, and browser test changes", () => {
+    for (const path of [
+      "apps/web/app/(map)/page.tsx",
+      "apps/web/app/components/pub-map.tsx",
+      "apps/web/app/globals.css",
+      "apps/web/app/lib/pub-search.ts",
+      "apps/web/app/lib/media/use-media-library.ts",
+      "apps/web/content/future-page.md",
+      "apps/web/public/icon.svg",
+      "apps/web/stories/public-ui.stories.tsx",
+      "apps/web/tailwind.config.ts",
+      ".storybook/main.ts",
+      "e2e/support/page-helpers.ts",
+      "tests/e2e/future.spec.ts",
+      "playwright.config.ts",
+      "playwright.storybook.config.ts",
+    ]) {
+      expect(classifyPaths([path]).e2eRelevant, path).toBe(true);
+    }
+  });
+
+  it("skips E2E for backend, unit test, and documentation-only changes", () => {
+    for (const path of [
+      "apps/web/app/api/pubs/route.ts",
+      "apps/web/app/lib/pub-repository.ts",
+      "apps/web/app/lib/admin-pub-service.ts",
+      "packages/shared/src/pub.ts",
+      "tests/pub-repository.test.ts",
+      "docs/runbooks/release-operations.md",
+      "apps/web/AGENTS.md",
+      "apps/web/CLAUDE.md",
+    ]) {
+      expect(classifyPaths([path]).e2eRelevant, path).toBe(false);
+    }
+  });
+
+  it("runs E2E for UI PRs, main pushes, and explicit manual requests", () => {
+    const ui = classifyPaths(["apps/web/app/components/pub-map.tsx"]);
+    const backend = classifyPaths(["apps/web/app/api/pubs/route.ts"]);
+    expect(shouldRunE2e(ui, { eventName: "pull_request", ref: "refs/pull/553/merge" })).toBe(true);
+    expect(shouldRunE2e(backend, { eventName: "pull_request", ref: "refs/pull/553/merge" })).toBe(false);
+    expect(shouldRunE2e(classifyPaths(["README.md"]), { eventName: "pull_request" })).toBe(false);
+    expect(shouldRunE2e(backend, { eventName: "push", ref: "refs/heads/main" })).toBe(true);
+    expect(shouldRunE2e(backend, { eventName: "push", ref: "refs/heads/feature" })).toBe(false);
+    expect(shouldRunE2e(ui, { eventName: "workflow_dispatch", ref: "refs/heads/main" })).toBe(false);
+    expect(shouldRunE2e(backend, { eventName: "workflow_dispatch", runE2eInput: "true" })).toBe(true);
   });
 
   it("releases production inputs but skips CI, test, and documentation-only changes", () => {
@@ -82,6 +135,7 @@ describe("CI change classification", () => {
       openapiChanged: true,
       workflowChanged: true,
       releaseRelevant: false,
+      e2eRelevant: true,
     });
     expect(classifyGitChange({ eventName: "pull_request", baseSha: "0".repeat(40), headSha: "a".repeat(40) })).toEqual(
       classifyPaths([]),
@@ -121,6 +175,7 @@ describe("CI change classification", () => {
         openapiChanged: false,
         workflowChanged: false,
         releaseRelevant: true,
+        e2eRelevant: false,
       });
       expect(
         classifyGitChange({ eventName: "push", baseSha: "0".repeat(40), headSha: docsCommit, cwd }).releaseRelevant,
