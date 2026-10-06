@@ -8,6 +8,12 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: Run Playwright E2E and Storybook browser tests
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,6 +31,8 @@ jobs:
       code_changed: ${{ steps.changes.outputs.code_changed }}
       full_ci: ${{ steps.changes.outputs.full_ci }}
       release_relevant: ${{ steps.changes.outputs.release_relevant }}
+      e2e_relevant: ${{ steps.changes.outputs.e2e_relevant }}
+      run_e2e: ${{ steps.changes.outputs.run_e2e }}
     env:
       SLACK_CICD_CHANNEL: ${{ vars.SLACK_CICD_CHANNEL }}
       SLACK_CICD_WEBHOOK_URL: ${{ secrets.SLACK_CICD_WEBHOOK_URL }}
@@ -39,6 +47,8 @@ jobs:
         id: changes
         env:
           CI_EVENT_NAME: ${{ github.event_name }}
+          CI_REF: ${{ github.ref }}
+          CI_RUN_E2E: ${{ inputs.run_e2e }}
           CI_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
           CI_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -124,7 +134,7 @@ jobs:
 
   e2e:
     name: E2E
-    if: needs.ci.outputs.full_ci == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: needs.ci.outputs.run_e2e == 'true'
     needs: ci
     runs-on: ubuntu-24.04
     timeout-minutes: 15
