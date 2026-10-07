@@ -15,7 +15,15 @@ vi.mock("../../apps/web/app/lib/admin-server", () => ({
 }));
 vi.mock("../../apps/web/app/lib/i18n/server", () => ({ getRequestLocale: () => Promise.resolve("ja") }));
 vi.mock("../../apps/web/app/components/admin-navigation", () => ({
-  AdminNavigation: () => <nav aria-label="管理機能">navigation</nav>,
+  AdminNavigation: () => (
+    <nav aria-label="管理機能">
+      navigation
+      <button type="button">ログアウト</button>
+    </nav>
+  ),
+}));
+vi.mock("../../apps/web/app/components/admin-release-info", () => ({
+  AdminReleaseInfo: () => <aside aria-label="リリース情報">Version / Release Date / Git Commit</aside>,
 }));
 
 import AdminLayout from "../../apps/web/app/admin/(protected)/layout";
@@ -48,6 +56,8 @@ describe("AdminLayout", () => {
     render(await AdminLayout({ children: <p>protected</p> }));
 
     expect(screen.getByRole("navigation", { name: "管理機能" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ログアウト" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "リリース情報" })).toBeInTheDocument();
     expect(screen.getByText("protected")).toBeInTheDocument();
   });
 });

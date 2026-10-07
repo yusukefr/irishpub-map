@@ -860,6 +860,13 @@ h1 {
   min-height: 100vh;
 }
 .admin-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -875,14 +882,18 @@ h1 {
   font-size: 1.5rem;
   font-weight: 700;
 }
-.admin-navigation,
 .admin-navigation ul {
   display: grid;
   gap: 10px;
 }
 .admin-navigation {
-  align-content: space-between;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
   flex: 1;
+}
+.admin-navigation button {
+  margin-top: auto;
 }
 .admin-navigation ul {
   margin: 0;
@@ -1286,10 +1297,16 @@ h1 {
     grid-template-columns: 1fr;
   }
   .admin-sidebar {
+    position: static;
+    height: auto;
+    min-height: auto;
+    align-self: stretch;
+    overflow: visible;
     gap: 18px;
     padding: 20px 16px;
   }
   .admin-navigation {
+    flex: none;
     gap: 14px;
   }
   .admin-navigation ul {
