@@ -240,6 +240,7 @@ describe("quiz database migration", () => {
 
     expect(verifySql).toContain("data_type = 'integer'");
     expect(verifySql).toContain("quiz_choices_sort_order_check");
+    expect(verifySql).toContain("CHECK ((sort_order >= 0))");
     expect(verifySql).toContain("quiz_choices_question_sort_order_key");
     expect(verifySql).toContain("quiz_choices question and sort_order index");
     expect(verifySql).toContain("version = '020_unify_sort_order_integer'");

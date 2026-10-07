@@ -18,7 +18,7 @@ BEGIN
     WHERE conrelid = 'public.quiz_choices'::regclass
       AND conname = 'quiz_choices_sort_order_check'
       AND contype = 'c'
-      AND pg_get_constraintdef(oid) = 'CHECK (sort_order >= 0)'
+      AND pg_get_constraintdef(oid) IN ('CHECK (sort_order >= 0)', 'CHECK ((sort_order >= 0))')
   ) THEN
     RAISE EXCEPTION 'quiz_choices.sort_order non-negative CHECK is missing';
   END IF;
