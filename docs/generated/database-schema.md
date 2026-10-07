@@ -526,7 +526,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | Column        | Type                       | Nullable | Default |
 | ------------- | -------------------------- | -------- | ------- |
 | `id`          | `text`                     | no       | —       |
-| `sort_order`  | `smallint`                 | no       | —       |
+| `sort_order`  | `integer`                  | no       | —       |
 | `created_at`  | `timestamp with time zone` | no       | `now()` |
 | `updated_at`  | `timestamp with time zone` | no       | `now()` |
 | `question_id` | `uuid`                     | no       | —       |
