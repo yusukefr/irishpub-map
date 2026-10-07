@@ -37,6 +37,8 @@ describe("i18n locale resolution", () => {
     ["ko-KR,ja-JP;q=0.9,en;q=0.8", "ja"],
     ["en;q=0.5,ja;q=1.0", "ja"],
     ["en;q=0,ja;q=0.5", "ja"],
+    ["en;q=1.,ja;q=0.5", "en"],
+    ["en;q=0.,ja;q=0.5", "ja"],
     ["en;q=0.8,ja;q=0.8", "en"],
     ["ja;q=0.8,en;q=0.8", "ja"],
     ["en;q=invalid,ja;q=0.5", "ja"],

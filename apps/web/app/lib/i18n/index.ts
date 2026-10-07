@@ -68,7 +68,7 @@ export function parseAcceptLanguage(value: string | null | undefined): Locale | 
     const [language, weight, ...extra] = candidate.split(";").map((part) => part.trim());
     if (extra.length > 0) continue;
 
-    const qualityText = weight?.match(/^q=(0(?:\.\d{1,3})?|1(?:\.0{1,3})?)$/i)?.[1];
+    const qualityText = weight?.match(/^q=(0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/i)?.[1];
     if (weight !== undefined && !qualityText) continue;
 
     const quality = qualityText === undefined ? 1 : Number(qualityText);
