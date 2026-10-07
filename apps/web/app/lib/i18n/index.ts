@@ -45,14 +45,42 @@ export function getTagLabel(locale: Locale, tag: string) {
 }
 
 /**
- * CookieまたはAccept-Languageの値から対応するロケールを取得します。
- * @param {string | null | undefined} value - 解析対象の言語指定。
+ * CookieやHTML langなどの単一言語タグから対応するロケールを取得します。
+ * @param {string | null | undefined} value - 解析対象の単一言語タグ。
  * @returns {Locale | undefined} 対応するロケール。
  */
 export function parseLocale(value: string | null | undefined): Locale | undefined {
-  const language = value?.toLowerCase().split(",")[0]?.trim();
-  if (!language) return undefined;
+  const language = value?.toLowerCase().trim();
+  if (!language || !/^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$/.test(language)) return undefined;
   return LOCALES.find((locale) => language === locale || language.startsWith(`${locale}-`));
+}
+
+/**
+ * Accept-Languageの候補を品質値の高い順に評価します。同値の場合は記載順を優先します。
+ * @param {string | null | undefined} value - Accept-Languageヘッダーの値。
+ * @returns {Locale | undefined} 採用可能な最優先のロケール。
+ */
+export function parseAcceptLanguage(value: string | null | undefined): Locale | undefined {
+  if (!value) return undefined;
+
+  let best: { locale: Locale; quality: number } | undefined;
+  for (const candidate of value.split(",")) {
+    const [language, weight, ...extra] = candidate.split(";").map((part) => part.trim());
+    if (extra.length > 0) continue;
+
+    const qualityText = weight?.match(/^q=(0(?:\.\d{1,3})?|1(?:\.0{1,3})?)$/i)?.[1];
+    if (weight !== undefined && !qualityText) continue;
+
+    const quality = qualityText === undefined ? 1 : Number(qualityText);
+    if (quality === 0) continue;
+
+    const locale = parseLocale(language);
+    if (locale && (!best || quality > best.quality)) {
+      best = { locale, quality };
+    }
+  }
+
+  return best?.locale;
 }
 
 /**
@@ -63,7 +91,7 @@ export function parseLocale(value: string | null | undefined): Locale | undefine
  * @returns {Locale} 表示するロケール。
  */
 export function resolveLocale(input: { cookieLocale?: string | null; acceptLanguage?: string | null }): Locale {
-  return parseLocale(input.cookieLocale) ?? parseLocale(input.acceptLanguage) ?? DEFAULT_LOCALE;
+  return parseLocale(input.cookieLocale) ?? parseAcceptLanguage(input.acceptLanguage) ?? DEFAULT_LOCALE;
 }
 
 /**
