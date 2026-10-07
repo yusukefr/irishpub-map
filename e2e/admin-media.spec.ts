@@ -11,7 +11,20 @@ test("Japanese Media管理画面にfixtureを表示する", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "Media管理" })).toBeVisible();
   await expect(page.getByText(E2E_TEST_DATA.media.landscape.id)).toBeVisible();
   await expect(page.getByText("1200 × 800")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Media" })).toHaveAttribute("aria-current", "page");
+  const navigation = page.getByRole("navigation", { name: "管理機能" });
+  const menuItems = [
+    ["Pubs", "/admin/pubs"],
+    ["Content", "/admin/content"],
+    ["Media", "/admin/media"],
+    ["Quiz", "/admin/quiz"],
+    ["Calendar", "/admin/calendar"],
+    ["Tags", "/admin/tags"],
+    ["Statuses", "/admin/statuses"],
+  ];
+  for (const [label, href] of menuItems) {
+    await expect(navigation.getByRole("link", { name: label, exact: true })).toHaveAttribute("href", href);
+  }
+  await expect(navigation.getByRole("link", { name: "Media", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("button", { name: "アップロード" })).toBeDisabled();
   await expect(page).toHaveScreenshot("admin-media-desktop-ja.png", { fullPage: true });
 });
