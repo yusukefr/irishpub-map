@@ -22,14 +22,15 @@ describe("AdminNavigation", () => {
   it("links every management area and marks the current page", () => {
     render(<AdminNavigation locale="ja" />);
 
-    expect(screen.getByRole("link", { name: "パブ" })).toHaveAttribute("href", "/admin/pubs");
+    expect(screen.getByRole("link", { name: "Pubs" })).toHaveAttribute("href", "/admin/pubs");
     expect(screen.getByRole("link", { name: "Content" })).toHaveAttribute("href", "/admin/content");
     expect(screen.getByRole("link", { name: "Media" })).toHaveAttribute("href", "/admin/media");
+    expect(screen.getByRole("link", { name: "Quiz" })).toHaveAttribute("href", "/admin/quiz");
     expect(screen.getByRole("link", { name: "Calendar" })).toHaveAttribute("href", "/admin/calendar");
-    expect(screen.getByRole("link", { name: "タグ" })).toHaveAttribute("href", "/admin/tags");
-    expect(screen.getByRole("link", { name: "ステータス" })).toHaveAttribute("href", "/admin/statuses");
-    expect(screen.getByRole("link", { name: "パブ" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "タグ" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Tags" })).toHaveAttribute("href", "/admin/tags");
+    expect(screen.getByRole("link", { name: "Statuses" })).toHaveAttribute("href", "/admin/statuses");
+    expect(screen.getByRole("link", { name: "Pubs" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Tags" })).not.toHaveAttribute("aria-current");
   });
 
   it("marks Media and nested Media routes as active", () => {
@@ -50,7 +51,7 @@ describe("AdminNavigation", () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ ok: true })));
     render(<AdminNavigation locale="ja" />);
 
-    expect(screen.getByRole("link", { name: "タグ" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Tags" })).toHaveAttribute("aria-current", "page");
     fireEvent.click(screen.getByRole("button", { name: "ログアウト" }));
     await waitFor(() => expect(navigationMocks.push).toHaveBeenCalledWith("/admin/login"));
     expect(fetchMock).toHaveBeenCalledWith("/api/admin/logout", { method: "POST" });
