@@ -20,6 +20,8 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 `019_add_calendar_event_id_default` は `calendar_events.id` のTEXT型と既存のsemantic IDを維持し、新規EventのIDに `gen_random_uuid()::text` のDEFAULTを設定します。RepositoryはDB生成IDを受け取り、Event本体と日英翻訳を同一transaction内で保存します。新しい作成処理の配備前に各環境へmigrationを適用します。
 
+表示順を表す `sort_order` は、Application側で整数として扱う共通カラムのため `INTEGER` に統一します。Choice数など行数の上限は列型ではなくDomain Validationで表現し、列型は格納値の実際の上限を必要とするときだけ狭めます。`020_unify_sort_order_integer` は `quiz_choices.sort_order` を `SMALLINT` から `INTEGER` へ拡張し、非負CHECKとQuestion内のUNIQUE制約を維持します。
+
 ## 概念モデル
 
 アプリケーションは、店舗・地域・営業状況・タグ・Editorial Content・Quiz・Irish Calendarを扱います。各概念の物理テーブル名、カラム、制約、インデックスは、現行Neonから生成した[生成済みスキーマ](../generated/database-schema.md)を参照してください。認証情報は環境変数、ログイン後のセッションは署名付きHttpOnly Cookieで管理し、アプリケーション用の認証テーブルは持ちません。

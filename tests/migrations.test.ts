@@ -229,6 +229,22 @@ describe("editorial content hero image migration", () => {
 });
 
 describe("quiz database migration", () => {
+  it("unifies Quiz sort order with INTEGER and retains its constraints and index", async () => {
+    const upSql = await readMigration("020_unify_sort_order_integer_up.sql");
+    const verifySql = await readMigration("020_unify_sort_order_integer_verify.sql");
+
+    expect(upSql).toContain("data_type = 'smallint'");
+    expect(upSql).toContain("ALTER COLUMN sort_order TYPE INTEGER");
+    expect(upSql).toContain("VALUES ('020_unify_sort_order_integer')");
+    expect(upSql.trimEnd().endsWith("COMMIT;")).toBe(true);
+
+    expect(verifySql).toContain("data_type = 'integer'");
+    expect(verifySql).toContain("quiz_choices_sort_order_check");
+    expect(verifySql).toContain("quiz_choices_question_sort_order_key");
+    expect(verifySql).toContain("quiz_choices question and sort_order index");
+    expect(verifySql).toContain("version = '020_unify_sort_order_integer'");
+  });
+
   it("maps legacy Question IDs atomically and verifies UUID references", async () => {
     const upSql = await readMigration("018_convert_quiz_question_ids_to_uuid_up.sql");
     const verifySql = await readMigration("018_convert_quiz_question_ids_to_uuid_verify.sql");
