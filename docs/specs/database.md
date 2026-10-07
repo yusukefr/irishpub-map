@@ -34,6 +34,8 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 Repositoryは要求ロケールの翻訳を優先し、存在しない場合は共通locale定義の既定localeへフォールバックします。対象は店舗、都道府県、市区町村、営業状況、タグ、Editorial Content、Quiz、Irish Calendarです。店舗の緯度経度、URL、コード、タグ関係やQuizのCategory、Special Date、正解、CalendarのDate Rule・Category・公開状態など言語に依存しない値は親テーブルに保持します。
 
+翻訳テーブル9種の `locale` はすべて `TEXT NOT NULL` とし、`CHECK (locale IN ('ja', 'en'))` で[共有の対応locale](../../packages/shared/src/locale.ts)と一致させます。未知のlocaleと空文字はDBでも拒否し、PostgreSQL ENUMは使用しません。localeを追加するときは、共有の対応locale、Applicationの入力検証・フォールバック、全翻訳テーブルのCHECK制約を同じ変更単位で更新します。Migration前に既存データのlocale分布を確認し、未知の値を自動削除・変換しません。
+
 ## 正規化とアプリケーション境界
 
 店舗、都道府県、市区町村、営業状況、タグ、Editorial Content、Quizは、言語に依存しない親テーブルとロケール別の翻訳テーブルへ分離します。これにより表示言語を追加しても、識別子・コード・関係を複製しません。店舗とタグは `pub_tags` を介した多対多で、複合主キーが重複を防ぎます。

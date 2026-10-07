@@ -288,7 +288,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 | Name                                               | Type        | Definition                                                                              |
 | -------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------- |
-| `municipality_translations_locale_check`           | CHECK       | `CHECK (btrim(locale) <> ''::text)`                                                     |
+| `municipality_translations_locale_check`           | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`                                  |
 | `municipality_translations_municipality_code_fkey` | FOREIGN KEY | `FOREIGN KEY (municipality_code) REFERENCES municipality_codes(code) ON DELETE CASCADE` |
 | `municipality_translations_name_check`             | CHECK       | `CHECK (btrim(name) <> ''::text)`                                                       |
 | `municipality_translations_name_reading_check`     | CHECK       | `CHECK (name_reading IS NULL OR btrim(name_reading) <> ''::text)`                       |
@@ -315,7 +315,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 | Name                                           | Type        | Definition                                                                     |
 | ---------------------------------------------- | ----------- | ------------------------------------------------------------------------------ |
-| `prefecture_translations_locale_check`         | CHECK       | `CHECK (btrim(locale) <> ''::text)`                                            |
+| `prefecture_translations_locale_check`         | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`                         |
 | `prefecture_translations_locale_name_key`      | UNIQUE      | `UNIQUE (locale, name)`                                                        |
 | `prefecture_translations_name_check`           | CHECK       | `CHECK (btrim(name) <> ''::text)`                                              |
 | `prefecture_translations_name_reading_check`   | CHECK       | `CHECK (name_reading IS NULL OR btrim(name_reading) <> ''::text)`              |
@@ -365,7 +365,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | Name                                         | Type        | Definition                                                                  |
 | -------------------------------------------- | ----------- | --------------------------------------------------------------------------- |
 | `pub_status_translations_display_name_check` | CHECK       | `CHECK (btrim(display_name) <> ''::text)`                                   |
-| `pub_status_translations_locale_check`       | CHECK       | `CHECK (btrim(locale) <> ''::text)`                                         |
+| `pub_status_translations_locale_check`       | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`                      |
 | `pub_status_translations_pkey`               | PRIMARY KEY | `PRIMARY KEY (status_code, locale)`                                         |
 | `pub_status_translations_status_code_fkey`   | FOREIGN KEY | `FOREIGN KEY (status_code) REFERENCES pub_statuses(code) ON DELETE CASCADE` |
 
@@ -440,7 +440,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | Name                                  | Type        | Definition                                                        |
 | ------------------------------------- | ----------- | ----------------------------------------------------------------- |
 | `pub_translations_address_check`      | CHECK       | `CHECK (address IS NULL OR btrim(address) <> ''::text)`           |
-| `pub_translations_locale_check`       | CHECK       | `CHECK (btrim(locale) <> ''::text)`                               |
+| `pub_translations_locale_check`       | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`            |
 | `pub_translations_name_check`         | CHECK       | `CHECK (btrim(name) <> ''::text)`                                 |
 | `pub_translations_name_reading_check` | CHECK       | `CHECK (name_reading IS NULL OR btrim(name_reading) <> ''::text)` |
 | `pub_translations_pkey`               | PRIMARY KEY | `PRIMARY KEY (pub_id, locale)`                                    |
@@ -657,7 +657,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 | Name                               | Type        | Definition                                                   |
 | ---------------------------------- | ----------- | ------------------------------------------------------------ |
-| `tag_translations_locale_check`    | CHECK       | `CHECK (btrim(locale) <> ''::text)`                          |
+| `tag_translations_locale_check`    | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`       |
 | `tag_translations_locale_name_key` | UNIQUE      | `UNIQUE (locale, name)`                                      |
 | `tag_translations_name_check`      | CHECK       | `CHECK (btrim(name) <> ''::text)`                            |
 | `tag_translations_pkey`            | PRIMARY KEY | `PRIMARY KEY (tag_id, locale)`                               |
