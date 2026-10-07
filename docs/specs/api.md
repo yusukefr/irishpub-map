@@ -84,7 +84,7 @@ Master参照はすべて `master:read` を要求し、現在のDBを既存Reposi
 | `GET` | `/api/automation/v1/master/statuses` | `200` と `{ statuses: [{ code, key, name }] }` | 認証 `401`、Scope不足 `403`、取得失敗 `500` |
 | `POST` | `/api/automation/v1/tags` | `201` と `{ tag: { id, key, translations, pubCount } }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、入力不正 `422`、競合 `409`、DB未設定 `503`、内部エラー `500` |
 
-都道府県と営業ステータスの表示名は日本語を既定とします。市区町村の表示名は管理APIと同じく言語Cookie、次に `Accept-Language` からlocaleを決め、日本語へフォールバックします。`prefectureCode` は1〜47の10進整数を管理APIと同じ条件で検証します。タグ一覧はサポートlocaleの翻訳と、関連する店舗の重複を除いた使用件数を返します。
+都道府県と営業ステータスの表示名は日本語を既定とします。市区町村の表示名は管理APIと同じく言語Cookie、次に `Accept-Language` の候補からlocaleを決め、日本語へフォールバックします。候補は `q` 値の高い順、同値なら記載順に評価し、`q=0`・不正な `q` 値・非対応言語は採用しません。`prefectureCode` は1〜47の10進整数を管理APIと同じ条件で検証します。タグ一覧はサポートlocaleの翻訳と、関連する店舗の重複を除いた使用件数を返します。
 
 タグ作成は `tag:create` を要求し、管理タグAPIと同じ `key` および `translations` 入力、共有Validation、競合判定とエラー形式を使います。IDはServer側でUUIDを生成します。Automation Clientは作成前にタグ一覧を取得し、表記・翻訳の違いだけで意味が同じタグや、既存タグで十分に分類できる属性には既存IDを使います。タグ化の対象は複数店舗の検索・分類に継続的に役立つ属性とし、単店固有のイベント、一時的なキャンペーン、主観的な評価は作成しません。意味的重複の完全な自動判定はServer側では行いません。Automation APIにタグ更新・削除Routeはありません。
 
@@ -100,7 +100,7 @@ Master参照はすべて `master:read` を要求し、現在のDBを既存Reposi
 | `PUT` | `/api/automation/v1/pubs/:id` | `pubs:update` | `200` と `{ pub: AdminPub }`。公開状態を維持して全体Snapshotを更新 |
 | `PATCH` | `/api/automation/v1/pubs/:id/publication` | `pubs:publish` | `200` と `{ publication: { id, isPublished, unchanged } }` |
 
-一覧のQueryは管理 Pub API と同じ `name`、`prefecture`、`municipality`、`status`、`tag`、`published`、`page` です。条件はANDで結合し、`page` は1から始まり、1ページ50件です。`prefecture` は1〜47の整数、`municipality` は指定した都道府県に対応する6桁コード、`tag` はUUID、`published` は `true` / `false` を指定します。`name` は前後の空白を除いた最大100文字です。不明なQueryや不正な値、同じQueryの重複は `400 invalid_request` です。表示値のlocaleは管理 Pub API と同じく言語Cookie、次に `Accept-Language` から決めます。
+一覧のQueryは管理 Pub API と同じ `name`、`prefecture`、`municipality`、`status`、`tag`、`published`、`page` です。条件はANDで結合し、`page` は1から始まり、1ページ50件です。`prefecture` は1〜47の整数、`municipality` は指定した都道府県に対応する6桁コード、`tag` はUUID、`published` は `true` / `false` を指定します。`name` は前後の空白を除いた最大100文字です。不明なQueryや不正な値、同じQueryの重複は `400 invalid_request` です。表示値のlocaleは管理 Pub API と同じく言語Cookie、次に `Accept-Language` の候補を `q` 値と記載順で評価して決めます。
 
 `POST` / `PUT` の本文は管理 Pub API の `AdminPubWriteInput` と同じ全体Snapshotです。書き込み可能なトップレベルのフィールドは `prefectureCode`、`municipalityCode`、`latitude`、`longitude`、`websiteUrl`、`googleMapsUrl`、`instagramUrl`、`status`、`translations`、`tagIds` です。例えば:
 
@@ -305,7 +305,7 @@ Media Asset APIは管理者専用です。`POST /api/admin/media` は同一Origi
 
 公開用の `GET /media/{uuid}` は本文Markdownの安定した画像参照です。登録済みMedia Assetだけを許可済みVercel Blob URLへ `307` redirectし、画像バイナリはアプリ経由でproxyしません。redirectは `max-age=300` と `s-maxage=300` でブラウザと共有CDNに5分間Cacheします。不正UUID・未登録ID・許可外URLは `404`、DB未設定・取得障害は `503` です。Storage keyとDB接続情報は返しません。
 
-参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスは `{ code, key, name }` です。表示名は日本語を既定とし、日本語へフォールバックします。画面操作で再取得する市区町村APIと管理店舗一覧APIは、言語Cookieを優先し、未指定時は `Accept-Language` から表示ロケールを決定します。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
+参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスは `{ code, key, name }` です。表示名は日本語を既定とし、日本語へフォールバックします。画面操作で再取得する市区町村APIと管理店舗一覧APIは、言語Cookieを優先し、未指定時は `Accept-Language` の候補を `q` 値と記載順で評価して表示ロケールを決定します。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
 
 管理APIは共通認証ヘルパーで、管理者設定が揃い、有効な署名済みセッションを持つリクエストだけを許可します。変更系リクエストは共通の同一Origin検証も通し、`Origin` の欠落・不一致を `403` で拒否します。現行は単一管理者モデルのため、このセッションを管理権限として扱います。Repositoryの例外時はDB・SQL・接続情報を含まない一般化したエラーを返します。
 
