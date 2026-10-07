@@ -47,6 +47,7 @@ const event = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  repositoryMocks.insertCalendarEvent.mockResolvedValue("8acbc777-5160-4f1d-8284-6db05f89485d");
   repositoryMocks.getAdminCalendarEvent.mockImplementation(async (id: string) => ({ ...event, id }));
   repositoryMocks.listAdminCalendarEvents.mockResolvedValue([event]);
   repositoryMocks.setCalendarEventPublication.mockResolvedValue({
@@ -59,15 +60,14 @@ beforeEach(() => {
 });
 
 describe("admin calendar service", () => {
-  it("Server生成UUIDで作成し、正規化した入力と一覧をRepositoryへ委譲する", async () => {
+  it("DB生成IDで作成し、正規化した入力と一覧をRepositoryへ委譲する", async () => {
     const created = await createAdminCalendarEvent({ ...completeInput, source: "  ", ignoredProperty: true });
-    expect(created.id).toMatch(/^[0-9a-f-]{36}$/u);
-    expect(repositoryMocks.insertCalendarEvent).toHaveBeenCalledWith(
-      created.id,
-      expect.objectContaining({ source: null }),
-    );
-    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][1]).not.toHaveProperty("ignoredProperty");
-    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][1]).not.toHaveProperty("sortOrder");
+    expect(created.id).toBe("8acbc777-5160-4f1d-8284-6db05f89485d");
+    expect(repositoryMocks.insertCalendarEvent).toHaveBeenCalledWith(expect.objectContaining({ source: null }));
+    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][0]).not.toHaveProperty("id");
+    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][0]).not.toHaveProperty("ignoredProperty");
+    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][0]).not.toHaveProperty("sortOrder");
+    expect(repositoryMocks.getAdminCalendarEvent).toHaveBeenCalledWith(created.id);
     await expect(readAdminCalendarList()).resolves.toHaveLength(1);
   });
 

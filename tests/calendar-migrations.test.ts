@@ -37,4 +37,16 @@ describe("calendar database migration", () => {
     expect(verifySql).toContain("orphan_calendar_translations");
     expect(verifySql).toContain("calendar_domain_migration_recorded");
   });
+
+  it("TEXT IDにDB生成UUIDのDEFAULTを追加し、履歴と型を検証する", async () => {
+    const upSql = await readMigration("019_add_calendar_event_id_default_up.sql");
+    const verifySql = await readMigration("019_add_calendar_event_id_default_verify.sql");
+
+    expect(upSql).toContain("ALTER COLUMN id SET DEFAULT gen_random_uuid()::text");
+    expect(upSql).toContain("VALUES ('019_add_calendar_event_id_default')");
+    expect(upSql).not.toContain("ALTER COLUMN id TYPE uuid");
+    expect(verifySql).toContain("data_type = 'text'");
+    expect(verifySql).toContain("column_default IN ('gen_random_uuid()::text', '(gen_random_uuid())::text')");
+    expect(verifySql).toContain("version = '019_add_calendar_event_id_default'");
+  });
 });

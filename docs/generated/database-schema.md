@@ -109,19 +109,19 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 ### Columns
 
-| Column              | Type                       | Nullable | Default        |
-| ------------------- | -------------------------- | -------- | -------------- |
-| `id`                | `text`                     | no       | —              |
-| `category`          | `text`                     | yes      | —              |
-| `date_rule`         | `jsonb`                    | yes      | —              |
-| `is_public_holiday` | `boolean`                  | no       | `false`        |
-| `featured`          | `boolean`                  | no       | `false`        |
-| `aliases`           | `ARRAY`                    | no       | `'{}'::text[]` |
-| `source`            | `text`                     | yes      | —              |
-| `sort_order`        | `integer`                  | no       | —              |
-| `is_published`      | `boolean`                  | no       | `false`        |
-| `created_at`        | `timestamp with time zone` | no       | `now()`        |
-| `updated_at`        | `timestamp with time zone` | no       | `now()`        |
+| Column              | Type                       | Nullable | Default                     |
+| ------------------- | -------------------------- | -------- | --------------------------- |
+| `id`                | `text`                     | no       | `(gen_random_uuid())::text` |
+| `category`          | `text`                     | yes      | —                           |
+| `date_rule`         | `jsonb`                    | yes      | —                           |
+| `is_public_holiday` | `boolean`                  | no       | `false`                     |
+| `featured`          | `boolean`                  | no       | `false`                     |
+| `aliases`           | `ARRAY`                    | no       | `'{}'::text[]`              |
+| `source`            | `text`                     | yes      | —                           |
+| `sort_order`        | `integer`                  | no       | —                           |
+| `is_published`      | `boolean`                  | no       | `false`                     |
+| `created_at`        | `timestamp with time zone` | no       | `now()`                     |
+| `updated_at`        | `timestamp with time zone` | no       | `now()`                     |
 
 ### Constraints
 
