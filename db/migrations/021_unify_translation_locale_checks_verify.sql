@@ -6,9 +6,9 @@ DECLARE
   has_unknown_locale BOOLEAN;
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM schema_migrations WHERE version = '020_unify_translation_locale_checks'
+    SELECT 1 FROM schema_migrations WHERE version = '021_unify_translation_locale_checks'
   ) THEN
-    RAISE EXCEPTION 'migration 020 history is missing';
+    RAISE EXCEPTION 'migration 021 history is missing';
   END IF;
 
   FOREACH target_table IN ARRAY ARRAY[

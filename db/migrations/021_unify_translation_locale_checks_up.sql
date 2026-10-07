@@ -8,9 +8,9 @@ DECLARE
   has_unknown_locale BOOLEAN;
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM schema_migrations WHERE version = '020_unify_translation_locale_checks'
+    SELECT 1 FROM schema_migrations WHERE version = '021_unify_translation_locale_checks'
   ) THEN
-    RAISE EXCEPTION 'migration 020_unify_translation_locale_checks is already applied';
+    RAISE EXCEPTION 'migration 021_unify_translation_locale_checks is already applied';
   END IF;
 
   FOREACH target_table IN ARRAY ARRAY[
@@ -94,6 +94,6 @@ ALTER TABLE pub_status_translations
   DROP CONSTRAINT pub_status_translations_locale_check,
   ADD CONSTRAINT pub_status_translations_locale_check CHECK (locale IN ('ja', 'en'));
 
-INSERT INTO schema_migrations (version) VALUES ('020_unify_translation_locale_checks');
+INSERT INTO schema_migrations (version) VALUES ('021_unify_translation_locale_checks');
 
 COMMIT;
