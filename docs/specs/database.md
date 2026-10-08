@@ -22,6 +22,8 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 Resource UUIDはPostgreSQL `uuid` 型で保持し、Application Serviceで `crypto.randomUUID()` を生成してRepositoryへ明示的に渡します。Applicationが生成するResource IDにはDB DEFAULTを設けません。APIとTypeScriptではUUIDをstringとして扱い、UUID形式のValidationを通します。UUIDでないsemantic IDやdomain codeはUUIDへ変換せず、そのドメインの型を維持します。
 
+店舗・タグ・Editorial ContentのIDもこの共通ルールに従います。一括店舗importでは入力データの店舗UUIDを明示し、タグの新規作成時はApplication側でUUIDを生成してINSERTします。Migration 023は `pubs.id`、`tags.id`、`content_entries.id` の既存UUID DEFAULTだけを削除し、PRIMARY KEYと既存行を維持します。
+
 表示順を表す `sort_order` は、Application側で整数として扱う共通カラムのため `INTEGER` に統一します。Choice数など行数の上限は列型ではなくDomain Validationで表現し、列型は格納値の実際の上限を必要とするときだけ狭めます。`020_unify_sort_order_integer` は `quiz_choices.sort_order` を `SMALLINT` から `INTEGER` へ拡張し、非負CHECKとQuestion内のUNIQUE制約を維持します。
 
 ## 概念モデル

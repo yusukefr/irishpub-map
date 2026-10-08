@@ -238,6 +238,22 @@ describe("editorial content hero image migration", () => {
   });
 });
 
+describe("resource UUID default migration", () => {
+  it("removes UUID defaults from application-generated resource primary keys", async () => {
+    const upSql = await readMigration("023_remove_resource_uuid_defaults_up.sql");
+    const verifySql = await readMigration("023_remove_resource_uuid_defaults_verify.sql");
+
+    for (const table of ["pubs", "tags", "content_entries"]) {
+      expect(upSql).toContain(`ALTER TABLE ${table} ALTER COLUMN id DROP DEFAULT`);
+      expect(verifySql).toContain(`'${table}'`);
+    }
+    expect(upSql).toContain("022_convert_calendar_event_ids_to_uuid");
+    expect(upSql).toContain("expected UUID default");
+    expect(verifySql).toContain("column_default IS NULL");
+    expect(verifySql).toContain("primary key is missing");
+  });
+});
+
 describe("quiz database migration", () => {
   it("unifies Quiz sort order with INTEGER and retains its constraints and index", async () => {
     const upSql = await readMigration("020_unify_sort_order_integer_up.sql");

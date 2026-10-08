@@ -105,6 +105,8 @@ describe("admin content repository", () => {
       expect.stringContaining("INSERT INTO content_translations"),
       expect.stringContaining("INSERT INTO content_translations"),
     ]);
+    expect(databaseMock.queries[0].text).toMatch(/INSERT INTO content_entries\s*\(id,/);
+    expect(databaseMock.queries[0].values).toContain(id);
     expect(databaseMock.queries[0].values).toContain(input.slug);
     expect(databaseMock.queries.map(({ text }) => text).join("\n")).not.toContain(input.slug);
   });
