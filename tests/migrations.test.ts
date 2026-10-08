@@ -42,7 +42,6 @@ describe("pubs database migrations", () => {
     expect(upSql).toContain("CREATE TABLE pub_tags");
     expect(upSql).toContain("ALTER TABLE pubs DROP COLUMN prefecture");
     expect(verifySql).toContain("orphan_pub_tags");
-    expect(verifySql).toContain("legacy_columns_remaining");
     expect(downSql).toContain("ALTER TABLE pubs ADD COLUMN prefecture");
     expect(downSql).toContain("DROP TABLE pub_tags");
   });
@@ -81,6 +80,7 @@ describe("pubs database migrations", () => {
 
   it("defines the final localization migration and verification", async () => {
     const upSql = await readMigration("007_finalize_localization_up.sql");
+    const prepareVerifySql = await readMigration("006_localize_display_data_verify.sql");
     const verifySql = await readMigration("007_finalize_localization_verify.sql");
 
     expect(upSql).toContain(
@@ -89,8 +89,18 @@ describe("pubs database migrations", () => {
     expect(upSql).toContain("Japanese pub translations are incomplete");
     expect(upSql).toContain("INSERT INTO municipality_translations");
     expect(upSql).toContain("INSERT INTO schema_migrations (version) VALUES (\x27007_finalize_localization\x27)");
-    expect(verifySql).toContain("legacy_columns_remaining");
-    expect(verifySql).toContain("tags_without_ja_translation");
+    expect(prepareVerifySql).toContain("RAISE EXCEPTION 'Japanese pub translations are incomplete'");
+    expect(prepareVerifySql).toContain("Japanese prefecture translation count does not match prefectures");
+    expect(prepareVerifySql).toContain(
+      "Japanese municipality translation count does not match named municipality codes",
+    );
+    expect(prepareVerifySql).toContain("RAISE EXCEPTION 'Japanese tag translations are incomplete'");
+    expect(verifySql).toContain("RAISE EXCEPTION 'Japanese pub translations are incomplete'");
+    expect(verifySql).toContain("RAISE EXCEPTION 'Japanese pub status translations are incomplete'");
+    expect(verifySql).toContain("RAISE EXCEPTION 'Orphaned tag translations exist'");
+    expect(verifySql).toContain("RAISE EXCEPTION 'Legacy localization columns remain'");
+    expect(prepareVerifySql.trimStart()).toMatch(/^DO \$verify\$/);
+    expect(verifySql.trimStart()).toMatch(/^DO \$verify\$/);
   });
 
   it("defines the tag name normalization migration, verification, and rollback", async () => {

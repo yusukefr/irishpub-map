@@ -1,0 +1,11 @@
+{
+  "projectId": "purple-cake-39243248",
+  "targets": {
+    "preview": {
+      "branchName": "preview"
+    },
+    "production": {
+      "branchName": "main"
+    }
+  }
+}
