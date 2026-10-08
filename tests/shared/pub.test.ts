@@ -17,11 +17,13 @@ const basePub: Pub = {
   instagramUrl: null,
   tags: ["guinness", "food"],
   status: "open",
+  pubType: "irish",
 };
 
 describe("asPubs", () => {
   it("returns typed pub data when every item is valid", () => {
     const statuses: Pub["status"][] = ["open", "temporarily_closed", "closed", "unknown"];
+    const pubTypes: Pub["pubType"][] = ["irish", "british", "other", "unclassified"];
     const pubs = statuses.map((status, index) => ({
       ...basePub,
       id: `550e8400-e29b-41d4-a716-44665544010${index + 2}`,
@@ -29,6 +31,7 @@ describe("asPubs", () => {
       websiteUrl: index % 2 === 0 ? basePub.websiteUrl : null,
       googleMapsUrl: index % 2 === 0 ? basePub.googleMapsUrl : undefined,
       status,
+      pubType: pubTypes[index],
     }));
 
     expect(asPubs(pubs)).toEqual(pubs.map((pub) => ({ ...pub, googleMapsUrl: pub.googleMapsUrl ?? null })));

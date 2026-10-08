@@ -24,3 +24,10 @@ export type PubStatusOption = {
   key: string;
   name: string;
 };
+
+/** DB上のコードと内部キーを表示名から分離した店舗種別マスタです。 */
+export type PubTypeOption = {
+  code: number;
+  key: import("./pub").PubType;
+  name: string;
+};

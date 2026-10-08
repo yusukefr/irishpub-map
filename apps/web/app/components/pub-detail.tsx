@@ -37,6 +37,7 @@ export function PubDetail({ pub, locale, labels }: PubDetailProps) {
     <section className="pub-detail-view" aria-labelledby="pub-detail-heading">
       <h3 id="pub-detail-heading">{pub.name}</h3>
       <StatusBadge status={pub.status} label={pub.statusDisplayName ?? labels.statuses[pub.status]} />
+      <p className="pub-detail-type">{pub.pubTypeDisplayName ?? pub.pubType}</p>
       <dl>
         <div>
           <dt>{labels.area}</dt>

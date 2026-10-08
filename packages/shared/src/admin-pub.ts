@@ -1,5 +1,5 @@
 import type { AdminFieldErrorCode } from "./admin-api-error";
-import type { PubStatus } from "./pub";
+import type { PubStatus, PubType } from "./pub";
 
 /** 管理店舗一覧で1ページに取得する最大件数です。 */
 export const ADMIN_PUB_PAGE_SIZE = 50;
@@ -31,6 +31,8 @@ export type AdminPubListItem = {
   prefectureCode: number | null;
   statusCode: number | null;
   statusDisplayName: string | null;
+  pubType: PubType | null;
+  pubTypeDisplayName: string | null;
   tagItems: AdminPubListTag[];
   isPublished: boolean;
   updatedAt: string;
@@ -74,6 +76,7 @@ export type AdminPub = {
   googleMapsUrl: string | null;
   instagramUrl: string | null;
   status: PubStatus | null;
+  pubType: PubType | null;
   translations: { ja: AdminPubTranslation; en: AdminPubTranslation | null };
   tagIds: string[];
   updatedAt: string;
@@ -123,6 +126,7 @@ export class AdminPubPublicationValidationError extends Error {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const STATUS_KEYS = new Set<PubStatus>(["open", "temporarily_closed", "closed", "unknown"]);
+const PUB_TYPE_KEYS = new Set<PubType>(["irish", "british", "other", "unclassified"]);
 
 /**
  * URL Query Parameterを正規化し、Repositoryへ渡せる管理店舗検索条件へ変換します。
@@ -204,6 +208,7 @@ export function parseAdminPubWriteInput(value: unknown): AdminPubWriteInput {
     "googleMapsUrl",
     "instagramUrl",
     "status",
+    "pubType",
     "translations",
     "tagIds",
   ] as const;
@@ -216,6 +221,7 @@ export function parseAdminPubWriteInput(value: unknown): AdminPubWriteInput {
   const googleMapsUrl = nullableUrl(input.googleMapsUrl, "googleMapsUrl", fieldErrors);
   const instagramUrl = nullableUrl(input.instagramUrl, "instagramUrl", fieldErrors);
   const status = nullableStatus(input.status, fieldErrors);
+  const pubType = nullablePubType(input.pubType, fieldErrors);
   const translations = parseTranslations(input.translations, fieldErrors);
   const tagIds = parseTagIds(input.tagIds, fieldErrors);
 
@@ -231,9 +237,19 @@ export function parseAdminPubWriteInput(value: unknown): AdminPubWriteInput {
     googleMapsUrl,
     instagramUrl,
     status,
+    pubType,
     translations,
     tagIds,
   };
+}
+
+function nullablePubType(value: unknown, fieldErrors: AdminPubFieldErrors): PubType | null {
+  if (value === null) return null;
+  if (typeof value !== "string" || !PUB_TYPE_KEYS.has(value as PubType)) {
+    fieldErrors.pubType = "invalid_format";
+    return null;
+  }
+  return value as PubType;
 }
 
 function parseTranslations(value: unknown, fieldErrors: AdminPubFieldErrors) {

@@ -37,6 +37,8 @@ paths:
     $ref: ./paths/automation-master.yaml#/Tags
   /api/automation/v1/master/statuses:
     $ref: ./paths/automation-master.yaml#/Statuses
+  /api/automation/v1/master/pub-types:
+    $ref: ./paths/automation-master.yaml#/PubTypes
   /api/automation/v1/tags:
     $ref: ./paths/automation-master.yaml#/TagCollection
   /api/automation/v1/content:

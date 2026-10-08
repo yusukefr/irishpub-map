@@ -29,6 +29,7 @@ const draftInput = {
   googleMapsUrl: null,
   instagramUrl: null,
   status: null,
+  pubType: null,
   translations: {
     ja: { name: "下書き", nameReading: null, address: null },
     en: null,
@@ -38,7 +39,11 @@ const draftInput = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  repositoryMocks.validateAdminPubReferences.mockResolvedValue({ fieldErrors: {}, statusCode: null });
+  repositoryMocks.validateAdminPubReferences.mockResolvedValue({
+    fieldErrors: {},
+    statusCode: null,
+    pubTypeCode: null,
+  });
 });
 
 describe("admin pub service", () => {
@@ -76,6 +81,7 @@ describe("admin pub service", () => {
       expect.stringMatching(/^[0-9a-f-]{36}$/i),
       draftInput,
       null,
+      null,
     );
   });
 
@@ -84,9 +90,9 @@ describe("admin pub service", () => {
 
     await expect(updateAdminPub("550e8400-e29b-41d4-a716-446655440001", draftInput)).rejects.toMatchObject({
       code: "publication_requirements_not_met",
-      missingFields: ["address", "prefecture", "municipality", "latitude", "longitude", "status"],
+      missingFields: ["address", "prefecture", "municipality", "latitude", "longitude", "status", "pubType"],
     });
-    expect(repositoryMocks.replaceAdminPub).toHaveBeenCalledWith(expect.any(String), draftInput, null, false);
+    expect(repositoryMocks.replaceAdminPub).toHaveBeenCalledWith(expect.any(String), draftInput, null, null, false);
   });
 
   it("reports missing reads and deletes as not found", async () => {
@@ -110,6 +116,7 @@ describe("admin pub service", () => {
         latitude: 35,
         longitude: 139,
         status: "open",
+        pubType: "irish",
         translations: {
           ...draftInput.translations,
           ja: { ...draftInput.translations.ja, address: "東京都" },

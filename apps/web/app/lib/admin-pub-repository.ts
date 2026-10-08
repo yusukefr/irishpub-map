@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import type { AdminPub, AdminPubFieldErrors, AdminPubWriteInput } from "@irishpub-map/shared/admin-pub";
-import type { PubStatus } from "@irishpub-map/shared/pub";
+import type { PubStatus, PubType } from "@irishpub-map/shared/pub";
 import { getE2EAdminPub } from "./e2e-test-fixtures";
 import { isE2ETestMode, rejectE2ETestMutation } from "./e2e-test-mode";
 
@@ -10,6 +10,7 @@ type DbRow = Record<string, unknown>;
 export type AdminPubReferenceResult = {
   fieldErrors: AdminPubFieldErrors;
   statusCode: number | null;
+  pubTypeCode: number | null;
 };
 
 /** 更新transactionの業務結果です。 */
@@ -27,7 +28,7 @@ export async function getAdminPub(id: string): Promise<AdminPub | null> {
   const rows = (await getRequiredSql()`
     SELECT pub.id::text, pub.is_published, pub.prefecture_code, pub.municipality_code,
       pub.latitude, pub.longitude, pub.website_url, pub.google_maps_url, pub.instagram_url,
-      status.key AS status_key, pub.updated_at,
+      status.key AS status_key, pub_type.key AS pub_type_key, pub.updated_at,
       ja.name AS name_ja, ja.name_reading AS name_reading_ja, ja.address AS address_ja,
       en.name AS name_en, en.name_reading AS name_reading_en, en.address AS address_en,
       COALESCE(
@@ -39,9 +40,10 @@ export async function getAdminPub(id: string): Promise<AdminPub | null> {
     JOIN pub_translations AS ja ON ja.pub_id = pub.id AND ja.locale = 'ja'
     LEFT JOIN pub_translations AS en ON en.pub_id = pub.id AND en.locale = 'en'
     LEFT JOIN pub_statuses AS status ON status.code = pub.status_code
+    LEFT JOIN pub_types AS pub_type ON pub_type.code = pub.pub_type_code
     LEFT JOIN pub_tags AS pub_tag ON pub_tag.pub_id = pub.id
     WHERE pub.id = ${id}::uuid
-    GROUP BY pub.id, status.key, ja.name, ja.name_reading, ja.address,
+    GROUP BY pub.id, status.key, pub_type.key, ja.name, ja.name_reading, ja.address,
       en.name, en.name_reading, en.address
   `) as DbRow[];
   if (rows.length === 0) return null;
@@ -90,6 +92,10 @@ export async function validateAdminPubReferences(input: AdminPubWriteInput): Pro
           WHERE status.key = ${input.status}
         )
       ) AS status_valid,
+      (
+        ${input.pubType}::text IS NULL
+        OR EXISTS (SELECT 1 FROM pub_types AS type WHERE type.key = ${input.pubType})
+      ) AS pub_type_valid,
       NOT EXISTS (
         SELECT 1 FROM jsonb_array_elements_text(${tagIdsJson}::jsonb) AS requested(id)
         WHERE NOT EXISTS (
@@ -100,7 +106,8 @@ export async function validateAdminPubReferences(input: AdminPubWriteInput): Pro
           WHERE tag.id = requested.id::uuid
         )
       ) AS tags_valid,
-      (SELECT status.code FROM pub_statuses AS status WHERE status.key = ${input.status}) AS status_code
+      (SELECT status.code FROM pub_statuses AS status WHERE status.key = ${input.status}) AS status_code,
+      (SELECT type.code FROM pub_types AS type WHERE type.key = ${input.pubType}) AS pub_type_code
   `) as DbRow[];
   if (rows.length !== 1) throw new Error("Invalid admin pub reference validation result.");
 
@@ -109,8 +116,9 @@ export async function validateAdminPubReferences(input: AdminPubWriteInput): Pro
   if (!requiredBoolean(row.prefecture_valid)) fieldErrors.prefectureCode = "invalid_format";
   if (!requiredBoolean(row.municipality_valid)) fieldErrors.municipalityCode = "invalid_format";
   if (!requiredBoolean(row.status_valid)) fieldErrors.status = "invalid_format";
+  if (!requiredBoolean(row.pub_type_valid)) fieldErrors.pubType = "invalid_format";
   if (!requiredBoolean(row.tags_valid)) fieldErrors.tagIds = "invalid_format";
-  return { fieldErrors, statusCode: nullableInteger(row.status_code) };
+  return { fieldErrors, statusCode: nullableInteger(row.status_code), pubTypeCode: nullableInteger(row.pub_type_code) };
 }
 
 /**
@@ -118,9 +126,15 @@ export async function validateAdminPubReferences(input: AdminPubWriteInput): Pro
  * @param {string} id - Application Serviceで発行した店舗UUID。
  * @param {AdminPubWriteInput} input - 構文・参照検証済みの下書き入力。
  * @param {number | null} statusCode - DBマスタから解決した営業状態コード。
+ * @param {number | null} pubTypeCode - DBマスタから解決したPub Type code。
  * @returns {Promise<void>} transactionが完了した場合に解決します。
  */
-export async function insertAdminPub(id: string, input: AdminPubWriteInput, statusCode: number | null): Promise<void> {
+export async function insertAdminPub(
+  id: string,
+  input: AdminPubWriteInput,
+  statusCode: number | null,
+  pubTypeCode: number | null,
+): Promise<void> {
   rejectE2ETestMutation();
   const sql = getRequiredSql();
   await sql.transaction(
@@ -129,12 +143,12 @@ export async function insertAdminPub(id: string, input: AdminPubWriteInput, stat
         transaction`
           INSERT INTO pubs (
             id, prefecture_code, municipality_code, latitude, longitude,
-            website_url, google_maps_url, instagram_url, status_code, is_published
+            website_url, google_maps_url, instagram_url, status_code, pub_type_code, is_published
           )
           VALUES (
             ${id}::uuid, ${input.prefectureCode}, ${input.municipalityCode},
             ${input.latitude}, ${input.longitude}, ${input.websiteUrl},
-            ${input.googleMapsUrl}, ${input.instagramUrl}, ${statusCode}, FALSE
+            ${input.googleMapsUrl}, ${input.instagramUrl}, ${statusCode}, ${pubTypeCode}, FALSE
           )
         `,
         transaction`
@@ -170,13 +184,15 @@ export async function insertAdminPub(id: string, input: AdminPubWriteInput, stat
  * @param {string} id - 更新対象店舗のUUID。
  * @param {AdminPubWriteInput} input - 構文・参照検証済み入力。
  * @param {number | null} statusCode - DBマスタから解決した営業状態コード。
- * @param {boolean} publishReady - 更新後入力がPublish Validationを満たす場合はtrue。
+ * @param {number | null} pubTypeCode - DBマスタから解決したPub Type code。
+ * @param {boolean} publishReady - 更新後入力が既存公開条件を満たす場合はtrue。
  * @returns {Promise<AdminPubUpdateResult>} 更新、対象なし、公開条件拒否のいずれか。
  */
 export async function replaceAdminPub(
   id: string,
   input: AdminPubWriteInput,
   statusCode: number | null,
+  pubTypeCode: number | null,
   publishReady: boolean,
 ): Promise<AdminPubUpdateResult> {
   rejectE2ETestMutation();
@@ -191,7 +207,7 @@ export async function replaceAdminPub(
             municipality_code = ${input.municipalityCode},
             latitude = ${input.latitude}, longitude = ${input.longitude},
             website_url = ${input.websiteUrl}, google_maps_url = ${input.googleMapsUrl},
-            instagram_url = ${input.instagramUrl}, status_code = ${statusCode}, updated_at = NOW()
+            instagram_url = ${input.instagramUrl}, status_code = ${statusCode}, pub_type_code = ${pubTypeCode}, updated_at = NOW()
           WHERE pub.id = ${id}::uuid AND (NOT pub.is_published OR ${publishReady})
           RETURNING pub.id
         `,
@@ -288,6 +304,7 @@ function toAdminPub(row: DbRow): AdminPub {
     googleMapsUrl: nullableText(row.google_maps_url),
     instagramUrl: nullableText(row.instagram_url),
     status: nullableStatus(row.status_key),
+    pubType: nullablePubType(row.pub_type_key),
     translations: {
       ja: {
         name: requiredText(row.name_ja),
@@ -350,6 +367,14 @@ function nullableStatus(value: unknown): PubStatus | null {
     throw new Error("Invalid pub status returned from database.");
   }
   return status as PubStatus;
+}
+
+function nullablePubType(value: unknown): PubType | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string" || !["irish", "british", "other", "unclassified"].includes(value)) {
+    throw new Error("Invalid pub type returned from database.");
+  }
+  return value as PubType;
 }
 
 function requiredUuid(value: unknown) {

@@ -56,6 +56,7 @@ const PREFECTURE_NAMES = [
   "沖縄県",
 ];
 const PUB_STATUS_CODES = { open: 1, temporarily_closed: 2, closed: 3, unknown: 4 };
+const PUB_TYPES = new Set(["irish", "british", "other"]);
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 /** コマンドライン引数からインポート元のJSONファイルパスを取得します。 */
@@ -86,6 +87,8 @@ export async function importPubs(databaseUrl, pubs, sql) {
   let skipped = 0;
   for (const pub of pubs) {
     const prefectureCode = PREFECTURE_NAMES.indexOf(pub.prefecture) + 1;
+    const pubTypeRows = await client`SELECT code FROM pub_types WHERE key = ${pub.pubType}`;
+    if (pubTypeRows.length !== 1) throw new Error(`Could not resolve pub type for ${pub.id}.`);
     const municipalityRows = await client`
       SELECT m.code
       FROM municipality_codes m
@@ -96,11 +99,12 @@ export async function importPubs(databaseUrl, pubs, sql) {
     const rows = await client`
       INSERT INTO pubs (
         id, prefecture_code, municipality_code, latitude, longitude,
-        website_url, google_maps_url, instagram_url, status_code
+        website_url, google_maps_url, instagram_url, status_code, pub_type_code
       ) VALUES (
         ${pub.id}::uuid, ${prefectureCode}, ${municipalityRows[0].code}, ${pub.latitude}, ${pub.longitude},
         ${toNullable(pub.websiteUrl)}, ${toNullable(pub.googleMapsUrl)},
-        ${toNullable(pub.instagramUrl)}, ${PUB_STATUS_CODES[pub.status]}
+        ${toNullable(pub.instagramUrl)}, ${PUB_STATUS_CODES[pub.status]},
+        ${pubTypeRows[0].code}
       )
       ON CONFLICT (id) DO NOTHING
       RETURNING id
@@ -153,7 +157,8 @@ function isPub(value) {
     Array.isArray(pub.tags) &&
     pub.tags.every((tag) => isNonEmptyString(tag)) &&
     PREFECTURE_NAMES.includes(pub.prefecture) &&
-    PUB_STATUSES.has(pub.status)
+    PUB_STATUSES.has(pub.status) &&
+    PUB_TYPES.has(pub.pubType)
   );
 }
 

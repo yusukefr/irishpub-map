@@ -34,6 +34,8 @@ Resource UUIDはPostgreSQL `uuid` 型で保持し、Application Serviceで `cryp
 
 店舗は都道府県・市区町村・営業状況に分類され、各概念はロケール別の翻訳を持ちます。店舗とタグは多対多で関連付けます。Editorial Contentは翻訳を持ち、Quizは任意の関連Contentを参照し、問題・Choice・各翻訳を親子関係で管理します。Irish Calendarはイベント本体と日英翻訳を親子関係で管理し、表示順を`sort_order`で管理します。
 
+Pub Typeは `pub_types` と `pub_type_translations` のマスタ・翻訳で保持し、`pubs.pub_type_code` の外部キーで関連付けます。keyは `irish`、`british`、`other`、`unclassified` です。既存店舗は分類根拠が確認できるまで `unclassified` とし、Gastropubは既存のTagsで表します。
+
 この関係はアプリケーションの概念モデルです。物理カラム、NULL許容、外部キー、削除規則は生成済みスキーマを正とします。
 
 ## 翻訳の選択

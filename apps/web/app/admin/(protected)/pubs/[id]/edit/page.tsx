@@ -8,6 +8,7 @@ import {
   getMunicipalitiesByPrefecture,
   getPrefectures,
   getPubStatuses,
+  getPubTypes,
   getTags,
 } from "../../../../../lib/master-repository";
 import { isDatabaseConfigured } from "../../../../../lib/pub-repository";
@@ -33,9 +34,10 @@ export default async function EditAdminPubPage({
   const returnTo = getSafeReturnTo((await searchParams).returnTo);
   const databaseConfigured = isDatabaseConfigured();
   const pub = databaseConfigured ? await getPubOrNotFound(id) : null;
-  const [prefectures, statuses, tags, municipalities] = await Promise.all([
+  const [prefectures, statuses, pubTypes, tags, municipalities] = await Promise.all([
     getPrefectures(locale),
     getPubStatuses(locale),
+    getPubTypes(locale),
     getTags(locale),
     pub?.prefectureCode ? getMunicipalitiesByPrefecture(pub.prefectureCode, locale) : Promise.resolve([]),
   ]);
@@ -45,6 +47,7 @@ export default async function EditAdminPubPage({
       prefectures={prefectures}
       municipalities={municipalities}
       statuses={statuses}
+      pubTypes={pubTypes}
       tags={tags}
       databaseConfigured={databaseConfigured}
       locale={locale}

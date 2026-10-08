@@ -11,6 +11,7 @@ const pub = {
   longitude: 139.76,
   tags: ["guinness"],
   status: "open",
+  pubType: "irish",
 };
 
 describe("parsePubs", () => {
@@ -31,6 +32,7 @@ describe("importPubs", () => {
     let insertIndex = 0;
     const sql = vi.fn(async (strings: TemplateStringsArray, ...values: unknown[]) => {
       const query = strings[0].trimStart();
+      if (query.startsWith("SELECT code FROM pub_types")) return [{ code: 1 }];
       if (query.startsWith("SELECT m.code")) return [{ code: "131016" }];
       if (query.startsWith("INSERT INTO tags")) {
         expect(query).toContain("INSERT INTO tags (id, key)");

@@ -20,6 +20,8 @@ const pubs: Pub[] = [
     instagramUrl: null,
     tags: ["guinness", "food"],
     status: "open",
+    pubType: "irish",
+    pubTypeDisplayName: "Irish Pub",
   },
   {
     id: "osaka-sample",
@@ -35,6 +37,7 @@ const pubs: Pub[] = [
     instagramUrl: null,
     tags: ["live-music"],
     status: "unknown",
+    pubType: "unclassified",
   },
   {
     id: "kyoto-sample",
@@ -49,6 +52,7 @@ const pubs: Pub[] = [
     instagramUrl: null,
     tags: ["food"],
     status: "closed",
+    pubType: "other",
   },
 ];
 

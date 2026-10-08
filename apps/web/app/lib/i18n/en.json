@@ -770,7 +770,8 @@
       "municipality": "Municipality",
       "latitude": "Latitude",
       "longitude": "Longitude",
-      "status": "Operating status"
+      "status": "Operating status",
+      "pubType": "Pub type"
     },
     "previousPage": "Previous",
     "nextPage": "Next",

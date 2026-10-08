@@ -3983,3 +3983,78 @@ body {
 .admin-content-form textarea {
   width: 100%;
 }
+
+/* Pub Typeの識別を営業状態より先に伝え、非営業は共通グレーへ落とします。 */
+.pub-map-marker:not(.pub-map-marker-open),
+.pub-map-marker-open {
+  position: relative;
+  display: grid;
+  width: 36px;
+  height: 44px;
+  place-items: center;
+  border: 3px solid #fffdf8;
+  border-radius: 50% 50% 50% 0;
+  background: var(--pub-marker-color);
+  box-shadow: 0 2px 8px rgb(23 33 29 / 28%);
+  transform: translateY(-4px) rotate(-45deg);
+}
+.pub-map-marker-open {
+  --pub-marker-color: #168b49;
+}
+.pub-map-marker-type-irish {
+  --pub-marker-color: #168b49;
+}
+.pub-map-marker-type-british {
+  --pub-marker-color: #2563eb;
+}
+.pub-map-marker-type-other,
+.pub-map-marker-type-unclassified {
+  --pub-marker-color: #d97706;
+}
+.pub-map-marker:not(.pub-map-marker-open) {
+  --pub-marker-color: #858b95;
+}
+.pub-map-marker-symbol {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: #fffdf8;
+  color: #26382f;
+  font-size: 16px;
+  font-weight: 800;
+  transform: rotate(45deg);
+}
+.pub-map-marker:not(.pub-map-marker-open) .pub-map-marker-symbol {
+  opacity: 0.55;
+}
+.pub-map-legend {
+  position: absolute;
+  z-index: 2;
+  right: 12px;
+  bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: min(280px, calc(100% - 24px));
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 4px 16px rgb(23 33 29 / 16%);
+  color: var(--ink);
+  font-size: 0.72rem;
+}
+.pub-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.pub-map-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pub-marker-color);
+}

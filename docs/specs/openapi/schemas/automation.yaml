@@ -38,6 +38,14 @@ Status:
     code: { type: integer }
     key: { type: string, enum: [open, temporarily_closed, closed, unknown] }
     name: { type: string }
+PubType:
+  type: object
+  additionalProperties: false
+  required: [code, key, name]
+  properties:
+    code: { type: integer }
+    key: { type: string, enum: [irish, british, other, unclassified] }
+    name: { type: string }
 TagTranslations:
   type: object
   required: [ja]
@@ -330,6 +338,7 @@ PubWrite:
       googleMapsUrl,
       instagramUrl,
       status,
+      pubType,
       translations,
       tagIds,
     ]
@@ -342,6 +351,7 @@ PubWrite:
     googleMapsUrl: { type: [string, "null"], format: uri, pattern: "^[Hh][Tt][Tt][Pp][Ss]?://" }
     instagramUrl: { type: [string, "null"], format: uri, pattern: "^[Hh][Tt][Tt][Pp][Ss]?://" }
     status: { type: [string, "null"], enum: [open, temporarily_closed, closed, unknown, null] }
+    pubType: { type: [string, "null"], enum: [irish, british, other, unclassified, null] }
     translations: { $ref: "#/PubTranslations" }
     tagIds:
       type: array
@@ -362,6 +372,7 @@ Pub:
       googleMapsUrl,
       instagramUrl,
       status,
+      pubType,
       translations,
       tagIds,
       updatedAt,
@@ -377,6 +388,7 @@ Pub:
     googleMapsUrl: { $ref: "#/PubWrite/properties/googleMapsUrl" }
     instagramUrl: { $ref: "#/PubWrite/properties/instagramUrl" }
     status: { $ref: "#/PubWrite/properties/status" }
+    pubType: { $ref: "#/PubWrite/properties/pubType" }
     translations: { $ref: "#/PubTranslations" }
     tagIds: { $ref: "#/PubWrite/properties/tagIds" }
     updatedAt: { type: string, format: date-time }
@@ -409,6 +421,8 @@ PubListItem:
       prefectureCode,
       statusCode,
       statusDisplayName,
+      pubType,
+      pubTypeDisplayName,
       tagItems,
       isPublished,
       updatedAt,
@@ -432,6 +446,8 @@ PubListItem:
     prefectureCode: { type: [integer, "null"] }
     statusCode: { type: [integer, "null"] }
     statusDisplayName: { type: [string, "null"] }
+    pubType: { type: [string, "null"], enum: [irish, british, other, unclassified, null] }
+    pubTypeDisplayName: { type: [string, "null"] }
     tagItems: { type: array, items: { $ref: "#/PubListTag" } }
     isPublished: { type: boolean }
     updatedAt: { type: string, format: date-time }

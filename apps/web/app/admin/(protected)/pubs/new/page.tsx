@@ -1,6 +1,6 @@
 import { getRequestLocale } from "../../../../lib/i18n/server";
 import { requireAdminSession } from "../../../../lib/admin-server";
-import { getPrefectures, getPubStatuses, getTags } from "../../../../lib/master-repository";
+import { getPrefectures, getPubStatuses, getPubTypes, getTags } from "../../../../lib/master-repository";
 import { isDatabaseConfigured } from "../../../../lib/pub-repository";
 import { AdminPubEditor } from "../../../../components/admin-pub-editor";
 
@@ -11,9 +11,10 @@ import { AdminPubEditor } from "../../../../components/admin-pub-editor";
 export default async function NewAdminPubPage() {
   await requireAdminSession();
   const locale = await getRequestLocale();
-  const [prefectures, statuses, tags] = await Promise.all([
+  const [prefectures, statuses, pubTypes, tags] = await Promise.all([
     getPrefectures(locale),
     getPubStatuses(locale),
+    getPubTypes(locale),
     getTags(locale),
   ]);
   return (
@@ -22,6 +23,7 @@ export default async function NewAdminPubPage() {
       prefectures={prefectures}
       municipalities={[]}
       statuses={statuses}
+      pubTypes={pubTypes}
       tags={tags}
       databaseConfigured={isDatabaseConfigured()}
       locale={locale}

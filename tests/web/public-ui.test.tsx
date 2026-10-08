@@ -28,6 +28,7 @@ const pub: Pub = {
   longitude: 139,
   tags: [],
   status: "unknown",
+  pubType: "unclassified",
 };
 
 describe("Public UI primitives", () => {

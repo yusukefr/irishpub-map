@@ -26,6 +26,8 @@ const samplePub: Pub = {
   longitude: 139.76,
   tags: ["guinness", "craft-beer", "live-music", "sports"],
   status: "open",
+  pubType: "irish",
+  pubTypeDisplayName: "Irish Pub",
 };
 
 // 実店舗の写真ではなく、media slotの寸法・代替テキストを確認する図です。

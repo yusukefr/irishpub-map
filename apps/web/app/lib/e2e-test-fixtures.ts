@@ -8,6 +8,7 @@ import {
 import type {
   MunicipalityOption,
   PrefectureOption,
+  PubTypeOption,
   PubStatusOption,
   TagOption,
 } from "@irishpub-map/shared/admin-master";
@@ -273,6 +274,8 @@ const pubDefinitions = [
     latitude: 35.1709,
     longitude: 136.8815,
     status: "open" as const,
+    pubType: "irish" as const,
+    pubTypeDisplayName: "アイリッシュパブ",
     statusCode: 1,
     tagIds: [E2E_TEST_DATA.tags.guinness.id],
     isPublished: true,
@@ -287,6 +290,8 @@ const pubDefinitions = [
     latitude: 35.6812,
     longitude: 139.7671,
     status: "open" as const,
+    pubType: "irish" as const,
+    pubTypeDisplayName: "アイリッシュパブ",
     statusCode: 1,
     tagIds: [E2E_TEST_DATA.tags.whiskey.id],
     isPublished: true,
@@ -340,6 +345,7 @@ export function getE2EAdminPub(id: string): AdminPub | null {
     googleMapsUrl: null,
     instagramUrl: null,
     status: pub.status,
+    pubType: pub.pubType,
     translations: {
       ja: { name: pub.name, nameReading: pub.kana, address: pub.addressJa },
       en: { name: pub.name, nameReading: null, address: pub.addressEn },
@@ -386,6 +392,19 @@ export function getE2ETags(locale: Locale): TagOption[] {
  */
 export function getE2EPubStatuses(locale: Locale): PubStatusOption[] {
   return statusDefinitions.map((value) => ({ code: value.code, key: value.key, name: value[locale] }));
+}
+
+/** E2E用のPub Type選択肢を返します。
+ * @param {Locale} locale - fixtureの表示ロケール。
+ * @returns {PubTypeOption[]} 固定Pub Type一覧。
+ */
+export function getE2EPubTypes(locale: Locale): PubTypeOption[] {
+  return [
+    { code: 1, key: "irish", ja: "アイリッシュパブ", en: "Irish Pub" },
+    { code: 2, key: "british", ja: "ブリティッシュパブ", en: "British Pub" },
+    { code: 3, key: "other", ja: "その他のパブ", en: "Other Pub" },
+    { code: 4, key: "unclassified", ja: "未分類", en: "Unclassified" },
+  ].map(({ code, key, ja, en }) => ({ code, key, name: locale === "ja" ? ja : en })) as PubTypeOption[];
 }
 
 /**
@@ -594,6 +613,8 @@ function toPublishedPub(pub: PubDefinition, locale: Locale): Pub {
     tags: tags.map((value) => value.key),
     tagDisplayNames: Object.fromEntries(tags.map((value) => [value.key, value[locale]])),
     status: pub.status,
+    pubType: pub.pubType,
+    pubTypeDisplayName: locale === "ja" ? "アイリッシュパブ" : "Irish Pub",
     statusDisplayName: status[locale],
   };
 }
@@ -617,6 +638,8 @@ function toAdminPubListItem(pub: PubDefinition, locale: Locale): AdminPubListIte
     instagramUrl: published.instagramUrl ?? null,
     tagDisplayNames: published.tagDisplayNames ?? {},
     status: published.status,
+    pubType: published.pubType,
+    pubTypeDisplayName: published.pubTypeDisplayName ?? null,
     prefectureCode: pub.prefectureCode,
     statusCode: pub.statusCode,
     statusDisplayName: published.statusDisplayName ?? null,

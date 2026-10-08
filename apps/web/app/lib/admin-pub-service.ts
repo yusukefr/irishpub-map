@@ -43,7 +43,7 @@ export async function createAdminPub(value: unknown, id: string = randomUUID()):
   const references = await validateAdminPubReferences(input);
   throwReferenceErrors(references.fieldErrors);
 
-  await insertAdminPub(id, input, references.statusCode);
+  await insertAdminPub(id, input, references.statusCode, references.pubTypeCode);
   const created = await getAdminPub(id);
   if (!created) throw new Error("Created admin pub could not be read.");
   return created;
@@ -72,7 +72,13 @@ export async function updateAdminPub(id: string, value: unknown): Promise<AdminP
   throwReferenceErrors(references.fieldErrors);
 
   const missingFields = getPublicationMissingFields(input);
-  const result = await replaceAdminPub(id, input, references.statusCode, missingFields.length === 0);
+  const result = await replaceAdminPub(
+    id,
+    input,
+    references.statusCode,
+    references.pubTypeCode,
+    missingFields.length === 0,
+  );
   if (result === "not_found") throw new AdminPubServiceError("not_found");
   if (result === "publication_blocked") {
     throw new AdminPubServiceError("publication_requirements_not_met", {}, missingFields);
@@ -106,6 +112,8 @@ export function getPublicationMissingFields(input: AdminPubWriteInput): string[]
     ["latitude", input.latitude !== null],
     ["longitude", input.longitude !== null],
     ["status", input.status !== null],
+    // PUTは公開状態を変更しないため、既存公開店舗のunclassifiedを維持した編集を許可します。
+    ["pubType", input.pubType !== null],
   ] as const;
   return checks.filter(([, complete]) => !complete).map(([field]) => field);
 }

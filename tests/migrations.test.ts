@@ -7,6 +7,17 @@ async function readMigration(name: string) {
 }
 
 describe("pubs database migrations", () => {
+  it("adds normalized pub types and classifies legacy records as unclassified", async () => {
+    const upSql = await readMigration("022_add_pub_types_up.sql");
+    const verifySql = await readMigration("022_add_pub_types_verify.sql");
+    expect(upSql).toContain("CREATE TABLE pub_types");
+    expect(upSql).toContain("CREATE TABLE pub_type_translations");
+    expect(upSql).toContain("UPDATE pubs SET pub_type_code = 4");
+    expect(upSql).toContain("('gastropub')");
+    expect(verifySql).toContain("Existing pubs must remain unclassified");
+    expect(verifySql).toContain("Pub type foreign key coverage is invalid");
+  });
+
   it("moves legacy JSONB rows into independent columns with a UUID map", async () => {
     const sql = await readMigration("001_pubs_columns_up.sql");
 

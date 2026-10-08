@@ -1,10 +1,10 @@
-export type { Pub, PubStatus } from "./pub";
+export type { Pub, PubStatus, PubType } from "./pub";
 export { asPubs } from "./pub";
 export { DEFAULT_LOCALE, REQUIRED_TRANSLATION_LOCALE, SUPPORTED_LOCALES, isSupportedLocale } from "./locale";
 export type { Locale } from "./locale";
 export { PREFECTURES, getPrefectureCode, getPrefectureName } from "./prefecture";
 export { PUB_STATUS_DEFINITIONS, getPubStatusCode, getPubStatusValue } from "./status";
-export type { MunicipalityOption, PrefectureOption, PubStatusOption, TagOption } from "./admin-master";
+export type { MunicipalityOption, PrefectureOption, PubStatusOption, PubTypeOption, TagOption } from "./admin-master";
 export {
   ADMIN_API_ERROR_CODES,
   ADMIN_FIELD_ERROR_CODES,

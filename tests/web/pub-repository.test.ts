@@ -46,6 +46,8 @@ const baseRow = {
   tag_display_names: { guinness: "ギネス", food: "食事あり" },
   status_code: 1,
   status_display_name: "営業中",
+  pub_type_key: "irish",
+  pub_type_display_name: "アイリッシュパブ",
   is_published: true,
 };
 
@@ -178,6 +180,7 @@ describe("admin pub publication updates", () => {
     has_latitude: true,
     has_longitude: true,
     has_status: true,
+    has_pub_type: true,
     has_tags: true,
   };
 

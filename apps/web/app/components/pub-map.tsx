@@ -9,7 +9,13 @@ import { DEFAULT_LOCALE, formatMessage, getTranslation, type Locale, type Transl
 import { getSafeExternalUrl } from "../lib/external-url";
 import { Button } from "./ui/button";
 
-const NON_OPEN_PUB_MARKER_COLOR = "#6b7280";
+const NON_OPEN_PUB_MARKER_COLOR = "#858B95";
+const PUB_TYPE_MARKERS = {
+  irish: { color: "#168B49", symbol: "☘" },
+  british: { color: "#2563EB", symbol: "♛" },
+  other: { color: "#D97706", symbol: "🍺" },
+  unclassified: { color: "#D97706", symbol: "🍺" },
+} as const;
 
 const DEFAULT_MAP_CENTER: [number, number] = [139.767, 35.681];
 const DEFAULT_MAP_ZOOM = 5;
@@ -291,6 +297,19 @@ function PubMapCanvas({
 
   return (
     <div className="map-canvas" ref={containerRef} aria-label={t.map.locationsLabel}>
+      <div className="pub-map-legend" aria-label={locale === "ja" ? "地図の凡例" : "Map legend"}>
+        {[
+          ["irish", "#168B49", locale === "ja" ? "アイリッシュ" : "Irish"],
+          ["british", "#2563EB", locale === "ja" ? "ブリティッシュ" : "British"],
+          ["other", "#D97706", locale === "ja" ? "その他" : "Other"],
+          ["closed", "#858B95", locale === "ja" ? "営業中以外" : "Not open"],
+        ].map(([key, color, label]) => (
+          <span key={key}>
+            <i style={{ "--pub-marker-color": color } as React.CSSProperties} aria-hidden="true" />
+            {label}
+          </span>
+        ))}
+      </div>
       {mapUnavailable ? (
         <div className="map-fallback" role="status">
           <h2>{t.map.unavailableHeading}</h2>
@@ -574,33 +593,28 @@ function createMarkerElement(
   marker.className = [
     "pub-map-marker",
     `pub-map-marker-${pub.status}`,
-    pub.status === "open" ? "pub-map-marker-guinness" : "",
+    `pub-map-marker-type-${pub.pubType}`,
     isSelected ? "pub-map-marker-selected" : "",
   ]
     .filter(Boolean)
     .join(" ");
-  marker.setAttribute("aria-label", selectLabel(pub.name));
+  marker.setAttribute("aria-label", `${selectLabel(pub.name)}. ${pub.pubTypeDisplayName ?? pub.pubType}`);
   marker.setAttribute("aria-pressed", String(isSelected));
   marker.addEventListener("click", onSelect);
 
+  const markerType = PUB_TYPE_MARKERS[pub.pubType] ?? PUB_TYPE_MARKERS.unclassified;
+  const symbol = document.createElement("span");
+  symbol.className = "pub-map-marker-symbol";
+  symbol.textContent = markerType.symbol;
   if (pub.status !== "open") {
     marker.style.setProperty("--pub-marker-color", NON_OPEN_PUB_MARKER_COLOR);
-    marker.append(document.createElement("span"));
+    marker.append(symbol);
 
     return marker;
   }
 
-  const glass = document.createElement("span");
-  glass.className = "pub-map-marker-glass";
-
-  const foam = document.createElement("span");
-  foam.className = "pub-map-marker-foam";
-
-  const stout = document.createElement("span");
-  stout.className = "pub-map-marker-stout";
-
-  glass.append(foam, stout);
-  marker.append(glass);
+  marker.style.setProperty("--pub-marker-color", markerType.color);
+  marker.append(symbol);
 
   return marker;
 }

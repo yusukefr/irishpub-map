@@ -26,6 +26,7 @@ const pub = {
   tags: ["guinness"],
   tagDisplayNames: { guinness: "ギネス" },
   status: "open" as const,
+  pubType: "irish" as const,
   statusDisplayName: "営業中",
   prefectureCode: 13,
   statusCode: 1,

@@ -770,7 +770,8 @@
       "municipality": "市区町村",
       "latitude": "緯度",
       "longitude": "経度",
-      "status": "営業ステータス"
+      "status": "営業ステータス",
+      "pubType": "パブ種別"
     },
     "previousPage": "前へ",
     "nextPage": "次へ",

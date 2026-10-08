@@ -7,6 +7,7 @@ import type {
   MunicipalityOption,
   PrefectureOption,
   PubStatusOption,
+  PubTypeOption,
   TagOption,
 } from "@irishpub-map/shared/admin-master";
 import { getAdminApiErrorMessage } from "../lib/admin-api-client";
@@ -18,6 +19,7 @@ type Props = {
   prefectures: PrefectureOption[];
   municipalities: MunicipalityOption[];
   statuses: PubStatusOption[];
+  pubTypes: PubTypeOption[];
   tags: TagOption[];
   databaseConfigured: boolean;
   locale: Locale;
@@ -35,6 +37,7 @@ type EditorValues = {
   latitude: string;
   longitude: string;
   status: string;
+  pubType: string;
   websiteUrl: string;
   googleMapsUrl: string;
   instagramUrl: string;
@@ -60,6 +63,7 @@ const emptyValues: EditorValues = {
   latitude: "",
   longitude: "",
   status: "",
+  pubType: "",
   websiteUrl: "",
   googleMapsUrl: "",
   instagramUrl: "",
@@ -79,6 +83,7 @@ function toEditorValues(pub: AdminPub | null): EditorValues {
     latitude: pub.latitude === null ? "" : String(pub.latitude),
     longitude: pub.longitude === null ? "" : String(pub.longitude),
     status: pub.status ?? "",
+    pubType: pub.pubType ?? "",
     websiteUrl: pub.websiteUrl ?? "",
     googleMapsUrl: pub.googleMapsUrl ?? "",
     instagramUrl: pub.instagramUrl ?? "",
@@ -96,6 +101,7 @@ function toInput(values: EditorValues, englishEnabled: boolean): AdminPubWriteIn
     googleMapsUrl: values.googleMapsUrl.trim() || null,
     instagramUrl: values.instagramUrl.trim() || null,
     status: (values.status || null) as AdminPubWriteInput["status"],
+    pubType: (values.pubType || null) as AdminPubWriteInput["pubType"],
     translations: {
       ja: {
         name: values.name.trim(),
@@ -131,6 +137,7 @@ export function AdminPubEditor({
   prefectures,
   municipalities: initialMunicipalities,
   statuses,
+  pubTypes = [],
   tags,
   databaseConfigured,
   locale,
@@ -394,6 +401,19 @@ export function AdminPubEditor({
             {statuses.map((status) => (
               <option key={status.code} value={status.key}>
                 {status.name}
+              </option>
+            ))}
+          </select>
+          <label htmlFor="admin-pub-type">{t.admin.publicationFields.pubType}</label>
+          <select
+            id="admin-pub-type"
+            value={values.pubType}
+            onChange={(event) => setValue("pubType", event.target.value)}
+          >
+            <option value="">—</option>
+            {pubTypes.map((type) => (
+              <option key={type.code} value={type.key}>
+                {type.name}
               </option>
             ))}
           </select>
