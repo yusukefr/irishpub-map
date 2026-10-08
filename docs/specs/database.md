@@ -18,7 +18,9 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 `018_convert_quiz_question_ids_to_uuid` は旧Question IDをUUIDへ対応付け、`quiz_questions.id` と3つの参照列をPostgreSQL UUID型へ変換します。既存UUIDは維持し、旧形式だけに新規UUIDを割り当てます。Question・翻訳・Choiceの対応と行数を単一transaction内で検証し、正解Choiceの遅延外部キーと関連Content・Media Asset参照を維持します。Choice IDとその参照列はTEXT型のままです。各環境では互換Applicationの配備を確認し、Migrationとverify SQLの成功後にUUID専用Applicationを配備します。
 
-`019_add_calendar_event_id_default` は `calendar_events.id` のTEXT型と既存のsemantic IDを維持し、新規EventのIDに `gen_random_uuid()::text` のDEFAULTを設定します。RepositoryはDB生成IDを受け取り、Event本体と日英翻訳を同一transaction内で保存します。新しい作成処理の配備前に各環境へmigrationを適用します。
+`019_add_calendar_event_id_default` はCalendar Eventの既存semantic IDを維持し、新規EventのIDに `gen_random_uuid()::text` のDEFAULTを設定しました。`022_convert_calendar_event_ids_to_uuid` では既存UUIDを維持し、semantic IDだけにUUIDを割り当てて、`calendar_events.id` と `calendar_event_translations.event_id` をUUIDへ変換します。Calendar Event IDは他のResource UUIDと同様にApplication Serviceの `crypto.randomUUID()` で生成し、DB DEFAULTは持ちません。Migration適用後、UUID専用Applicationを速やかに配備します。旧ApplicationはIDのRead / Update / Deleteを続けられますが、DB DEFAULT削除後のCreateは失敗するため、配備間の短いCreate停止を考慮して適用順序を決めます。
+
+Resource UUIDはPostgreSQL `uuid` 型で保持し、Application Serviceで `crypto.randomUUID()` を生成してRepositoryへ明示的に渡します。Applicationが生成するResource IDにはDB DEFAULTを設けません。APIとTypeScriptではUUIDをstringとして扱い、UUID形式のValidationを通します。UUIDでないsemantic IDやdomain codeはUUIDへ変換せず、そのドメインの型を維持します。
 
 表示順を表す `sort_order` は、Application側で整数として扱う共通カラムのため `INTEGER` に統一します。Choice数など行数の上限は列型ではなくDomain Validationで表現し、列型は格納値の実際の上限を必要とするときだけ狭めます。`020_unify_sort_order_integer` は `quiz_choices.sort_order` を `SMALLINT` から `INTEGER` へ拡張し、非負CHECKとQuestion内のUNIQUE制約を維持します。
 

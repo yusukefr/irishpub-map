@@ -2,8 +2,8 @@ CalendarEventIdParameter:
   name: id
   in: path
   required: true
-  description: Calendar event identifier. New events use a server-generated UUID; previously stored stable IDs remain supported.
+  description: Calendar event UUID.
   schema:
     type: string
-    maxLength: 100
-    pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    format: uuid
+    pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"

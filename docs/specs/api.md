@@ -269,7 +269,7 @@ Draft / Publishedの検証、カテゴリAllow List、Choice（Draftは0〜4件�
 | `PATCH` | `/api/admin/content/:id/publication` | `200` と `{ publication: { id, status, unchanged, publishedAt } }` | 未認証は `401`、Origin不正は `403`、入力不正・公開条件不足は `422`、対象なしは `404` |
 | `GET` | `/api/admin/calendar` | `200` と `{ events, databaseConfigured }`。DraftとPublishedを含む | 未認証は `401`、取得失敗は `500` |
 | `POST` | `/api/admin/calendar` | `201` とDraftの `{ event }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、重複は `409`、DB未設定は `503` |
-| `GET` | `/api/admin/calendar/:id` | `200` と日英翻訳を含む `{ event }` | 未認証は `401`、ID不正は `400`、対象なしは `404`、DB未設定は `503` |
+| `GET` | `/api/admin/calendar/:id` | `200` と日英翻訳を含む `{ event }`。`:id` はUUID | 未認証は `401`、UUID形式でないIDは `400`、対象なしは `404`、DB未設定は `503` |
 | `PUT` | `/api/admin/calendar/:id` | `200` と公開状態を維持した `{ event }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404`、DB未設定は `503` |
 | `PATCH` | `/api/admin/calendar/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
 | `DELETE` | `/api/admin/calendar/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、対象なしは `404`、DB未設定は `503` |

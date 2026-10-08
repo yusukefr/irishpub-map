@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => navigation }));
 vi.stubGlobal("fetch", fetchMock);
 
 const event: AdminCalendarEvent = {
-  id: "st-patricks-day",
+  id: "8acbc777-5160-4f1d-8284-6db05f89485d",
   category: "culture",
   dateRule: { type: "fixed", month: 3, day: 17 },
   isPublicHoliday: false,

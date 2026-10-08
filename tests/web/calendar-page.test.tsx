@@ -39,7 +39,7 @@ const pageEvents: readonly CalendarEvent[] = [
     "language",
   ),
   pageEvent(
-    "st-patricks-day",
+    "8acbc777-5160-4f1d-8284-6db05f89485d",
     { ja: "聖パトリックの日", en: "St Patricks Day" },
     { type: "fixed", month: 3, day: 17 },
     "public_holiday",
