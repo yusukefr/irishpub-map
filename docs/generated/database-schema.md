@@ -146,17 +146,17 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 ### Columns
 
-| Column                | Type                       | Nullable | Default             |
-| --------------------- | -------------------------- | -------- | ------------------- |
-| `id`                  | `uuid`                     | no       | `gen_random_uuid()` |
-| `kind`                | `text`                     | yes      | —                   |
-| `slug`                | `text`                     | yes      | —                   |
-| `category`            | `text`                     | yes      | —                   |
-| `status`              | `text`                     | no       | —                   |
-| `published_at`        | `timestamp with time zone` | yes      | —                   |
-| `created_at`          | `timestamp with time zone` | no       | `now()`             |
-| `updated_at`          | `timestamp with time zone` | no       | `now()`             |
-| `hero_image_asset_id` | `uuid`                     | yes      | —                   |
+| Column                | Type                       | Nullable | Default |
+| --------------------- | -------------------------- | -------- | ------- |
+| `id`                  | `uuid`                     | no       | —       |
+| `kind`                | `text`                     | yes      | —       |
+| `slug`                | `text`                     | yes      | —       |
+| `category`            | `text`                     | yes      | —       |
+| `status`              | `text`                     | no       | —       |
+| `published_at`        | `timestamp with time zone` | yes      | —       |
+| `created_at`          | `timestamp with time zone` | no       | `now()` |
+| `updated_at`          | `timestamp with time zone` | no       | `now()` |
+| `hero_image_asset_id` | `uuid`                     | yes      | —       |
 
 ### Constraints
 
@@ -455,19 +455,19 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 ### Columns
 
-| Column              | Type                       | Nullable | Default             |
-| ------------------- | -------------------------- | -------- | ------------------- |
-| `id`                | `uuid`                     | no       | `gen_random_uuid()` |
-| `latitude`          | `double precision`         | yes      | —                   |
-| `longitude`         | `double precision`         | yes      | —                   |
-| `website_url`       | `text`                     | yes      | —                   |
-| `google_maps_url`   | `text`                     | yes      | —                   |
-| `instagram_url`     | `text`                     | yes      | —                   |
-| `updated_at`        | `timestamp with time zone` | no       | `now()`             |
-| `prefecture_code`   | `smallint`                 | yes      | —                   |
-| `status_code`       | `smallint`                 | yes      | —                   |
-| `municipality_code` | `text`                     | yes      | —                   |
-| `is_published`      | `boolean`                  | no       | `false`             |
+| Column              | Type                       | Nullable | Default |
+| ------------------- | -------------------------- | -------- | ------- |
+| `id`                | `uuid`                     | no       | —       |
+| `latitude`          | `double precision`         | yes      | —       |
+| `longitude`         | `double precision`         | yes      | —       |
+| `website_url`       | `text`                     | yes      | —       |
+| `google_maps_url`   | `text`                     | yes      | —       |
+| `instagram_url`     | `text`                     | yes      | —       |
+| `updated_at`        | `timestamp with time zone` | no       | `now()` |
+| `prefecture_code`   | `smallint`                 | yes      | —       |
+| `status_code`       | `smallint`                 | yes      | —       |
+| `municipality_code` | `text`                     | yes      | —       |
+| `is_published`      | `boolean`                  | no       | `false` |
 
 ### Constraints
 
@@ -673,10 +673,10 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 ### Columns
 
-| Column | Type   | Nullable | Default             |
-| ------ | ------ | -------- | ------------------- |
-| `id`   | `uuid` | no       | `gen_random_uuid()` |
-| `key`  | `text` | no       | —                   |
+| Column | Type   | Nullable | Default |
+| ------ | ------ | -------- | ------- |
+| `id`   | `uuid` | no       | —       |
+| `key`  | `text` | no       | —       |
 
 ### Constraints
 
