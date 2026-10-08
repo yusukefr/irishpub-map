@@ -85,11 +85,11 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 | Column        | Type                       | Nullable | Default |
 | ------------- | -------------------------- | -------- | ------- |
-| `event_id`    | `text`                     | no       | —       |
 | `locale`      | `text`                     | no       | —       |
 | `name`        | `text`                     | no       | —       |
 | `description` | `text`                     | no       | —       |
 | `updated_at`  | `timestamp with time zone` | no       | `now()` |
+| `event_id`    | `uuid`                     | no       | —       |
 
 ### Constraints
 
@@ -109,19 +109,19 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 
 ### Columns
 
-| Column              | Type                       | Nullable | Default                     |
-| ------------------- | -------------------------- | -------- | --------------------------- |
-| `id`                | `text`                     | no       | `(gen_random_uuid())::text` |
-| `category`          | `text`                     | yes      | —                           |
-| `date_rule`         | `jsonb`                    | yes      | —                           |
-| `is_public_holiday` | `boolean`                  | no       | `false`                     |
-| `featured`          | `boolean`                  | no       | `false`                     |
-| `aliases`           | `ARRAY`                    | no       | `'{}'::text[]`              |
-| `source`            | `text`                     | yes      | —                           |
-| `sort_order`        | `integer`                  | no       | —                           |
-| `is_published`      | `boolean`                  | no       | `false`                     |
-| `created_at`        | `timestamp with time zone` | no       | `now()`                     |
-| `updated_at`        | `timestamp with time zone` | no       | `now()`                     |
+| Column              | Type                       | Nullable | Default        |
+| ------------------- | -------------------------- | -------- | -------------- |
+| `category`          | `text`                     | yes      | —              |
+| `date_rule`         | `jsonb`                    | yes      | —              |
+| `is_public_holiday` | `boolean`                  | no       | `false`        |
+| `featured`          | `boolean`                  | no       | `false`        |
+| `aliases`           | `ARRAY`                    | no       | `'{}'::text[]` |
+| `source`            | `text`                     | yes      | —              |
+| `sort_order`        | `integer`                  | no       | —              |
+| `is_published`      | `boolean`                  | no       | `false`        |
+| `created_at`        | `timestamp with time zone` | no       | `now()`        |
+| `updated_at`        | `timestamp with time zone` | no       | `now()`        |
+| `id`                | `uuid`                     | no       | —              |
 
 ### Constraints
 
@@ -129,7 +129,6 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | ---------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `calendar_events_category_check`   | CHECK       | `CHECK (category IS NULL OR (category = ANY (ARRAY['public_holiday'::text, 'culture'::text, 'tradition'::text, 'language'::text, 'literature'::text, 'history'::text, 'religion'::text])))`                                                                                                                                                                                                                                           |
 | `calendar_events_date_rule_check`  | CHECK       | `CHECK (date_rule IS NULL OR jsonb_typeof(date_rule) = 'object'::text AND date_rule ? 'type'::text AND jsonb_typeof(date_rule -> 'type'::text) = 'string'::text AND ((date_rule ->> 'type'::text) = ANY (ARRAY['fixed'::text, 'date_range'::text, 'nth_weekday'::text, 'last_weekday'::text, 'relative_to_easter'::text, 'weekday_on_or_after'::text, 'closest_weekday_to_date'::text, 'rule_set'::text, 'annual_variable'::text])))` |
-| `calendar_events_id_check`         | CHECK       | `CHECK (btrim(id) <> ''::text AND id = btrim(id))`                                                                                                                                                                                                                                                                                                                                                                                    |
 | `calendar_events_pkey`             | PRIMARY KEY | `PRIMARY KEY (id)`                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `calendar_events_sort_order_check` | CHECK       | `CHECK (sort_order >= 0)`                                                                                                                                                                                                                                                                                                                                                                                                             |
 
