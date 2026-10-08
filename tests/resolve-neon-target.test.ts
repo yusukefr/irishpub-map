@@ -11,8 +11,13 @@ const config = {
 
 function cliFor(branchName = "preview", connectionString = "postgres://test-user@ep-direct/neondb") {
   return vi.fn(async (args: string[]) => {
-    if (args[0] === "api") {
-      return JSON.stringify({ branches: [{ id: "br-current", name: branchName }] });
+    if (args[0] === "branches") {
+      const branches = Array.from({ length: 30 }, (_, index) => ({
+        id: `br-earlier-${index}`,
+        name: `earlier-branch-${index}`,
+      }));
+      branches.push({ id: "br-current", name: branchName });
+      return JSON.stringify(branches);
     }
     return connectionString;
   });
@@ -34,7 +39,7 @@ describe("resolveNeonTarget", () => {
       connectionString: "postgres://test-user@ep-direct/neondb",
     });
     expect(runCli).toHaveBeenCalledTimes(2);
-    expect(runCli.mock.calls[0][0]).toContain("/projects/test-project/branches");
+    expect(runCli.mock.calls[0][0]).toEqual(["branches", "list", "--project-id", "test-project", "--output", "json"]);
     expect(runCli.mock.calls[1][0]).toEqual(["connection-string", "br-current", "--project-id", "test-project"]);
   });
 

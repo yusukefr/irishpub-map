@@ -32,7 +32,7 @@ npm run db:migrate -- --target preview db/migrations/<migration>_up.sql
 npm run db:migrate -- --target preview db/migrations/<migration>_verify.sql
 ```
 
-4. table、constraint、index、外部キー、必要な参照データ、`schema_migrations`をverify SQLで確認する。
+4. table、constraint、index、外部キー、必要な参照データ、`schema_migrations`をverify SQLで確認する。Repository内のverify SQLは不足や不整合を検出すると`RAISE EXCEPTION`で失敗し、Migration Runnerは結果行や機微なDBデータを出力しません。
 5. 関連するアプリケーション、unit test、E2Eを検証する。
 6. Preview検証に成功し、Production適用への明示承認がある場合だけ、Production Guard付きでup / verifyを実行する。
 

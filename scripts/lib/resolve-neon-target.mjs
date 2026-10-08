@@ -5,7 +5,7 @@ import { promisify } from "node:util";
 const execFileAsync = promisify(execFile);
 const CONFIG_PATH = "config/neon-targets.json";
 
-/** Neon CLIのAPI応答を使い、Repositoryで指定されたTargetの接続情報を解決します。 */
+/** Neon CLIで全Branchを列挙し、Repositoryで指定されたTargetの接続情報を解決します。 */
 export async function resolveNeonTarget(
   targetName,
   { readConfig = readFile, runCli = runNeonCli, cwd = process.cwd() } = {},
@@ -34,8 +34,9 @@ export async function resolveNeonTarget(
   const projectId = config.projectId;
   let branches;
   try {
-    const response = await runCli(["api", `/projects/${encodeURIComponent(projectId)}/branches`, "--output", "json"]);
-    branches = parseJson(response).branches;
+    const response = await runCli(["branches", "list", "--project-id", projectId, "--output", "json"]);
+    const branchResponse = parseJson(response);
+    branches = Array.isArray(branchResponse) ? branchResponse : branchResponse?.branches;
   } catch {
     throw new Error("Could not resolve Neon branches. Check Neon CLI installation and authentication.");
   }
