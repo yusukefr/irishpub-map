@@ -15,7 +15,6 @@
     "db:schema": "node scripts/generate-database-schema.mjs",
     "generate:database-schema": "node scripts/generate-database-schema.mjs --target production",
     "check:database-schema": "node scripts/generate-database-schema.mjs --target production --check",
-    "export-municipality-csv": "node scripts/export-municipality-codes.mjs",
     "validate:production-env": "node scripts/validate-production-env.mjs",
     "lint": "eslint --config eslint.config.mjs apps/web/app packages/shared/src e2e playwright.config.ts playwright.storybook.config.ts --max-warnings=0",
     "lint:openapi": "redocly lint docs/specs/openapi/openapi.yaml",
@@ -53,8 +52,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "storybook": "^10.6.0",
-    "vitest": "^5.0.3",
-    "xlsx": "^0.18.5"
+    "vitest": "^5.0.3"
   },
   "engines": {
     "node": "24.x",
