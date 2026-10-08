@@ -203,6 +203,9 @@ describe("calendar admin repository", () => {
     expect(mocks.queries[1].text).toContain("RETURNING id");
     expect(mocks.queries[1].text).toContain("INSERT INTO calendar_event_translations");
     expect(mocks.queries[1].text).toContain("SELECT inserted_event.id");
+    expect(mocks.queries[1].text).toContain(
+      "VALUES ('ja'::text, $8::text, $9::text), ('en'::text, $10::text, $11::text)",
+    );
     expect(mocks.queries[1].text).toContain("COUNT(*) FROM inserted_translations");
     expect(mocks.queries[1].values).toContain(
       JSON.stringify({ type: "nth_weekday", month: 3, weekday: "monday", nth: 2 }),

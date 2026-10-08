@@ -124,7 +124,7 @@ export async function insertCalendarEvent(id: string, input: AdminCalendarWriteI
         "RETURNING id), inserted_translations AS (" +
         "INSERT INTO calendar_event_translations (event_id, locale, name, description) " +
         "SELECT inserted_event.id, translation.locale, translation.name, translation.description " +
-        "FROM inserted_event CROSS JOIN (VALUES ('ja'::text, $7::text, $8::text), ('en'::text, $9::text, $10::text)) " +
+        "FROM inserted_event CROSS JOIN (VALUES ('ja'::text, $8::text, $9::text), ('en'::text, $10::text, $11::text)) " +
         "AS translation(locale, name, description) RETURNING event_id) " +
         "SELECT id FROM inserted_event WHERE (SELECT COUNT(*) FROM inserted_translations) = 2",
       [
