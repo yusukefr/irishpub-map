@@ -32,7 +32,7 @@ npm run db:migrate -- --target preview db/migrations/<migration>_up.sql
 npm run db:migrate -- --target preview db/migrations/<migration>_verify.sql
 ```
 
-4. table、constraint、index、外部キー、必要な参照データ、`schema_migrations`をverify SQLで確認する。Repository内のverify SQLは不足や不整合を検出すると`RAISE EXCEPTION`で失敗し、Migration Runnerは結果行や機微なDBデータを出力しません。
+4. table、constraint、index、外部キー、必要な参照データ、`schema_migrations`をverify SQLで確認する。新規作成・更新するverify SQLは、結果行の目視確認に依存せず、不足や不整合があれば`RAISE EXCEPTION`で失敗する自己検証型にする。006 / 007のverify SQLをこの形式の例とする。Migration Runnerは結果行や機微なDBデータを出力しません。
 5. 関連するアプリケーション、unit test、E2Eを検証する。
 6. Preview検証に成功し、Production適用への明示承認がある場合だけ、Production Guard付きでup / verifyを実行する。
 
@@ -55,7 +55,8 @@ Vercelは`db/migrations/`を自動適用しません。アプリをデプロイ�
 
 ## Validation
 
-- verify SQLが期待する結果を返す。
+- 自己検証型のverify SQLは正常終了する。
+- 既存のSELECT結果確認型verify SQL（例: `001_pubs_columns_verify.sql`、`002_normalize_pub_metadata_verify.sql`）は、Migration Runnerの終了コードだけで検証完了と判断しない。Runnerは結果行を表示しないため、別途安全なSQLクライアントで結果を確認するか、実行前に自己検証型へ更新する。
 - 接続先が意図したNeon Branchである。
 - 必要なアプリケーション検証が成功する。
 - schema documentationを更新する必要がある場合は、現行Neon schemaから再生成し、差分を確認する。
