@@ -4,7 +4,7 @@
 
 Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定された環境では、`apps/web/app/lib/pub-repository.ts` が正規化済みの店舗・マスタ・翻訳・タグ関係テーブルを読み書きします。未設定時は公開APIと管理画面が空の店舗一覧を返し、更新操作は利用できません。
 
-現行の物理スキーマは、Neon PostgreSQLのカタログを読み取り専用で照会して生成する[生成済みスキーマ](../generated/database-schema.md)を基準とします。`npm run generate:database-schema` はテーブル、カラム、制約、外部キー、インデックスを安定した順序で再生成します。生成ファイルは手動編集せず、`DATABASE_URL` やデータ値を出力しません。Schema変更の履歴と適用手順は `db/migrations/` と[Neon migration Runbook](../runbooks/neon-migrations.md)を参照し、現行スキーマの根拠にはしません。
+現行の物理スキーマは、Neon PostgreSQLのカタログを読み取り専用で照会して生成する[生成済みスキーマ](../generated/database-schema.md)を基準とします。`npm run db:schema -- --target production` は共通Neon Target Resolverを通じてProductionのテーブル、カラム、制約、外部キー、インデックスを安定した順序で再生成します。互換用の`npm run generate:database-schema`もProduction Targetを使います。生成ファイルは手動編集せず、Connection Stringやデータ値を出力しません。Schema変更の履歴と適用手順は `db/migrations/` と[Neon migration Runbook](../runbooks/neon-migrations.md)を参照し、現行スキーマの根拠にはしません。
 
 `014_add_media_assets` は公開Vercel BlobのURLと内部Storage key、実データから判定したMIME type、画像寸法、ファイルサイズを `media_assets` に保存します。UUID、Storage key、URLの一意性、MIME allowlist、8192px・4000万画素・4 MiBの制約と管理一覧用の `(created_at DESC, id DESC)` indexをDB側でも保証します。Migration適用後はRunbookに従って検証し、現行DBから生成済みschemaを更新します。
 
