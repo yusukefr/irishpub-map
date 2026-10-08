@@ -65,7 +65,7 @@ const writeInput: AdminCalendarWriteInput = {
 
 function publicRow(overrides: Record<string, unknown> = {}) {
   return {
-    id: "event-one",
+    id: "8acbc777-5160-4f1d-8284-6db05f89485d",
     category: "culture",
     date_rule: { type: "fixed", month: 3, day: 17 },
     is_public_holiday: false,
@@ -112,7 +112,7 @@ describe("calendar public repository", () => {
 
     await expect(getPublishedCalendarEvents()).resolves.toEqual([
       {
-        id: "event-one",
+        id: "8acbc777-5160-4f1d-8284-6db05f89485d",
         name: { ja: "イベント", en: "Event" },
         date: { type: "fixed", month: 3, day: 17 },
         category: "culture",
@@ -159,57 +159,59 @@ describe("calendar public repository", () => {
 });
 
 describe("calendar admin repository", () => {
-  it.each(["event-one", "8acbc777-5160-4f1d-8284-6db05f89485d"])(
-    "既存IDとUUIDの双方で参照・更新・公開・削除できる: %s",
-    async (id) => {
-      mocks.responses = [[adminRow({ id })]];
-      await expect(getAdminCalendarEvent(id)).resolves.toMatchObject({ id });
+  it("UUIDで参照・更新・公開・削除できる", async () => {
+    const id = "8acbc777-5160-4f1d-8284-6db05f89485d";
+    mocks.responses = [[adminRow({ id })]];
+    await expect(getAdminCalendarEvent(id)).resolves.toMatchObject({ id });
 
-      mocks.responses = [[{ id, is_published: false }], [{ id }], [], []];
-      await expect(updateCalendarEvent(id, writeInput)).resolves.toBe("updated");
+    mocks.responses = [[{ id, is_published: false }], [{ id }], [], []];
+    await expect(updateCalendarEvent(id, writeInput)).resolves.toBe("updated");
 
-      mocks.responses = [[{ id, is_published: false }], [{ id, is_published: true }]];
-      await expect(setCalendarEventPublication(id, true)).resolves.toMatchObject({ id, isPublished: true });
+    mocks.responses = [[{ id, is_published: false }], [{ id, is_published: true }]];
+    await expect(setCalendarEventPublication(id, true)).resolves.toMatchObject({ id, isPublished: true });
 
-      mocks.responses = [[{ id, is_published: false }]];
-      await expect(deleteCalendarEvent(id)).resolves.toEqual({ id, wasPublished: false });
-    },
-  );
+    mocks.responses = [[{ id, is_published: false }]];
+    await expect(deleteCalendarEvent(id)).resolves.toEqual({ id, wasPublished: false });
+  });
 
   it("Draftを含む一覧と詳細を取得する", async () => {
     mocks.responses = [[adminRow()], [adminRow({ is_published: true })]];
 
     await expect(listAdminCalendarEvents()).resolves.toMatchObject([
-      { id: "event-one", isPublished: false, nameJa: "イベント", nameEn: "Event" },
+      { id: "8acbc777-5160-4f1d-8284-6db05f89485d", isPublished: false, nameJa: "イベント", nameEn: "Event" },
     ]);
-    await expect(getAdminCalendarEvent("event-one")).resolves.toMatchObject({
-      id: "event-one",
+    await expect(getAdminCalendarEvent("8acbc777-5160-4f1d-8284-6db05f89485d")).resolves.toMatchObject({
+      id: "8acbc777-5160-4f1d-8284-6db05f89485d",
       isPublished: true,
       translations: { ja: { name: "イベント", description: "説明" } },
     });
   });
 
-  it("DB生成IDをEventと日英翻訳で共有し、同一transactionで作成する", async () => {
+  it("Application生成UUIDをEventと日英翻訳で共有し、同一transactionで作成する", async () => {
     const generatedId = "8acbc777-5160-4f1d-8284-6db05f89485d";
     mocks.responses = [[], [{ id: generatedId }]];
 
-    await expect(insertCalendarEvent(writeInput)).resolves.toBe(generatedId);
+    await expect(insertCalendarEvent(generatedId, writeInput)).resolves.toBe(generatedId);
 
     expect(mocks.transactionCount).toBe(1);
     expect(mocks.queries).toHaveLength(2);
     expect(mocks.queries[0].text).toContain("LOCK TABLE calendar_events IN SHARE ROW EXCLUSIVE MODE");
     expect(mocks.queries[1].text).toContain("INSERT INTO calendar_events");
     expect(mocks.queries[1].text).toContain(
-      "(category, date_rule, is_public_holiday, featured, aliases, source, sort_order)",
+      "(id, category, date_rule, is_public_holiday, featured, aliases, source, sort_order)",
     );
     expect(mocks.queries[1].text).toContain("RETURNING id");
     expect(mocks.queries[1].text).toContain("INSERT INTO calendar_event_translations");
     expect(mocks.queries[1].text).toContain("SELECT inserted_event.id");
+    expect(mocks.queries[1].text).toContain(
+      "VALUES ('ja'::text, $8::text, $9::text), ('en'::text, $10::text, $11::text)",
+    );
     expect(mocks.queries[1].text).toContain("COUNT(*) FROM inserted_translations");
     expect(mocks.queries[1].values).toContain(
       JSON.stringify({ type: "nth_weekday", month: 3, weekday: "monday", nth: 2 }),
     );
     expect(mocks.queries[1].values).toEqual([
+      generatedId,
       "culture",
       JSON.stringify({ type: "nth_weekday", month: 3, weekday: "monday", nth: 2 }),
       false,
@@ -224,36 +226,49 @@ describe("calendar admin repository", () => {
   });
 
   it("Published Eventの不完全更新をtransaction内でブロックする", async () => {
-    mocks.responses = [[{ id: "event-one", is_published: true }], [], [], []];
+    mocks.responses = [[{ id: "8acbc777-5160-4f1d-8284-6db05f89485d", is_published: true }], [], [], []];
 
-    await expect(updateCalendarEvent("event-one", { ...writeInput, category: null, dateRule: null })).resolves.toBe(
-      "publication_blocked",
-    );
+    await expect(
+      updateCalendarEvent("8acbc777-5160-4f1d-8284-6db05f89485d", { ...writeInput, category: null, dateRule: null }),
+    ).resolves.toBe("publication_blocked");
     expect(mocks.transactionCount).toBe(1);
   });
 
   it("Draft Eventは公開要件未充足でも本体と翻訳を更新する", async () => {
-    mocks.responses = [[{ id: "event-one", is_published: false }], [{ id: "event-one" }], [], []];
+    mocks.responses = [
+      [{ id: "8acbc777-5160-4f1d-8284-6db05f89485d", is_published: false }],
+      [{ id: "8acbc777-5160-4f1d-8284-6db05f89485d" }],
+      [],
+      [],
+    ];
 
-    await expect(updateCalendarEvent("event-one", { ...writeInput, category: null, dateRule: null })).resolves.toBe(
-      "updated",
-    );
+    await expect(
+      updateCalendarEvent("8acbc777-5160-4f1d-8284-6db05f89485d", { ...writeInput, category: null, dateRule: null }),
+    ).resolves.toBe("updated");
     expect(mocks.queries[2].text).toContain("event.is_published = FALSE");
     expect(mocks.queries[2].values).toContain(false);
   });
 
   it("公開状態変更、削除、E2E mutation拒否を行う", async () => {
-    mocks.responses = [[{ id: "event-one", is_published: false }], [{ id: "event-one", is_published: true }]];
-    await expect(setCalendarEventPublication("event-one", true)).resolves.toEqual({
-      id: "event-one",
+    mocks.responses = [
+      [{ id: "8acbc777-5160-4f1d-8284-6db05f89485d", is_published: false }],
+      [{ id: "8acbc777-5160-4f1d-8284-6db05f89485d", is_published: true }],
+    ];
+    await expect(setCalendarEventPublication("8acbc777-5160-4f1d-8284-6db05f89485d", true)).resolves.toEqual({
+      id: "8acbc777-5160-4f1d-8284-6db05f89485d",
       isPublished: true,
       unchanged: false,
     });
 
-    mocks.responses = [[{ id: "event-one", is_published: false }]];
-    await expect(deleteCalendarEvent("event-one")).resolves.toEqual({ id: "event-one", wasPublished: false });
+    mocks.responses = [[{ id: "8acbc777-5160-4f1d-8284-6db05f89485d", is_published: false }]];
+    await expect(deleteCalendarEvent("8acbc777-5160-4f1d-8284-6db05f89485d")).resolves.toEqual({
+      id: "8acbc777-5160-4f1d-8284-6db05f89485d",
+      wasPublished: false,
+    });
 
     process.env.E2E_TEST_MODE = "1";
-    await expect(insertCalendarEvent(writeInput)).rejects.toThrow("Mutations are disabled in E2E test mode.");
+    await expect(insertCalendarEvent("8acbc777-5160-4f1d-8284-6db05f89485d", writeInput)).rejects.toThrow(
+      "Mutations are disabled in E2E test mode.",
+    );
   });
 });

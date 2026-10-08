@@ -33,7 +33,7 @@ import {
 
 const events: readonly CalendarEvent[] = [
   {
-    id: "event-one",
+    id: "8acbc777-5160-4f1d-8284-6db05f89485d",
     name: { ja: "イベント", en: "Event" },
     date: { type: "fixed", month: 3, day: 17 },
     category: "culture",

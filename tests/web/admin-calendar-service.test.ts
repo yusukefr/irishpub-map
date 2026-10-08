@@ -38,7 +38,7 @@ const completeInput = {
 };
 
 const event = {
-  id: "event-one",
+  id: "8acbc777-5160-4f1d-8284-6db05f89485d",
   ...completeInput,
   isPublished: false,
   createdAt: "2026-09-17T00:00:00.000Z",
@@ -51,22 +51,28 @@ beforeEach(() => {
   repositoryMocks.getAdminCalendarEvent.mockImplementation(async (id: string) => ({ ...event, id }));
   repositoryMocks.listAdminCalendarEvents.mockResolvedValue([event]);
   repositoryMocks.setCalendarEventPublication.mockResolvedValue({
-    id: "event-one",
+    id: "8acbc777-5160-4f1d-8284-6db05f89485d",
     isPublished: true,
     unchanged: false,
   });
   repositoryMocks.updateCalendarEvent.mockResolvedValue("updated");
-  repositoryMocks.deleteCalendarEvent.mockResolvedValue({ id: "event-one", wasPublished: true });
+  repositoryMocks.deleteCalendarEvent.mockResolvedValue({
+    id: "8acbc777-5160-4f1d-8284-6db05f89485d",
+    wasPublished: true,
+  });
 });
 
 describe("admin calendar service", () => {
-  it("DB生成IDで作成し、正規化した入力と一覧をRepositoryへ委譲する", async () => {
+  it("Application生成UUIDをRepositoryへ渡し、正規化した入力と一覧を委譲する", async () => {
     const created = await createAdminCalendarEvent({ ...completeInput, source: "  ", ignoredProperty: true });
-    expect(created.id).toBe("8acbc777-5160-4f1d-8284-6db05f89485d");
-    expect(repositoryMocks.insertCalendarEvent).toHaveBeenCalledWith(expect.objectContaining({ source: null }));
-    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][0]).not.toHaveProperty("id");
-    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][0]).not.toHaveProperty("ignoredProperty");
-    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][0]).not.toHaveProperty("sortOrder");
+    expect(created.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu);
+    expect(repositoryMocks.insertCalendarEvent).toHaveBeenCalledWith(
+      created.id,
+      expect.objectContaining({ source: null }),
+    );
+    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][1]).not.toHaveProperty("id");
+    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][1]).not.toHaveProperty("ignoredProperty");
+    expect(repositoryMocks.insertCalendarEvent.mock.calls[0][1]).not.toHaveProperty("sortOrder");
     expect(repositoryMocks.getAdminCalendarEvent).toHaveBeenCalledWith(created.id);
     await expect(readAdminCalendarList()).resolves.toHaveLength(1);
   });
@@ -161,14 +167,18 @@ describe("admin calendar service", () => {
       ...event,
       translations: { ja: { name: "イベント", description: "" }, en: { name: "Event", description: "" } },
     });
-    await expect(changeAdminCalendarEventPublication("event-one", true)).resolves.toMatchObject({ isPublished: true });
-    await expect(updateAdminCalendarEvent("event-one", draft)).rejects.toMatchObject({
+    await expect(
+      changeAdminCalendarEventPublication("8acbc777-5160-4f1d-8284-6db05f89485d", true),
+    ).resolves.toMatchObject({ isPublished: true });
+    await expect(updateAdminCalendarEvent("8acbc777-5160-4f1d-8284-6db05f89485d", draft)).rejects.toMatchObject({
       code: "publication_requirements_not_met",
     });
   });
 
   it("公開切替、競合、未存在を業務エラーへ変換する", async () => {
-    await expect(changeAdminCalendarEventPublication("event-one", true)).resolves.toMatchObject({
+    await expect(
+      changeAdminCalendarEventPublication("8acbc777-5160-4f1d-8284-6db05f89485d", true),
+    ).resolves.toMatchObject({
       isPublished: true,
     });
     repositoryMocks.insertCalendarEvent.mockRejectedValue({ code: "23505" });
@@ -176,21 +186,26 @@ describe("admin calendar service", () => {
       code: "conflict",
     });
     repositoryMocks.deleteCalendarEvent.mockResolvedValue(null);
-    await expect(removeAdminCalendarEvent("event-one")).rejects.toBeInstanceOf(AdminCalendarServiceError);
+    await expect(removeAdminCalendarEvent("8acbc777-5160-4f1d-8284-6db05f89485d")).rejects.toBeInstanceOf(
+      AdminCalendarServiceError,
+    );
   });
 
   it("Publishedに影響する操作だけPublic Calendar Cacheをinvalidateする", async () => {
-    await changeAdminCalendarEventPublication("event-one", true);
+    await changeAdminCalendarEventPublication("8acbc777-5160-4f1d-8284-6db05f89485d", true);
     expect(cacheMocks.invalidatePublishedCalendarData).toHaveBeenCalledOnce();
 
     cacheMocks.invalidatePublishedCalendarData.mockClear();
     repositoryMocks.getAdminCalendarEvent.mockResolvedValue({ ...event, isPublished: true });
-    await updateAdminCalendarEvent("event-one", completeInput);
+    await updateAdminCalendarEvent("8acbc777-5160-4f1d-8284-6db05f89485d", completeInput);
     expect(cacheMocks.invalidatePublishedCalendarData).toHaveBeenCalledOnce();
 
     cacheMocks.invalidatePublishedCalendarData.mockClear();
-    repositoryMocks.deleteCalendarEvent.mockResolvedValue({ id: "event-one", wasPublished: false });
-    await removeAdminCalendarEvent("event-one");
+    repositoryMocks.deleteCalendarEvent.mockResolvedValue({
+      id: "8acbc777-5160-4f1d-8284-6db05f89485d",
+      wasPublished: false,
+    });
+    await removeAdminCalendarEvent("8acbc777-5160-4f1d-8284-6db05f89485d");
     expect(cacheMocks.invalidatePublishedCalendarData).not.toHaveBeenCalled();
   });
 
@@ -200,7 +215,9 @@ describe("admin calendar service", () => {
       dateRule: { type: "fixed", month: 2, day: 29 },
     });
 
-    await expect(changeAdminCalendarEventPublication("event-one", true)).rejects.toMatchObject({
+    await expect(
+      changeAdminCalendarEventPublication("8acbc777-5160-4f1d-8284-6db05f89485d", true),
+    ).rejects.toMatchObject({
       code: "publication_requirements_not_met",
       fieldErrors: { dateRule: "invalid_format" },
     });
@@ -208,8 +225,14 @@ describe("admin calendar service", () => {
   });
 
   it("削除結果のwasPublishedをServiceから返す", async () => {
-    repositoryMocks.deleteCalendarEvent.mockResolvedValue({ id: "event-one", wasPublished: true });
+    repositoryMocks.deleteCalendarEvent.mockResolvedValue({
+      id: "8acbc777-5160-4f1d-8284-6db05f89485d",
+      wasPublished: true,
+    });
 
-    await expect(removeAdminCalendarEvent("event-one")).resolves.toEqual({ id: "event-one", wasPublished: true });
+    await expect(removeAdminCalendarEvent("8acbc777-5160-4f1d-8284-6db05f89485d")).resolves.toEqual({
+      id: "8acbc777-5160-4f1d-8284-6db05f89485d",
+      wasPublished: true,
+    });
   });
 });

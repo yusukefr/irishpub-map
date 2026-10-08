@@ -40,7 +40,7 @@ describe("AdminNavigation", () => {
   });
 
   it("marks Calendar child routes as active", () => {
-    navigationMocks.pathname = "/admin/calendar/event-one";
+    navigationMocks.pathname = "/admin/calendar/8acbc777-5160-4f1d-8284-6db05f89485d";
     render(<AdminNavigation locale="ja" />);
 
     expect(screen.getByRole("link", { name: "Calendar" })).toHaveAttribute("aria-current", "page");

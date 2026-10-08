@@ -1,4 +1,5 @@
 import type { AdminFieldErrorCode } from "@irishpub-map/shared/admin-api-error";
+import { randomUUID } from "node:crypto";
 import {
   isCalendarEventId,
   parseCalendarDateRuleDefinition,
@@ -56,15 +57,15 @@ export function readAdminCalendarList(): Promise<readonly AdminCalendarListItem[
 }
 
 /**
- * 未検証入力からDB生成IDを持つCalendar Eventを作成します。
+ * 未検証入力からApplication生成UUIDを持つCalendar Eventを作成します。
  * @param value
  * @returns 作成されたCalendar Event。
  */
 export async function createAdminCalendarEvent(value: unknown): Promise<AdminCalendarEvent> {
   const parsed = parseWriteInput(value);
-  let id: string;
+  const id = randomUUID();
   try {
-    id = await insertCalendarEvent(parsed.input);
+    await insertCalendarEvent(id, parsed.input);
   } catch (error) {
     if (isUniqueViolation(error)) throw new AdminCalendarServiceError("conflict", { id: "invalid_format" });
     throw error;

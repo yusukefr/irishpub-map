@@ -22,22 +22,19 @@ type DefinitionRuleSetCondition =
   | Readonly<{ type: "fixed_date_weekday"; month: number; day: number; weekday: CalendarWeekdayName }>
   | Readonly<{ type: "otherwise" }>;
 
-/** Calendar Event IDの最大長です。 */
-export const CALENDAR_ID_MAX_LENGTH = 100;
-
-/** Calendar Eventで利用できるStable IDの形式です。 */
-export const CALENDAR_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+/** Calendar Event IDとして受け付けるUUID形式です。 */
+export const CALENDAR_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
 /**
- * 指定値がCalendar EventのStable ID形式か判定します。
+ * 指定値がCalendar Event UUID形式か判定します。
  * @param value
- * @returns Stable ID形式の場合はtrue。
+ * @returns UUID形式の場合はtrue。
  */
 export function isCalendarEventId(value: string): boolean {
-  return value.length <= CALENDAR_ID_MAX_LENGTH && CALENDAR_ID_PATTERN.test(value);
+  return CALENDAR_ID_PATTERN.test(value);
 }
 
-/** Stable ID validationの短縮API名です。 */
+/** Calendar Event ID validationの短縮API名です。 */
 export const isCalendarId = isCalendarEventId;
 
 /**

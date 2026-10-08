@@ -49,4 +49,21 @@ describe("calendar database migration", () => {
     expect(verifySql).toContain("column_default IN ('gen_random_uuid()::text', '(gen_random_uuid())::text')");
     expect(verifySql).toContain("version = '019_add_calendar_event_id_default'");
   });
+
+  it("Calendar Event IDをUUIDへ変換し、行数・参照・制約を検証する", async () => {
+    const upSql = await readMigration("022_convert_calendar_event_ids_to_uuid_up.sql");
+    const verifySql = await readMigration("022_convert_calendar_event_ids_to_uuid_verify.sql");
+
+    expect(upSql).toContain("CREATE TEMP TABLE calendar_event_id_map");
+    expect(upSql).toContain("THEN id::uuid");
+    expect(upSql).toContain("ELSE gen_random_uuid()");
+    expect(upSql).toContain("UPDATE calendar_event_translations AS translation SET event_id_uuid = mapping.new_id");
+    expect(upSql).toContain("ALTER COLUMN id DROP DEFAULT");
+    expect(upSql).toContain("row counts or translation references changed");
+    expect(upSql).toContain("VALUES ('022_convert_calendar_event_ids_to_uuid')");
+    expect(verifySql).toContain("data_type = 'uuid'");
+    expect(verifySql).toContain("calendar_events.id must not have a default");
+    expect(verifySql).toContain("orphaned parent");
+    expect(verifySql).toContain("calendar event index is missing");
+  });
 });

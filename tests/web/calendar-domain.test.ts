@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getEventsForDate, getEventsForMonth, getTodayInTokyo } from "../../apps/web/app/lib/calendar/queries";
 import { getGregorianEasterDate, resolveDateRule } from "../../apps/web/app/lib/calendar/resolver";
-import { parseCalendarDateRule } from "../../apps/web/app/lib/calendar/validation";
+import { isCalendarEventId, parseCalendarDateRule } from "../../apps/web/app/lib/calendar/validation";
 import type { CalendarDateRule, CalendarEvent } from "../../apps/web/app/lib/calendar/types";
 
 function event(id: string, date: CalendarDateRule): CalendarEvent {
@@ -71,6 +71,15 @@ describe("calendar date rule validation", () => {
     ],
   ])("%s is rejected", (_label, value) => {
     expect(() => parseCalendarDateRule(value, "date")).toThrow("Invalid calendar data");
+  });
+});
+
+describe("calendar event ID validation", () => {
+  it("accepts UUIDs and rejects semantic IDs and malformed values", () => {
+    expect(isCalendarEventId("8acbc777-5160-4f1d-8284-6db05f89485d")).toBe(true);
+    expect(isCalendarEventId("8ACBC777-5160-4F1D-8284-6DB05F89485D")).toBe(true);
+    expect(isCalendarEventId("st-patricks-day")).toBe(false);
+    expect(isCalendarEventId("not-a-uuid")).toBe(false);
   });
 });
 

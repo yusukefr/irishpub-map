@@ -40,20 +40,24 @@ beforeEach(() => {
   mocks.configured.mockReturnValue(true);
   mocks.list.mockResolvedValue([]);
   mocks.create.mockResolvedValue({ id: "new-event" });
-  mocks.read.mockResolvedValue({ id: "event-one" });
-  mocks.update.mockResolvedValue({ id: "event-one" });
-  mocks.remove.mockResolvedValue({ id: "event-one", wasPublished: false });
-  mocks.publication.mockResolvedValue({ id: "event-one", isPublished: true, unchanged: false });
+  mocks.read.mockResolvedValue({ id: "8acbc777-5160-4f1d-8284-6db05f89485d" });
+  mocks.update.mockResolvedValue({ id: "8acbc777-5160-4f1d-8284-6db05f89485d" });
+  mocks.remove.mockResolvedValue({ id: "8acbc777-5160-4f1d-8284-6db05f89485d", wasPublished: false });
+  mocks.publication.mockResolvedValue({
+    id: "8acbc777-5160-4f1d-8284-6db05f89485d",
+    isPublished: true,
+    unchanged: false,
+  });
 });
 
 describe("admin calendar API", () => {
   it("returns the event list and database configuration state", async () => {
-    mocks.list.mockResolvedValue([{ id: "event-one" }]);
+    mocks.list.mockResolvedValue([{ id: "8acbc777-5160-4f1d-8284-6db05f89485d" }]);
 
     await expect(
       listGet(request("https://example.test/api/admin/calendar")).then((response) => response.json()),
     ).resolves.toEqual({
-      events: [{ id: "event-one" }],
+      events: [{ id: "8acbc777-5160-4f1d-8284-6db05f89485d" }],
       databaseConfigured: true,
     });
   });
@@ -88,12 +92,19 @@ describe("admin calendar API", () => {
   });
 
   it("connects detail, update, delete, and publication routes", async () => {
-    const context = { params: Promise.resolve({ id: "event-one" }) };
-    expect((await detailGet(request("https://example.test/api/admin/calendar/event-one"), context)).status).toBe(200);
+    const context = { params: Promise.resolve({ id: "8acbc777-5160-4f1d-8284-6db05f89485d" }) };
+    expect(
+      (
+        await detailGet(
+          request("https://example.test/api/admin/calendar/8acbc777-5160-4f1d-8284-6db05f89485d"),
+          context,
+        )
+      ).status,
+    ).toBe(200);
     expect(
       (
         await PUT(
-          request("https://example.test/api/admin/calendar/event-one", {
+          request("https://example.test/api/admin/calendar/8acbc777-5160-4f1d-8284-6db05f89485d", {
             method: "PUT",
             headers: { "Content-Type": "application/json", origin: "https://example.test" },
             body: "{}",
@@ -105,7 +116,7 @@ describe("admin calendar API", () => {
     expect(
       (
         await PATCH(
-          request("https://example.test/api/admin/calendar/event-one/publication", {
+          request("https://example.test/api/admin/calendar/8acbc777-5160-4f1d-8284-6db05f89485d/publication", {
             method: "PATCH",
             headers: { "Content-Type": "application/json", origin: "https://example.test" },
             body: JSON.stringify({ isPublished: true }),
@@ -117,7 +128,7 @@ describe("admin calendar API", () => {
     expect(
       (
         await DELETE(
-          request("https://example.test/api/admin/calendar/event-one", {
+          request("https://example.test/api/admin/calendar/8acbc777-5160-4f1d-8284-6db05f89485d", {
             method: "DELETE",
             headers: { origin: "https://example.test" },
           }),
@@ -125,12 +136,12 @@ describe("admin calendar API", () => {
         )
       ).status,
     ).toBe(200);
-    expect(mocks.publication).toHaveBeenCalledWith("event-one", true);
+    expect(mocks.publication).toHaveBeenCalledWith("8acbc777-5160-4f1d-8284-6db05f89485d", true);
   });
 
   it("rejects malformed event IDs before calling the service", async () => {
-    const context = { params: Promise.resolve({ id: "Invalid ID" }) };
-    const response = await detailGet(request("https://example.test/api/admin/calendar/Invalid%20ID"), context);
+    const context = { params: Promise.resolve({ id: "st-patricks-day" }) };
+    const response = await detailGet(request("https://example.test/api/admin/calendar/st-patricks-day"), context);
 
     expect(response.status).toBe(400);
     expect(mocks.read).not.toHaveBeenCalled();
