@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { neon } from "@neondatabase/serverless";
 import { getTagLabel, normalizeTags } from "../packages/shared/src/tag.ts";
@@ -112,8 +113,8 @@ export async function importPubs(databaseUrl, pubs, sql) {
       `;
       for (const tag of normalizeTags(pub.tags)) {
         const tagRows = await client`
-          INSERT INTO tags (key)
-          VALUES (${tag})
+          INSERT INTO tags (id, key)
+          VALUES (${randomUUID()}::uuid, ${tag})
           ON CONFLICT (key) DO UPDATE SET key = EXCLUDED.key
           RETURNING id
         `;

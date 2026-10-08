@@ -88,6 +88,8 @@ describe("tag repository", () => {
       expect.stringContaining("INSERT INTO tag_translations"),
       expect.stringContaining("INSERT INTO tag_translations"),
     ]);
+    expect(databaseMock.queries[1].text).toMatch(/INSERT INTO tags\s*\(id, key\)/);
+    expect(databaseMock.queries[1].values).toContain(created.id);
   });
 
   it("updates display names without changing the key and removes empty English", async () => {

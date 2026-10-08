@@ -151,6 +151,8 @@ describe("admin pub repository", () => {
       expect.stringContaining("'en'"),
       expect.stringContaining("INSERT INTO pub_tags"),
     ]);
+    expect(databaseMock.queries[0].text).toMatch(/INSERT INTO pubs\s*\(\s*id,/);
+    expect(databaseMock.queries[0].values).toContain(pubId);
     expect(databaseMock.queries.every(({ text }) => !text.includes("INSERT INTO tags"))).toBe(true);
   });
 
