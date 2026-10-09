@@ -451,6 +451,55 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | ----------------------- | --------------------------------------------------------------------------------------------------- |
 | `pub_translations_pkey` | `CREATE UNIQUE INDEX pub_translations_pkey ON public.pub_translations USING btree (pub_id, locale)` |
 
+## pub_type_translations
+
+### Columns
+
+| Column          | Type       | Nullable | Default |
+| --------------- | ---------- | -------- | ------- |
+| `pub_type_code` | `smallint` | no       | —       |
+| `locale`        | `text`     | no       | —       |
+| `display_name`  | `text`     | no       | —       |
+
+### Constraints
+
+| Name                                       | Type        | Definition                                                                 |
+| ------------------------------------------ | ----------- | -------------------------------------------------------------------------- |
+| `pub_type_translations_display_name_check` | CHECK       | `CHECK (btrim(display_name) <> ''::text)`                                  |
+| `pub_type_translations_locale_check`       | CHECK       | `CHECK (locale = ANY (ARRAY['ja'::text, 'en'::text]))`                     |
+| `pub_type_translations_pkey`               | PRIMARY KEY | `PRIMARY KEY (pub_type_code, locale)`                                      |
+| `pub_type_translations_pub_type_code_fkey` | FOREIGN KEY | `FOREIGN KEY (pub_type_code) REFERENCES pub_types(code) ON DELETE CASCADE` |
+
+### Indexes
+
+| Name                         | Definition                                                                                                           |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `pub_type_translations_pkey` | `CREATE UNIQUE INDEX pub_type_translations_pkey ON public.pub_type_translations USING btree (pub_type_code, locale)` |
+
+## pub_types
+
+### Columns
+
+| Column | Type       | Nullable | Default |
+| ------ | ---------- | -------- | ------- |
+| `code` | `smallint` | no       | —       |
+| `key`  | `text`     | no       | —       |
+
+### Constraints
+
+| Name                  | Type        | Definition                                                                                       |
+| --------------------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| `pub_types_key_check` | CHECK       | `CHECK (key = ANY (ARRAY['irish'::text, 'british'::text, 'other'::text, 'unclassified'::text]))` |
+| `pub_types_key_key`   | UNIQUE      | `UNIQUE (key)`                                                                                   |
+| `pub_types_pkey`      | PRIMARY KEY | `PRIMARY KEY (code)`                                                                             |
+
+### Indexes
+
+| Name                | Definition                                                                    |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `pub_types_key_key` | `CREATE UNIQUE INDEX pub_types_key_key ON public.pub_types USING btree (key)` |
+| `pub_types_pkey`    | `CREATE UNIQUE INDEX pub_types_pkey ON public.pub_types USING btree (code)`   |
+
 ## pubs
 
 ### Columns
@@ -468,6 +517,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | `status_code`       | `smallint`                 | yes      | —       |
 | `municipality_code` | `text`                     | yes      | —       |
 | `is_published`      | `boolean`                  | no       | `false` |
+| `pub_type_code`     | `smallint`                 | yes      | —       |
 
 ### Constraints
 
@@ -481,6 +531,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | `pubs_columns_new_website_url_check`     | CHECK       | `CHECK (website_url IS NULL OR website_url ~* '^https?://'::text)`                              |
 | `pubs_municipality_code_fkey`            | FOREIGN KEY | `FOREIGN KEY (municipality_code) REFERENCES municipality_codes(code)`                           |
 | `pubs_prefecture_code_fkey`              | FOREIGN KEY | `FOREIGN KEY (prefecture_code) REFERENCES prefectures(code)`                                    |
+| `pubs_pub_type_code_fkey`                | FOREIGN KEY | `FOREIGN KEY (pub_type_code) REFERENCES pub_types(code)`                                        |
 | `pubs_status_code_fkey`                  | FOREIGN KEY | `FOREIGN KEY (status_code) REFERENCES pub_statuses(code)`                                       |
 
 ### Indexes
@@ -490,6 +541,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | `pubs_columns_new_pkey`      | `CREATE UNIQUE INDEX pubs_columns_new_pkey ON public.pubs USING btree (id)`              |
 | `pubs_municipality_code_idx` | `CREATE INDEX pubs_municipality_code_idx ON public.pubs USING btree (municipality_code)` |
 | `pubs_prefecture_code_idx`   | `CREATE INDEX pubs_prefecture_code_idx ON public.pubs USING btree (prefecture_code)`     |
+| `pubs_pub_type_code_idx`     | `CREATE INDEX pubs_pub_type_code_idx ON public.pubs USING btree (pub_type_code)`         |
 | `pubs_status_code_idx`       | `CREATE INDEX pubs_status_code_idx ON public.pubs USING btree (status_code)`             |
 
 ## quiz_choice_translations
