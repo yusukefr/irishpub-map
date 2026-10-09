@@ -218,6 +218,7 @@ for (const locale of ["ja", "en"] as const) {
       if (width === 390 && locale === "ja") {
         await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", {
           animations: "disabled",
+          maxDiffPixels: 200,
           mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
         });
       }

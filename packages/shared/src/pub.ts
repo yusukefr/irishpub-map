@@ -3,6 +3,9 @@ import { normalizeTag, normalizeTags } from "./tag";
 /** 店舗の営業状態を表します。 */
 export type PubStatus = "open" | "temporarily_closed" | "closed" | "unknown";
 
+/** 店舗が掲げる主要なパブ業態です。 */
+export type PubType = "irish" | "british" | "other" | "unclassified";
+
 /** 店舗検索・地図表示・永続化で共有する店舗データです。 */
 export type Pub = {
   id: string;
@@ -24,6 +27,8 @@ export type Pub = {
   status: PubStatus;
   /** 選択ロケールで表示する営業ステータス名です。 */
   statusDisplayName?: string;
+  pubType: PubType;
+  pubTypeDisplayName?: string;
 };
 
 /**
@@ -73,8 +78,14 @@ function isPub(value: unknown): value is Pub {
     pub.tags.every((tag) => isNonEmptyString(tag)) &&
     isOptionalStringRecord(pub.tagDisplayNames) &&
     isOptionalString(pub.statusDisplayName) &&
+    isPubType(pub.pubType) &&
+    isOptionalString(pub.pubTypeDisplayName) &&
     isPubStatus(pub.status)
   );
+}
+
+function isPubType(value: unknown): value is PubType {
+  return value === "irish" || value === "british" || value === "other" || value === "unclassified";
 }
 
 function isPubStatus(value: unknown): value is PubStatus {
@@ -133,6 +144,7 @@ function normalizePub(pub: Pub): Pub {
     tags: normalizeTags(pub.tags),
     tagDisplayNames: normalizeTagDisplayNames(pub.tagDisplayNames),
     statusDisplayName: normalizeOptionalText(pub.statusDisplayName),
+    pubTypeDisplayName: normalizeOptionalText(pub.pubTypeDisplayName),
   };
 }
 

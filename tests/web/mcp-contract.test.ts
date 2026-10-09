@@ -59,6 +59,7 @@ const pubBase = {
   googleMapsUrl: null,
   instagramUrl: null,
   status: "open",
+  pubType: "irish",
   translations: { ja: { name: "Sample", nameReading: null, address: "Tokyo" }, en: null },
   tagIds: [id],
   updatedAt: timestamp,
@@ -220,7 +221,7 @@ describe("Remote MCP contract", () => {
     const listResult = (await mcpBody(listed)).result as { tools: Array<Record<string, unknown>> };
     expect(listResult.tools.map((tool) => tool.name)).toEqual([...MCP_TOOL_ALLOW_LIST]);
     expect(new Set(listResult.tools.map((tool) => tool.name)).size).toBe(listResult.tools.length);
-    expect(listResult.tools).toHaveLength(20);
+    expect(listResult.tools).toHaveLength(21);
     const scopes = [
       "master:read",
       "master:read",
@@ -255,7 +256,7 @@ describe("Remote MCP contract", () => {
       "pubs:publish",
       "tag:create",
     ];
-    for (const [index, tool] of listResult.tools.slice(10).entries()) {
+    for (const [index, tool] of listResult.tools.slice(10, 20).entries()) {
       const create = [0, 3, 6, 9].includes(index);
       expect(tool.annotations).toMatchObject({
         readOnlyHint: false,
@@ -485,6 +486,8 @@ describe("Remote MCP contract", () => {
               prefectureCode: 13,
               statusCode: 1,
               statusDisplayName: "Open",
+              pubType: "irish",
+              pubTypeDisplayName: "Irish Pub",
               tagItems: [{ id, key: "irish", name: "Irish" }],
               isPublished: false,
               updatedAt: timestamp,
@@ -497,6 +500,12 @@ describe("Remote MCP contract", () => {
         },
       },
       { name: "get_pub", args: { id }, path: `/pubs/${id}`, data: { pub: pubBase } },
+      {
+        name: "list_pub_types",
+        args: {},
+        path: "/master/pub-types",
+        data: { pubTypes: [{ code: 1, key: "irish", name: "Irish Pub" }] },
+      },
     ];
     const handler = createHandler();
     for (const item of cases) {
@@ -695,6 +704,7 @@ describe("Remote MCP contract", () => {
       googleMapsUrl: null,
       instagramUrl: null,
       status: null,
+      pubType: null,
       translations: { ja: { name: "パブ", nameReading: null, address: null }, en: null },
       tagIds: [],
     };
@@ -1231,6 +1241,7 @@ describe("Remote MCP contract", () => {
       "update_pub",
       "set_pub_publication",
       "create_tag",
+      "list_pub_types",
     ]);
     for (const [file, section, path, method, scope] of [
       ["automation-content.yaml", "Collection", "content", "post", "content:create"],

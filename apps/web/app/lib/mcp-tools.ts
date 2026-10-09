@@ -8,6 +8,7 @@ import {
   prefecturesResponse,
   pubListResponse,
   pubResponse,
+  pubTypesResponse,
   quizListResponse,
   quizResponse,
   statusesResponse,
@@ -53,6 +54,7 @@ export const MCP_TOOL_ALLOW_LIST = [
   "update_pub",
   "set_pub_publication",
   "create_tag",
+  "list_pub_types",
 ] as const;
 
 const readOnlyAnnotations = {
@@ -442,5 +444,17 @@ export function registerMcpTools(server: McpServer): void {
     },
     async ({ idempotencyKey: key, ...body }) =>
       automationResult({ method: "POST", path: "/api/automation/v1/tags", body, idempotencyKey: key }, tagResponse),
+  );
+
+  server.registerTool(
+    MCP_TOOL_ALLOW_LIST[20],
+    {
+      title: "List pub types",
+      description: description("pub classification master data", "master:read", "choosing a pub's primary type"),
+      inputSchema: {},
+      outputSchema: pubTypesResponse,
+      annotations: readOnlyAnnotations,
+    },
+    async () => readResult("/api/automation/v1/master/pub-types", pubTypesResponse),
   );
 }

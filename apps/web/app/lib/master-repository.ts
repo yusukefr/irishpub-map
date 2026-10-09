@@ -4,9 +4,16 @@ import type {
   MunicipalityOption,
   PrefectureOption,
   PubStatusOption,
+  PubTypeOption,
   TagOption,
 } from "@irishpub-map/shared/admin-master";
-import { getE2EMunicipalities, getE2EPrefectures, getE2EPubStatuses, getE2ETags } from "./e2e-test-fixtures";
+import {
+  getE2EMunicipalities,
+  getE2EPrefectures,
+  getE2EPubStatuses,
+  getE2EPubTypes,
+  getE2ETags,
+} from "./e2e-test-fixtures";
 import { isE2ETestMode } from "./e2e-test-mode";
 
 type MasterLocale = Locale;
@@ -122,6 +129,31 @@ export async function getPubStatuses(locale: MasterLocale = DEFAULT_LOCALE): Pro
   return rows.map((row) => ({
     code: requiredInteger(row.code),
     key: requiredText(row.key),
+    name: requiredText(row.name),
+  }));
+}
+
+/** 登録済み店舗種別をコード順で取得します。
+ * @param {MasterLocale} locale - 優先表示ロケール。
+ * @returns {Promise<PubTypeOption[]>} 店舗種別一覧。DB未設定時は空配列。
+ */
+export async function getPubTypes(locale: MasterLocale = DEFAULT_LOCALE): Promise<PubTypeOption[]> {
+  if (isE2ETestMode()) return getE2EPubTypes(locale);
+  if (!process.env.DATABASE_URL) return [];
+  const rows = (await getSql()`
+    WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
+    SELECT type.code, type.key, translation.display_name AS name
+    FROM pub_types AS type
+    JOIN LATERAL (
+      SELECT value.display_name FROM pub_type_translations AS value
+      JOIN locale_preference AS preference ON preference.locale = value.locale
+      WHERE value.pub_type_code = type.code ORDER BY preference.priority LIMIT 1
+    ) AS translation ON TRUE
+    ORDER BY type.code
+  `) as DbRow[];
+  return rows.map((row) => ({
+    code: requiredInteger(row.code),
+    key: requiredText(row.key) as PubTypeOption["key"],
     name: requiredText(row.name),
   }));
 }

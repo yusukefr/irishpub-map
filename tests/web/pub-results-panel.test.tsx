@@ -20,6 +20,7 @@ const pubs: Pub[] = [
     instagramUrl: "javascript:alert(1)",
     tags: ["guinness", "food", "live-music"],
     status: "open",
+    pubType: "irish",
   },
   {
     id: "osaka-sample",
@@ -34,6 +35,7 @@ const pubs: Pub[] = [
     instagramUrl: null,
     tags: [],
     status: "unknown",
+    pubType: "unclassified",
   },
 ];
 

@@ -263,6 +263,7 @@ export function AdminPubManager({
                   <th scope="col">{t.admin.name}</th>
                   <th scope="col">{t.admin.area}</th>
                   <th scope="col">{t.admin.status}</th>
+                  <th scope="col">{t.admin.publicationFields.pubType}</th>
                   <th scope="col">{t.admin.publication}</th>
                   <th scope="col">{t.admin.filterTag}</th>
                   <th scope="col">{t.admin.updatedAt}</th>
@@ -279,6 +280,9 @@ export function AdminPubManager({
                       </th>
                       <td data-label={t.admin.area}>{[pub.prefecture, pub.city].filter(Boolean).join(" ") || "—"}</td>
                       <td data-label={t.admin.status}>{pub.statusDisplayName || "—"}</td>
+                      <td data-label={t.admin.publicationFields.pubType}>
+                        {pub.pubTypeDisplayName || pub.pubType || "—"}
+                      </td>
                       <td data-label={t.admin.publication}>
                         <span
                           className={`admin-publication-badge ${pub.isPublished ? "is-published" : "is-unpublished"}`}

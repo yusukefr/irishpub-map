@@ -19,6 +19,7 @@ const pubs: Pub[] = [
     tags: ["guinness", "live-music", "seasonal-event"],
     tagDisplayNames: { guinness: "Guinness", "live-music": "Live music" },
     status: "open",
+    pubType: "irish",
     statusDisplayName: "Open",
   },
   {
@@ -33,6 +34,7 @@ const pubs: Pub[] = [
     instagramUrl: null,
     tags: [],
     status: "unknown",
+    pubType: "unclassified",
   },
   {
     id: "nagoya-closed",
@@ -47,6 +49,7 @@ const pubs: Pub[] = [
     instagramUrl: null,
     tags: ["craft-beer"],
     status: "closed",
+    pubType: "other",
   },
 ];
 

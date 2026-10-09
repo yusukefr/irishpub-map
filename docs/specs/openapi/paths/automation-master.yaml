@@ -76,6 +76,30 @@ Statuses:
       "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
       "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
 
+PubTypes:
+  get:
+    tags: [Automation Master]
+    operationId: listAutomationPubTypes
+    summary: List pub types
+    description: "Required server-side scope: `master:read`. Returns localized options; empty without DATABASE_URL."
+    x-required-scope: master:read
+    security: [{ AutomationBearer: [] }]
+    responses:
+      "200":
+        description: Pub types ordered by code
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pubTypes]
+              properties:
+                pubTypes:
+                  type: array
+                  items: { $ref: "../schemas/automation.yaml#/PubType" }
+      "401": { $ref: "../schemas/automation-errors.yaml#/AutomationUnauthorized" }
+      "403": { $ref: "../schemas/automation-errors.yaml#/AutomationForbidden" }
+      "500": { $ref: "../schemas/automation-errors.yaml#/AutomationInternalError" }
+
 TagCollection:
   post:
     tags: [Automation Tags]

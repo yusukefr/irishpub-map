@@ -66,6 +66,7 @@ const draftInput = {
   googleMapsUrl: null,
   instagramUrl: null,
   status: "open",
+  pubType: "irish",
   translations: { ja: { name: "Example Pub", nameReading: null, address: "名古屋市" }, en: null },
   tagIds: [tagId],
 };

@@ -14,6 +14,7 @@ const props = {
   prefectures: [{ code: 13, name: "東京都" }],
   municipalities: [],
   statuses: [{ code: 1, key: "open" as const, name: "営業中" }],
+  pubTypes: [{ code: 1, key: "irish" as const, name: "アイリッシュパブ" }],
   tags,
   databaseConfigured: true,
   locale: "ja" as const,
@@ -29,6 +30,7 @@ const existingPub = {
   googleMapsUrl: null,
   instagramUrl: null,
   status: "open" as const,
+  pubType: "irish" as const,
   translations: {
     ja: { name: "The Pub", nameReading: "ザ パブ", address: "渋谷" },
     en: { name: "The Pub", nameReading: null, address: "Shibuya" },

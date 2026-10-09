@@ -127,6 +127,7 @@ export const pubWrite = z
     googleMapsUrl: pubUrl,
     instagramUrl: pubUrl,
     status: z.enum(["open", "temporarily_closed", "closed", "unknown"]).nullable(),
+    pubType: z.enum(["irish", "british", "other", "unclassified"]).nullable(),
     translations: z.object({ ja: pubTranslation, en: pubEnglishTranslation.nullable() }).strict(),
     tagIds: z.array(uuid).refine((ids) => new Set(ids).size === ids.length),
   })

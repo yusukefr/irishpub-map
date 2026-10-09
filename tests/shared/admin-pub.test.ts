@@ -17,6 +17,7 @@ const draftInput = {
   googleMapsUrl: null,
   instagramUrl: null,
   status: null,
+  pubType: null,
   translations: {
     ja: { name: "  アイリッシュパブ  ", nameReading: null, address: null },
     en: null,

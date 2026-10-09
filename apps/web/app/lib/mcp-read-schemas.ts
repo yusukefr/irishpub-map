@@ -62,6 +62,13 @@ export const tagsResponse = z.object({
 export const statusesResponse = z.object({
   statuses: z.array(z.object({ code: z.number().int(), key: status, name: z.string() }).strict()),
 });
+export const pubTypesResponse = z.object({
+  pubTypes: z.array(
+    z
+      .object({ code: z.number().int(), key: z.enum(["irish", "british", "other", "unclassified"]), name: z.string() })
+      .strict(),
+  ),
+});
 
 const contentBase = z.object({
   id: uuid,
@@ -166,6 +173,8 @@ const pubListItem = z.object({
   prefectureCode: z.number().int().nullable(),
   statusCode: z.number().int().nullable(),
   statusDisplayName: z.string().nullable(),
+  pubType: z.enum(["irish", "british", "other", "unclassified"]).nullable(),
+  pubTypeDisplayName: z.string().nullable(),
   tagItems: z.array(z.object({ id: uuid, key: z.string(), name: z.string() })),
   isPublished: z.boolean(),
   updatedAt: dateTime,
@@ -199,6 +208,7 @@ export const pubResponse = z.object({
       googleMapsUrl: pubUrl,
       instagramUrl: pubUrl,
       status: status.nullable(),
+      pubType: z.enum(["irish", "british", "other", "unclassified"]).nullable(),
       translations: z.object({ ja: pubTranslation, en: pubTranslation.nullable() }),
       tagIds: uniqueUuidArray,
       updatedAt: dateTime,

@@ -6,7 +6,7 @@
 
 店舗データはNeon Postgresを正とします。`DATABASE_URL` が未設定の環境では公開APIと管理画面は空の店舗一覧を表示し、更新操作は利用できません。
 
-公開用の `Pub` は公開条件を満たす表示データを表し、公開APIは公開状態そのものを含めません。管理一覧は未完成の下書きを表現できる `AdminPubListItem`、管理詳細は日英翻訳とタグIDを含む `AdminPub` を返します。作成・更新は公開状態を含まない `AdminPubWriteInput`、公開状態の変更は `SetAdminPubPublicationInput` を使用します。正確な型定義とValidationは `packages/shared/src/pub.ts` および `packages/shared/src/admin-pub.ts` を正とし、業務ルールは[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+公開用の `Pub` は公開条件を満たす表示データを表し、公開APIは公開状態そのものを含めません。Pub Typeは `irish` / `british` / `other` / `unclassified` の単一値を持ち、Gastropub等の特徴はタグで表します。管理一覧は未完成の下書きを表現できる `AdminPubListItem`、管理詳細は日英翻訳とタグIDを含む `AdminPub` を返します。作成・更新は公開状態を含まない `AdminPubWriteInput`、公開状態の変更は `SetAdminPubPublicationInput` を使用します。正確な型定義とValidationは `packages/shared/src/pub.ts` および `packages/shared/src/admin-pub.ts` を正とし、業務ルールは[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
 管理画面の選択肢は `packages/shared/src/admin-master.ts` の `PrefectureOption`、`MunicipalityOption`、`TagOption`、`PubStatusOption` を使用します。これらは表示に必要なコード・ID・内部キー・表示名だけを持ち、DBの行や監査用カラムをそのまま公開しません。
 
@@ -35,7 +35,9 @@
     "food": "食事あり"
   },
   "status": "open",
-  "statusDisplayName": "営業中"
+  "statusDisplayName": "営業中",
+  "pubType": "irish",
+  "pubTypeDisplayName": "アイリッシュパブ"
 }
 ```
 
@@ -59,6 +61,8 @@
 | `tagDisplayNames` | Record<string, string> | no | 内部キーを選択ロケールの `tag_translations.name` へ対応付けた値 |
 | `status` | string | yes | `pubs.status_code` に対応する共有営業状況値 |
 | `statusDisplayName` | string | no | 選択ロケールの `pub_status_translations.display_name` |
+| `pubType` | `irish` \| `british` \| `other` \| `unclassified` | yes | `pub_types.key`。未確認の既存公開店は `unclassified` |
+| `pubTypeDisplayName` | string | no | 選択ロケール優先、日本語フォールバックの種別名 |
 
 ## ロケール
 

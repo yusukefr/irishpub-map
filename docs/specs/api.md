@@ -10,6 +10,8 @@ Next.js Route Handler で公開 API と管理 API を提供します。Automatio
 
 公開状態の店舗一覧だけを返します。Repositoryが `pubs.is_published = TRUE` をSQLで絞り込み、`isPublished` 自体は公開レスポンスへ含めません。`locale` には共通locale定義でサポートしている値を指定できます。指定ロケールの翻訳を優先し、未登録の表示文字列は共通locale定義の既定localeへフォールバックします。レスポンスは `packages/shared` の `Pub` 型に合わせ、API 側で `asPubs` による検証を行います。
 
+各店舗は `pubType` に `irish` / `british` / `other` / `unclassified` を持ち、要求localeに対応する `pubTypeDisplayName` を返します。Gastropubは既存タグとして表します。
+
 レスポンス例:
 
 ```json
@@ -305,7 +307,7 @@ Media Asset APIは管理者専用です。`POST /api/admin/media` は同一Origi
 
 公開用の `GET /media/{uuid}` は本文Markdownの安定した画像参照です。登録済みMedia Assetだけを許可済みVercel Blob URLへ `307` redirectし、画像バイナリはアプリ経由でproxyしません。redirectは `max-age=300` と `s-maxage=300` でブラウザと共有CDNに5分間Cacheします。不正UUID・未登録ID・許可外URLは `404`、DB未設定・取得障害は `503` です。Storage keyとDB接続情報は返しません。
 
-参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスは `{ code, key, name }` です。表示名は日本語を既定とし、日本語へフォールバックします。画面操作で再取得する市区町村APIと管理店舗一覧APIは、言語Cookieを優先し、未指定時は `Accept-Language` の候補を `q` 値と記載順で評価して表示ロケールを決定します。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
+参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスとPub Typeは `{ code, key, name }` です。表示名は日本語を既定とし、日本語へフォールバックします。画面操作で再取得する市区町村APIと管理店舗一覧APIは、言語Cookieを優先し、未指定時は `Accept-Language` の候補を `q` 値と記載順で評価して表示ロケールを決定します。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
 
 管理APIは共通認証ヘルパーで、管理者設定が揃い、有効な署名済みセッションを持つリクエストだけを許可します。変更系リクエストは共通の同一Origin検証も通し、`Origin` の欠落・不一致を `403` で拒否します。現行は単一管理者モデルのため、このセッションを管理権限として扱います。Repositoryの例外時はDB・SQL・接続情報を含まない一般化したエラーを返します。
 

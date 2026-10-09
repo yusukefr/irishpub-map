@@ -42,6 +42,7 @@ const draftInput = {
   googleMapsUrl: null,
   instagramUrl: null,
   status: null,
+  pubType: null,
   translations: {
     ja: { name: "下書き", nameReading: null, address: null },
     en: null,
@@ -77,6 +78,7 @@ describe("admin pub repository", () => {
           google_maps_url: null,
           instagram_url: null,
           status_key: null,
+          pub_type_key: null,
           updated_at: "2026-08-29T03:00:00.000Z",
           name_ja: "下書き",
           name_reading_ja: null,
@@ -105,8 +107,10 @@ describe("admin pub repository", () => {
           prefecture_valid: true,
           municipality_valid: false,
           status_valid: true,
+          pub_type_valid: true,
           tags_valid: false,
           status_code: 1,
+          pub_type_code: null,
         },
       ],
     ];
@@ -122,6 +126,7 @@ describe("admin pub repository", () => {
     ).resolves.toEqual({
       fieldErrors: { municipalityCode: "invalid_format", tagIds: "invalid_format" },
       statusCode: 1,
+      pubTypeCode: null,
     });
     expect(databaseMock.queries[0].text).toContain("municipality.prefecture_code");
     expect(databaseMock.queries[0].text).toContain("jsonb_array_elements_text");

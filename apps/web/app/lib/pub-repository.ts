@@ -30,6 +30,8 @@ type DbPubRow = {
   tags: unknown;
   tag_display_names: unknown;
   status_code: unknown;
+  pub_type_key: unknown;
+  pub_type_display_name: unknown;
   status_display_name: unknown;
   is_published: unknown;
 };
@@ -64,6 +66,7 @@ type PublicationSnapshotRow = {
   has_latitude: unknown;
   has_longitude: unknown;
   has_status: unknown;
+  has_pub_type: unknown;
   has_tags: unknown;
 };
 
@@ -136,6 +139,7 @@ export async function getAdminPubPage(
     SELECT p.id::text, pt.name, pt.name_reading AS kana, p.prefecture_code, pref.name AS prefecture,
       mt.name AS city, p.municipality_code, pt.address, p.latitude, p.longitude, p.website_url,
       p.google_maps_url, p.instagram_url, p.status_code, status.key AS status_key,
+      pub_type.key AS pub_type_key, pub_type_translation.display_name AS pub_type_display_name,
       st.display_name AS status_display_name, p.is_published, p.updated_at,
       COALESCE(array_agg(tag.key ORDER BY tag.key) FILTER (WHERE tag.key IS NOT NULL), '{}') AS tags,
       COALESCE(jsonb_object_agg(tag.key, COALESCE(tag_translation.name, tag.key)) FILTER (WHERE tag.key IS NOT NULL), '{}'::jsonb) AS tag_display_names,
@@ -147,6 +151,8 @@ export async function getAdminPubPage(
     LEFT JOIN LATERAL (SELECT name FROM prefecture_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.prefecture_code=p.prefecture_code ORDER BY preference.priority LIMIT 1) AS pref ON TRUE
     LEFT JOIN LATERAL (SELECT name FROM municipality_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.municipality_code=p.municipality_code ORDER BY preference.priority LIMIT 1) AS mt ON TRUE
     LEFT JOIN pub_statuses AS status ON status.code=p.status_code
+    LEFT JOIN pub_types AS pub_type ON pub_type.code=p.pub_type_code
+    LEFT JOIN LATERAL (SELECT display_name FROM pub_type_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.pub_type_code=pub_type.code ORDER BY preference.priority LIMIT 1) AS pub_type_translation ON TRUE
     LEFT JOIN LATERAL (SELECT display_name FROM pub_status_translations AS value JOIN locale_preference AS preference ON preference.locale=value.locale WHERE value.status_code=p.status_code ORDER BY preference.priority LIMIT 1) AS st ON TRUE
     LEFT JOIN pub_tags AS pub_tag ON pub_tag.pub_id=p.id
     LEFT JOIN tags AS tag ON tag.id=pub_tag.tag_id
@@ -157,7 +163,7 @@ export async function getAdminPubPage(
       AND (${statusKey}::text IS NULL OR status.key=${statusKey})
       AND (${tagId}::uuid IS NULL OR EXISTS (SELECT 1 FROM pub_tags AS search_tag WHERE search_tag.pub_id=p.id AND search_tag.tag_id=${tagId}::uuid))
       AND (${isPublished}::boolean IS NULL OR p.is_published=${isPublished})
-    GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address, status.key, st.display_name
+    GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address, status.key, st.display_name, pub_type.key, pub_type_translation.display_name
     ORDER BY p.updated_at DESC, pt.name, p.id
     LIMIT ${ADMIN_PUB_PAGE_SIZE} OFFSET ${offset}
   `) as DbAdminPubListRow[];
@@ -219,6 +225,7 @@ export async function setAdminPubPublication(id: string, isPublished: boolean) {
           AND pub.latitude IS NOT NULL
           AND pub.longitude IS NOT NULL
           AND pub.status_code IS NOT NULL
+          AND EXISTS (SELECT 1 FROM pub_types AS type WHERE type.code=pub.pub_type_code AND type.key IN ('irish','british','other'))
           AND EXISTS (SELECT 1 FROM pub_translations AS translation WHERE translation.pub_id=pub.id AND translation.locale='ja' AND btrim(translation.name)<>'' AND translation.address IS NOT NULL AND btrim(translation.address)<>'')
           AND EXISTS (SELECT 1 FROM municipality_codes AS municipality WHERE municipality.code=pub.municipality_code AND municipality.prefecture_code=pub.prefecture_code)
           AND EXISTS (SELECT 1 FROM prefecture_translations AS translation WHERE translation.prefecture_code=pub.prefecture_code AND translation.locale='ja' AND btrim(translation.name)<>'')
@@ -253,6 +260,7 @@ async function getPublicationSnapshot(sql: ReturnType<typeof neon>, id: string) 
       pub.latitude IS NOT NULL AS has_latitude,
       pub.longitude IS NOT NULL AS has_longitude,
       (pub.status_code IS NOT NULL AND EXISTS (SELECT 1 FROM pub_status_translations AS translation WHERE translation.status_code=pub.status_code AND translation.locale='ja' AND btrim(translation.display_name)<>'')) AS has_status,
+      EXISTS (SELECT 1 FROM pub_types AS type WHERE type.code=pub.pub_type_code AND type.key IN ('irish','british','other')) AS has_pub_type,
       NOT EXISTS (
         SELECT 1 FROM pub_tags AS pub_tag
         LEFT JOIN tag_translations AS translation
@@ -275,6 +283,7 @@ async function getPublicationSnapshot(sql: ReturnType<typeof neon>, id: string) 
     ["latitude", row.has_latitude],
     ["longitude", row.has_longitude],
     ["status", row.has_status],
+    ["pubType", row.has_pub_type],
     ["tags", row.has_tags],
   ] as const;
   if (checks.some(([, value]) => typeof value !== "boolean"))
@@ -290,6 +299,7 @@ async function getDbPubRows(locale: string, includeUnpublished: boolean) {
     WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
     SELECT p.id::text, pt.name, pt.name_reading AS kana, p.prefecture_code, pref.name AS prefecture, mt.name AS city, p.municipality_code, pt.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code, st.display_name AS status_display_name, p.is_published,
+      pub_type.key AS pub_type_key, pub_type_translation.display_name AS pub_type_display_name,
       COALESCE(array_agg(t.key ORDER BY t.key) FILTER (WHERE t.key IS NOT NULL), '{}') AS tags,
       COALESCE(jsonb_object_agg(t.key, tt.name) FILTER (WHERE t.key IS NOT NULL), '{}'::jsonb) AS tag_display_names
     FROM pubs p
@@ -297,10 +307,12 @@ async function getDbPubRows(locale: string, includeUnpublished: boolean) {
     JOIN LATERAL (SELECT tr.name FROM prefecture_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.prefecture_code=p.prefecture_code ORDER BY lp.priority LIMIT 1) pref ON TRUE
     LEFT JOIN LATERAL (SELECT tr.name FROM municipality_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.municipality_code=p.municipality_code ORDER BY lp.priority LIMIT 1) mt ON TRUE
     JOIN LATERAL (SELECT display_name FROM pub_status_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.status_code=p.status_code ORDER BY lp.priority LIMIT 1) st ON TRUE
+    LEFT JOIN pub_types AS pub_type ON pub_type.code=p.pub_type_code
+    LEFT JOIN LATERAL (SELECT display_name FROM pub_type_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.pub_type_code=pub_type.code ORDER BY lp.priority LIMIT 1) AS pub_type_translation ON TRUE
     LEFT JOIN pub_tags ptag ON ptag.pub_id=p.id LEFT JOIN tags t ON t.id=ptag.tag_id
     LEFT JOIN LATERAL (SELECT name FROM tag_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.tag_id=t.id ORDER BY lp.priority LIMIT 1) tt ON TRUE
     WHERE p.is_published = TRUE OR ${includeUnpublished}
-    GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address, st.display_name
+    GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address, st.display_name, pub_type.key, pub_type_translation.display_name
     ORDER BY p.municipality_code::bigint, pt.name, p.id
   `) as DbPubRow[];
   return rows;
@@ -338,6 +350,8 @@ function toPub(value: DbPubRow): Pub {
       tagDisplayNames: row.tagDisplayNames,
       status: row.status,
       statusDisplayName: row.statusDisplayName,
+      pubType: row.pubType,
+      pubTypeDisplayName: row.pubTypeDisplayName,
     },
   ])[0];
 }
@@ -436,6 +450,8 @@ function normalizeDbRow(row: DbPubRow) {
     tagDisplayNames: normalizeDbTagDisplayNames(row.tag_display_names),
     status,
     statusDisplayName: normalizeOptionalText(row.status_display_name),
+    pubType: normalizeText(row.pub_type_key),
+    pubTypeDisplayName: normalizeOptionalText(row.pub_type_display_name),
   };
 }
 
@@ -529,6 +545,8 @@ function toAdminPubListItem(row: DbAdminPubListRow): AdminPubListItem {
     tags: requiredTextArray(row.tags),
     tagDisplayNames: normalizeDbTagDisplayNames(row.tag_display_names) ?? {},
     status: (status as Pub["status"] | undefined) ?? null,
+    pubType: nullablePubType(row.pub_type_key),
+    pubTypeDisplayName: nullableText(row.pub_type_display_name),
     prefectureCode,
     statusCode,
     statusDisplayName: nullableText(row.status_display_name),
@@ -576,6 +594,14 @@ function nullableText(value: unknown) {
   if (normalized === undefined) return null;
   if (typeof normalized !== "string") throw new Error("Invalid nullable text.");
   return normalized;
+}
+
+function nullablePubType(value: unknown): Pub["pubType"] | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string" || !["irish", "british", "other", "unclassified"].includes(value)) {
+    throw new Error("Invalid pub type returned from database.");
+  }
+  return value as Pub["pubType"];
 }
 
 function nullableNumber(value: unknown) {

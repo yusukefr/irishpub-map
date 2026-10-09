@@ -21,6 +21,8 @@ const pubs: Pub[] = [
     instagramUrl: "https://instagram.example.com/tokyo-sample",
     tags: ["guinness"],
     status: "open",
+    pubType: "irish",
+    pubTypeDisplayName: "アイリッシュパブ",
   },
   {
     id: "osaka-sample",
@@ -34,6 +36,7 @@ const pubs: Pub[] = [
     instagramUrl: null,
     tags: [],
     status: "unknown",
+    pubType: "unclassified",
   },
   {
     id: "closed-sample",
@@ -47,6 +50,7 @@ const pubs: Pub[] = [
     instagramUrl: null,
     tags: [],
     status: "closed",
+    pubType: "other",
   },
 ];
 
@@ -134,17 +138,16 @@ describe("PubMap", () => {
       element: HTMLElement;
     };
     expect(openMarkerOptions.anchor).toBe("bottom");
-    expect(openMarkerOptions.element).toHaveClass("pub-map-marker", "pub-map-marker-open", "pub-map-marker-guinness");
-    expect(openMarkerOptions.element).toHaveAccessibleName("店舗を選択: Tokyo Sample Pub");
+    expect(openMarkerOptions.element).toHaveClass("pub-map-marker", "pub-map-marker-open", "pub-map-marker-type-irish");
+    expect(openMarkerOptions.element).toHaveAccessibleName("店舗を選択: Tokyo Sample Pub. アイリッシュパブ");
     expect(openMarkerOptions.element).toHaveAttribute("aria-pressed", "false");
-    expect(openMarkerOptions.element.querySelector(".pub-map-marker-foam")).not.toBeNull();
-    expect(openMarkerOptions.element.querySelector(".pub-map-marker-stout")).not.toBeNull();
+    expect(openMarkerOptions.element.querySelector(".pub-map-marker-symbol")?.textContent).toBe("☘");
     const unknownMarkerOptions = maplibreMock.markerConstructor.mock.calls[1][0] as { element: HTMLElement };
     const closedMarkerOptions = maplibreMock.markerConstructor.mock.calls[2][0] as { element: HTMLElement };
     expect(unknownMarkerOptions.element).toHaveClass("pub-map-marker-unknown");
-    expect(unknownMarkerOptions.element).toHaveStyle({ "--pub-marker-color": "#6b7280" });
+    expect(unknownMarkerOptions.element).toHaveStyle({ "--pub-marker-color": "#858B95" });
     expect(closedMarkerOptions.element).toHaveClass("pub-map-marker-closed");
-    expect(closedMarkerOptions.element).toHaveStyle({ "--pub-marker-color": "#6b7280" });
+    expect(closedMarkerOptions.element).toHaveStyle({ "--pub-marker-color": "#858B95" });
     expect(maplibreMock.popupSetHTML).not.toHaveBeenCalled();
     expect(maplibreMock.popupConstructor).toHaveBeenNthCalledWith(1, {
       offset: 18,
@@ -320,7 +323,7 @@ describe("PubMap", () => {
 
     const markerOptions = maplibreMock.markerConstructor.mock.calls[3][0] as { element: HTMLElement };
     expect(markerOptions.element).toHaveClass("pub-map-marker-temporarily_closed");
-    expect(markerOptions.element).toHaveStyle({ "--pub-marker-color": "#6b7280" });
+    expect(markerOptions.element).toHaveStyle({ "--pub-marker-color": "#858B95" });
   });
 
   it("moves the map to the provided current location", () => {

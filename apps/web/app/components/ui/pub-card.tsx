@@ -60,6 +60,7 @@ export function PubCard({
         </span>
         <span className={styles.metadata}>{[pub.prefecture, pub.city].filter(Boolean).join(" / ")}</span>
         <StatusBadge status={pub.status} label={pub.statusDisplayName ?? t.statuses[pub.status]} />
+        <span className="pub-type-label">{pub.pubTypeDisplayName ?? pub.pubType}</span>
       </button>
       {metadata ? <div className={styles.metadata}>{metadata}</div> : null}
       {distance ? <p className={styles.metadata}>{distance}</p> : null}

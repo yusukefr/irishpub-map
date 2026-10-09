@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -7,6 +7,36 @@ async function readMigration(name: string) {
 }
 
 describe("pubs database migrations", () => {
+  it("uses a unique migration number after the merged UUID-default migration", async () => {
+    const migrationFiles = await readdir(resolve(process.cwd(), "db/migrations"));
+    const upMigrations = migrationFiles.filter((name) => /^\d+_.+_up\.sql$/.test(name));
+    const numbers = upMigrations.map((name) => name.match(/^(\d+)_/)![1]);
+
+    expect(new Set(numbers).size).toBe(numbers.length);
+    expect(upMigrations).toContain("023_remove_resource_uuid_defaults_up.sql");
+    expect(upMigrations).toContain("024_add_pub_types_up.sql");
+  });
+
+  it("adds normalized pub types and classifies legacy records as unclassified", async () => {
+    const upSql = await readMigration("024_add_pub_types_up.sql");
+    const verifySql = await readMigration("024_add_pub_types_verify.sql");
+    expect(upSql).toContain("CREATE TABLE pub_types");
+    expect(upSql).toContain("CREATE TABLE pub_type_translations");
+    expect(upSql).toContain("UPDATE pubs SET pub_type_code = 4");
+    expect(upSql).toContain("Existing pubs were not initialized as unclassified");
+    expect(upSql).toContain("migration 023_remove_resource_uuid_defaults must be applied first");
+    expect(upSql).toContain("migration 024_add_pub_types is already applied");
+    expect(upSql).toContain("INSERT INTO tags (id, key) VALUES (gen_random_uuid(), 'gastropub')");
+    expect(upSql).toContain("INSERT INTO schema_migrations (version) VALUES ('024_add_pub_types')");
+    expect(verifySql).toContain("migration 024_add_pub_types history is missing");
+    expect(verifySql).toContain("pubs.pub_type_code must be a nullable SMALLINT");
+    expect(verifySql).toContain("Pub type foreign key coverage is invalid");
+    expect(verifySql).toContain("Published pubs must have a type");
+    expect(verifySql).toContain("Gastropub tag translations are incomplete");
+    expect(verifySql).not.toContain("Existing pubs must remain unclassified");
+    expect(verifySql).not.toContain("pub_type_code <> 4");
+  });
+
   it("moves legacy JSONB rows into independent columns with a UUID map", async () => {
     const sql = await readMigration("001_pubs_columns_up.sql");
 

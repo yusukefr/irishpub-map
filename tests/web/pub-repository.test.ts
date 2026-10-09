@@ -46,6 +46,8 @@ const baseRow = {
   tag_display_names: { guinness: "ギネス", food: "食事あり" },
   status_code: 1,
   status_display_name: "営業中",
+  pub_type_key: "irish",
+  pub_type_display_name: "アイリッシュパブ",
   is_published: true,
 };
 
@@ -178,6 +180,7 @@ describe("admin pub publication updates", () => {
     has_latitude: true,
     has_longitude: true,
     has_status: true,
+    has_pub_type: true,
     has_tags: true,
   };
 
@@ -258,8 +261,16 @@ describe("publication-aware pub queries", () => {
     const pubs = await getPublishedPubs("en");
 
     expect(pubs.map((pub) => pub.id)).toEqual([baseRow.id]);
+    expect(pubs[0]).toMatchObject({ pubType: "irish", pubTypeDisplayName: "アイリッシュパブ" });
     expect(pubs[0]).not.toHaveProperty("isPublished");
     expect(databaseMock.queries[0].text).toContain("WHERE p.is_published = TRUE OR");
+    expect(databaseMock.queries[0].text).toContain("pub_type.key AS pub_type_key");
+    expect(databaseMock.queries[0].text).toContain("pub_type_translation.display_name AS pub_type_display_name");
+    expect(databaseMock.queries[0].text).toContain("LEFT JOIN pub_types AS pub_type ON pub_type.code=p.pub_type_code");
+    expect(databaseMock.queries[0].text).toContain(
+      "LEFT JOIN LATERAL (SELECT display_name FROM pub_type_translations tr JOIN locale_preference lp ON lp.locale=tr.locale",
+    );
+    expect(databaseMock.queries[0].text).toContain("pub_type.key, pub_type_translation.display_name");
     expect(databaseMock.queries[0].values).toContain(false);
   });
 
@@ -273,6 +284,11 @@ describe("publication-aware pub queries", () => {
       { id: "550e8400-e29b-41d4-a716-446655440001", isPublished: true },
       { id: "550e8400-e29b-41d4-a716-446655440002", isPublished: false },
     ]);
+    expect(pubs[0]).toMatchObject({ pubType: "irish", pubTypeDisplayName: "アイリッシュパブ" });
+    expect(databaseMock.queries[0].text).toContain("pub_type.key AS pub_type_key");
+    expect(databaseMock.queries[0].text).toContain("pub_type_translation.display_name AS pub_type_display_name");
+    expect(databaseMock.queries[0].text).toContain("LEFT JOIN pub_types AS pub_type ON pub_type.code=p.pub_type_code");
+    expect(databaseMock.queries[0].text).toContain("pub_type.key, pub_type_translation.display_name");
     expect(databaseMock.queries[0].values).toContain(true);
   });
 });
