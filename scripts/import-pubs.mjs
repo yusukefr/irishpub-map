@@ -56,7 +56,7 @@ const PREFECTURE_NAMES = [
   "沖縄県",
 ];
 const PUB_STATUS_CODES = { open: 1, temporarily_closed: 2, closed: 3, unknown: 4 };
-const PUB_TYPES = new Set(["irish", "british", "other"]);
+const PUB_TYPES = new Set(["irish", "british", "other", "unclassified"]);
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 /** コマンドライン引数からインポート元のJSONファイルパスを取得します。 */

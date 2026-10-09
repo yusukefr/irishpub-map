@@ -19,6 +19,12 @@ describe("parsePubs", () => {
     expect(parsePubs([pub])).toEqual([pub]);
   });
 
+  it("accepts unclassified and rejects missing or unknown pub types", () => {
+    expect(parsePubs([{ ...pub, pubType: "unclassified" }])).toEqual([{ ...pub, pubType: "unclassified" }]);
+    expect(() => parsePubs([{ ...pub, pubType: undefined }])).toThrow("Invalid pub data found.");
+    expect(() => parsePubs([{ ...pub, pubType: "unknown" }])).toThrow("Invalid pub data found.");
+  });
+
   it("rejects duplicate IDs and invalid records", () => {
     expect(() => parsePubs([pub, { ...pub, name: "Duplicate" }])).toThrow("Invalid pub data found.");
     expect(() => parsePubs([{ ...pub, status: "invalid" }])).toThrow("Invalid pub data found.");

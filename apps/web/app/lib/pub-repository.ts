@@ -299,6 +299,7 @@ async function getDbPubRows(locale: string, includeUnpublished: boolean) {
     WITH locale_preference AS (SELECT ${locale}::text AS locale, 0 AS priority UNION ALL SELECT ${DEFAULT_LOCALE}, 1)
     SELECT p.id::text, pt.name, pt.name_reading AS kana, p.prefecture_code, pref.name AS prefecture, mt.name AS city, p.municipality_code, pt.address, p.latitude, p.longitude,
       p.website_url, p.google_maps_url, p.instagram_url, p.status_code, st.display_name AS status_display_name, p.is_published,
+      pub_type.key AS pub_type_key, pub_type_translation.display_name AS pub_type_display_name,
       COALESCE(array_agg(t.key ORDER BY t.key) FILTER (WHERE t.key IS NOT NULL), '{}') AS tags,
       COALESCE(jsonb_object_agg(t.key, tt.name) FILTER (WHERE t.key IS NOT NULL), '{}'::jsonb) AS tag_display_names
     FROM pubs p
@@ -306,10 +307,12 @@ async function getDbPubRows(locale: string, includeUnpublished: boolean) {
     JOIN LATERAL (SELECT tr.name FROM prefecture_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.prefecture_code=p.prefecture_code ORDER BY lp.priority LIMIT 1) pref ON TRUE
     LEFT JOIN LATERAL (SELECT tr.name FROM municipality_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.municipality_code=p.municipality_code ORDER BY lp.priority LIMIT 1) mt ON TRUE
     JOIN LATERAL (SELECT display_name FROM pub_status_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.status_code=p.status_code ORDER BY lp.priority LIMIT 1) st ON TRUE
+    LEFT JOIN pub_types AS pub_type ON pub_type.code=p.pub_type_code
+    LEFT JOIN LATERAL (SELECT display_name FROM pub_type_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.pub_type_code=pub_type.code ORDER BY lp.priority LIMIT 1) AS pub_type_translation ON TRUE
     LEFT JOIN pub_tags ptag ON ptag.pub_id=p.id LEFT JOIN tags t ON t.id=ptag.tag_id
     LEFT JOIN LATERAL (SELECT name FROM tag_translations tr JOIN locale_preference lp ON lp.locale=tr.locale WHERE tr.tag_id=t.id ORDER BY lp.priority LIMIT 1) tt ON TRUE
     WHERE p.is_published = TRUE OR ${includeUnpublished}
-    GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address, st.display_name
+    GROUP BY p.id, pt.name, pt.name_reading, pref.name, mt.name, pt.address, st.display_name, pub_type.key, pub_type_translation.display_name
     ORDER BY p.municipality_code::bigint, pt.name, p.id
   `) as DbPubRow[];
   return rows;
