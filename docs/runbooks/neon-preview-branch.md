@@ -19,6 +19,8 @@ Vercel Preview用に固定のNeon Branchを使い、Preview Deploymentごとの�
 
 ## Procedure
 
+Repositoryの`preview` Targetは`config/neon-targets.json`で指定された固定Branchを指し、Vercelが作成するPR専用Preview Branchとは別物です。Migration PreflightとResolverは固定Target名を厳密に解決し、PR専用Branchへ自動切替しません。PR専用Branchを調査するときは、実際のBranch名/IDを個別に確認してください。
+
 1. Neon Consoleで未使用の`preview/*` Branchを確認する。Production Branchと現在利用中のPreview Branchは削除しない。
 2. 必要な場合だけ、専用Preview Branchを1つ作成し、接続文字列を安全に取得する。
 3. Vercel ProjectのStorage integrationで、`Create database branch for deployment`のPreview設定を無効にする。
