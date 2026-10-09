@@ -39,6 +39,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Public UI | [Irish Pub Map Design System](design/README.md) | Current。Token、Component、Pattern、Reference Screenの入口 |
 | Development rules / GitHub / JSDoc | [Development conventions](development/conventions.md) | Current。root `AGENTS.md` のMandatory Rulesを優先 |
 | Testing strategy / Test Layer | [テスト戦略](development/testing.md) | Current。テストの責務、追加・削除、Mock・Fixture、Coverageの判断基準 |
+| Test inventory snapshot (#534) | [現行テストの棚卸し](development/test-inventory-534.md) | Historical。HEAD `e6a3fef` 時点のテスト構成と整理候補 |
 | Codexの並列開発 | [Git worktreeによる並列開発](development/codex-parallel-workflow.md) | Current。root `AGENTS.md` のMandatory Rulesを優先 |
 | Local development | [ローカル開発の開始](setup/development.md) | Current。最短の開発開始手順。低頻度作業はRunbookへ |
 | Standard deployment | [通常デプロイ](setup/deployment.md) | Current。Preview / Productionの通常フロー。障害対応はRunbookへ |
