@@ -643,6 +643,13 @@ describe("Remote MCP contract", () => {
       ["update_pub", { id, ...pubWrite, updatedAt: timestamp }],
       ["update_pub", { id, ...pubWrite, status: 1 }],
       ["create_pub", { idempotencyKey: "intent", ...pubWrite, googleMapsUrl: "https://maps.example.com/pub" }],
+      ...(["websiteUrl", "googleMapsUrl", "instagramUrl"] as const).map(
+        (field) =>
+          [
+            "update_pub",
+            { id, ...Object.fromEntries(Object.entries(pubWrite).filter(([key]) => key !== field)) },
+          ] as const,
+      ),
       [
         "update_pub",
         {

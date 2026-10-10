@@ -124,6 +124,18 @@ describe("admin pub write validation", () => {
     });
   });
 
+  it.each(["websiteUrl", "googleMapsUrl", "instagramUrl"] as const)(
+    "requires the %s key in a full write snapshot",
+    (field) => {
+      const input: Record<string, unknown> = { ...draftInput };
+      delete input[field];
+
+      expect(() => parseAdminPubWriteInput(input)).toThrow(
+        expect.objectContaining({ fieldErrors: { [field]: "required" } }),
+      );
+    },
+  );
+
   it("normalizes blank URLs, preserves URL text, and validates service hosts and paths", () => {
     expect(parseAdminPubUrl("  ", "websiteUrl")).toEqual({ value: null });
     expect(parseAdminPubUrl(" https://EXAMPLE.com/a?b=1 ", "websiteUrl")).toEqual({

@@ -75,6 +75,20 @@ describe("admin pub service", () => {
     expect(repositoryMocks.insertAdminPub).not.toHaveBeenCalled();
   });
 
+  it.each(["websiteUrl", "googleMapsUrl", "instagramUrl"] as const)(
+    "rejects an update snapshot missing %s before persistence",
+    async (field) => {
+      const input: Record<string, unknown> = { ...draftInput };
+      delete input[field];
+
+      await expect(updateAdminPub("550e8400-e29b-41d4-a716-446655440001", input)).rejects.toMatchObject({
+        code: "validation",
+        fieldErrors: { [field]: "required" },
+      });
+      expect(repositoryMocks.replaceAdminPub).not.toHaveBeenCalled();
+    },
+  );
+
   it("maps invalid references to a conflict before opening the write transaction", async () => {
     repositoryMocks.validateAdminPubReferences.mockResolvedValue({
       fieldErrors: { municipalityCode: "invalid_format" },

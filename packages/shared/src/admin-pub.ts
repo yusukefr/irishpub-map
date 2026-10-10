@@ -417,6 +417,10 @@ function nullableCoordinate(
 }
 
 function nullableUrl(value: unknown, field: string, fieldErrors: AdminPubFieldErrors) {
+  if (value === undefined) {
+    fieldErrors[field] = "required";
+    return null;
+  }
   const parsed = parseAdminPubUrl(value, field as "websiteUrl" | "googleMapsUrl" | "instagramUrl");
   if (parsed.error) fieldErrors[field] = parsed.error;
   return parsed.value;
