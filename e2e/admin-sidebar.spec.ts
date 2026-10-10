@@ -56,3 +56,18 @@ test("360px Mobile Navigation can open and reach every area and Sign out", async
   await expect(page.getByRole("complementary", { name: "リリース情報" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });
+
+test("360px Mobile Navigation closes after moving to another admin page", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await loginAsE2EAdmin(page, "/admin/pubs");
+
+  const menu = page.getByRole("button", { name: "管理メニュー" });
+  await menu.click();
+  await expect(menu).toHaveAttribute("aria-expanded", "true");
+  await page.getByRole("navigation", { name: "管理機能" }).getByRole("link", { name: "Calendar", exact: true }).click();
+
+  await expect(page).toHaveURL(/\/admin\/calendar$/);
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("navigation", { name: "管理機能" })).not.toBeVisible();
+  await expect(page.getByRole("heading", { name: "Calendar管理" })).toBeVisible();
+});

@@ -72,4 +72,16 @@ describe("AdminNavigation", () => {
     expect(screen.getByRole("navigation", { name: "Admin features" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
+
+  it("closes the compact menu when the current route changes", async () => {
+    const { rerender } = render(<AdminNavigation locale="ja" />);
+    const toggle = screen.getByRole("button", { name: "管理メニュー" });
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    navigationMocks.pathname = "/admin/calendar";
+    rerender(<AdminNavigation locale="ja" />);
+
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-expanded", "false"));
+  });
 });

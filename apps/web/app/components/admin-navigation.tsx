@@ -15,7 +15,9 @@ export function AdminNavigation({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const router = useRouter();
   const t = getTranslation(locale).admin;
-  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const [expandedPathname, setExpandedPathname] = useState<string | null>(null);
+  const isNavigationOpen = expandedPathname === pathname;
+
   const items = [
     { href: "/admin/pubs", label: t.navPubs },
     { href: "/admin/content", label: t.navContent },
@@ -38,7 +40,7 @@ export function AdminNavigation({ locale }: { locale: Locale }) {
         type="button"
         aria-expanded={isNavigationOpen}
         aria-controls="admin-navigation-links"
-        onClick={() => setIsNavigationOpen((open) => !open)}
+        onClick={() => setExpandedPathname(isNavigationOpen ? null : pathname)}
       >
         {t.navigationMenu}
       </button>
