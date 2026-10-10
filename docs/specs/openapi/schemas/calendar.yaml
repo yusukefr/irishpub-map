@@ -265,9 +265,8 @@ AdminCalendarUpdateInput:
     - type: object
       properties:
         id:
-          type: string
-          format: uuid
-          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          allOf:
+            - $ref: "./automation.yaml#/Uuid"
           description: Optional. When provided, this UUID must equal the path parameter; otherwise the API returns 422 validation_error.
 
 AdminCalendarTranslationInput:
@@ -314,10 +313,9 @@ AdminCalendarEvent:
     ]
   properties:
     id:
-      type: string
-      format: uuid
-      description: Server-generated UUID for new events; existing stable IDs are retained.
-      pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      allOf:
+        - $ref: "./automation.yaml#/Uuid"
+      description: Server-generated UUID. Immutable after creation.
     category:
       $ref: "#/CalendarCategory"
     dateRule:
@@ -369,9 +367,7 @@ AdminCalendarListItem:
     ]
   properties:
     id:
-      type: string
-      format: uuid
-      pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      $ref: "./automation.yaml#/Uuid"
     category:
       $ref: "#/CalendarCategory"
     dateRule:

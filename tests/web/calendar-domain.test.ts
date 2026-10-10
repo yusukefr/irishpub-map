@@ -78,6 +78,9 @@ describe("calendar event ID validation", () => {
   it("accepts UUIDs and rejects semantic IDs and malformed values", () => {
     expect(isCalendarEventId("8acbc777-5160-4f1d-8284-6db05f89485d")).toBe(true);
     expect(isCalendarEventId("8ACBC777-5160-4F1D-8284-6DB05F89485D")).toBe(true);
+    expect(isCalendarEventId("01890f3e-7c00-7cc2-98c4-dc0c0c07398f")).toBe(true);
+    expect(isCalendarEventId("01890f3e-7c00-7cc2-c8c4-dc0c0c07398f")).toBe(false);
+    expect(isCalendarEventId("01890f3e-7c00-9cc2-98c4-dc0c0c07398f")).toBe(false);
     expect(isCalendarEventId("st-patricks-day")).toBe(false);
     expect(isCalendarEventId("not-a-uuid")).toBe(false);
   });

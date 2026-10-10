@@ -1,8 +1,12 @@
 import { z } from "zod";
+import { UUID_PATTERN } from "@irishpub-map/shared/uuid";
 
 // OpenAPI の GET response で必須の情報を検証し、Tool Result には検証済みフィールドだけを残す。
-const uuid = z.uuid();
-const uniqueUuidArray = z.array(uuid).refine((items) => new Set(items).size === items.length);
+export const uuidSchema = z.string().regex(UUID_PATTERN);
+const uuid = uuidSchema;
+const uniqueUuidArray = z
+  .array(uuid)
+  .refine((items) => new Set(items.map((id) => id.toLowerCase())).size === items.length);
 const dateTime = z.iso.datetime({ offset: true });
 const nullableDateTime = dateTime.nullable();
 const prefectureCode = z.number().int().min(1).max(47);

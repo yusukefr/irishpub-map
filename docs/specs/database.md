@@ -8,7 +8,7 @@
 
 ## IDと生成責務
 
-Resource IDはPostgreSQL `uuid` 型とし、Application Serviceが `crypto.randomUUID()` で生成してRepositoryへ渡します。Application生成IDのDB列にDEFAULTは設定しません。APIとTypeScriptではUUIDを文字列として扱い、UUID形式を検証します。UUID以外のdomain codeはその型を維持します。Import処理は入力に含まれる店舗UUIDを使います。
+Resource IDはPostgreSQL `uuid` 型とし、Application Serviceが `crypto.randomUUID()` でUUID v4を生成してRepositoryへ渡します。Application生成IDのDB列にDEFAULTは設定しません。API、MCP、TypeScriptではRFC 9562 variantのUUID version 1〜8を受け入れ、16進数の大文字小文字を区別しません。UUID以外のdomain codeはその型を維持します。Import処理は入力に含まれる店舗UUIDを使います。
 
 ## ドメインモデルと公開境界
 

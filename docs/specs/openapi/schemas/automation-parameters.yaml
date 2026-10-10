@@ -10,7 +10,7 @@ IdempotencyKey:
     pattern: '^[^\s\x00-\x1f\x7f](?:[^\x00-\x1f\x7f]*[^\s\x00-\x1f\x7f])?$'
 RequestId:
   description: Identifier for tracing an authenticated create or mutation in audit records.
-  schema: { type: string, format: uuid }
+  schema: { $ref: "./automation.yaml#/Uuid" }
 ContentId:
   name: id
   in: path

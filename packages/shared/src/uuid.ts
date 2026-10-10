@@ -1,7 +1,9 @@
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+/** RFC 9562 variant UUID v1〜v8を受け入れる共通Patternです。 */
+export const UUID_PATTERN =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
 /**
- * 値がRFC 4122のUUID version 1〜5形式かを判定します。
+ * 値がRFC 9562 variantのUUID version 1〜8形式かを判定します。
  * @param {unknown} value - 判定する未検証値。
  * @returns {value is string} UUID形式の文字列の場合はtrue。
  */

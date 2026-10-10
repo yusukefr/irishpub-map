@@ -50,6 +50,13 @@ describe("admin pub search validation", () => {
     });
   });
 
+  it("accepts uppercase UUID query IDs without rewriting their input spelling", () => {
+    expect(parseAdminPubSearchParams(new URLSearchParams({ tag: "550E8400-E29B-41D4-A716-446655440001" }))).toEqual({
+      tagId: "550E8400-E29B-41D4-A716-446655440001",
+      page: 1,
+    });
+  });
+
   it("uses defaults for empty values and accepts the published state", () => {
     expect(parseAdminPubSearchParams(new URLSearchParams("name=&published=true"))).toEqual({
       isPublished: true,
@@ -122,6 +129,15 @@ describe("admin pub write validation", () => {
         en: { name: "Pub Name", nameReading: null, address: "Tokyo" },
       },
     });
+  });
+
+  it("rejects duplicate tag UUIDs even when letter case differs", () => {
+    expect(() =>
+      parseAdminPubWriteInput({
+        ...draftInput,
+        tagIds: ["550e8400-e29b-41d4-a716-446655440001", "550E8400-E29B-41D4-A716-446655440001"],
+      }),
+    ).toThrow(expect.objectContaining({ fieldErrors: { tagIds: "invalid_format" } }));
   });
 
   it.each(["websiteUrl", "googleMapsUrl", "instagramUrl"] as const)(

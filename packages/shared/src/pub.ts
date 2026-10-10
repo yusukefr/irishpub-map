@@ -171,7 +171,7 @@ function normalizeOptionalUrl(value: string | null | undefined) {
   const normalized = typeof value === "string" ? value.trim() : value;
   return normalized || null;
 }
-/** 店舗IDがRFC 4122のUUID形式かを判定します。
+/** 店舗IDがRFC 9562 variantのUUID version 1〜8形式かを判定します。
  * @param {unknown} value - 判定する値。
  * @returns {value is string} UUID形式の文字列の場合はtrue。
  */

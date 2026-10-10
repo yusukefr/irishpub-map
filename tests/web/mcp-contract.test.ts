@@ -8,8 +8,8 @@ import { GET as getProtectedResource } from "../../apps/web/app/.well-known/oaut
 import { verifyMcpAccessToken, type McpOAuthConfig } from "../../apps/web/app/lib/mcp-auth";
 import { createAuthenticatedMcpHandler } from "../../apps/web/app/lib/mcp-server";
 import { MCP_TOOL_ALLOW_LIST } from "../../apps/web/app/lib/mcp-tools";
-import { quizListResponse, quizResponse } from "../../apps/web/app/lib/mcp-read-schemas";
-import { quizPublicationResponse } from "../../apps/web/app/lib/mcp-write-schemas";
+import { pubResponse, quizListResponse, quizResponse, uuidSchema } from "../../apps/web/app/lib/mcp-read-schemas";
+import { quizPublicationResponse, quizWrite as quizWriteSchema } from "../../apps/web/app/lib/mcp-write-schemas";
 
 const envKeys = [
   "MCP_PUBLIC_ORIGIN",
@@ -1029,6 +1029,28 @@ describe("Remote MCP contract", () => {
     expect(
       quizPublicationResponse.safeParse({ publication: { id: "legacy-question", isPublished: true, unchanged: false } })
         .success,
+    ).toBe(false);
+  });
+
+  it("uses the shared UUID v1-v8 contract for MCP input and output IDs", () => {
+    const uuidV7 = "01890f3e-7c00-7cc2-98c4-dc0c0c07398f";
+    const invalidVariant = "01890f3e-7c00-7cc2-c8c4-dc0c0c07398f";
+    const invalidVersion = "01890f3e-7c00-9cc2-98c4-dc0c0c07398f";
+    expect(uuidSchema.safeParse(uuidV7).success).toBe(true);
+    expect(uuidSchema.safeParse(uuidV7.toUpperCase()).success).toBe(true);
+    expect(uuidSchema.safeParse(invalidVariant).success).toBe(false);
+    expect(uuidSchema.safeParse(invalidVersion).success).toBe(false);
+    expect(uuidSchema.safeParse("not-a-uuid").success).toBe(false);
+    expect(quizWriteSchema.safeParse({ ...quizWrite, relatedContentId: uuidV7 }).success).toBe(true);
+    expect(
+      quizListResponse.safeParse({
+        questions: [{ ...quizBase, id: uuidV7, questionJa: "", questionEn: "", choiceCount: 0 }],
+      }).success,
+    ).toBe(true);
+    expect(
+      pubResponse.safeParse({
+        pub: { ...pubBase, tagIds: [uuidV7, uuidV7.toUpperCase()] },
+      }).success,
     ).toBe(false);
   });
 

@@ -77,6 +77,14 @@ describe("admin calendar service", () => {
     await expect(readAdminCalendarList()).resolves.toHaveLength(1);
   });
 
+  it("matches equivalent Path and Body UUIDs without regard to letter case", async () => {
+    const id = "8acbc777-5160-4f1d-8284-6db05f89485d";
+    await expect(updateAdminCalendarEvent(id, { ...completeInput, id: id.toUpperCase() })).resolves.toMatchObject({
+      id,
+    });
+    expect(repositoryMocks.updateCalendarEvent).toHaveBeenCalledWith(id, expect.any(Object), true);
+  });
+
   it("不正ID、カテゴリ、日付ルールをvalidation errorへ変換する", async () => {
     for (const value of [
       { ...completeInput, category: "unknown" },

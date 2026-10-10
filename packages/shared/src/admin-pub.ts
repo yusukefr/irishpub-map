@@ -376,7 +376,8 @@ function parseTagIds(value: unknown, fieldErrors: AdminPubFieldErrors) {
     fieldErrors.tagIds = value === undefined ? "required" : "invalid_type";
     return null;
   }
-  if (!value.every(isUuid) || new Set(value).size !== value.length) {
+  const validIds = value.filter(isUuid);
+  if (validIds.length !== value.length || new Set(validIds.map((id) => id.toLowerCase())).size !== value.length) {
     fieldErrors.tagIds = "invalid_format";
     return null;
   }

@@ -8,6 +8,7 @@ import type {
   RuleSetCondition,
 } from "./types";
 import { resolveDateRule } from "./resolver";
+import { isUuid, UUID_PATTERN } from "@irishpub-map/shared/uuid";
 
 const WEEKDAYS = {
   sunday: 0,
@@ -22,8 +23,8 @@ type DefinitionRuleSetCondition =
   | Readonly<{ type: "fixed_date_weekday"; month: number; day: number; weekday: CalendarWeekdayName }>
   | Readonly<{ type: "otherwise" }>;
 
-/** Calendar Event IDとして受け付けるUUID形式です。 */
-export const CALENDAR_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+/** Calendar Event IDとして受け付ける共通UUID形式です。 */
+export const CALENDAR_ID_PATTERN = UUID_PATTERN;
 
 /**
  * 指定値がCalendar Event UUID形式か判定します。
@@ -31,7 +32,7 @@ export const CALENDAR_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
  * @returns UUID形式の場合はtrue。
  */
 export function isCalendarEventId(value: string): boolean {
-  return CALENDAR_ID_PATTERN.test(value);
+  return isUuid(value);
 }
 
 /** Calendar Event ID validationの短縮API名です。 */
