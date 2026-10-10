@@ -40,7 +40,7 @@
 
 | フィールド | 型 | 必須 | DBでの取得元・説明 |
 | --- | --- | --- | --- |
-| `id` | string | yes | `pubs.id`。RFC 4122 UUID |
+| `id` | string | yes | `pubs.id`。RFC 9562 variantのUUID version 1〜8 |
 | `name` | string | yes | 選択ロケールの `pub_translations.name` |
 | `kana` | string \| null | no | 選択ロケールの `pub_translations.name_reading` |
 | `prefecture` | string | yes | 選択ロケールの `prefecture_translations.name` |

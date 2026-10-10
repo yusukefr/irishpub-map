@@ -2,8 +2,5 @@ CalendarEventIdParameter:
   name: id
   in: path
   required: true
-  description: Calendar event UUID.
-  schema:
-    type: string
-    format: uuid
-    pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+  description: Calendar event UUID; see the shared RFC 9562 UUID rule.
+  schema: { $ref: "./automation.yaml#/Uuid" }

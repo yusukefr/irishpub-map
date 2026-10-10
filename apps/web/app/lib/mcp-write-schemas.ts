@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { parseAdminPubAddress, parseAdminPubUrl } from "@irishpub-map/shared/admin-pub";
-import { contentResponse, pubResponse, quizResponse, tagsResponse } from "./mcp-read-schemas";
+import { contentResponse, pubResponse, quizResponse, tagsResponse, uuidSchema } from "./mcp-read-schemas";
 
 // OpenAPI の Write input だけを通し、GET に含まれる server-managed field は受け付けない。
-const uuid = z.uuid();
+const uuid = uuidSchema;
 const slug = z
   .string()
   .max(100)
@@ -145,7 +145,7 @@ export const pubWrite = z
     status: z.enum(["open", "temporarily_closed", "closed", "unknown"]).nullable(),
     pubType: z.enum(["irish", "british", "other", "unclassified"]).nullable(),
     translations: z.object({ ja: pubTranslation, en: pubEnglishTranslation.nullable() }).strict(),
-    tagIds: z.array(uuid).refine((ids) => new Set(ids).size === ids.length),
+    tagIds: z.array(uuid).refine((ids) => new Set(ids.map((id) => id.toLowerCase())).size === ids.length),
   })
   .strict();
 export const pubCreateResponse = pubResponse.extend({

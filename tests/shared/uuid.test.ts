@@ -7,17 +7,20 @@ import { isQuizQuestionId } from "../../apps/web/app/lib/quiz/types";
 describe("shared UUID validation", () => {
   const validUuid = "550e8400-e29b-41d4-a716-446655440000";
 
-  it("accepts RFC 4122 version 1-5 UUIDs without regard to letter case", () => {
+  it("accepts RFC 9562 variant version 1-8 UUIDs without regard to letter case", () => {
     expect(isUuid(validUuid)).toBe(true);
+    expect(isUuid("01890f3e-7c00-7cc2-98c4-dc0c0c07398f")).toBe(true);
     expect(isUuid("550E8400-E29B-41D4-A716-446655440000")).toBe(true);
+    expect(isUuid("01890F3E-7C00-7CC2-98C4-DC0C0C07398F")).toBe(true);
   });
 
-  it("rejects non-string values and UUIDs outside the existing version and variant contract", () => {
+  it("rejects non-string values, unsupported versions, invalid variants, and malformed strings", () => {
     expect(isUuid(null)).toBe(false);
     expect(isUuid(42)).toBe(false);
     expect(isUuid("not-a-uuid")).toBe(false);
-    expect(isUuid("550e8400-e29b-71d4-a716-446655440000")).toBe(false);
+    expect(isUuid("550e8400-e29b-91d4-a716-446655440000")).toBe(false);
     expect(isUuid("550e8400-e29b-41d4-c716-446655440000")).toBe(false);
+    expect(isUuid("550e8400-e29b-41d4-a716-44665544000")).toBe(false);
   });
 
   it("keeps Pub, Media Asset, and Quiz Question ID checks on the shared contract", () => {

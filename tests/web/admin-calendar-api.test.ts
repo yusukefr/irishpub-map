@@ -146,4 +146,19 @@ describe("admin calendar API", () => {
     expect(response.status).toBe(400);
     expect(mocks.read).not.toHaveBeenCalled();
   });
+
+  it("accepts UUID v7 route IDs and rejects unsupported version or variant with 400", async () => {
+    const id = "01890f3e-7c00-7cc2-98c4-dc0c0c07398f";
+    const valid = await detailGet(request(`https://example.test/api/admin/calendar/${id}`), {
+      params: Promise.resolve({ id }),
+    });
+    expect(valid.status).toBe(200);
+
+    for (const invalidId of ["01890f3e-7c00-9cc2-98c4-dc0c0c07398f", "01890f3e-7c00-7cc2-c8c4-dc0c0c07398f"]) {
+      const invalid = await detailGet(request(`https://example.test/api/admin/calendar/${invalidId}`), {
+        params: Promise.resolve({ id: invalidId }),
+      });
+      expect(invalid.status).toBe(400);
+    }
+  });
 });

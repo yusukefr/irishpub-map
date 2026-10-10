@@ -4,6 +4,12 @@
 
 Next.js Route Handler で公開 API と管理 API を提供します。Automation APIでは共通認証・認可基盤を使い、Master参照、タグ作成、Pub・Editorial Content・Quiz管理を提供します。公開画面はサーバー側から API 経由で店舗データを取得します。`DATABASE_URL` が設定されている環境ではNeonを読み書きし、未設定時は空の店舗一覧を返します。
 
+## UUID
+
+Resource IDの新規生成は既存どおり `crypto.randomUUID()` によるUUID v4です。受入時は共有validatorに従い、RFC 9562 variantを持つUUID version 1〜8を許可します。英字の大文字・小文字はどちらも有効です。OpenAPIの共通 `Uuid` schemaは `format: uuid` に加えて同じversion・variant条件をpatternで表し、`format` 単独をRuntime検証の代わりにはしません。Choice ID、Content slug、Tag key、自治体コードなどのドメイン識別子はUUID化しません。
+
+UUIDとして不正なPath IDは各Routeの既存エラー契約に従います（Calendar AdminとQuizは `400 invalid_request`）。UUIDを含むBody入力の形式不正は既存の `422 validation_error` を維持します。UUIDの文字列表記はAPI境界で小文字へ書き換えず、PostgreSQL `uuid` castを使うRepositoryでは大文字小文字を区別せず同一IDとして照合します。同じUUIDを複数指定できない配列とCalendar更新時のPath/Body ID照合も、大文字小文字を無視します。
+
 ## 公開 API
 
 ### `GET /api/pubs`

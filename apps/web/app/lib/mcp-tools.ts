@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { uuidSchema } from "./mcp-read-schemas";
 import { requestAutomationApi, type AutomationApiRequest, type AutomationApiResult } from "./mcp-automation-client";
 import {
   contentListResponse,
@@ -76,18 +77,18 @@ const mutationAnnotations = {
   openWorldHint: false,
 } as const;
 // Automation API の成功本文に含まれない監査用 Header を MCP 結果へ添える。
-const contentCreateToolResponse = contentCreateResponse.extend({ requestId: z.uuid() });
-const contentWriteResponse = contentResponse.extend({ requestId: z.uuid() });
-const quizCreateToolResponse = quizCreateResponse.extend({ requestId: z.uuid() });
-const quizWriteResponse = quizResponse.extend({ requestId: z.uuid() });
-const contentPublicationWriteResponse = contentPublicationResponse.extend({ requestId: z.uuid() });
-const quizPublicationWriteResponse = quizPublicationResponse.extend({ requestId: z.uuid() });
-const pubCreateToolResponse = pubCreateResponse.extend({ requestId: z.uuid() });
-const pubWriteResponse = pubResponse.extend({ requestId: z.uuid() });
-const pubPublicationWriteResponse = pubPublicationResponse.extend({ requestId: z.uuid() });
-const tagCreateToolResponse = tagResponse.extend({ requestId: z.uuid() });
+const contentCreateToolResponse = contentCreateResponse.extend({ requestId: uuidSchema });
+const contentWriteResponse = contentResponse.extend({ requestId: uuidSchema });
+const quizCreateToolResponse = quizCreateResponse.extend({ requestId: uuidSchema });
+const quizWriteResponse = quizResponse.extend({ requestId: uuidSchema });
+const contentPublicationWriteResponse = contentPublicationResponse.extend({ requestId: uuidSchema });
+const quizPublicationWriteResponse = quizPublicationResponse.extend({ requestId: uuidSchema });
+const pubCreateToolResponse = pubCreateResponse.extend({ requestId: uuidSchema });
+const pubWriteResponse = pubResponse.extend({ requestId: uuidSchema });
+const pubPublicationWriteResponse = pubPublicationResponse.extend({ requestId: uuidSchema });
+const tagCreateToolResponse = tagResponse.extend({ requestId: uuidSchema });
 const emptyInput = z.object({}).strict();
-const uuidId = z.object({ id: z.uuid() }).strict();
+const uuidId = z.object({ id: uuidSchema }).strict();
 const quizId = uuidId;
 const pubFilters = z
   .object({
@@ -98,7 +99,7 @@ const pubFilters = z
       .regex(/^\d{6}$/)
       .optional(),
     status: z.enum(["open", "temporarily_closed", "closed", "unknown"]).optional(),
-    tag: z.uuid().optional(),
+    tag: uuidSchema.optional(),
     published: z.boolean().optional(),
     page: z.number().int().min(1).max(100_000).optional(),
   })
@@ -117,7 +118,7 @@ function errorResult(result: Extract<AutomationApiResult, { ok: false }>) {
 async function automationResult(options: AutomationApiRequest, schema: z.ZodType) {
   const result = await requestAutomationApi(options);
   if (!result.ok) return errorResult(result);
-  const requestId = z.uuid().safeParse(result.requestId);
+  const requestId = uuidSchema.safeParse(result.requestId);
   const parsed = schema.safeParse(result.data);
   if (!parsed.success) {
     return errorResult({
@@ -311,7 +312,7 @@ export function registerMcpTools(server: McpServer): void {
       title: "Update content",
       description:
         "Write operation. Replaces all editable fields of existing content through the Automation API with content:update scope. Call get_content first, construct only the five ContentWrite fields, show current values and changes, and obtain explicit user confirmation before calling. Preserves publication state; does not create, publish, or delete. Call get_content again after updating to verify saved values.",
-      inputSchema: contentWrite.extend({ id: z.uuid() }),
+      inputSchema: contentWrite.extend({ id: uuidSchema }),
       outputSchema: contentWriteResponse,
       annotations: mutationAnnotations,
     },
@@ -325,7 +326,7 @@ export function registerMcpTools(server: McpServer): void {
       title: "Set content publication",
       description:
         "Write operation. Changes only the publication state of existing content through the Automation API with content:publish scope. Call get_content first, show the current and requested status, and obtain explicit user confirmation before calling. Publishing must satisfy Automation API requirements. Does not create, edit content fields, or delete. Call get_content again after the change to verify publication state.",
-      inputSchema: contentPublicationInput.extend({ id: z.uuid() }),
+      inputSchema: contentPublicationInput.extend({ id: uuidSchema }),
       outputSchema: contentPublicationWriteResponse,
       annotations: mutationAnnotations,
     },
@@ -407,7 +408,7 @@ export function registerMcpTools(server: McpServer): void {
       title: "Update pub",
       description:
         "Write operation. Replaces all editable fields of an existing pub through the Automation API with pubs:update scope. Call get_pub first, show the target and exact before/after changes, and obtain explicit user confirmation. Send only the PubWrite snapshot, never id, isPublished, or updatedAt from GET; refresh master data and tags when relevant. Preserves publication state and does not create or delete. Call get_pub again after updating to verify saved values.",
-      inputSchema: pubWrite.extend({ id: z.uuid() }),
+      inputSchema: pubWrite.extend({ id: uuidSchema }),
       outputSchema: pubWriteResponse,
       annotations: mutationAnnotations,
     },
@@ -421,7 +422,7 @@ export function registerMcpTools(server: McpServer): void {
       title: "Set pub publication",
       description:
         "Write operation. Changes only an existing pub's isPublished state through the Automation API with pubs:publish scope. Call get_pub first, show the current and requested state, and obtain explicit user confirmation. The Automation API checks publication requirements and reports missingFields. Does not create, edit pub fields, or delete. Call get_pub again after the change to verify publication state.",
-      inputSchema: pubPublicationInput.extend({ id: z.uuid() }),
+      inputSchema: pubPublicationInput.extend({ id: uuidSchema }),
       outputSchema: pubPublicationWriteResponse,
       annotations: mutationAnnotations,
     },

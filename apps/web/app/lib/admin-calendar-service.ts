@@ -197,7 +197,13 @@ function parseWriteInput(value: unknown, expectedId?: string): { id: string | nu
         ? expectedId
         : parseId(source.id, "id", fieldErrors, false);
   if (expectedId === undefined && source.id !== undefined) fieldErrors.id = "immutable";
-  if (expectedId !== undefined && source.id !== undefined && id !== expectedId) fieldErrors.id = "immutable";
+  if (
+    expectedId !== undefined &&
+    source.id !== undefined &&
+    (id === null || id.toLowerCase() !== expectedId.toLowerCase())
+  ) {
+    fieldErrors.id = "immutable";
+  }
   const input = {
     category: parseCategory(source.category, fieldErrors),
     dateRule: parseDateRule(source.dateRule, fieldErrors),

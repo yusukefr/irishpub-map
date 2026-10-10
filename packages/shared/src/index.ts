@@ -4,7 +4,7 @@ export { DEFAULT_LOCALE, REQUIRED_TRANSLATION_LOCALE, SUPPORTED_LOCALES, isSuppo
 export type { Locale } from "./locale";
 export { PREFECTURES, getPrefectureCode, getPrefectureName } from "./prefecture";
 export { PUB_STATUS_DEFINITIONS, getPubStatusCode, getPubStatusValue } from "./status";
-export { isUuid } from "./uuid";
+export { isUuid, UUID_PATTERN } from "./uuid";
 export type { MunicipalityOption, PrefectureOption, PubStatusOption, PubTypeOption, TagOption } from "./admin-master";
 export {
   ADMIN_API_ERROR_CODES,
