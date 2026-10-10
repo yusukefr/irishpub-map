@@ -41,9 +41,10 @@ npm run db:migrate -- --target preview db/migrations/<migration>_verify.sql
 
 4. table、constraint、index、外部キー、必要な参照データ、`schema_migrations`をverify SQLで確認する。新規作成・更新するverify SQLは、結果行の目視確認に依存せず、不足や不整合があれば`RAISE EXCEPTION`で失敗する自己検証型にする。006 / 007のverify SQLをこの形式の例とする。Migration Runnerは結果行や機微なDBデータを出力しません。
 5. 関連するアプリケーション、unit test、E2Eを検証する。
-6. Preview検証に成功し、Production適用への明示承認がある場合だけ、Production Guard付きでup / verifyを実行する。
+6. Preview検証に成功し、Production適用への明示承認がある場合だけ、Production Guard付きでup / verifyを実行する。PreviewとProductionではMigration履歴が異なる可能性があるため、それぞれのTargetで適用前にPreflightを実行する。Previewの成功をProductionの履歴確認の代わりにしない。
 
 ```bash
+npm run db:preflight -- --target production --required-migration 024_add_pub_types
 npm run db:connection-check -- --target production
 npm run db:migrate -- --target production --confirm-production db/migrations/<migration>_up.sql
 npm run db:migrate -- --target production --confirm-production db/migrations/<migration>_verify.sql
