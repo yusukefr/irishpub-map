@@ -1,4 +1,5 @@
 import { AdminTagValidationError } from "@irishpub-map/shared/admin-tag";
+import { isUuid } from "@irishpub-map/shared/uuid";
 import { adminApiErrorResponse } from "./admin-api";
 import { TagRepositoryError } from "./tag-repository";
 
@@ -25,5 +26,5 @@ export function adminTagErrorResponse(error: unknown) {
  * @returns {boolean} UUID形式の場合はtrue。
  */
 export function isAdminTagId(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  return isUuid(value);
 }

@@ -1,4 +1,5 @@
 import { normalizeTag, normalizeTags } from "./tag";
+import { isUuid } from "./uuid";
 
 /** 店舗の営業状態を表します。 */
 export type PubStatus = "open" | "temporarily_closed" | "closed" | "unknown";
@@ -130,8 +131,6 @@ function isLongitude(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) && value >= -180 && value <= 180;
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function normalizePub(pub: Pub): Pub {
   return {
     ...pub,
@@ -177,5 +176,5 @@ function normalizeOptionalUrl(value: string | null | undefined) {
  * @returns {value is string} UUID形式の文字列の場合はtrue。
  */
 export function isPubId(value: unknown): value is string {
-  return typeof value === "string" && UUID_PATTERN.test(value);
+  return isUuid(value);
 }

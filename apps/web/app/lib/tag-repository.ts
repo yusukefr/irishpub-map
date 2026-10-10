@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
+import { isUuid } from "@irishpub-map/shared/uuid";
 import { REQUIRED_TRANSLATION_LOCALE, SUPPORTED_LOCALES, type Locale } from "@irishpub-map/shared/locale";
 import type {
   AdminTag,
@@ -221,7 +222,7 @@ function parseTranslations(value: unknown): AdminTagTranslations {
 
 function requiredUuid(value: unknown) {
   const text = requiredText(value);
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text)) {
+  if (!isUuid(text)) {
     throw new Error("Invalid admin tag UUID returned from database.");
   }
   return text;

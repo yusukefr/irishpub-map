@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { CONTENT_SLUG_MAX_LENGTH } from "@irishpub-map/shared/admin-content";
+import { isUuid } from "@irishpub-map/shared/uuid";
 import { DEFAULT_LOCALE, type Locale } from "@irishpub-map/shared/locale";
 import { getE2EPublishedContentBySlug, getE2EPublishedContentList } from "../e2e-test-fixtures";
 import { isE2ETestMode } from "../e2e-test-mode";
@@ -23,7 +24,6 @@ type DbContentRow = DbContentSummaryRow & {
   hero_image_caption: unknown;
 };
 let sqlClient: ReturnType<typeof neon> | null = null;
-const CONTENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 /**
  * DB行を公開Contentへ変換します。
@@ -79,7 +79,7 @@ export async function getPublishedContentById(
   id: string,
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<PublishedContent | null> {
-  if (!CONTENT_ID_PATTERN.test(id) || !process.env.DATABASE_URL) return null;
+  if (!isUuid(id) || !process.env.DATABASE_URL) return null;
   return getPublishedContentByIdFromDatabase(id, locale);
 }
 

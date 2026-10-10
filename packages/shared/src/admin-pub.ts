@@ -1,5 +1,6 @@
 import type { AdminFieldErrorCode } from "./admin-api-error";
 import type { PubStatus, PubType } from "./pub";
+import { isUuid } from "./uuid";
 
 /** 管理店舗一覧で1ページに取得する最大件数です。 */
 export const ADMIN_PUB_PAGE_SIZE = 50;
@@ -124,7 +125,6 @@ export class AdminPubPublicationValidationError extends Error {
   }
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const STATUS_KEYS = new Set<PubStatus>(["open", "temporarily_closed", "closed", "unknown"]);
 const PUB_TYPE_KEYS = new Set<PubType>(["irish", "british", "other", "unclassified"]);
 
@@ -156,7 +156,7 @@ export function parseAdminPubSearchParams(params: URLSearchParams): AdminPubSear
   const statusValue = optionalSingle(params, "status");
   const statusKey = statusValue === undefined ? undefined : parseStatus(statusValue);
   const tagId = optionalSingle(params, "tag");
-  if (tagId !== undefined && !UUID_PATTERN.test(tagId)) throw new AdminPubSearchValidationError();
+  if (tagId !== undefined && !isUuid(tagId)) throw new AdminPubSearchValidationError();
 
   const publishedValue = optionalSingle(params, "published");
   const isPublished = publishedValue === undefined ? undefined : parsePublished(publishedValue);
@@ -287,7 +287,7 @@ function parseTagIds(value: unknown, fieldErrors: AdminPubFieldErrors) {
     fieldErrors.tagIds = value === undefined ? "required" : "invalid_type";
     return null;
   }
-  if (!value.every((id) => typeof id === "string" && UUID_PATTERN.test(id)) || new Set(value).size !== value.length) {
+  if (!value.every(isUuid) || new Set(value).size !== value.length) {
     fieldErrors.tagIds = "invalid_format";
     return null;
   }

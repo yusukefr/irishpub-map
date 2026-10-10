@@ -1,3 +1,5 @@
+import { isUuid } from "./uuid";
+
 /** Media Asset一覧APIで1ページに返す固定件数です。 */
 export const ADMIN_MEDIA_PAGE_SIZE = 50;
 /** Upload可能な画像の最大bytesです。 */
@@ -41,15 +43,13 @@ export class AdminMediaSearchValidationError extends Error {
   }
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 /**
  * Media Asset IDがUUID形式かを判定します。
- * @param {string} value - 判定対象。
- * @returns {boolean} UUID形式の場合はtrue。
+ * @param {unknown} value - 判定対象。
+ * @returns {value is string} UUID形式の文字列の場合はtrue。
  */
-export function isMediaAssetId(value: string): boolean {
-  return UUID_PATTERN.test(value);
+export function isMediaAssetId(value: unknown): value is string {
+  return isUuid(value);
 }
 
 /**

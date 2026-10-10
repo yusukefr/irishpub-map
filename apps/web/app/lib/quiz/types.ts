@@ -1,5 +1,6 @@
 import type { Locale } from "../i18n";
 import type { MediaAsset } from "@irishpub-map/shared/media";
+import { isUuid } from "@irishpub-map/shared/uuid";
 
 /** Quizで利用できるLocale非依存カテゴリIDのAllow Listです。 */
 export const QUIZ_CATEGORIES = [
@@ -15,7 +16,6 @@ export const QUIZ_CATEGORIES = [
 
 /** 管理画面で入力できるChoice IDの最大文字数です。 */
 export const QUIZ_CHOICE_ID_MAX_LENGTH = 60;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 /** 問題画像のLocale別代替テキストの最大文字数です。 */
 export const QUIZ_IMAGE_ALT_MAX_LENGTH = 500;
 /** 問題画像のLocale別キャプションの最大文字数です。 */
@@ -137,7 +137,7 @@ export function isQuizCategory(value: string): value is QuizCategory {
  * @returns {boolean} UUIDの場合はtrue。
  */
 export function isQuizQuestionId(value: string) {
-  return UUID_PATTERN.test(value);
+  return isUuid(value);
 }
 
 /**

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { neon } from "@neondatabase/serverless";
 import { getTagLabel, normalizeTags } from "../packages/shared/src/tag.ts";
+import { isUuid } from "../packages/shared/src/uuid.ts";
 
 const DEFAULT_SOURCE_PATH = "pubs.json";
 const PUB_STATUSES = new Set(["open", "temporarily_closed", "closed", "unknown"]);
@@ -58,7 +59,6 @@ const PREFECTURE_NAMES = [
 const PUB_STATUS_CODES = { open: 1, temporarily_closed: 2, closed: 3, unknown: 4 };
 const PUB_TYPES = new Set(["irish", "british", "other", "unclassified"]);
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 /** コマンドライン引数からインポート元のJSONファイルパスを取得します。 */
 export function getSourcePath(args) {
   if (args.length > 1) throw new Error("Usage: node scripts/import-pubs.mjs [pubs.json]");
@@ -143,7 +143,7 @@ function isPub(value) {
   const pub = value;
 
   return (
-    UUID_PATTERN.test(pub.id) &&
+    isUuid(pub.id) &&
     isNonEmptyString(pub.name) &&
     isOptionalKana(pub.kana) &&
     isNonEmptyString(pub.prefecture) &&

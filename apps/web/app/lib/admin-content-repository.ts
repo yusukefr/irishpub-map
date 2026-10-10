@@ -1,4 +1,5 @@
 import { neon, type NeonQueryFunctionInTransaction } from "@neondatabase/serverless";
+import { isUuid } from "@irishpub-map/shared/uuid";
 import type {
   AdminContent,
   AdminContentListItem,
@@ -357,7 +358,7 @@ function requiredStatus(value: unknown): ContentStatus {
 
 function requiredUuid(value: unknown) {
   const id = requiredString(value);
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+  if (!isUuid(id)) {
     throw new Error("Invalid UUID returned from database.");
   }
   return id;
