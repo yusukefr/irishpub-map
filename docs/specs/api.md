@@ -10,7 +10,7 @@ Next.js Route Handler で公開 API と管理 API を提供します。Automatio
 
 公開中の店舗一覧を `{ "pubs": Pub[] }` で返します。RepositoryのSQLが `pubs.is_published = TRUE` で絞り込み、公開状態の列 `isPublished` はレスポンスへ含めません。`DATABASE_URL` 未設定時は `200` と空の `pubs` 配列を返します。DB接続やデータ処理に失敗した場合、Route Handlerは例外を変換しないため、Next.jsの通常の `500` 応答になります。DBの個々の行が共有 `Pub` 型に適合しない場合はその行を省略して続行し、全行が不正なら `500` になります。
 
-`locale` Queryは省略可能で、指定できる値は `ja` と `en` です。既定値は `ja` です。不正値は `{ "error": "Unsupported locale." }` と `400` を返します。翻訳テーブルに要求localeの行がなければ日本語へフォールバックします。店舗名・住所、都道府県、市区町村、営業状態、タグ、Pub Typeの表示文言にこの優先順位を適用します。`prefecture`、`query` その他の検索Queryは受け付けず、検索・絞り込みは取得後のクライアント側で行います。
+`locale` Queryは省略可能で、指定できる値は `ja` と `en` です。既定値は `ja` です。不正値は `{ "error": "Unsupported locale." }` と `400` を返します。翻訳テーブルに要求localeの行がなければ日本語へフォールバックします。店舗名・住所、都道府県、市区町村、営業状態、タグ、Pub Typeの表示文言にこの優先順位を適用します。`prefecture`、`query` など `locale` 以外のQueryはRoute Handlerで検証・解釈されず、無視されます。サーバー側の絞り込みは行わず、検索・絞り込みは取得後のクライアント側で行います。
 
 レスポンスの各店舗は `packages/shared/src/pub.ts` の `Pub` を使い、Repositoryが `asPubs` で検証・正規化します。IDはUUID文字列、`status` は `open` / `temporarily_closed` / `closed` / `unknown`、`pubType` は `irish` / `british` / `other` / `unclassified` です。Gastropub等の特徴はタグで表します。必須項目、optional fieldの省略、URLのnullabilityと各値の詳細は[店舗データ仕様](data.md)を参照してください。
 
@@ -42,8 +42,6 @@ Next.js Route Handler で公開 API と管理 API を提供します。Automatio
 
 Route Handlerは `Cache-Control` や再検証時間を明示していません。クライアントは固定のキャッシュ期間をAPI契約として仮定できません。
 
-現在の[OpenAPI定義](openapi/openapi.yaml)には `GET /api/pubs` は含まれません。同定義はAdmin CalendarとAutomation APIの契約を記述します。Public API契約と共通Clientの整備は #541 の対象で、まだ実装済みではありません。
-
 ## 公開 API の現在の認証
 
 現行の `GET /api/pubs` は `IRISHPUB_MAP_API_KEY` を使います。Production (`VERCEL_ENV=production`) では値が未設定または空白のみの場合、`{ "error": "API authentication is not configured." }` と `503` を返し、Vercel Production向けビルド検証でも設定漏れを検出します。キーが設定されている場合は `x-api-key` ヘッダーを照合し、欠落・不一致なら `{ "error": "Unauthorized" }` と `401` を返します。Production以外では未設定ならKey検証を行わず、設定されていれば照合します。認証判定が `locale` 検証より先です。
@@ -56,176 +54,26 @@ API Keyの実値はレスポンスやログへ出力しません。Webトップ�
 
 Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL_AUTOMATION_BYPASS_SECRET` に Protection Bypass for Automation secret を設定してください。設定されている場合、サーバー側 fetch は `x-vercel-protection-bypass` ヘッダーを送信します。未設定でSSOへリダイレクトされた場合、トップページは静的データを複製せず店舗0件で表示します。実データを表示するには、SSOを回避できる設定とDATABASE_URLの両方を適切に構成してください。
 
-検索・絞り込みは、取得済みの店舗データに対してブラウザで実行します。そのため `prefecture` や `query` のクエリパラメーターは現在の公開 API では受け付けません。
-
 ## Automation APIの認証・認可
 
-全EndpointのPath、Method、Bearer認証、必要Scope、入出力Schema、Error、`Idempotency-Key` の機械可読な契約は[OpenAPI定義](openapi/openapi.yaml)を参照してください。接続、Token Rotation、権限設定、Create / Publishの運用は[Automation API Runbook](../runbooks/automation-api-access.md)を参照してください。
+Automation APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・必要Scopeは[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。このOpenAPIにはAutomation API全体とAdmin Calendar APIを収録しています。公開 `GET /api/pubs` とAdmin Pub / Tag / Status / Content / Quiz / Media APIは未収録であり、OpenAPIが全APIを網羅しているとは扱いません。Public API契約と共通Clientの整備は #541 の対象です。
 
-`/api/automation/v1/*` は外部Automation向けのnamespaceです。各Route Handlerは共通helperへ必要Scopeを明示して認証・認可します。
+`/api/automation/v1/*` は外部Automation用です。Bearer Tokenを要求し、Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数やRepositoryへ保存しません。設定、発行、Token Rotation、Scope運用とCreate / Publishフローは[Automation API Runbook](../runbooks/automation-api-access.md)を参照してください。
 
-`Authorization: Bearer <token>` を要求し、`Bearer` とTokenの間は1文字以上のスペースを許容します。Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数へ保存しません。Tokenの欠落・不一致・設定不備は `WWW-Authenticate: Bearer` ヘッダーを付けた `401` と `{ "errorCode": "unauthorized" }` を返し、理由やToken/hashをResponseへ含めません。
+各操作はOpenAPIに記載された必要Scopeを個別に要求し、別Scopeから権限を継承しません。管理者Session Cookieを受け付けず、同一Origin検証も要求しません。逆に管理APIはAutomation Bearer Tokenを受け付けません。Bearer Tokenの欠落・不一致・設定不備は `401 unauthorized`、認証済みTokenのScope不足は `403 forbidden` です。Scope名とEndpointの対応はOpenAPIだけで管理します。
 
-`AUTOMATION_API_SCOPES` はカンマ区切りで設定します（例: `master:read,tag:create,content:read,content:create`）。利用可能なScopeは `master:read`、`tag:create`、`content:read`、`content:create`、`content:update`、`content:publish`、`quiz:read`、`quiz:create`、`quiz:update`、`quiz:publish`、`pubs:read`、`pubs:create`、`pubs:update`、`pubs:publish` です。未知のScopeは無視し、部分一致では認可しません。認証済みTokenに必要Scopeがない場合は `403` と `{ "errorCode": "forbidden" }` を返します。
+CreateのIdempotency-Keyは成功済みの同一Requestを重複作成から保護し、成功結果を完了から24時間再利用できます。Keyのhashは保存しますがRaw Keyは保存しません。Validation失敗や5xxは成功結果として保存しません。変更操作はRequest ID、Scope、Resourceと結果を監査記録へ保存し、Token、Cookie、Request / Response本文、環境変数は記録しません。運用上の再送・監査の詳細はAutomation API Runbookを参照してください。
 
-Automation認証では管理者Session Cookieを受け付けず、同一Origin検証も要求しません。逆に管理APIはAutomation Bearer Tokenを受け付けません。Tokenは `node scripts/generate-automation-token.mjs` を対話端末で実行して生成し、Raw Tokenは外部Connector側、表示されたSHA-256だけをServer側へ設定します。
+## API契約の範囲
 
-### Automation Createの冪等性と監査
+| API | 役割 | 契約の参照先 |
+| --- | --- | --- |
+| Public Pub API | Mobile / Web向けの公開店舗読取り | 本文書の[Public API](#公開-api)と[店舗データ仕様](data.md)。OpenAPI収録は #541 の対象 |
+| Admin API | Web管理画面向けの認証済み管理操作 | OpenAPI未収録の現行Route契約は本節と各ドメイン仕様を参照 |
+| Automation API | 外部Connector向けのScope制御された管理操作 | [OpenAPI定義](openapi/openapi.yaml)と[Automation API Runbook](../runbooks/automation-api-access.md) |
+| Admin Calendar API | Web管理画面向けCalendar操作 | [OpenAPI定義](openapi/openapi.yaml)、画面Behaviorは[Product仕様](product.md) |
 
-`POST /api/automation/v1/content`、`/quiz`、`/pubs`、`/tags` は認証・Scope確認後に `Idempotency-Key` を要求します。Keyは空文字・前後空白・制御文字を含まず、128文字以内とします。HTTPの `Headers` が前後空白を除去した場合は、Serverが受け取った値を検証します。欠落時は `400 idempotency_key_required`、形式不正は `400 invalid_idempotency_key` を返します。
-
-同じKeyと同じmethod・path・JSON本文の再送は、初回の `201` とJSON Responseを返し、Resourceを再作成しません。JSON objectのfield順は判定に影響しません。Keyを別のRequestに使うと `409 idempotency_conflict`、同じRequestがまだ処理中なら `409 idempotency_in_progress` です。処理中のRetryは後で再送します。成功結果は完了時から24時間保持し、長時間pendingだった記録の回復時も完了時に期限を設定します。期限切れの完了記録はCreate時に少量ずつ削除し、使用されたKeyの期限は個別にも判定します。Validation失敗と5xxは成功結果としてcacheしません。Clientは論理的に別のCreateには新しいKeyを使います。
-
-認証済みのCreate、Update、Publish/Unpublishの結果は `X-Request-Id` をResponse Headerへ返し、Request ID、Scope、method、path（動的ID部分は `:id`）、Resource種別・ID、action、成功/失敗とHTTP statusを監査記録へ保存します。Readと認証失敗は監査対象外です。同じCreateの成功結果を再送した場合は変更がないため監査行を追加しません。Bearer Token、Authorization Header、Token hash、Cookie、Request/Response本文と環境変数は監査記録へ保存しません。成立済みの変更後に監査書込だけが失敗した場合は変更をrollbackせず、Request IDをServer Logへ記録します。
-
-### Automation Master参照とタグ作成
-
-Master参照はすべて `master:read` を要求し、現在のDBを既存Repositoryから読み取ります。Repositoryの内部行やDBエラー詳細は返しません。`DATABASE_URL` 未設定時は一覧を空配列で返します。
-
-| メソッド | パス | 成功時 | 主な失敗時 |
-| --- | --- | --- | --- |
-| `GET` | `/api/automation/v1/master/prefectures` | `200` と `{ prefectures: [{ code, name }] }` | 認証 `401`、Scope不足 `403`、取得失敗 `500` |
-| `GET` | `/api/automation/v1/master/municipalities?prefectureCode=:code` | `200` と `{ municipalities: [{ code, prefectureCode, name }] }` | 認証 `401`、Scope不足 `403`、コード不正 `400 invalid_prefecture_code`、取得失敗 `500` |
-| `GET` | `/api/automation/v1/master/tags` | `200` と `{ tags: [{ id, key, translations, pubCount }] }` | 認証 `401`、Scope不足 `403`、取得失敗 `500` |
-| `GET` | `/api/automation/v1/master/statuses` | `200` と `{ statuses: [{ code, key, name }] }` | 認証 `401`、Scope不足 `403`、取得失敗 `500` |
-| `POST` | `/api/automation/v1/tags` | `201` と `{ tag: { id, key, translations, pubCount } }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、入力不正 `422`、競合 `409`、DB未設定 `503`、内部エラー `500` |
-
-都道府県と営業ステータスの表示名は日本語を既定とします。市区町村の表示名は管理APIと同じく言語Cookie、次に `Accept-Language` の候補からlocaleを決め、日本語へフォールバックします。候補は `q` 値の高い順、同値なら記載順に評価し、`q=0`・不正な `q` 値・非対応言語は採用しません。`prefectureCode` は1〜47の10進整数を管理APIと同じ条件で検証します。タグ一覧はサポートlocaleの翻訳と、関連する店舗の重複を除いた使用件数を返します。
-
-タグ作成は `tag:create` を要求し、管理タグAPIと同じ `key` および `translations` 入力、共有Validation、競合判定とエラー形式を使います。IDはServer側でUUIDを生成します。Automation Clientは作成前にタグ一覧を取得し、表記・翻訳の違いだけで意味が同じタグや、既存タグで十分に分類できる属性には既存IDを使います。タグ化の対象は複数店舗の検索・分類に継続的に役立つ属性とし、単店固有のイベント、一時的なキャンペーン、主観的な評価は作成しません。意味的重複の完全な自動判定はServer側では行いません。Automation APIにタグ更新・削除Routeはありません。
-
-### Automation Pub管理
-
-各操作は対応する `pubs:*` Scopeだけを要求し、別のPub Scopeから権限を継承しません。Bearer認証の `401 unauthorized` とScope不足の `403 forbidden` は上記の共通契約を使います。管理 Pub API と同じ検索Validation、Service、Repository、エラー形式を使います。
-
-| メソッド | パス | Scope | 成功時 |
-| --- | --- | --- | --- |
-| `GET` | `/api/automation/v1/pubs` | `pubs:read` | `200` と `{ pubs: AdminPubListItem[], total, page, pageSize, databaseConfigured }`。DraftとPublishedを含む |
-| `GET` | `/api/automation/v1/pubs/:id` | `pubs:read` | `200` と `{ pub: AdminPub }`。NULL項目、日英翻訳、Tag ID、公開状態を含む |
-| `POST` | `/api/automation/v1/pubs` | `pubs:create` | `201` と `{ pub: AdminPub }`。ServerがUUIDを発行し、必ず非公開で作成 |
-| `PUT` | `/api/automation/v1/pubs/:id` | `pubs:update` | `200` と `{ pub: AdminPub }`。公開状態を維持して全体Snapshotを更新 |
-| `PATCH` | `/api/automation/v1/pubs/:id/publication` | `pubs:publish` | `200` と `{ publication: { id, isPublished, unchanged } }` |
-
-一覧のQueryは管理 Pub API と同じ `name`、`prefecture`、`municipality`、`status`、`tag`、`published`、`page` です。条件はANDで結合し、`page` は1から始まり、1ページ50件です。`prefecture` は1〜47の整数、`municipality` は指定した都道府県に対応する6桁コード、`tag` はUUID、`published` は `true` / `false` を指定します。`name` は前後の空白を除いた最大100文字です。不明なQueryや不正な値、同じQueryの重複は `400 invalid_request` です。表示値のlocaleは管理 Pub API と同じく言語Cookie、次に `Accept-Language` の候補を `q` 値と記載順で評価して決めます。
-
-`POST` / `PUT` の本文は管理 Pub API の `AdminPubWriteInput` と同じ全体Snapshotです。書き込み可能なトップレベルのフィールドは `prefectureCode`、`municipalityCode`、`latitude`、`longitude`、`websiteUrl`、`googleMapsUrl`、`instagramUrl`、`status`、`translations`、`tagIds` です。例えば:
-
-```json
-{
-  "prefectureCode": 23,
-  "municipalityCode": "231061",
-  "latitude": 35.1709,
-  "longitude": 136.8815,
-  "websiteUrl": "https://example.com",
-  "googleMapsUrl": null,
-  "instagramUrl": null,
-  "status": "open",
-  "translations": {
-    "ja": { "name": "Example Irish Pub", "nameReading": null, "address": "名古屋市..." },
-    "en": null
-  },
-  "tagIds": []
-}
-```
-
-日本語店舗名はDraft時点で必須です。Draftではほかの基本項目を `null`、英語翻訳を `null`、Tag IDを空配列にできます。指定する座標は有限数で緯度−90〜90・経度−180〜180、URLはHTTP(S)で2,048文字以内です。公式サイトは任意ホスト、Google Mapsは対応するGoogle Maps共有ホストとパス、Instagramはプロフィール・投稿・リールURLだけを許可し、ユーザー情報と制御文字を拒否します。URL先への接続はしません。住所は前後をtrimして制御文字を拒否し、300文字以内です。日本語住所はDraftで任意・公開時必須、英語翻訳では英語住所を必須とします。営業ステータスは `open` / `temporarily_closed` / `closed` / `unknown` です。Tag IDは重複のないUUID配列です。市区町村と都道府県の対応、営業ステータスとTagの存在は既存ServiceとRepositoryが現在のDBで検証します。`id`、`isPublished`、`updatedAt` などのServer管理フィールドを本文へ含めると `422 validation_error` になります。GETの `pub` をそのままPUTせず、上記の書き込み可能なフィールドだけを送信します。
-
-作成前には `GET /pubs?name=...` などで既存店舗を検索し、店舗名、住所、Website URL、Google Maps URL、Instagram URLを比較します。登録する都道府県・市区町村・営業ステータスは上記のMaster APIから、Tag IDは `GET /master/tags` から取得します。適切なTagがない場合だけ `POST /tags` で作成し、返されたIDをPub入力の `tagIds` に指定します。Client側でMasterコードやTag IDを推測せず、Pub APIはTagを自動作成しません。意味的な店舗重複の自動判定はありません。
-
-標準フローは既存Pub検索 → MasterとTag確認 → `POST` で非公開Draft作成 → `GET /:id` で保存内容確認 → `PATCH /:id/publication` で公開です。`PATCH` の本文は `{ "isPublished": true }` または `{ "isPublished": false }` のみで、余分なフィールドやboolean以外の値を拒否します。公開時は既存のPub Publication Validationを適用し、不足項目をまとめて返します。Published Pubの `PUT` でも公開条件を満たす必要があり、更新によって自動的に非公開へ変わることはありません。Automation APIにPub削除Routeや `pubs:delete` Scopeはありません。
-
-不正JSONは `400 invalid_json`、JSON以外のContent-Typeは `415 invalid_content_type`、入力不正は `422 validation_error` と必要に応じて `fieldErrors`、存在しないMasterやTagは `409 validation_error` と `fieldErrors` を返します。公開条件不足は `422 publication_requirements_not_met` と `missingFields`、不正なPub IDは `400 invalid_request`、未登録IDは `404 pub_not_found` です。DB未設定時、一覧は空配列と `databaseConfigured: false`、詳細取得と更新系は `503 database_unavailable` を返します。内部エラーは詳細を伏せた `500 internal_error` です。
-
-### Automation Editorial Content管理
-
-各操作は対応する `content:*` Scopeだけを要求し、別のContent Scopeから権限を継承しません。Bearer認証の `401` とScope不足の `403` は上記の共通契約を使います。管理 API と同じContent Service、共有Validation、エラー変換を使い、SQLや公開キャッシュの失効処理をRouteに重複実装しません。
-
-| メソッド | パス | Scope | 成功時 |
-| --- | --- | --- | --- |
-| `GET` | `/api/automation/v1/content` | `content:read` | `200` と `{ content: AdminContentListItem[], databaseConfigured: boolean }`。DraftとPublishedを含む |
-| `GET` | `/api/automation/v1/content/:id` | `content:read` | `200` と `{ content: AdminContent }` |
-| `POST` | `/api/automation/v1/content` | `content:create` | `201` と `{ content: AdminContent }`。ServerがUUIDを発行してDraftを作成 |
-| `PUT` | `/api/automation/v1/content/:id` | `content:update` | `200` と `{ content: AdminContent }`。公開状態を維持して全体Snapshotを更新 |
-| `PATCH` | `/api/automation/v1/content/:id/publication` | `content:publish` | `200` と `{ publication: { id, status, unchanged, publishedAt } }` |
-
-`POST` と `PUT` の本文は管理 Content API の `AdminContentWriteInput` と同じ全体Snapshotです。受け付けるトップレベルのフィールドは `kind`、`slug`、`category`、`heroImageAssetId`、`translations` だけです。各翻訳には `title`、`summary`、`bodyMarkdown`、`heroImageAlt`、`heroImageCaption` を含めます。Draft作成時のRequest例:
-
-```json
-{
-  "kind": null,
-  "slug": null,
-  "category": null,
-  "heroImageAssetId": null,
-  "translations": {
-    "ja": {
-      "title": "",
-      "summary": "",
-      "bodyMarkdown": "",
-      "heroImageAlt": "",
-      "heroImageCaption": ""
-    },
-    "en": {
-      "title": "",
-      "summary": "",
-      "bodyMarkdown": "",
-      "heroImageAlt": "",
-      "heroImageCaption": ""
-    }
-  }
-}
-```
-
-`PUT` は `GET /api/automation/v1/content/:id` のResponseをそのまま送信する契約ではありません。GETの `content` に含まれるResponse専用・Server管理フィールド `id`、`status`、`publishedAt`、`createdAt`、`updatedAt`、`heroImage` は送信しません。これらを含むと `422 validation_error` になります。PUTする際はGETのContentから上記の書き込み可能な5フィールドだけを取り出し、必要な値を更新して送信します。公開状態は専用の `PATCH` で変更します。
-
-`heroImageAssetId` は登録済みMedia AssetのUUIDまたは `null` です。`heroImage` オブジェクト自体は `POST` / `PUT` へ送信しません。日英の `heroImageAlt` と `heroImageCaption` はRequest内に文字列として含め、画像のないDraftでは空文字にできます。`heroImageCaption` の文言は任意です。`heroImageAssetId` を設定してPublishedにする場合、日英の `heroImageAlt` には空でない文言が必要です。
-
-Draftではkind・slug・categoryを `null`、翻訳文言を空文字にできます。kindは `story` / `guide`、slugは最大100文字のkebab-case、categoryは `history` / `culture` / `pub-culture` / `food-drink` です。Markdown URLの安全性は既存Serviceが検証します。
-
-`PATCH` の本文は `{ "status": "published" }` または `{ "status": "draft" }` のみで、余分なフィールドは拒否します。標準フローは `POST` でDraft作成 → `GET /:id` で保存内容確認 → `PATCH /:id/publication` で公開です。Publishedへの変更にはkind、slug、categoryと日英すべてのtitle、summary、bodyMarkdownが必要です。Hero画像を設定した場合は日英の代替テキストも必要です。Publishedの `PUT` でも公開条件を維持し、公開Contentの更新・公開状態変更後は既存の公開キャッシュを失効させます。
-
-入力本文がJSON以外なら `415 invalid_content_type`、不正JSONなら `400 invalid_json`、入力不正なら `422 validation_error` と必要に応じて `fieldErrors` を返します。公開条件不足は `422 publication_requirements_not_met` と `missingFields`、slug競合は `409 content_conflict` と必要に応じて `fieldErrors` を返します。不正なIDは `400 invalid_request`、未登録IDは `404 content_not_found` です。DB未設定時、一覧は空配列と `databaseConfigured: false`、詳細取得と更新系は `503 database_unavailable` を返します。内部エラーは詳細を伏せた `500 internal_error` です。
-
-### Automation Quiz管理
-
-Quiz APIは既存のQuiz Service、Validation、Repository、管理API Error Contractを再利用します。Question IDはServer生成UUIDで、`:id` を持つRouteはUUIDのみ受け付けます。Automation Createの冪等性処理では再試行に備えて同じUUIDを使用します。Scopeは操作ごとに分離され、一覧・詳細取得は `quiz:read`、Draft作成は `quiz:create`、全体Snapshot更新は `quiz:update`、公開状態変更は `quiz:publish` を要求します。Scope間の権限継承はありません。
-
-| メソッド | パス | 成功時 | 主な失敗時 |
-| --- | --- | --- | --- |
-| `GET` | `/api/automation/v1/quiz` | `200` と `{ questions }`。DraftとPublishedを含む | 認証 `401`、Scope不足 `403`、DB未設定 `503 database_unavailable`、取得失敗 `500` |
-| `GET` | `/api/automation/v1/quiz/:id` | `200` と `{ question }` | 認証 `401`、Scope不足 `403`、対象なし `404 quiz_not_found`、DB未設定 `503` |
-| `POST` | `/api/automation/v1/quiz` | `201` とServer生成IDのDraft `{ question }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、入力不正 `422`、競合 `409`、DB未設定 `503` |
-| `PUT` | `/api/automation/v1/quiz/:id` | `200` と公開状態を維持した `{ question }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、入力不正・公開条件不足 `422`、競合 `409`、対象なし `404`、DB未設定 `503` |
-| `PATCH` | `/api/automation/v1/quiz/:id/publication` | `200` と `{ publication }` | 認証 `401`、Scope不足 `403`、JSON不正 `400`、Content-Type不正 `415`、本文不正・公開条件不足 `422`、対象なし `404`、DB未設定 `503` |
-
-作成と更新のRequestは管理Quiz APIと同じ全体Snapshot契約です。画像関連Fieldは `imageAssetId`、`translations.ja.imageAlt`、`translations.ja.imageCaption`、`translations.en.imageAlt`、`translations.en.imageCaption` を含みます。画像を付けない場合は `imageAssetId: null` とし、既存画像を維持して `PUT` する場合は `imageAssetId` と日英の `imageAlt` / `imageCaption` も引き継いでください。Snapshot更新でこれらを省略すると、画像情報は維持されません。
-
-画像関連Fieldの入力例です。公開時、`imageAssetId` が指定されていれば日英それぞれの `imageAlt` が必須です。`imageCaption` は任意です。
-
-```json
-{
-  "imageAssetId": null,
-  "translations": {
-    "ja": {
-      "question": "",
-      "explanation": "",
-      "sourceLabel": "",
-      "imageAlt": "",
-      "imageCaption": ""
-    },
-    "en": {
-      "question": "",
-      "explanation": "",
-      "sourceLabel": "",
-      "imageAlt": "",
-      "imageCaption": ""
-    }
-  }
-}
-```
-
-ID、公開状態、日時、Choiceの `sortOrder` などServer管理Fieldは保存入力として利用されません。GET ResponseのQuestionはChoiceごとにServerが決めた `sortOrder` を含みますが、POST / PUT Requestでは送信できず、指定すると `422 validation_error` になります。RequestのChoice配列順からServerが並び順を決定するため、GETしたQuestion ResponseをそのままPUTする契約ではありません。作成時のQuestion IDはServerが生成し、新規Quizは必ずDraftになります。Publication状態の変更は専用Endpointだけが受け付け、Bodyはbooleanの `isPublished` だけを許可します。
-
-Draft / Publishedの検証、カテゴリAllow List、Choice（Draftは0〜4件、公開時は4件）、正解Choice参照、日英翻訳、HTTPS `sourceUrl`、Guide参照、特別日の条件は既存Quiz Serviceが検証します。Published Quizの更新も現在の公開条件を満たす場合に限り、公開時の要件不足は `422 publication_requirements_not_met` と `missingFields` で返します。詳細なQuiz入力と公開条件は下記のQuiz管理API仕様と同じです。
+OpenAPI収録済みAPIのSchemaやStatusをここへ複製しません。APIの全体方針と認証境界は本書、機械可読なContractはOpenAPI、運用手順はRunbook、ドメイン固有の業務条件は各Specに記載します。
 
 ## 管理 API
 
@@ -244,7 +92,7 @@ Draft / Publishedの検証、カテゴリAllow List、Choice（Draftは0〜4件�
 }
 ```
 
-共通コードは `unauthorized`、`forbidden`、`invalid_json`、`invalid_content_type`、`database_unavailable`、`internal_error` です。ログイン、店舗、タグ、マスタ固有のコードには `invalid_credentials`、`auth_not_configured`、`invalid_pub_data`、`pub_not_found`、`publication_requirements_not_met`、`content_conflict`、`content_not_found`、`quiz_conflict`、`quiz_not_found`、`calendar_conflict`、`calendar_not_found`、`tag_conflict`、`tag_not_found`、`tag_in_use`、`invalid_tag_id`、`invalid_prefecture_code` があります。フィールド理由は `required`、`too_long`、`invalid_format`、`invalid_type`、`leading_or_trailing_space`、`immutable` です。未知のコードやJSONでないレスポンスはClientで一般化し、APIは例外文、DB・SQL・接続情報を返しません。HTTPステータスは従来どおり、認証 `401`、権限 `403`、入力 `400` / `415` / `422`、対象なし `404`、競合 `409`、設定不足 `503`、内部エラー `500` を使います。
+共通コードは `unauthorized`、`forbidden`、`invalid_json`、`invalid_content_type`、`database_unavailable`、`internal_error` です。ログイン、店舗、タグ、マスタ固有のコードには `invalid_credentials`、`auth_not_configured`、`invalid_pub_data`、`pub_not_found`、`publication_requirements_not_met`、`content_conflict`、`content_not_found`、`quiz_conflict`、`quiz_not_found`、`tag_conflict`、`tag_not_found`、`tag_in_use`、`invalid_tag_id`、`invalid_prefecture_code` があります。フィールド理由は `required`、`too_long`、`invalid_format`、`invalid_type`、`leading_or_trailing_space`、`immutable` です。未知のコードやJSONでないレスポンスはClientで一般化し、APIは例外文、DB・SQL・接続情報を返しません。HTTPステータスは認証 `401`、権限 `403`、入力 `400` / `415` / `422`、対象なし `404`、競合 `409`、設定不足 `503`、内部エラー `500` を使います。
 
 営業ステータス管理固有のコードは、不正なURLパラメーターの `invalid_status_code` と、更新対象が存在しない `status_not_found` です。
 
@@ -273,21 +121,13 @@ Draft / Publishedの検証、カテゴリAllow List、Choice（Draftは0〜4件�
 | `GET` | `/api/admin/content/:id` | `200` と日英翻訳を含む `{ content }` | 未認証は `401`、ID不正は `400`、対象なしは `404`、DB未設定は `503` |
 | `PUT` | `/api/admin/content/:id` | `200` と公開状態を維持した `{ content }` | 未認証は `401`、Origin不正は `403`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404` |
 | `PATCH` | `/api/admin/content/:id/publication` | `200` と `{ publication: { id, status, unchanged, publishedAt } }` | 未認証は `401`、Origin不正は `403`、入力不正・公開条件不足は `422`、対象なしは `404` |
-| `GET` | `/api/admin/calendar` | `200` と `{ events, databaseConfigured }`。DraftとPublishedを含む | 未認証は `401`、取得失敗は `500` |
-| `POST` | `/api/admin/calendar` | `201` とDraftの `{ event }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、重複は `409`、DB未設定は `503` |
-| `GET` | `/api/admin/calendar/:id` | `200` と日英翻訳を含む `{ event }`。`:id` はUUID | 未認証は `401`、UUID形式でないIDは `400`、対象なしは `404`、DB未設定は `503` |
-| `PUT` | `/api/admin/calendar/:id` | `200` と公開状態を維持した `{ event }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404`、DB未設定は `503` |
-| `PATCH` | `/api/admin/calendar/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
-| `DELETE` | `/api/admin/calendar/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、対象なしは `404`、DB未設定は `503` |
 | `GET` | `/api/admin/quiz` | `200` と `{ questions, databaseConfigured }`。DraftとPublishedを含む | 未認証は `401`、取得失敗は `500` |
 | `POST` | `/api/admin/quiz` | `201` とServer生成UUIDを持つDraftの `{ question }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、重複は `409`、DB未設定は `503` |
 | `GET` | `/api/admin/quiz/:id` | `200` と日英翻訳・Choiceを含む `{ question }` | 未認証は `401`、ID不正は `400`、対象なしは `404`、DB未設定は `503` |
 | `PUT` | `/api/admin/quiz/:id` | `200` と公開状態を維持した `{ question }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404`、DB未設定は `503` |
 | `PATCH` | `/api/admin/quiz/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
 
-Calendar Admin APIのPath、Method、Request / Response、Status、認証、Schemaの機械可読な契約は[OpenAPI定義](openapi/openapi.yaml)を正とします。この文書では引き続きCalendar APIの設計方針と運用上の補足を扱います。
-
-Irish Calendarは公開用APIを新設せず、`/discover/calendar`のServer ComponentがPublic Calendar Data Loader経由でPublished Eventを取得します。管理操作は上記の`/api/admin/calendar`系Routeだけが受け付け、CreateはDraft、`PUT`は公開状態を維持し、Publication変更は専用`PATCH`で行います。Published変更時はPublic Calendar Cacheをinvalidateし、Date RuleはServer-side Validationを通過させます。
+Irish Calendarの公開表示は `/discover/calendar` のServer ComponentがPublic Calendar Data Loader経由でPublished Eventを取得します。管理Calendar APIの契約は[OpenAPI定義](openapi/openapi.yaml)、画面Behaviorは[Product仕様](product.md)を参照してください。
 
 Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`translations: { ja, en }` を含む全体スナップショットを受け付けます。各翻訳は `title`、`summary`、`bodyMarkdown` を持ちます。Draftでは言語非依存項目を `null`、翻訳文言を空文字で保存できます。kindは `story` / `guide`、categoryは既知分類、localeは `ja` / `en`、slugは小文字英数字と単語間のハイフンだけを許可します。bodyMarkdownは先頭・末尾の空白を含む原文を保持します。MarkdownはRendererと同じCommonMark・GFM ParserでAST化し、link・image・definitionのURLにはHTTP(S)、ルート相対、ページ内アンカーだけを許可します。
 
@@ -320,7 +160,6 @@ Media Asset APIは管理者専用です。`POST /api/admin/media` は同一Origi
 ## 今後の拡張候補
 
 - `GET /api/pubs/:id`: 店舗詳細を返す
-- モバイルアプリからの API 利用
 
 ## 注意点
 
