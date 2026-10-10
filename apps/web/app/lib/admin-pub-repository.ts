@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { isUuid } from "@irishpub-map/shared/uuid";
 import type { AdminPub, AdminPubFieldErrors, AdminPubWriteInput } from "@irishpub-map/shared/admin-pub";
 import type { PubStatus, PubType } from "@irishpub-map/shared/pub";
 import { getE2EAdminPub } from "./e2e-test-fixtures";
@@ -379,7 +380,7 @@ function nullablePubType(value: unknown): PubType | null {
 
 function requiredUuid(value: unknown) {
   const id = requiredText(value);
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+  if (!isUuid(id)) {
     throw new Error("Invalid UUID returned from database.");
   }
   return id;

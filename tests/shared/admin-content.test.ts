@@ -2,9 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
   AdminContentPublicationValidationError,
   AdminContentWriteValidationError,
+  isAdminContentId,
   parseAdminContentWriteInput,
   parseSetAdminContentPublicationInput,
 } from "../../packages/shared/src/admin-content";
+
+describe("admin content UUID IDs", () => {
+  it("preserves RFC 4122 version 1-5 and case-insensitive validation", () => {
+    expect(isAdminContentId("550E8400-E29B-41D4-A716-446655440000")).toBe(true);
+    expect(isAdminContentId("550e8400-e29b-71d4-a716-446655440000")).toBe(false);
+  });
+});
 
 const draft = {
   kind: null,

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { AdminFieldErrorCode } from "@irishpub-map/shared/admin-api-error";
 import { isMediaAssetId } from "@irishpub-map/shared/media";
+import { isUuid } from "@irishpub-map/shared/uuid";
 import { getAdminContent } from "./admin-content-repository";
 import { getMediaAsset } from "./media/repository";
 import { getQuizPublicationMissingFields } from "./quiz/publication";
@@ -28,7 +29,6 @@ import {
 export { getQuizPublicationMissingFields } from "./quiz/publication";
 type FieldErrors = Partial<Record<string, AdminFieldErrorCode>>;
 type RecordValue = Record<string, unknown>;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 /** 管理Quiz操作でAPIへ安全に公開できる業務エラーです。 */
 export class AdminQuizServiceError extends Error {
   constructor(
@@ -226,7 +226,7 @@ function parseSourceUrl(value: unknown, errors: FieldErrors): string | null {
 }
 function parseRelatedContentId(value: unknown, errors: FieldErrors): string | null {
   if (value === undefined || value === null || value === "") return null;
-  if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
+  if (!isUuid(value)) {
     errors.relatedContentId = "invalid_format";
     return null;
   }

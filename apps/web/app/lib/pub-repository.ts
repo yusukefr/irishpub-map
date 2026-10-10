@@ -9,6 +9,7 @@ import {
 } from "@irishpub-map/shared/admin-pub";
 import { getPrefectureName } from "@irishpub-map/shared/prefecture";
 import { getPubStatusValue } from "@irishpub-map/shared/status";
+import { isUuid } from "@irishpub-map/shared/uuid";
 import { asPubs, isPubId, type Pub } from "@irishpub-map/shared/pub";
 import { getE2EAdminPubPage, getE2EPublishedPubs } from "./e2e-test-fixtures";
 import { isDataSourceConfigured, isE2ETestMode, rejectE2ETestMutation } from "./e2e-test-mode";
@@ -565,14 +566,7 @@ function normalizeAdminPubListTags(value: unknown): AdminPubListTag[] {
     const id = normalizeText(tag.id);
     const key = normalizeText(tag.key);
     const name = normalizeText(tag.name);
-    if (
-      typeof id !== "string" ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ||
-      typeof key !== "string" ||
-      !key ||
-      typeof name !== "string" ||
-      !name
-    ) {
+    if (typeof id !== "string" || !isUuid(id) || typeof key !== "string" || !key || typeof name !== "string" || !name) {
       throw new Error("Invalid admin pub tag.");
     }
     return { id, key, name };

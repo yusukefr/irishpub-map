@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { DEFAULT_LOCALE, type Locale } from "@irishpub-map/shared/locale";
+import { isUuid } from "@irishpub-map/shared/uuid";
 import type {
   MunicipalityOption,
   PrefectureOption,
@@ -176,7 +177,7 @@ function requiredText(value: unknown) {
 
 function requiredUuid(value: unknown) {
   const text = requiredText(value);
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text)) {
+  if (!isUuid(text)) {
     throw new Error("Invalid master UUID returned from database.");
   }
   return text;

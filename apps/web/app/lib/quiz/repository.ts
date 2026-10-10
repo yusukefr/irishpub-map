@@ -1,6 +1,7 @@
 import { neon, type NeonQueryFunctionInTransaction } from "@neondatabase/serverless";
 import { DEFAULT_LOCALE, isSupportedLocale, type Locale } from "@irishpub-map/shared/locale";
 import type { MediaAsset, MediaMimeType } from "@irishpub-map/shared/media";
+import { isUuid } from "@irishpub-map/shared/uuid";
 import { getPublishedContentById } from "../content/repository";
 import {
   getE2EAdminQuiz,
@@ -793,7 +794,7 @@ function nullableHttpsUrl(value: unknown) {
 
 function requiredUuid(value: unknown) {
   const text = requiredNonEmptyString(value);
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(text)) {
+  if (!isUuid(text)) {
     throw invalidDatabaseQuiz();
   }
   return text;

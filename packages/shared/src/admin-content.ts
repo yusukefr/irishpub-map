@@ -1,6 +1,7 @@
 import type { AdminFieldErrorCode } from "./admin-api-error";
 import { SUPPORTED_LOCALES, type Locale } from "./locale";
 import { isMediaAssetId, type MediaAsset } from "./media";
+import { isUuid } from "./uuid";
 
 /** Editorial Contentで管理できる種類です。 */
 export const CONTENT_KINDS = ["story", "guide"] as const;
@@ -89,7 +90,6 @@ export class AdminContentPublicationValidationError extends Error {
   }
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /**
@@ -151,7 +151,7 @@ export function isContentCategory(value: string): value is ContentCategory {
  * @returns {boolean} UUID形式の場合はtrue。
  */
 export function isAdminContentId(value: string) {
-  return UUID_PATTERN.test(value);
+  return isUuid(value);
 }
 
 function parseTranslations(value: unknown, errors: AdminContentFieldErrors) {
