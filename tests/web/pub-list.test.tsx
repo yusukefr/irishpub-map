@@ -69,7 +69,8 @@ describe("PubList", () => {
     render(<PubList pubs={pubs} />);
 
     const cards = screen.getAllByRole("article");
-    expect(within(cards[0]).getByText("Open")).toHaveAttribute("data-status", "open");
+    expect(within(cards[0]).queryByText("Open")).not.toBeInTheDocument();
+    expect(within(cards[0]).getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" })).toBeInTheDocument();
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("Guinness");
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("Live music");
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("+1");
