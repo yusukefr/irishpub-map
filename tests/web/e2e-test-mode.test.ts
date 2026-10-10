@@ -6,9 +6,11 @@ import {
   getE2EAdminPub,
   getE2EAdminPubPage,
   getE2EAdminTags,
+  getE2EPublishedContentBySlug,
   getE2EPublishedContentList,
   getE2EPublishedPubs,
   getE2EPublishedQuizQuestions,
+  gradeE2EPublishedQuizAnswer,
 } from "../../apps/web/app/lib/e2e-test-fixtures";
 import { isDataSourceConfigured, isE2ETestMode, rejectE2ETestMutation } from "../../apps/web/app/lib/e2e-test-mode";
 import { isUuid } from "@irishpub-map/shared/uuid";
@@ -64,6 +66,32 @@ describe("E2E test mode", () => {
     expect(getE2EPublishedQuizQuestions("ja").map(({ question }) => question)).toEqual(["E2E 公開Quiz"]);
     expect(getE2EPublishedQuizQuestions("en").map(({ question }) => question)).toEqual(["E2E Published Quiz"]);
     expect(adminQuiz.every((question) => isUuid(question.id))).toBe(true);
+
+    const publishedContent = contents.find((content) => content.status === "published");
+    const publishedQuiz = adminQuiz.find((question) => question.isPublished);
+    expect(publishedContent).toBeDefined();
+    expect(publishedQuiz).toBeDefined();
+    expect(publishedQuiz?.relatedContentId).toBe(publishedContent?.id);
+    expect(publishedContent?.heroImageAssetId).toBe(E2E_TEST_DATA.media.landscape.id);
+    expect(publishedQuiz?.imageAssetId).toBe(E2E_TEST_DATA.media.landscape.id);
+
+    const tagIds = new Set(getE2EAdminTags().map((tag) => tag.id));
+    for (const pubId of Object.values(E2E_TEST_DATA.pubs).map(({ id }) => id)) {
+      const pub = getE2EAdminPub(pubId);
+      expect(pub).not.toBeNull();
+      expect(pub?.tagIds.every((tagId) => tagIds.has(tagId))).toBe(true);
+    }
+
+    for (const locale of ["ja", "en"] as const) {
+      const publicQuestion = getE2EPublishedQuizQuestions(locale)[0];
+      const answer = gradeE2EPublishedQuizAnswer(publicQuestion.id, publicQuestion.choices[0].id, locale);
+      expect(answer.relatedGuide).toBeDefined();
+      const relatedGuide = answer.relatedGuide
+        ? getE2EPublishedContentBySlug("guide", answer.relatedGuide.slug, locale)
+        : null;
+      expect(relatedGuide).not.toBeNull();
+      expect(answer.relatedGuide?.label).toBe(relatedGuide?.title);
+    }
   });
 
   it("rejects fixture mutations before a database can be used", () => {

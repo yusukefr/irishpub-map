@@ -161,7 +161,7 @@ describe("public quiz repository", () => {
     await expect(gradePublishedQuizAnswer(questions[0].id, questions[0].choices[0].id, "en")).resolves.toMatchObject({
       status: "correct",
       explanation: "An explanation for E2E.",
-      relatedGuide: { slug: "e2e-published-guide" },
+      relatedGuide: { slug: "split-the-g" },
     });
     // DATABASE_URLが存在しても一覧取得・採点はNeonへ接続しません。
     expect(mocks.queries).toEqual([]);

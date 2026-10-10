@@ -1,6 +1,6 @@
 import { neon, type NeonQueryFunctionInTransaction } from "@neondatabase/serverless";
 import { isCalendarEventId, parseCalendarDateRule, parseCalendarDateRuleDefinition } from "./validation";
-import { rejectE2ETestMutation } from "../e2e-test-mode";
+import { isE2ETestMode, rejectE2ETestMutation } from "../e2e-test-mode";
 import type {
   AdminCalendarEvent,
   AdminCalendarListItem,
@@ -47,7 +47,7 @@ let sqlClient: ReturnType<typeof neon> | null = null;
  * @returns 検証済みの公開Calendar Event一覧。
  */
 export async function getPublishedCalendarEvents(): Promise<readonly CalendarEvent[]> {
-  if (!process.env.DATABASE_URL) return [];
+  if (isE2ETestMode() || !process.env.DATABASE_URL) return [];
   const rows = await queryRows(
     getRequiredSql(),
     "SELECT event.id, event.category, event.date_rule, event.is_public_holiday, event.featured, event.aliases, event.source, " +
@@ -65,7 +65,7 @@ export async function getPublishedCalendarEvents(): Promise<readonly CalendarEve
  * @returns 管理Calendar Event一覧。
  */
 export async function listAdminCalendarEvents(): Promise<readonly AdminCalendarListItem[]> {
-  if (!process.env.DATABASE_URL) return [];
+  if (isE2ETestMode() || !process.env.DATABASE_URL) return [];
   const rows = await queryRows(
     getRequiredSql(),
     "SELECT event.id, event.category, event.date_rule, event.is_public_holiday, event.featured, event.aliases, event.source, " +
@@ -86,7 +86,7 @@ export async function listAdminCalendarEvents(): Promise<readonly AdminCalendarL
  */
 export async function getAdminCalendarEvent(id: string): Promise<AdminCalendarEvent | null> {
   requiredId(id);
-  if (!process.env.DATABASE_URL) return null;
+  if (isE2ETestMode() || !process.env.DATABASE_URL) return null;
   const rows = await queryRows(
     getRequiredSql(),
     "SELECT event.id, event.category, event.date_rule, event.is_public_holiday, event.featured, event.aliases, event.source, " +

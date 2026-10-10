@@ -20,6 +20,7 @@ vi.mock("@neondatabase/serverless", () => ({
 import { getPublishedContentById } from "../../apps/web/app/lib/content/repository";
 
 const originalDatabaseUrl = process.env.DATABASE_URL;
+const originalE2ETestMode = process.env.E2E_TEST_MODE;
 const id = "550e8400-e29b-41d4-a716-446655440001";
 
 beforeEach(() => {
@@ -31,6 +32,8 @@ beforeEach(() => {
 afterEach(() => {
   if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
   else process.env.DATABASE_URL = originalDatabaseUrl;
+  if (originalE2ETestMode === undefined) delete process.env.E2E_TEST_MODE;
+  else process.env.E2E_TEST_MODE = originalE2ETestMode;
 });
 
 describe("published content ID repository", () => {
@@ -66,6 +69,13 @@ describe("published content ID repository", () => {
     await expect(getPublishedContentById("invalid", "ja")).resolves.toBeNull();
     delete process.env.DATABASE_URL;
     await expect(getPublishedContentById(id, "ja")).resolves.toBeNull();
+    expect(databaseMock.queries).toEqual([]);
+  });
+
+  it("E2E modeではDatabase URLが設定されていてもID readをNeonへ渡さない", async () => {
+    process.env.E2E_TEST_MODE = "1";
+
+    await expect(getPublishedContentById(id, "en")).resolves.toBeNull();
     expect(databaseMock.queries).toEqual([]);
   });
 });

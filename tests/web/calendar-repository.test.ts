@@ -40,6 +40,7 @@ import {
   deleteCalendarEvent,
   getAdminCalendarEvent,
   getPublishedCalendarEvents,
+  isCalendarDatabaseConfigured,
   insertCalendarEvent,
   listAdminCalendarEvents,
   parsePublishedCalendarRow,
@@ -107,6 +108,18 @@ afterEach(() => {
 });
 
 describe("calendar public repository", () => {
+  it("E2E modeではDatabase URLが設定されていても全ReadをFixture境界で止める", async () => {
+    process.env.E2E_TEST_MODE = "1";
+    const id = "8acbc777-5160-4f1d-8284-6db05f89485d";
+
+    expect(isCalendarDatabaseConfigured()).toBe(true);
+    await expect(getPublishedCalendarEvents()).resolves.toEqual([]);
+    await expect(listAdminCalendarEvents()).resolves.toEqual([]);
+    await expect(getAdminCalendarEvent(id)).resolves.toBeNull();
+    expect(mocks.queries).toEqual([]);
+    expect(mocks.transactionCount).toBe(0);
+  });
+
   it("公開済みだけを検証済みのCalendarEventとして返し、管理情報を公開しない", async () => {
     mocks.responses = [[publicRow()]];
 
