@@ -69,7 +69,7 @@ test("360px Mobile Navigation stays closed after route changes and same-page nav
   await expect(page).toHaveURL(/\/admin\/calendar$/);
   await expect(menu).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("navigation", { name: "管理機能" })).not.toBeVisible();
-  await expect(page.getByRole("heading", { name: "Calendar管理" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Calendar Event一覧" })).toBeVisible();
 
   await page.goBack();
   await expect(page).toHaveURL(/\/admin\/pubs$/);
