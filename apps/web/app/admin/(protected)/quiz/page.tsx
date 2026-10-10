@@ -39,7 +39,6 @@ export default async function AdminQuizPage() {
           <table className="admin-pub-table">
             <thead>
               <tr>
-                <th>{q.id}</th>
                 <th>{q.question}</th>
                 <th>{q.category}</th>
                 <th>{q.specialDate}</th>
@@ -52,9 +51,6 @@ export default async function AdminQuizPage() {
             <tbody>
               {questions.map((question) => (
                 <tr key={question.id}>
-                  <td data-label={q.id}>
-                    <code>{question.id}</code>
-                  </td>
                   <td data-label={q.question}>
                     <strong>{question.questionJa || "—"}</strong>
                     {question.questionEn ? (

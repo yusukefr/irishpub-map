@@ -63,6 +63,8 @@ describe("Admin Quiz pages", () => {
     expect(mocks.requireAdminSession).toHaveBeenCalled();
     expect(screen.getByRole("heading", { name: "Quiz管理" })).toBeInTheDocument();
     expect(screen.getByText("下書き")).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Question ID" })).not.toBeInTheDocument();
+    expect(screen.queryByText("11111111-1111-4111-8111-000000000001")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "編集" })).toHaveAttribute(
       "href",
       "/admin/quiz/11111111-1111-4111-8111-000000000001",

@@ -41,7 +41,6 @@ export default async function AdminCalendarPage() {
           <table className="admin-pub-table admin-content-table">
             <thead>
               <tr>
-                <th>{c.id}</th>
                 <th>{c.name}</th>
                 <th>{c.category}</th>
                 <th>{c.dateRule}</th>
@@ -55,9 +54,6 @@ export default async function AdminCalendarPage() {
             <tbody>
               {events.map((event) => (
                 <tr key={event.id}>
-                  <td data-label={c.id}>
-                    <code>{event.id}</code>
-                  </td>
                   <td data-label={c.name}>
                     <strong>{event.nameJa || c.notSet}</strong>
                     {event.nameEn ? (
