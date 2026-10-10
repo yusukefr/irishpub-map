@@ -1,11 +1,17 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  E2E_TEST_DATA,
+  getE2EAdminContentList,
+  getE2EAdminQuizList,
   getE2EAdminPub,
   getE2EAdminPubPage,
   getE2EAdminTags,
+  getE2EPublishedContentList,
   getE2EPublishedPubs,
+  getE2EPublishedQuizQuestions,
 } from "../../apps/web/app/lib/e2e-test-fixtures";
 import { isDataSourceConfigured, isE2ETestMode, rejectE2ETestMutation } from "../../apps/web/app/lib/e2e-test-mode";
+import { isUuid } from "@irishpub-map/shared/uuid";
 
 const originalE2EMode = process.env.E2E_TEST_MODE;
 const originalVercelEnv = process.env.VERCEL_ENV;
@@ -28,6 +34,36 @@ describe("E2E test mode", () => {
     expect(getE2EAdminPubPage({ statusKey: "open", page: 1 }, "en")).toMatchObject({ total: 2, page: 1 });
     expect(getE2EAdminPub("30000000-0000-4000-8000-000000000001")?.translations.en?.address).toContain("Nagoya");
     expect(getE2EAdminTags()).toHaveLength(2);
+  });
+
+  it("keeps fixture IDs, locales, and publication state production-shaped", () => {
+    const fixedIds = [
+      ...Object.values(E2E_TEST_DATA.content).map(({ id }) => id),
+      ...Object.values(E2E_TEST_DATA.pubs).map(({ id }) => id),
+      ...Object.values(E2E_TEST_DATA.tags).map(({ id }) => id),
+      ...Object.values(E2E_TEST_DATA.media).map(({ id }) => id),
+    ];
+    expect(fixedIds.every(isUuid)).toBe(true);
+
+    const contents = getE2EAdminContentList();
+    expect(contents.map((content) => content.status).sort()).toEqual(["draft", "published"]);
+    for (const content of contents) {
+      expect(content.publishedAt === null).toBe(content.status === "draft");
+    }
+    expect(getE2EPublishedContentList("guide", "ja").map(({ title }) => title)).toEqual([
+      "Split the Gを楽しむ",
+      "サンプルガイド",
+    ]);
+    expect(getE2EPublishedContentList("guide", "en").map(({ title }) => title)).toEqual([
+      "How to Enjoy Split the G",
+      "Sample Guide",
+    ]);
+
+    const adminQuiz = getE2EAdminQuizList();
+    expect(adminQuiz.map((question) => question.isPublished).sort()).toEqual([false, true]);
+    expect(getE2EPublishedQuizQuestions("ja").map(({ question }) => question)).toEqual(["E2E 公開Quiz"]);
+    expect(getE2EPublishedQuizQuestions("en").map(({ question }) => question)).toEqual(["E2E Published Quiz"]);
+    expect(adminQuiz.every((question) => isUuid(question.id))).toBe(true);
   });
 
   it("rejects fixture mutations before a database can be used", () => {

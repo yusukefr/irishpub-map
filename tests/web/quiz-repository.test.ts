@@ -154,7 +154,6 @@ afterEach(() => {
 describe("public quiz repository", () => {
   it("E2E Test ModeではPublished Question一覧と採点をfixtureから返す", async () => {
     process.env.E2E_TEST_MODE = "1";
-    delete process.env.DATABASE_URL;
 
     const questions = await listPublishedQuizQuestions("en");
     expect(questions).toHaveLength(1);
@@ -164,6 +163,8 @@ describe("public quiz repository", () => {
       explanation: "An explanation for E2E.",
       relatedGuide: { slug: "e2e-published-guide" },
     });
+    // DATABASE_URLが存在しても一覧取得・採点はNeonへ接続しません。
+    expect(mocks.queries).toEqual([]);
   });
   it("公開済みだけをLocale fallback付きで取得し、回答情報をSQLとDTOへ含めない", async () => {
     mocks.responses = [publicRows()];
