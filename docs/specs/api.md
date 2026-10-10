@@ -124,7 +124,7 @@ Master参照はすべて `master:read` を要求し、現在のDBを既存Reposi
 }
 ```
 
-日本語店舗名はDraft時点で必須です。Draftではほかの基本項目を `null`、英語翻訳を `null`、Tag IDを空配列にできます。指定する座標は有限数で緯度−90〜90・経度−180〜180、URLはHTTP/HTTPS、営業ステータスは `open` / `temporarily_closed` / `closed` / `unknown` です。Tag IDは重複のないUUID配列です。市区町村と都道府県の対応、営業ステータスとTagの存在は既存ServiceとRepositoryが現在のDBで検証します。`id`、`isPublished`、`updatedAt` などのServer管理フィールドを本文へ含めると `422 validation_error` になります。GETの `pub` をそのままPUTせず、上記の書き込み可能なフィールドだけを送信します。
+日本語店舗名はDraft時点で必須です。Draftではほかの基本項目を `null`、英語翻訳を `null`、Tag IDを空配列にできます。指定する座標は有限数で緯度−90〜90・経度−180〜180、URLはHTTP(S)で2,048文字以内です。公式サイトは任意ホスト、Google Mapsは対応するGoogle Maps共有ホストとパス、Instagramはプロフィール・投稿・リールURLだけを許可し、ユーザー情報と制御文字を拒否します。URL先への接続はしません。住所は前後をtrimして制御文字を拒否し、300文字以内です。日本語住所はDraftで任意・公開時必須、英語翻訳では英語住所を必須とします。営業ステータスは `open` / `temporarily_closed` / `closed` / `unknown` です。Tag IDは重複のないUUID配列です。市区町村と都道府県の対応、営業ステータスとTagの存在は既存ServiceとRepositoryが現在のDBで検証します。`id`、`isPublished`、`updatedAt` などのServer管理フィールドを本文へ含めると `422 validation_error` になります。GETの `pub` をそのままPUTせず、上記の書き込み可能なフィールドだけを送信します。
 
 作成前には `GET /pubs?name=...` などで既存店舗を検索し、店舗名、住所、Website URL、Google Maps URL、Instagram URLを比較します。登録する都道府県・市区町村・営業ステータスは上記のMaster APIから、Tag IDは `GET /master/tags` から取得します。適切なTagがない場合だけ `POST /tags` で作成し、返されたIDをPub入力の `tagIds` に指定します。Client側でMasterコードやTag IDを推測せず、Pub APIはTagを自動作成しません。意味的な店舗重複の自動判定はありません。
 

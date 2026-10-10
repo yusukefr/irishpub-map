@@ -1,6 +1,6 @@
 import type { AdminFieldErrorCode } from "./admin-api-error";
 import type { PubStatus, PubType } from "./pub";
-import { isUuid } from "./uuid";
+import { isUuid } from "./uuid.ts";
 
 /** 管理店舗一覧で1ページに取得する最大件数です。 */
 export const ADMIN_PUB_PAGE_SIZE = 50;
@@ -94,13 +94,16 @@ export type AdminPubFieldErrors = Partial<Record<string, AdminFieldErrorCode>>;
 
 /** 管理店舗入力がDraft Validationまたは入力契約を満たさない場合のエラーです。 */
 export class AdminPubWriteValidationError extends Error {
+  readonly fieldErrors: AdminPubFieldErrors;
+
   /**
    * 検証済みのフィールド別エラーを保持します。
    * @param {AdminPubFieldErrors} fieldErrors - APIで安全に返せるフィールド別理由。
    */
-  constructor(readonly fieldErrors: AdminPubFieldErrors) {
+  constructor(fieldErrors: AdminPubFieldErrors) {
     super("Invalid admin pub write input.");
     this.name = "AdminPubWriteValidationError";
+    this.fieldErrors = fieldErrors;
   }
 }
 
@@ -127,6 +130,92 @@ export class AdminPubPublicationValidationError extends Error {
 
 const STATUS_KEYS = new Set<PubStatus>(["open", "temporarily_closed", "closed", "unknown"]);
 const PUB_TYPE_KEYS = new Set<PubType>(["irish", "british", "other", "unclassified"]);
+const MAX_PUB_URL_LENGTH = 2_048;
+const MAX_PUB_ADDRESS_LENGTH = 300;
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/;
+
+/**
+ * 店舗リンクを未入力時nullへ正規化し、共通のHTTP(S) URL規則を適用します。
+ * @param {unknown} value - 未検証のURL入力。
+ * @param {"websiteUrl" | "googleMapsUrl" | "instagramUrl"} field - URL種別。
+ * @returns {{ value: string | null; error?: AdminFieldErrorCode }} 正規化値またはフィールドエラー。
+ */
+export function parseAdminPubUrl(
+  value: unknown,
+  field: "websiteUrl" | "googleMapsUrl" | "instagramUrl",
+): { value: string | null; error?: AdminFieldErrorCode } {
+  if (value === null || value === undefined) return { value: null };
+  if (typeof value !== "string") return { value: null, error: "invalid_type" };
+  if (CONTROL_CHARACTERS.test(value)) return { value: null, error: "invalid_format" };
+  const normalized = value.trim();
+  if (!normalized) return { value: null };
+  if (normalized.length > MAX_PUB_URL_LENGTH) return { value: null, error: "too_long" };
+
+  let url: URL;
+  try {
+    url = new URL(normalized);
+  } catch {
+    return { value: null, error: "invalid_format" };
+  }
+  if (
+    (url.protocol !== "http:" && url.protocol !== "https:") ||
+    !url.hostname ||
+    url.username !== "" ||
+    url.password !== ""
+  ) {
+    return { value: null, error: "invalid_format" };
+  }
+
+  if (field === "googleMapsUrl" && !isGoogleMapsUrl(url)) {
+    return { value: null, error: "invalid_format" };
+  }
+  if (field === "instagramUrl" && !isInstagramUrl(url)) {
+    return { value: null, error: "invalid_format" };
+  }
+  return { value: normalized };
+}
+
+/**
+ * 店舗住所をtrimし、制御文字と300文字超過を拒否します。
+ * @param {unknown} value - 未検証の住所入力。
+ * @param {boolean} required - 翻訳で住所を必須にするか。
+ * @returns {{ value: string | null; error?: AdminFieldErrorCode }} 正規化値またはフィールドエラー。
+ */
+export function parseAdminPubAddress(
+  value: unknown,
+  required = false,
+): { value: string | null; error?: AdminFieldErrorCode } {
+  if (value === undefined || value === null || value === "") {
+    return required ? { value: null, error: "required" } : { value: null };
+  }
+  if (typeof value !== "string") return { value: null, error: "invalid_type" };
+  if (CONTROL_CHARACTERS.test(value)) return { value: null, error: "invalid_format" };
+  const normalized = value.trim();
+  if (!normalized) return required ? { value: null, error: "required" } : { value: null };
+  if (normalized.length > MAX_PUB_ADDRESS_LENGTH) return { value: null, error: "too_long" };
+  return { value: normalized };
+}
+
+function isGoogleMapsUrl(url: URL): boolean {
+  const hostname = url.hostname.toLowerCase();
+  if (hostname === "maps.app.goo.gl") return /^\/[A-Za-z0-9_-]+\/?$/.test(url.pathname);
+  if (hostname === "maps.google.com") return true;
+  if (hostname === "google.com" || hostname === "www.google.com") {
+    return url.pathname === "/maps" || url.pathname.startsWith("/maps/");
+  }
+  return false;
+}
+
+function isInstagramUrl(url: URL): boolean {
+  if (url.hostname.toLowerCase() !== "instagram.com" && url.hostname.toLowerCase() !== "www.instagram.com") {
+    return false;
+  }
+  const segments = url.pathname.split("/").filter(Boolean);
+  if (segments.length === 1) {
+    return /^[A-Za-z0-9_](?:[A-Za-z0-9._]{0,28}[A-Za-z0-9_])?$/.test(segments[0]) && !segments[0].includes("..");
+  }
+  return segments.length === 2 && /^(?:p|reel)$/.test(segments[0]) && /^[A-Za-z0-9_-]{5,}$/.test(segments[1]);
+}
 
 /**
  * URL Query Parameterを正規化し、Repositoryへ渡せる管理店舗検索条件へ変換します。
@@ -278,7 +367,7 @@ function parseTranslation(
   validateKeys(translation, ["name", "nameReading", "address"], fieldErrors, `${path}.`);
   const name = normalizedText(translation.name, `${path}.name`, true, fieldErrors);
   const nameReading = normalizedText(translation.nameReading, `${path}.nameReading`, false, fieldErrors);
-  const address = normalizedText(translation.address, `${path}.address`, requireAddress, fieldErrors);
+  const address = normalizedAddress(translation.address, `${path}.address`, requireAddress, fieldErrors);
   return name ? { name, nameReading, address } : null;
 }
 
@@ -328,20 +417,19 @@ function nullableCoordinate(
 }
 
 function nullableUrl(value: unknown, field: string, fieldErrors: AdminPubFieldErrors) {
-  if (value === null || value === "") return null;
-  if (typeof value !== "string") {
-    fieldErrors[field] = value === undefined ? "required" : "invalid_type";
+  if (value === undefined) {
+    fieldErrors[field] = "required";
     return null;
   }
-  const normalized = value.trim();
-  try {
-    const url = new URL(normalized);
-    if ((url.protocol !== "http:" && url.protocol !== "https:") || !url.hostname) throw new Error();
-    return normalized;
-  } catch {
-    fieldErrors[field] = "invalid_format";
-    return null;
-  }
+  const parsed = parseAdminPubUrl(value, field as "websiteUrl" | "googleMapsUrl" | "instagramUrl");
+  if (parsed.error) fieldErrors[field] = parsed.error;
+  return parsed.value;
+}
+
+function normalizedAddress(value: unknown, field: string, required: boolean, fieldErrors: AdminPubFieldErrors) {
+  const parsed = parseAdminPubAddress(value, required);
+  if (parsed.error) fieldErrors[field] = parsed.error;
+  return parsed.value;
 }
 
 function nullableStatus(value: unknown, fieldErrors: AdminPubFieldErrors): PubStatus | null {

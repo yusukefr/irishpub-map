@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseAdminPubAddress, parseAdminPubUrl } from "@irishpub-map/shared/admin-pub";
 import { contentResponse, pubResponse, quizResponse, tagsResponse } from "./mcp-read-schemas";
 
 // OpenAPI の Write input だけを通し、GET に含まれる server-managed field は受け付けない。
@@ -105,15 +106,30 @@ export const quizPublicationResponse = z
   .strict();
 
 const pubRequiredText = z.string().trim().min(1);
-const pubOptionalText = z.string().nullable();
+const pubAddress = z
+  .string()
+  .nullable()
+  .superRefine((value, context) => {
+    if (value === null) return;
+    const result = parseAdminPubAddress(value);
+    if (result.error) context.addIssue({ code: "custom", message: result.error });
+  });
+const pubRequiredAddress = z.string().superRefine((value, context) => {
+  const result = parseAdminPubAddress(value, true);
+  if (result.error) context.addIssue({ code: "custom", message: result.error });
+});
 const pubTranslation = z
-  .object({ name: pubRequiredText, nameReading: pubOptionalText, address: pubOptionalText })
+  .object({ name: pubRequiredText, nameReading: z.string().nullable(), address: pubAddress })
   .strict();
-const pubEnglishTranslation = pubTranslation.extend({ address: pubRequiredText });
-const pubUrl = z
-  .url()
-  .regex(/^https?:\/\//i)
-  .nullable();
+const pubEnglishTranslation = pubTranslation.extend({ address: pubRequiredAddress });
+const pubUrl = (field: "websiteUrl" | "googleMapsUrl" | "instagramUrl") =>
+  z
+    .string()
+    .nullable()
+    .superRefine((value, context) => {
+      const result = parseAdminPubUrl(value, field);
+      if (result.error) context.addIssue({ code: "custom", message: result.error });
+    });
 export const pubWrite = z
   .object({
     prefectureCode: z.number().int().min(1).max(47).nullable(),
@@ -123,9 +139,9 @@ export const pubWrite = z
       .nullable(),
     latitude: z.number().min(-90).max(90).nullable(),
     longitude: z.number().min(-180).max(180).nullable(),
-    websiteUrl: pubUrl,
-    googleMapsUrl: pubUrl,
-    instagramUrl: pubUrl,
+    websiteUrl: pubUrl("websiteUrl"),
+    googleMapsUrl: pubUrl("googleMapsUrl"),
+    instagramUrl: pubUrl("instagramUrl"),
     status: z.enum(["open", "temporarily_closed", "closed", "unknown"]).nullable(),
     pubType: z.enum(["irish", "british", "other", "unclassified"]).nullable(),
     translations: z.object({ ja: pubTranslation, en: pubEnglishTranslation.nullable() }).strict(),

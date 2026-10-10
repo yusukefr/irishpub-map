@@ -65,6 +65,10 @@ jobs:
         if: steps.changes.outputs.full_ci == 'true' || steps.changes.outputs.openapi_changed == 'true'
         run: npm ci
 
+      - name: Import pubs Node.js runtime smoke test
+        if: steps.changes.outputs.full_ci == 'true'
+        run: node scripts/check-import-pubs-runtime.mjs
+
       - name: Check sensitive data
         run: npm run check:sensitive-data
 

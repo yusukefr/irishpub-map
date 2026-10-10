@@ -3,6 +3,8 @@ import {
   AdminPubPublicationValidationError,
   AdminPubSearchValidationError,
   AdminPubWriteValidationError,
+  parseAdminPubAddress,
+  parseAdminPubUrl,
   parseAdminPubWriteInput,
   parseAdminPubSearchParams,
   parseSetAdminPubPublicationInput,
@@ -120,6 +122,93 @@ describe("admin pub write validation", () => {
         en: { name: "Pub Name", nameReading: null, address: "Tokyo" },
       },
     });
+  });
+
+  it.each(["websiteUrl", "googleMapsUrl", "instagramUrl"] as const)(
+    "requires the %s key in a full write snapshot",
+    (field) => {
+      const input: Record<string, unknown> = { ...draftInput };
+      delete input[field];
+
+      expect(() => parseAdminPubWriteInput(input)).toThrow(
+        expect.objectContaining({ fieldErrors: { [field]: "required" } }),
+      );
+    },
+  );
+
+  it("normalizes blank URLs, preserves URL text, and validates service hosts and paths", () => {
+    expect(parseAdminPubUrl("  ", "websiteUrl")).toEqual({ value: null });
+    expect(parseAdminPubUrl(" https://EXAMPLE.com/a?b=1 ", "websiteUrl")).toEqual({
+      value: "https://EXAMPLE.com/a?b=1",
+    });
+    for (const url of [
+      "https://www.google.com/maps",
+      "https://www.google.com/maps/place/Pub",
+      "https://google.com/maps/search/?api=1&query=pub",
+      "https://maps.google.com/?cid=123",
+      "https://maps.app.goo.gl/AbCd123",
+    ]) {
+      expect(parseAdminPubUrl(url, "googleMapsUrl")).toEqual({ value: url });
+    }
+    expect(parseAdminPubUrl("https://www.google.com.evil.example/maps", "googleMapsUrl").error).toBe("invalid_format");
+    for (const url of [
+      "https://instagram.com/pub_name/",
+      "https://www.instagram.com/p/AbCd_123/",
+      "https://instagram.com/reel/AbCd-123",
+    ]) {
+      expect(parseAdminPubUrl(url, "instagramUrl")).toEqual({ value: url });
+    }
+    expect(parseAdminPubUrl("https://instagram.example/pub", "instagramUrl").error).toBe("invalid_format");
+  });
+
+  it.each([
+    "javascript:alert(1)",
+    "https://u:p@a/",
+    "https://example.com:99999/",
+    "https://example.com/\npath",
+    "https://example.com/" + "a".repeat(2_040),
+  ])("rejects unsafe or oversized URL %s", (url) => {
+    expect(parseAdminPubUrl(url, "websiteUrl").error).toMatch(/invalid_format|too_long/);
+  });
+
+  it("reports URL type, parse, scheme, and Maps path failures with stable codes", () => {
+    expect(parseAdminPubUrl(42, "websiteUrl").error).toBe("invalid_type");
+    expect(parseAdminPubUrl("https://[", "websiteUrl").error).toBe("invalid_format");
+    expect(parseAdminPubUrl("ftp://example.com", "websiteUrl").error).toBe("invalid_format");
+    expect(parseAdminPubUrl("https://google.com/search?q=pub", "googleMapsUrl").error).toBe("invalid_format");
+    expect(parseAdminPubUrl("https://maps.app.goo.gl/", "googleMapsUrl").error).toBe("invalid_format");
+    expect(parseAdminPubUrl("https://www.instagram.com/invalid..name", "instagramUrl").error).toBe("invalid_format");
+    expect(parseAdminPubUrl("https://instagram.com/p/a/", "instagramUrl").error).toBe("invalid_format");
+    expect(parseAdminPubUrl("https://instagram.com/stories/pub/", "instagramUrl").error).toBe("invalid_format");
+    expect(parseAdminPubUrl("https://:p@a/", "websiteUrl").error).toBe("invalid_format");
+  });
+
+  it("returns field-specific errors for malformed translation containers and text types", () => {
+    try {
+      parseAdminPubWriteInput({
+        ...draftInput,
+        translations: { ja: { name: 42, nameReading: null, address: null }, en: "invalid" },
+      });
+      expect.fail("validation should fail");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AdminPubWriteValidationError);
+      expect((error as AdminPubWriteValidationError).fieldErrors).toMatchObject({
+        "translations.ja.name": "invalid_type",
+        "translations.en": "invalid_type",
+      });
+    }
+  });
+
+  it("trims addresses, allows optional Japanese Draft address, and enforces controls and 300 characters", () => {
+    expect(parseAdminPubAddress("  東京都  ")).toEqual({ value: "東京都" });
+    expect(parseAdminPubAddress(null)).toEqual({ value: null });
+    expect(parseAdminPubAddress("a".repeat(300))).toEqual({ value: "a".repeat(300) });
+    expect(parseAdminPubAddress("a".repeat(301)).error).toBe("too_long");
+    expect(parseAdminPubAddress("Tokyo\nJapan").error).toBe("invalid_format");
+    expect(parseAdminPubAddress(null, true).error).toBe("required");
+    expect(parseAdminPubAddress(undefined).value).toBeNull();
+    expect(parseAdminPubAddress("  ", true).error).toBe("required");
+    expect(parseAdminPubAddress(42).error).toBe("invalid_type");
   });
 
   it.each([

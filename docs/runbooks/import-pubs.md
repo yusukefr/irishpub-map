@@ -37,6 +37,7 @@ DATABASE_URL="$NEON_PREVIEW_DATABASE_URL" npm run import-pubs -- path/to/pubs.js
 
 ## Validation
 
+- 入力URLと日英住所には共有Validationを適用します。URLはHTTP(S)・2,048文字以内で、MapsとInstagram URLは対応するホスト・パス形式に限ります。住所はtrim後300文字以内で制御文字を含めないでください。
 - 結果の`Imported`、`skipped`、`total`が意図した件数であることを確認する。
 - 無効な入力または入力内の重複`id`では、DB書き込み前にエラーとなることを確認する。
 - 対象DBの管理画面または読み取り専用queryで、追加結果と公開状態を確認する。

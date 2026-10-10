@@ -54,6 +54,41 @@ describe("admin pub service", () => {
     expect(repositoryMocks.validateAdminPubReferences).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [{ ...draftInput, googleMapsUrl: "https://maps.example.com/pub" }, { googleMapsUrl: "invalid_format" }],
+    [
+      {
+        ...draftInput,
+        translations: {
+          ja: { ...draftInput.translations.ja, address: "a".repeat(301) },
+          en: null,
+        },
+      },
+      { "translations.ja.address": "too_long" },
+    ],
+  ])("rejects shared URL and address failures before persistence", async (input, fieldErrors) => {
+    await expect(createAdminPub(input)).rejects.toMatchObject<AdminPubServiceError>({
+      code: "validation",
+      fieldErrors,
+    });
+    expect(repositoryMocks.validateAdminPubReferences).not.toHaveBeenCalled();
+    expect(repositoryMocks.insertAdminPub).not.toHaveBeenCalled();
+  });
+
+  it.each(["websiteUrl", "googleMapsUrl", "instagramUrl"] as const)(
+    "rejects an update snapshot missing %s before persistence",
+    async (field) => {
+      const input: Record<string, unknown> = { ...draftInput };
+      delete input[field];
+
+      await expect(updateAdminPub("550e8400-e29b-41d4-a716-446655440001", input)).rejects.toMatchObject({
+        code: "validation",
+        fieldErrors: { [field]: "required" },
+      });
+      expect(repositoryMocks.replaceAdminPub).not.toHaveBeenCalled();
+    },
+  );
+
   it("maps invalid references to a conflict before opening the write transaction", async () => {
     repositoryMocks.validateAdminPubReferences.mockResolvedValue({
       fieldErrors: { municipalityCode: "invalid_format" },

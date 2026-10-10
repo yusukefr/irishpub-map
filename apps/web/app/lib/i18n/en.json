@@ -444,6 +444,14 @@
     "login": "Sign in",
     "loggingIn": "Signing in…",
     "loginFailed": "Sign in failed.",
+    "pubValidation": {
+      "url": "Enter a valid HTTP or HTTPS URL.",
+      "urlTooLong": "URLs must be 2,048 characters or fewer.",
+      "googleMapsUrl": "Enter a Google Maps sharing link.",
+      "instagramUrl": "Enter an Instagram profile, post, or reel link.",
+      "addressTooLong": "Addresses must be 300 characters or fewer.",
+      "addressControlCharacters": "Remove line breaks, tabs, and other control characters from the address."
+    },
     "errors": {
       "unauthorized": "Authentication is required. Please sign in again.",
       "forbidden": "This operation is not allowed.",

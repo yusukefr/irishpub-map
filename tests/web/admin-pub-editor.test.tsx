@@ -154,6 +154,56 @@ describe("AdminPubEditor", () => {
     expect(screen.getByLabelText("店舗名")).toHaveAttribute("aria-invalid", "true");
   });
 
+  it("URLと住所のフィールド別理由を表示し、修正前の値を保持する", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          errorCode: "validation_error",
+          fieldErrors: {
+            googleMapsUrl: "invalid_format",
+            instagramUrl: "invalid_format",
+            "translations.ja.address": "too_long",
+          },
+        }),
+        { status: 422 },
+      ),
+    );
+    render(<AdminPubEditor {...props} />);
+    fireEvent.change(screen.getByLabelText("店舗名"), { target: { value: "Draft" } });
+    fireEvent.change(screen.getByLabelText("Google Maps"), { target: { value: "https://example.com" } });
+    fireEvent.change(screen.getByLabelText("Instagram"), { target: { value: "https://example.com/pub" } });
+    fireEvent.change(screen.getByLabelText("住所"), { target: { value: "入力した住所" } });
+    fireEvent.submit(screen.getByRole("button", { name: "追加" }).closest("form")!);
+    expect((await screen.findAllByText(/Google Mapsの共有リンクを入力してください/)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Instagramのプロフィール、投稿、またはリール/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/住所は300文字以内/).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Google Maps")).toHaveValue("https://example.com");
+    expect(screen.getByLabelText("Instagram")).toHaveValue("https://example.com/pub");
+    expect(screen.getByLabelText("住所")).toHaveValue("入力した住所");
+  });
+
+  it("長すぎるURL、公式URL形式、住所制御文字の理由を表示する", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          errorCode: "validation_error",
+          fieldErrors: {
+            websiteUrl: "invalid_format",
+            googleMapsUrl: "too_long",
+            "translations.en.address": "invalid_format",
+          },
+        }),
+        { status: 422 },
+      ),
+    );
+    render(<AdminPubEditor {...props} />);
+    fireEvent.change(screen.getByLabelText("店舗名"), { target: { value: "Draft" } });
+    fireEvent.submit(screen.getByRole("button", { name: "追加" }).closest("form")!);
+    expect((await screen.findAllByText(/URLは2,048文字以内/)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/HTTPまたはHTTPSの正しいURL/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/住所の改行、タブ/).length).toBeGreaterThan(0);
+  });
+
   it("DB未設定時は書き込み操作を無効化する", () => {
     render(<AdminPubEditor {...props} databaseConfigured={false} />);
     expect(screen.getByRole("button", { name: "追加" })).toBeDisabled();
