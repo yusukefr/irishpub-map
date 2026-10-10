@@ -249,6 +249,7 @@ AdminCalendarWriteInput:
       $ref: "#/AdminCalendarTranslationsInput"
 
 AdminCalendarCreateInput:
+  description: The event ID must be omitted because the server generates it.
   allOf:
     - $ref: "#/AdminCalendarWriteInput"
     - not:
@@ -258,15 +259,16 @@ AdminCalendarCreateInput:
         required: [id]
 
 AdminCalendarUpdateInput:
+  description: An optional ID must be a UUID matching the path parameter.
   allOf:
     - $ref: "#/AdminCalendarWriteInput"
     - type: object
       properties:
         id:
           type: string
-          maxLength: 100
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-          description: If provided, this value must equal the path parameter.
+          format: uuid
+          pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          description: Optional. When provided, this UUID must equal the path parameter; otherwise the API returns 422 validation_error.
 
 AdminCalendarTranslationInput:
   type: object
@@ -313,9 +315,9 @@ AdminCalendarEvent:
   properties:
     id:
       type: string
+      format: uuid
       description: Server-generated UUID for new events; existing stable IDs are retained.
-      maxLength: 100
-      pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
     category:
       $ref: "#/CalendarCategory"
     dateRule:
@@ -368,8 +370,8 @@ AdminCalendarListItem:
   properties:
     id:
       type: string
-      maxLength: 100
-      pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      format: uuid
+      pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
     category:
       $ref: "#/CalendarCategory"
     dateRule:

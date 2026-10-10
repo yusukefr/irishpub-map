@@ -103,7 +103,7 @@ CalendarItem:
     tags: [Admin Calendar]
     operationId: updateAdminCalendarEvent
     summary: Replace a calendar event
-    description: Replaces editable fields while preserving publication state. Server-managed fields are ignored. If id is supplied, it must match the path parameter.
+    description: Replaces editable fields while preserving publication state. Server-managed fields are ignored. The optional body id must be a UUID matching the path parameter; a mismatch returns 422 validation_error.
     security:
       - AdminSession: []
     requestBody:
@@ -213,8 +213,8 @@ CalendarPublication:
                   properties:
                     id:
                       type: string
-                      maxLength: 100
-                      pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                      format: uuid
+                      pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
                     isPublished:
                       type: boolean
                     unchanged:
