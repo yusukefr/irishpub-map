@@ -15,8 +15,9 @@ function cliFor(branchName = "preview", connectionString = "postgres://test-user
       const branches = Array.from({ length: 30 }, (_, index) => ({
         id: `br-earlier-${index}`,
         name: `earlier-branch-${index}`,
+        current_state: "ready",
       }));
-      branches.push({ id: "br-current", name: branchName });
+      branches.push({ id: "br-current", name: branchName, current_state: "ready" });
       return JSON.stringify(branches);
     }
     return connectionString;
@@ -43,6 +44,17 @@ describe("resolveNeonTarget", () => {
     expect(runCli.mock.calls[1][0]).toEqual(["connection-string", "br-current", "--project-id", "test-project"]);
   });
 
+  it("resolves with a project-scoped API key when the Branch API allows access", async () => {
+    const runCli = cliFor();
+    await expect(
+      resolveNeonTarget("preview", {
+        readConfig: vi.fn(async () => JSON.stringify(config)),
+        runCli,
+      }),
+    ).resolves.toMatchObject({ branchName: "preview" });
+    expect(runCli.mock.calls[0][0][0]).toBe("branches");
+  });
+
   it("does not need worktree env files", async () => {
     await expect(
       resolveNeonTarget("preview", {
@@ -62,8 +74,72 @@ describe("resolveNeonTarget", () => {
         readConfig: vi.fn(async () => JSON.stringify(config)),
         runCli: cliFor("main"),
       }),
-    ).rejects.toThrow("Neon branch configured for preview was not found");
+    ).rejects.toThrow("NEON_BRANCH_NOT_FOUND: Neon branch configured for preview was not found");
   });
+
+  it.each(["archived", "init", undefined])("stops unless the branch is ready (%s)", async (current_state) => {
+    const runCli = vi.fn(async (args: string[]) => {
+      if (args[0] === "branches") return JSON.stringify([{ id: "br-current", name: "preview", current_state }]);
+      return "postgres://test-user@ep-direct/neondb";
+    });
+    await expect(
+      resolveNeonTarget("preview", { readConfig: vi.fn(async () => JSON.stringify(config)), runCli }),
+    ).rejects.toThrow(`NEON_BRANCH_NOT_READY: Neon branch preview (br-current) is ${current_state ?? "unknown"}`);
+    expect(runCli).toHaveBeenCalledTimes(1);
+  });
+
+  it("distinguishes missing CLI and unavailable authentication without exposing CLI output", async () => {
+    const missingCli = Object.assign(new Error("spawn neon ENOENT"), { code: "ENOENT" });
+    await expect(
+      resolveNeonTarget("preview", {
+        readConfig: vi.fn(async () => JSON.stringify(config)),
+        runCli: vi.fn(async () => {
+          throw missingCli;
+        }),
+      }),
+    ).rejects.toThrow("NEON_CLI_NOT_INSTALLED:");
+
+    const secret = "napi_secret-value";
+    await expect(
+      resolveNeonTarget("preview", {
+        readConfig: vi.fn(async () => JSON.stringify(config)),
+        runCli: vi.fn(async () => {
+          throw new Error(`Not signed in; ${secret}`);
+        }),
+      }),
+    ).rejects.toThrow("NEON_AUTH_UNAVAILABLE:");
+    await expect(
+      resolveNeonTarget("preview", {
+        readConfig: vi.fn(async () => JSON.stringify(config)),
+        runCli: vi.fn(async () => {
+          throw new Error(`Not signed in; ${secret}`);
+        }),
+      }),
+    ).rejects.not.toThrow(secret);
+  });
+
+  it.each(["403 Forbidden: project access denied", "404 Not Found"])(
+    "distinguishes project access denial from missing authentication (%s)",
+    async (message) => {
+      await expect(
+        resolveNeonTarget("preview", {
+          readConfig: vi.fn(async () => JSON.stringify(config)),
+          runCli: vi.fn(async () => {
+            throw new Error(message);
+          }),
+        }),
+      ).rejects.toThrow("NEON_PROJECT_ACCESS_DENIED:");
+
+      await expect(
+        resolveNeonTarget("preview", {
+          readConfig: vi.fn(async () => JSON.stringify(config)),
+          runCli: vi.fn(async () => {
+            throw new Error("Cannot run interactive auth in CI");
+          }),
+        }),
+      ).rejects.toThrow("NEON_AUTH_UNAVAILABLE:");
+    },
+  );
 
   it("rejects a pooled endpoint without exposing the connection string", async () => {
     const secret = "postgres://test-user@ep-direct-pooler/neondb";
@@ -76,8 +152,12 @@ describe("resolveNeonTarget", () => {
   });
 
   it("rejects malformed connection URIs", () => {
-    expect(() => assertDirectConnection("not-a-uri")).toThrow("Neon returned an invalid connection URI.");
-    expect(() => assertDirectConnection("https://localhost/path")).toThrow("Neon returned an invalid connection URI.");
+    expect(() => assertDirectConnection("not-a-uri")).toThrow(
+      "NEON_CONNECTION_FAILED: Neon returned an invalid connection URI.",
+    );
+    expect(() => assertDirectConnection("https://localhost/path")).toThrow(
+      "NEON_CONNECTION_FAILED: Neon returned an invalid connection URI.",
+    );
   });
 
   it("requires a known target and config values", async () => {

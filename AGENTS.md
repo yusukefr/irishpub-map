@@ -64,4 +64,11 @@ Framework、Library、Vercelの仕様は、使用中のVersionに対応する公
 
 作業前に `nvm use` でNode.jsのVersionを合わせます。変更内容に応じて test、format check、typecheck、lint、build、E2E、Visual Regression、Accessibility、dependency auditを実行します。具体的なコマンドは [Development conventions](docs/development/conventions.md) を参照してください。
 
+## Neon Agent Diagnostics
+
+- Migration接続前は `npm run db:preflight -- --target <preview|production> --required-migration <version_name>` を実行し、解決されたProject / Branch名・ID・状態とMigration履歴を確認します。Preflightは読み取り専用です。ProductionへのMigration実行には既存のGuardとユーザーの明示承認が引き続き必要です。
+- CLIはRepositoryの固定`neon` devDependencyを使います。CLI認証には`NEON_API_KEY` SecretまたはCLI Profileが必要で、認証情報をIssue、ログ、ファイルへ出しません。
+- CLIが使えずNeon MCPが公開されているAgentは、`config/neon-targets.json`の`projectId`を明示して`list_branches(project_id)`等の読み取りToolでBranchを調査できます。`list_projects`への依存は不要です。CLIとMCPの認証・Tool公開範囲は独立しています。MCPが読み取り専用の場合に、別の書込み経路やProductionへ切り替えません。
+- 固定`preview` Targetは設定されたBranch名を厳密に解決します。PR専用Preview Branchへ自動で切替しません。Branch作成・削除・復元やMigration適用はPreflightの範囲外です。診断手順は[Neon Migration Runbook](docs/runbooks/neon-migrations.md)を参照してください。
+
 検証を省略した場合は理由をPR本文と作業報告へ記載します。

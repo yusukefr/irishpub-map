@@ -15,7 +15,7 @@ async function main() {
     await client.connect();
     await client.query("SELECT 1");
   } catch {
-    throw new Error(`Could not connect to Neon target ${resolvedTarget.target}.`);
+    throw new Error(`NEON_CONNECTION_FAILED: Could not connect to Neon target ${resolvedTarget.target}.`);
   } finally {
     await client.end().catch(() => {});
   }
@@ -24,6 +24,7 @@ async function main() {
   console.log(`Project:      ${resolvedTarget.projectId}`);
   console.log(`Branch:       ${resolvedTarget.branchName}`);
   console.log(`Branch ID:    ${resolvedTarget.branchId}`);
+  console.log(`Branch state: ${resolvedTarget.branchState}`);
   console.log("Connection:   direct");
   console.log("Auth source:  neon-cli");
 }
