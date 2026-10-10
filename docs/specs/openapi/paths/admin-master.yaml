@@ -1,0 +1,105 @@
+Prefectures:
+  get:
+    tags: [Admin Master]
+    operationId: listAdminPrefectures
+    summary: List prefectures
+    description: Returns Japanese display names ordered by prefecture code. Returns an empty list when the database is not configured.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Prefectures
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-master.yaml#/PrefecturesResponse" }
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+Municipalities:
+  get:
+    tags: [Admin Master]
+    operationId: listAdminMunicipalities
+    summary: List municipalities in a prefecture
+    description: "Returns municipalities ordered by code. Names use the request locale resolved from the locale cookie, then Accept-Language, then Japanese. Returns an empty list when the database is not configured."
+    security:
+      - AdminSession: []
+    parameters:
+      - name: prefectureCode
+        in: query
+        required: true
+        description: Decimal prefecture code from 1 through 47. Leading zeroes and non-decimal forms are rejected.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 47
+    responses:
+      "200":
+        description: Municipalities in the requested prefecture
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-master.yaml#/MunicipalitiesResponse" }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidPrefectureCode
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+Tags:
+  get:
+    tags: [Admin Master]
+    operationId: listAdminMasterTags
+    summary: List tag options
+    description: Returns Japanese display names ordered by tag key. This is a selector DTO without the pub counts exposed by the Automation API. Returns an empty list when the database is not configured.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Tag options
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-master.yaml#/TagsResponse" }
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+Statuses:
+  get:
+    tags: [Admin Master]
+    operationId: listAdminMasterStatuses
+    summary: List pub status options
+    description: Returns Japanese display names ordered by status code. Returns an empty list when the database is not configured.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Pub status options
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-master.yaml#/StatusesResponse" }
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+PubTypes:
+  get:
+    tags: [Admin Master]
+    operationId: listAdminMasterPubTypes
+    summary: List pub type options
+    description: Returns Japanese display names ordered by pub type code. Returns an empty list when the database is not configured.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Pub type options
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-master.yaml#/PubTypesResponse" }
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError

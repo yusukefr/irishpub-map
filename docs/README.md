@@ -28,7 +28,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | --- | --- | --- |
 | Product仕様・画面Behavior | [Product specification](specs/product.md) | Current。現行Behaviorは実装・テストを優先 |
 | Architecture | [System overview](architecture/system-overview.md)、[Sequences](architecture/sequences.md) | Current。実装とInfrastructureを優先 |
-| Public API | [API specification](specs/api.md)、[OpenAPI contract](specs/openapi/openapi.yaml) | Current。API全体方針はMarkdown、機械可読なCalendar Admin / Automation契約はOpenAPI。Route Handlerとテストを優先 |
+| Public API | [API specification](specs/api.md)、[OpenAPI contract](specs/openapi/openapi.yaml)、[Admin API coverage](specs/openapi/admin-api-coverage.md) | Current。API全体方針はMarkdown、機械可読なCalendar / Master AdminとAutomation契約はOpenAPI。Admin Routeの収録状況は一覧も参照し、Route Handlerとテストを優先 |
 | Pub data contract | [Data specification](specs/data.md) | Current。共有型、Validation、DBを優先 |
 | Database | [Database specification](specs/database.md)、[Generated schema](generated/database-schema.md) | 設計はCurrent、物理SchemaはGenerated。Neonの現行Schemaを優先 |
 | Pub draft / publish | [Admin pub lifecycle](specs/admin-pub-lifecycle.md) | Current。管理APIとテストを優先 |

@@ -48,6 +48,18 @@ InvalidRequest:
               errorCode:
                 const: invalid_request
 
+InvalidPrefectureCode:
+  description: The prefectureCode query parameter is invalid.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: invalid_prefecture_code
+
 InvalidRequestBody:
   allOf:
     - $ref: "#/ErrorBody"
