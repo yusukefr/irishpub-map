@@ -23,7 +23,7 @@ import type { AdminQuizListItem, AdminQuizQuestion, PublicQuizQuestion, QuizAnsw
 export const E2E_TEST_DATA = {
   content: {
     draft: { id: "30000000-0000-4000-8000-000000000201", title: "E2E 下書きガイド" },
-    published: { id: "30000000-0000-4000-8000-000000000202", title: "E2E 公開ガイド" },
+    published: { id: "30000000-0000-4000-8000-000000000202", title: "Split the Gを楽しむ" },
   },
   pubs: {
     nagoya: { id: "30000000-0000-4000-8000-000000000001", name: "E2E Irish Pub Nagoya" },
@@ -166,24 +166,24 @@ const contentDefinitions: AdminContent[] = [
   {
     id: E2E_TEST_DATA.content.published.id,
     kind: "guide",
-    slug: "e2e-published-guide",
-    category: "culture",
+    slug: "split-the-g",
+    category: "pub-culture",
     status: "published",
-    publishedAt: UPDATED_AT,
+    publishedAt: "2026-09-05T00:00:00.000Z",
     heroImageAssetId: E2E_TEST_DATA.media.landscape.id,
     heroImage: E2E_TEST_DATA.media.landscape,
     translations: {
       ja: {
         title: E2E_TEST_DATA.content.published.title,
-        summary: "E2Eで管理画面を確認するための公開記事です。",
-        bodyMarkdown: "## 公開本文",
+        summary: "Guinnessのグラスを使ったPubの遊び「Split the G」を、安全に楽しむためのガイドです。",
+        bodyMarkdown: `## Split the Gとは\n\n地域や一緒に楽しむ人によって判定方法は異なります。\n\n![パブのグラス](/media/${E2E_TEST_DATA.media.landscape.id})\n\nSplit the Gは、成功や飲む速さ・量を競うものではありません。\n\n[Irish Pubを探す →](/)`,
         heroImageAlt: "パブのテーブルに置かれたグラス",
         heroImageCaption: "パブで過ごす時間",
       },
       en: {
-        title: "E2E Published Guide",
-        summary: "Published content used to verify the content admin UI.",
-        bodyMarkdown: "## Published body",
+        title: "How to Enjoy Split the G",
+        summary: "A guide to enjoying the pub game Split the G with a Guinness glass, safely and at your own pace.",
+        bodyMarkdown: `## What is Split the G?\n\nHow the result is judged varies between places and groups.\n\n![A glass on a pub table](/media/${E2E_TEST_DATA.media.landscape.id})\n\nSplit the G is not about drinking quickly or drinking more.\n\n[Find an Irish pub →](/)`,
         heroImageAlt: "A glass on a pub table",
         heroImageCaption: "Time at the pub",
       },
@@ -539,12 +539,13 @@ export function gradeE2EPublishedQuizAnswer(questionId: string, choiceId: string
       (content) =>
         content.id === question.relatedContentId && content.kind === "guide" && content.status === "published",
     );
-    if (relatedGuide) {
+    const publicGuide = relatedGuide ? getE2EPublishedContentBySlug("guide", relatedGuide.slug ?? "", locale) : null;
+    if (relatedGuide && publicGuide) {
       return {
         ...result,
         relatedGuide: {
-          slug: relatedGuide.slug ?? "",
-          label: relatedGuide.translations[locale].title ?? relatedGuide.translations.ja.title ?? "",
+          slug: publicGuide.slug,
+          label: publicGuide.title,
         },
       };
     }

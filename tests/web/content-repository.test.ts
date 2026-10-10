@@ -109,7 +109,6 @@ describe("editorial content repository", () => {
   });
   it("E2E専用fixtureでは公開Guideだけを返し、Draft slugを公開しない", async () => {
     process.env.E2E_TEST_MODE = "1";
-    delete process.env.DATABASE_URL;
 
     await expect(getPublishedContentBySlug("guide", "split-the-g", "en")).resolves.toMatchObject({
       slug: "split-the-g",
@@ -117,6 +116,7 @@ describe("editorial content repository", () => {
     });
     await expect(getPublishedContentBySlug("guide", "e2e-draft-guide", "ja")).resolves.toBeNull();
     await expect(listPublishedContent("guide", "ja")).resolves.toHaveLength(2);
+    // DATABASE_URLが存在してもE2E fixture経路はNeonへ接続しません。
     expect(databaseMock.queries).toEqual([]);
   });
   it("Allow List外のDB値を拒否する", () => {

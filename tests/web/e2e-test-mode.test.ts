@@ -1,11 +1,20 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  E2E_TEST_DATA,
+  getE2EAdminContent,
+  getE2EAdminContentList,
+  getE2EAdminQuizList,
   getE2EAdminPub,
   getE2EAdminPubPage,
   getE2EAdminTags,
+  getE2EPublishedContentBySlug,
+  getE2EPublishedContentList,
   getE2EPublishedPubs,
+  getE2EPublishedQuizQuestions,
+  gradeE2EPublishedQuizAnswer,
 } from "../../apps/web/app/lib/e2e-test-fixtures";
 import { isDataSourceConfigured, isE2ETestMode, rejectE2ETestMutation } from "../../apps/web/app/lib/e2e-test-mode";
+import { isUuid } from "@irishpub-map/shared/uuid";
 
 const originalE2EMode = process.env.E2E_TEST_MODE;
 const originalVercelEnv = process.env.VERCEL_ENV;
@@ -28,6 +37,85 @@ describe("E2E test mode", () => {
     expect(getE2EAdminPubPage({ statusKey: "open", page: 1 }, "en")).toMatchObject({ total: 2, page: 1 });
     expect(getE2EAdminPub("30000000-0000-4000-8000-000000000001")?.translations.en?.address).toContain("Nagoya");
     expect(getE2EAdminTags()).toHaveLength(2);
+  });
+
+  it("keeps fixture IDs, locales, and publication state production-shaped", () => {
+    const fixedIds = [
+      ...Object.values(E2E_TEST_DATA.content).map(({ id }) => id),
+      ...Object.values(E2E_TEST_DATA.pubs).map(({ id }) => id),
+      ...Object.values(E2E_TEST_DATA.tags).map(({ id }) => id),
+      ...Object.values(E2E_TEST_DATA.media).map(({ id }) => id),
+    ];
+    expect(fixedIds.every(isUuid)).toBe(true);
+
+    const contents = getE2EAdminContentList();
+    expect(contents.map((content) => content.status).sort()).toEqual(["draft", "published"]);
+    for (const content of contents) {
+      expect(content.publishedAt === null).toBe(content.status === "draft");
+    }
+    expect(getE2EPublishedContentList("guide", "ja").map(({ title }) => title)).toEqual([
+      "Split the Gを楽しむ",
+      "サンプルガイド",
+    ]);
+    expect(getE2EPublishedContentList("guide", "en").map(({ title }) => title)).toEqual([
+      "How to Enjoy Split the G",
+      "Sample Guide",
+    ]);
+
+    const adminQuiz = getE2EAdminQuizList();
+    expect(adminQuiz.map((question) => question.isPublished).sort()).toEqual([false, true]);
+    expect(getE2EPublishedQuizQuestions("ja").map(({ question }) => question)).toEqual(["E2E 公開Quiz"]);
+    expect(getE2EPublishedQuizQuestions("en").map(({ question }) => question)).toEqual(["E2E Published Quiz"]);
+    expect(adminQuiz.every((question) => isUuid(question.id))).toBe(true);
+
+    const publishedContent = contents.find((content) => content.status === "published");
+    const publishedQuiz = adminQuiz.find((question) => question.isPublished);
+    expect(publishedContent).toBeDefined();
+    expect(publishedQuiz).toBeDefined();
+    expect(publishedQuiz?.relatedContentId).toBe(publishedContent?.id);
+    expect(publishedContent?.heroImageAssetId).toBe(E2E_TEST_DATA.media.landscape.id);
+    expect(publishedQuiz?.imageAssetId).toBe(E2E_TEST_DATA.media.landscape.id);
+
+    const tagIds = new Set(getE2EAdminTags().map((tag) => tag.id));
+    for (const pubId of Object.values(E2E_TEST_DATA.pubs).map(({ id }) => id)) {
+      const pub = getE2EAdminPub(pubId);
+      expect(pub).not.toBeNull();
+      expect(pub?.tagIds.every((tagId) => tagIds.has(tagId))).toBe(true);
+    }
+
+    for (const locale of ["ja", "en"] as const) {
+      const adminGuide = getE2EAdminContent(E2E_TEST_DATA.content.published.id);
+      const publicGuide = getE2EPublishedContentBySlug("guide", "split-the-g", locale);
+      expect(adminGuide).not.toBeNull();
+      expect(publicGuide).not.toBeNull();
+      if (!adminGuide || !publicGuide) throw new Error("Published E2E guide fixture is missing.");
+
+      const translation = adminGuide.translations[locale];
+      expect(publicGuide).toMatchObject({
+        publishedAt: adminGuide.publishedAt,
+        title: translation.title,
+        summary: translation.summary,
+        bodyMarkdown: translation.bodyMarkdown,
+        heroImage: adminGuide.heroImage
+          ? {
+              url: adminGuide.heroImage.url,
+              width: adminGuide.heroImage.width,
+              height: adminGuide.heroImage.height,
+              alt: translation.heroImageAlt,
+              caption: translation.heroImageCaption,
+            }
+          : null,
+      });
+
+      const publicQuestion = getE2EPublishedQuizQuestions(locale)[0];
+      const answer = gradeE2EPublishedQuizAnswer(publicQuestion.id, publicQuestion.choices[0].id, locale);
+      expect(answer.relatedGuide).toBeDefined();
+      const relatedGuide = answer.relatedGuide
+        ? getE2EPublishedContentBySlug("guide", answer.relatedGuide.slug, locale)
+        : null;
+      expect(relatedGuide).not.toBeNull();
+      expect(answer.relatedGuide?.label).toBe(relatedGuide?.title);
+    }
   });
 
   it("rejects fixture mutations before a database can be used", () => {

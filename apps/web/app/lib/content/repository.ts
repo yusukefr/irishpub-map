@@ -79,7 +79,7 @@ export async function getPublishedContentById(
   id: string,
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<PublishedContent | null> {
-  if (!isUuid(id) || !process.env.DATABASE_URL) return null;
+  if (!isUuid(id) || isE2ETestMode() || !process.env.DATABASE_URL) return null;
   return getPublishedContentByIdFromDatabase(id, locale);
 }
 
