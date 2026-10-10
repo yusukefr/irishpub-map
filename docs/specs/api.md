@@ -138,7 +138,7 @@ Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`tran
 
 管理店舗一覧は1ページ50件です。`name`、`prefecture`、`municipality`、`status`、`tag`、`published`、`page` をQuery Parameterとして受け付け、指定条件をANDで適用します。店舗名は日本語名の部分一致、都道府県は1〜47、市区町村は選択都道府県に所属する6桁コード、タグはUUID、公開状態は `true` / `false` だけを受け付けます。すべての値はパラメータ化クエリへ渡し、外部入力からSQL文字列を組み立てません。一覧APIは最終ページを超えた場合も絞り込み後の `total` を保持して `pubs` を空配列で返し、管理画面 `/admin/pubs` はその結果から最後の有効ページを求め、絞り込み条件を維持してリダイレクトします。
 
-公開状態変更本文は `{ "isPublished": true | false }` だけを受け付けます。現在値と対象存在を確認し、同じ状態への要求は `unchanged: true` として更新しません。非公開化に公開条件は適用しません。公開時は日本語店舗名・住所、都道府県、市区町村と所属関係、緯度、経度、営業ステータス、および各日本語表示名をサーバー側で再検証します。不足時は更新せず、`publication_requirements_not_met` と `missingFields` を `422` で返します。
+公開状態変更本文は `{ "isPublished": true | false }` だけを受け付けます。現在値と対象存在を確認し、同じ状態への要求は `unchanged: true` として更新しません。非公開化に公開条件は適用しません。公開時は日本語店舗名・住所、都道府県、市区町村と所属関係、緯度、経度、営業ステータス、`pubType`（`irish` / `british` / `other`）、および各日本語表示名をサーバー側で再検証します。既に公開中の店舗は `pubType = unclassified` の状態を維持できます。不足時は更新せず、`publication_requirements_not_met` と `missingFields` を `422` で返します。
 
 タグ管理APIの入力、transaction、使用中削除拒否は[管理タグ仕様](tag-management.md)を参照してください。作成時は `key` と `translations.ja`、任意の `translations.<locale>` を受け付け、更新時は `translations` だけを受け付けます。
 
