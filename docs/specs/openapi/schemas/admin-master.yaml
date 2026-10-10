@@ -26,7 +26,7 @@ TagOption:
   additionalProperties: false
   required: [id, key, name]
   properties:
-    id: { $ref: '#/Uuid' }
+    id: { $ref: "#/Uuid" }
     key: { type: string, minLength: 1 }
     name: { type: string, minLength: 1 }
 
@@ -53,32 +53,32 @@ PrefecturesResponse:
   additionalProperties: false
   required: [prefectures]
   properties:
-    prefectures: { type: array, items: { $ref: '#/Prefecture' } }
+    prefectures: { type: array, items: { $ref: "#/Prefecture" } }
 
 MunicipalitiesResponse:
   type: object
   additionalProperties: false
   required: [municipalities]
   properties:
-    municipalities: { type: array, items: { $ref: '#/Municipality' } }
+    municipalities: { type: array, items: { $ref: "#/Municipality" } }
 
 TagsResponse:
   type: object
   additionalProperties: false
   required: [tags]
   properties:
-    tags: { type: array, items: { $ref: '#/TagOption' } }
+    tags: { type: array, items: { $ref: "#/TagOption" } }
 
 StatusesResponse:
   type: object
   additionalProperties: false
   required: [statuses]
   properties:
-    statuses: { type: array, items: { $ref: '#/PubStatus' } }
+    statuses: { type: array, items: { $ref: "#/PubStatus" } }
 
 PubTypesResponse:
   type: object
   additionalProperties: false
   required: [pubTypes]
   properties:
-    pubTypes: { type: array, items: { $ref: '#/PubType' } }
+    pubTypes: { type: array, items: { $ref: "#/PubType" } }
