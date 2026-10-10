@@ -40,6 +40,16 @@ describe("repository safety check", () => {
     expect(findSensitiveData(stagedAddedLines(diff))).toEqual([]);
   });
 
+  it("ignores funding URLs in nested npm package locks as well", () => {
+    const fundingUrl = ["https://github", ".com/", "prettier/prettier"].join("");
+    const diff = [
+      "diff --git a/tools/docs-check/package-lock.json b/tools/docs-check/package-lock.json",
+      `+${fundingUrl}`,
+    ].join("\n");
+
+    expect(findSensitiveData(stagedAddedLines(diff))).toEqual([]);
+  });
+
   it("detects configured account identifiers without storing them in the repository", () => {
     expect(findSensitiveData("managed identifier", ["managed identifier"])).toContain("ローカル環境で指定された識別子");
   });

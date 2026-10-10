@@ -59,11 +59,14 @@ jobs:
         uses: actions/setup-node@v7.0.0
         with:
           node-version-file: .nvmrc
-          cache: ${{ (steps.changes.outputs.full_ci == 'true' || steps.changes.outputs.openapi_changed == 'true') && 'npm' || '' }}
+          cache: npm
 
       - name: Install dependencies
         if: steps.changes.outputs.full_ci == 'true' || steps.changes.outputs.openapi_changed == 'true'
         run: npm ci
+
+      - name: Install documentation check tools
+        run: npm ci --prefix tools/docs-check --ignore-scripts
 
       - name: Import pubs Node.js runtime smoke test
         if: steps.changes.outputs.full_ci == 'true'
@@ -74,6 +77,13 @@ jobs:
 
       - name: Check LLM security
         run: npm run check:llm-security
+
+      - name: Markdown format check
+        if: steps.changes.outputs.full_ci != 'true'
+        run: npm run format:docs:check
+
+      - name: Mermaid syntax check
+        run: npm run check:mermaid
 
       - name: Format check
         if: steps.changes.outputs.full_ci == 'true'

@@ -33,6 +33,10 @@ export function findSensitiveData(text, identifiers = []) {
   return [...new Set(findings)];
 }
 
+function isNpmLockFile(file) {
+  return file === "package-lock.json" || file.endsWith("/package-lock.json");
+}
+
 /** staged差分の追加行から機密情報を抽出します。lockfileのfunding URLは検査対象外です。 */
 export function stagedAddedLines(diff) {
   let currentFile = "";
@@ -43,7 +47,7 @@ export function stagedAddedLines(diff) {
       if (line.startsWith("diff --git ")) {
         currentFile = line.match(/^diff --git a\/(.+) b\/.*$/)?.[1] || "";
       }
-      if (currentFile === "package-lock.json" || !line.startsWith("+") || line.startsWith("+++")) return [];
+      if (isNpmLockFile(currentFile) || !line.startsWith("+") || line.startsWith("+++")) return [];
       return [line.slice(1)];
     })
     .join("\n");
@@ -82,7 +86,7 @@ function trackedContents() {
   return runGit(["ls-files", "-z"])
     .split("\0")
     .filter(Boolean)
-    .filter((file) => file !== "package-lock.json")
+    .filter((file) => !isNpmLockFile(file))
     .flatMap((file) => {
       if (!existsSync(file)) return [];
       const content = readFileSync(file, "utf8");

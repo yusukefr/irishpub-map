@@ -9,7 +9,13 @@ const script = resolve("scripts/verify-pr-ci.sh");
 
 function verifyWithChecks(
   checks: string[],
-  options: { dispatch?: boolean; runSha?: string; currentSha?: string; changeAfterFirstPoll?: boolean } = {},
+  options: {
+    dispatch?: boolean;
+    runSha?: string;
+    currentSha?: string;
+    changeAfterFirstPoll?: boolean;
+    changedFiles?: string[];
+  } = {},
 ) {
   const directory = mkdtempSync(join(tmpdir(), "verify-pr-ci-"));
   const log = join(directory, "calls.log");
@@ -37,6 +43,9 @@ case "$1 $2" in
     fi
     ;;
   'repo view') printf 'owner/repo\n' ;;
+  'api --paginate')
+    printf '%s\n' "$MOCK_CHANGED_PATHS"
+    ;;
   'api repos/'*)
     index="$(cat "$MOCK_CURSOR")"
     line="$(sed -n "$index p" "$MOCK_CHECKS")"
@@ -74,6 +83,7 @@ esac
         MOCK_RUN_SHA: options.runSha ?? "sha-123",
         MOCK_CURRENT_SHA: options.currentSha ?? "sha-123",
         MOCK_CHANGE_AFTER_FIRST_POLL: options.changeAfterFirstPoll ? "true" : "false",
+        MOCK_CHANGED_PATHS: (options.changedFiles ?? ["package.json"]).join("\n"),
       },
     });
     return { result, calls: readFileSync(log, "utf8") };
@@ -136,6 +146,28 @@ describe("verify-pr-ci", () => {
     expect(calls).toContain("gh workflow run ci.yml --ref feature");
     expect(calls).toContain('headSha == "sha-123"');
     expect(calls).toContain("gh run watch 42 --exit-status");
+  });
+
+  it("does not dispatch Full CI for a docs-only change", () => {
+    const { result, calls } = verifyWithChecks(["-"], {
+      dispatch: true,
+      changedFiles: ["README.md", "docs/runbooks/release-operations.md"],
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("fallback skipped for docs-only or OpenAPI-only");
+    expect(calls).toContain("pulls/1/files");
+    expect(calls).not.toContain("gh workflow run");
+  });
+
+  it("does not dispatch Full CI for OpenAPI-only changes", () => {
+    const { result, calls } = verifyWithChecks(["-"], {
+      dispatch: true,
+      changedFiles: ["docs/specs/openapi/openapi.yaml"],
+    });
+
+    expect(result.status).toBe(1);
+    expect(calls).not.toContain("gh workflow run");
   });
 
   it("rejects a dispatched run whose HEAD does not match the PR", () => {

@@ -31,6 +31,8 @@
     "prepare": "node scripts/install-git-hooks.mjs",
     "check:sensitive-data": "node scripts/check-sensitive-data.mjs --tracked",
     "check:llm-security": "node scripts/check-llm-security.mjs --tracked",
+    "format:docs:check": "node tools/docs-check/check-doc-format.mjs",
+    "check:mermaid": "node tools/docs-check/check-mermaid.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
