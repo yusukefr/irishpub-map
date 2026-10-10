@@ -24,6 +24,8 @@ Resource UUIDはPostgreSQL `uuid` 型で保持し、Application Serviceで `cryp
 
 店舗・タグ・Editorial ContentのIDもこの共通ルールに従います。一括店舗importでは入力データの店舗UUIDを明示し、タグの新規作成時はApplication側でUUIDを生成してINSERTします。Migration 023は `pubs.id`、`tags.id`、`content_entries.id` の既存UUID DEFAULTだけを削除し、PRIMARY KEYと既存行を維持します。
 
+Production Neonで確認した `pubs.id` と `tags.id` は PostgreSQL `uuid NOT NULL` で、DB DEFAULTはありません。Pub IDは管理Pub作成Serviceが `crypto.randomUUID()` で発行し、importでは入力データのUUIDを渡します。タグIDもタグ作成Serviceが発行します。これは #561 後の現行仕様であり、クライアントやMobileから任意IDをDBへ直接書き込む契約ではありません。
+
 `025_convert_automation_resource_ids_to_uuid` はProductionに適用済みです。Automation両テーブルの `resource_id` はPostgreSQL `uuid` 型で、`automation_idempotency_keys.resource_id` は `UUID NOT NULL`、`automation_audit_logs.resource_id` はnullable `UUID` です。Resourceへの外部キーは追加していません。現行物理スキーマは[生成済みスキーマ](../generated/database-schema.md)を参照してください。
 
 表示順を表す `sort_order` は、Application側で整数として扱う共通カラムのため `INTEGER` に統一します。Choice数など行数の上限は列型ではなくDomain Validationで表現し、列型は格納値の実際の上限を必要とするときだけ狭めます。`020_unify_sort_order_integer` は `quiz_choices.sort_order` を `SMALLINT` から `INTEGER` へ拡張し、非負CHECKとQuestion内のUNIQUE制約を維持します。
@@ -39,6 +41,10 @@ Resource UUIDはPostgreSQL `uuid` 型で保持し、Application Serviceで `cryp
 Pub Typeは `pub_types` と `pub_type_translations` のマスタ・翻訳で保持し、`pubs.pub_type_code` の外部キーで関連付けます。keyは `irish`、`british`、`other`、`unclassified` です。既存店舗は分類根拠が確認できるまで `unclassified` とし、Gastropubは既存のTagsで表します。
 
 この関係はアプリケーションの概念モデルです。物理カラム、NULL許容、外部キー、削除規則は生成済みスキーマを正とします。
+
+Pubの物理列と公開DTOは同一ではありません。Production Neonの `pubs.latitude`、`longitude`、`prefecture_code`、`status_code`、`municipality_code`、`pub_type_code` はnullableです。`pubs.is_published` は `NOT NULL DEFAULT FALSE` です。翻訳テーブルの `name` と `locale` は必須ですが、住所・読み仮名はnullableで、localeは `ja` / `en` に制約されます。公開Publication Validationが住所、座標、都道府県、営業状態、Pub Typeなどを確認し、公開取得Queryは `is_published = TRUE` の行だけを選びます。Repositoryはその結果を必須値を持つ共有 `Pub` DTOへ変換して検証します。nullability、外部キー、制約の全容は[Production Neonから生成したSchema](../generated/database-schema.md)を参照してください。
+
+Mobile Clientは Neon の接続情報やDBへ直接接続せず、管理APIも利用しません。公開データの読取りはPublic APIの契約を使い、認証条件は[API仕様](api.md)に従います。
 
 ## 翻訳の選択
 

@@ -8,11 +8,13 @@ Next.js Route Handler で公開 API と管理 API を提供します。Automatio
 
 ### `GET /api/pubs`
 
-公開状態の店舗一覧だけを返します。Repositoryが `pubs.is_published = TRUE` をSQLで絞り込み、`isPublished` 自体は公開レスポンスへ含めません。`locale` には共通locale定義でサポートしている値を指定できます。指定ロケールの翻訳を優先し、未登録の表示文字列は共通locale定義の既定localeへフォールバックします。レスポンスは `packages/shared` の `Pub` 型に合わせ、API 側で `asPubs` による検証を行います。
+公開中の店舗一覧を `{ "pubs": Pub[] }` で返します。RepositoryのSQLが `pubs.is_published = TRUE` で絞り込み、公開状態の列 `isPublished` はレスポンスへ含めません。`DATABASE_URL` 未設定時は `200` と空の `pubs` 配列を返します。DB接続やデータ処理に失敗した場合、Route Handlerは例外を変換しないため、Next.jsの通常の `500` 応答になります。DBの個々の行が共有 `Pub` 型に適合しない場合はその行を省略して続行し、全行が不正なら `500` になります。
 
-各店舗は `pubType` に `irish` / `british` / `other` / `unclassified` を持ち、要求localeに対応する `pubTypeDisplayName` を返します。Gastropubは既存タグとして表します。
+`locale` Queryは省略可能で、指定できる値は `ja` と `en` です。既定値は `ja` です。不正値は `{ "error": "Unsupported locale." }` と `400` を返します。翻訳テーブルに要求localeの行がなければ日本語へフォールバックします。店舗名・住所、都道府県、市区町村、営業状態、タグ、Pub Typeの表示文言にこの優先順位を適用します。`prefecture`、`query` その他の検索Queryは受け付けず、検索・絞り込みは取得後のクライアント側で行います。
 
-レスポンス例:
+レスポンスの各店舗は `packages/shared/src/pub.ts` の `Pub` を使い、Repositoryが `asPubs` で検証・正規化します。IDはUUID文字列、`status` は `open` / `temporarily_closed` / `closed` / `unknown`、`pubType` は `irish` / `british` / `other` / `unclassified` です。Gastropub等の特徴はタグで表します。必須項目、optional fieldの省略、URLのnullabilityと各値の詳細は[店舗データ仕様](data.md)を参照してください。
+
+例（optionalな表示項目はデータにより省略されます）:
 
 ```json
 {
@@ -30,25 +32,27 @@ Next.js Route Handler で公開 API と管理 API を提供します。Automatio
       "tags": ["guinness"],
       "tagDisplayNames": { "guinness": "Guinness" },
       "status": "open",
-      "statusDisplayName": "Open"
+      "statusDisplayName": "営業中",
+      "pubType": "irish",
+      "pubTypeDisplayName": "アイリッシュパブ"
     }
   ]
 }
 ```
 
-## API key
+Route Handlerは `Cache-Control` や再検証時間を明示していません。クライアントは固定のキャッシュ期間をAPI契約として仮定できません。
 
-`IRISHPUB_MAP_API_KEY` が設定されている環境では、API リクエストに `x-api-key` ヘッダーが必要です。値が一致しない場合は `401` を返します。Vercel の Production では環境変数自体も必須で、未設定の場合はデプロイ時の検証に失敗し、実行時も `503` を返します。
+現在の[OpenAPI定義](openapi/openapi.yaml)には `GET /api/pubs` は含まれません。同定義はAdmin CalendarとAutomation APIの契約を記述します。Public API契約と共通Clientの整備は #541 の対象で、まだ実装済みではありません。
+
+## 公開 API の現在の認証
+
+現行の `GET /api/pubs` は `IRISHPUB_MAP_API_KEY` を使います。Production (`VERCEL_ENV=production`) では値が未設定または空白のみの場合、`{ "error": "API authentication is not configured." }` と `503` を返し、Vercel Production向けビルド検証でも設定漏れを検出します。キーが設定されている場合は `x-api-key` ヘッダーを照合し、欠落・不一致なら `{ "error": "Unauthorized" }` と `401` を返します。Production以外では未設定ならKey検証を行わず、設定されていれば照合します。認証判定が `locale` 検証より先です。
 
 ```bash
-curl -H "x-api-key: $IRISHPUB_MAP_API_KEY" http://localhost:3000/api/pubs
+curl -H "x-api-key: $IRISHPUB_MAP_API_KEY" "http://localhost:3000/api/pubs?locale=ja"
 ```
 
-ローカル開発と Preview で `IRISHPUB_MAP_API_KEY` が未設定の場合、API key チェックは無効です。設定した場合はローカルと Preview でも `x-api-key` を検証します。Production では Vercel の Environment Variables に必ず `IRISHPUB_MAP_API_KEY` を設定します。
-
-Vercel の `VERCEL_ENV=production` を使って Production を判定します。`vercel.json` の build command で `npm run validate:production-env` を実行するため、Production の設定漏れはデプロイ時に検出されます。API キーの実値はエラーメッセージ、レスポンス、ログへ出力しません。
-
-Web アプリのトップページはサーバー側で `/api/pubs` を fetch します。API key はサーバー側のヘッダーとして付与され、ブラウザには露出しません。
+API Keyの実値はレスポンスやログへ出力しません。Webトップページからの取得はサーバー側で行い、API Keyをブラウザへ渡しません。Mobileアプリへ固定Secretを埋め込む設計は安全に秘密を保持できないため、この現行方式をMobile用の認証手段として使用しません。#540 は公開APIを固定Client Secret不要のRead-only APIへ変更する別Issueで、完了するまでは将来仕様です。
 
 Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL_AUTOMATION_BYPASS_SECRET` に Protection Bypass for Automation secret を設定してください。設定されている場合、サーバー側 fetch は `x-vercel-protection-bypass` ヘッダーを送信します。未設定でSSOへリダイレクトされた場合、トップページは静的データを複製せず店舗0件で表示します。実データを表示するには、SSOを回避できる設定とDATABASE_URLの両方を適切に構成してください。
 

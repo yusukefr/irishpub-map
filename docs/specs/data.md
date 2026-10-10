@@ -8,6 +8,8 @@
 
 公開用の `Pub` は公開条件を満たす表示データを表し、公開APIは公開状態そのものを含めません。Pub Typeは `irish` / `british` / `other` / `unclassified` の単一値を持ち、Gastropub等の特徴はタグで表します。管理一覧は未完成の下書きを表現できる `AdminPubListItem`、管理詳細は日英翻訳とタグIDを含む `AdminPub` を返します。作成・更新は公開状態を含まない `AdminPubWriteInput`、公開状態の変更は `SetAdminPubPublicationInput` を使用します。正確な型定義とValidationは `packages/shared/src/pub.ts` および `packages/shared/src/admin-pub.ts` を正とし、業務ルールは[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
 
+`@irishpub-map/shared` は `Pub` / `PubStatus` / `PubType`、`asPubs`、`Locale` / `SUPPORTED_LOCALES` / `DEFAULT_LOCALE` / `isSupportedLocale` を公開します。サブパス `@irishpub-map/shared/pub` と `@irishpub-map/shared/locale` からも対応する型・関数をimportできます。Public APIの `locale` は現在 `ja` と `en` のみで、既定は `ja` です。
+
 管理画面の選択肢は `packages/shared/src/admin-master.ts` の `PrefectureOption`、`MunicipalityOption`、`TagOption`、`PubStatusOption` を使用します。これらは表示に必要なコード・ID・内部キー・表示名だけを持ち、DBの行や監査用カラムをそのまま公開しません。
 
 既知のタグキーと標準表示名は [`packages/shared/src/tag-definitions.json`](../../packages/shared/src/tag-definitions.json) をSource of Truthとし、一覧を仕様書へ複製しません。
@@ -18,22 +20,15 @@
 {
   "id": "550e8400-e29b-41d4-a716-446655440001",
   "name": "The Dubliners' Irish Pub Shinjuku",
-  "kana": "ざだぶりなーず あいりっしゅぱぶ しんじゅく",
   "prefecture": "東京都",
-  "city": "新宿区",
-  "municipalityCode": "131041",
   "address": "東京都新宿区...",
-  "latitude": 35.0,
-  "longitude": 139.0,
-  "websiteUrl": "https://example.com",
-  "googleMapsUrl": "https://maps.google.com/...",
+  "latitude": 35.681,
+  "longitude": 139.767,
+  "websiteUrl": null,
+  "googleMapsUrl": null,
   "instagramUrl": null,
-  "tags": ["guinness", "live-music", "food"],
-  "tagDisplayNames": {
-    "guinness": "ギネス",
-    "live-music": "ライブ音楽",
-    "food": "食事あり"
-  },
+  "tags": ["guinness"],
+  "tagDisplayNames": { "guinness": "ギネス" },
   "status": "open",
   "statusDisplayName": "営業中",
   "pubType": "irish",
@@ -58,11 +53,13 @@
 | `googleMapsUrl` | string \| null | no | `pubs.google_maps_url`。HTTP(S) URL |
 | `instagramUrl` | string \| null | no | `pubs.instagram_url`。HTTP(S) URL |
 | `tags` | string[] | yes | `pub_tags` で関連付く `tags.key` |
-| `tagDisplayNames` | Record<string, string> | no | 内部キーを選択ロケールの `tag_translations.name` へ対応付けた値 |
-| `status` | string | yes | `pubs.status_code` に対応する共有営業状況値 |
-| `statusDisplayName` | string | no | 選択ロケールの `pub_status_translations.display_name` |
+| `tagDisplayNames` | Record<string, string> | no | 内部キーを選択ロケール優先、日本語フォールバックの `tag_translations.name` へ対応付けた値 |
+| `status` | `PubStatus` | yes | `pubs.status_code` に対応する共有営業状況値 |
+| `statusDisplayName` | string | no | 選択ロケール優先、日本語フォールバックの `pub_status_translations.display_name` |
 | `pubType` | `irish` \| `british` \| `other` \| `unclassified` | yes | `pub_types.key`。未確認の既存公開店は `unclassified` |
 | `pubTypeDisplayName` | string | no | 選択ロケール優先、日本語フォールバックの種別名 |
+
+`kana`、`city`、`municipalityCode`、`tagDisplayNames`、`statusDisplayName`、`pubTypeDisplayName` は共有型でoptionalです。現在のRepositoryと `asPubs` は空のoptional文字列を省き、JSON化では値のないoptional fieldが省略されます。URL 3項目はTypeScript型でoptionalかつnullableで、現在の公開データでは値がなければ `null` を返します。`latitude`、`longitude`、`address` は公開DTOで必須ですが、物理DB列がnullableな項目があります。公開前のApplication Validationで必須条件を確認し、読出し時にDTOを検証します。
 
 ## ロケール
 
@@ -81,7 +78,7 @@ DBでは数値の `pubs.status_code` と `pub_statuses.code` で関連付け、�
 
 ## 検証と保存
 
-- 公開用データの読み出しは `asPubs` で検証します。必須項目の欠落、不正な緯度経度、重複ID、未定義の営業状況を含む値は受け付けません。
+- 公開用データの読み出しは `asPubs` で検証します。IDはUUID、name / prefecture / addressは空でない文字列、latitudeは有限数の−90〜90、longitudeは有限数の−180〜180、URLはHTTP(S)、status / pubTypeは定義済み値である必要があります。タグは文字列配列で、重複IDや不正データは受け付けません。optional文字列はtrim・空文字除去、タグは共有正規化関数で正規化します。
 - 管理画面・管理APIの作成・更新入力には `AdminPubWriteInput` を使用します。
 - 新規作成時の `id` はApplication ServiceがUUIDを発行し、更新時はURLで指定された既存IDを維持します。
 - `prefectureCode`、`municipalityCode`、`status`、`tagIds` は保存前にDB上のマスタと照合します。市区町村については指定された都道府県への所属も検証します。
