@@ -24,7 +24,7 @@ Resource UUIDはPostgreSQL `uuid` 型で保持し、Application Serviceで `cryp
 
 店舗・タグ・Editorial ContentのIDもこの共通ルールに従います。一括店舗importでは入力データの店舗UUIDを明示し、タグの新規作成時はApplication側でUUIDを生成してINSERTします。Migration 023は `pubs.id`、`tags.id`、`content_entries.id` の既存UUID DEFAULTだけを削除し、PRIMARY KEYと既存行を維持します。
 
-`025_convert_automation_resource_ids_to_uuid` はAutomation両テーブルの `resource_id` をPostgreSQL `uuid` 型へ変換します。適用後は `automation_idempotency_keys.resource_id` が `UUID NOT NULL`、`automation_audit_logs.resource_id` がnullable `UUID` となり、Resourceへの外部キーは追加しません。Migration適用前の環境の現行物理型は[生成済みスキーマ](../generated/database-schema.md)を参照してください。ProductionにはこのMigrationを未適用のため、Productionの列型も同スキーマをSource of Truthとします。
+`025_convert_automation_resource_ids_to_uuid` はProductionに適用済みです。Automation両テーブルの `resource_id` はPostgreSQL `uuid` 型で、`automation_idempotency_keys.resource_id` は `UUID NOT NULL`、`automation_audit_logs.resource_id` はnullable `UUID` です。Resourceへの外部キーは追加していません。現行物理スキーマは[生成済みスキーマ](../generated/database-schema.md)を参照してください。
 
 表示順を表す `sort_order` は、Application側で整数として扱う共通カラムのため `INTEGER` に統一します。Choice数など行数の上限は列型ではなくDomain Validationで表現し、列型は格納値の実際の上限を必要とするときだけ狭めます。`020_unify_sort_order_integer` は `quiz_choices.sort_order` を `SMALLINT` から `INTEGER` へ拡張し、非負CHECKとQuestion内のUNIQUE制約を維持します。
 
