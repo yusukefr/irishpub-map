@@ -83,5 +83,13 @@ describe("AdminNavigation", () => {
     rerender(<AdminNavigation locale="ja" />);
 
     await waitFor(() => expect(toggle).toHaveAttribute("aria-expanded", "false"));
+
+    navigationMocks.pathname = "/admin/pubs";
+    rerender(<AdminNavigation locale="ja" />);
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-expanded", "false"));
+
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole("link", { name: "Pubs" }));
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 });

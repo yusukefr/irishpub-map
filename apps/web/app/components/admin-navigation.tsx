@@ -15,8 +15,13 @@ export function AdminNavigation({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const router = useRouter();
   const t = getTranslation(locale).admin;
-  const [expandedPathname, setExpandedPathname] = useState<string | null>(null);
-  const isNavigationOpen = expandedPathname === pathname;
+  const [navigationState, setNavigationState] = useState({ pathname, isOpen: false });
+
+  if (navigationState.pathname !== pathname) {
+    setNavigationState({ pathname, isOpen: false });
+  }
+
+  const isNavigationOpen = navigationState.isOpen;
 
   const items = [
     { href: "/admin/pubs", label: t.navPubs },
@@ -40,7 +45,7 @@ export function AdminNavigation({ locale }: { locale: Locale }) {
         type="button"
         aria-expanded={isNavigationOpen}
         aria-controls="admin-navigation-links"
-        onClick={() => setExpandedPathname(isNavigationOpen ? null : pathname)}
+        onClick={() => setNavigationState({ pathname, isOpen: !isNavigationOpen })}
       >
         {t.navigationMenu}
       </button>
@@ -54,7 +59,11 @@ export function AdminNavigation({ locale }: { locale: Locale }) {
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
               <li key={href}>
-                <Link href={href} aria-current={active ? "page" : undefined}>
+                <Link
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => setNavigationState({ pathname, isOpen: false })}
+                >
                   {label}
                 </Link>
               </li>
