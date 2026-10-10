@@ -25,6 +25,8 @@ Irish Pub Mapのテストを追加・整理するときの判断基準です。�
 
 レイヤー名はテストの責務を表します。現行のVitestは`tests/**/*.test.{ts,tsx}`をjsdomで実行し、MapLibreをテスト用Mockへ置き換えます。Playwrightの通常E2Eは`e2e/`の`*.storybook.spec.ts`を除いてChromiumで実行し、Storybook browser testは別設定で同ファイルを実行します。
 
+Vitestのpool・隔離方式を変更する場合は、全テストの反復実行に加えて単独ファイル実行と状態cleanupを確認します。2026-10-10に調査した`vmThreads`と`isolate: false`の比較、および既定のjsdom / per-file isolationを維持した判断は[Vitest jsdom性能調査 (#606)](test-suite-performance-606.md)を参照してください。
+
 ## 追加するレイヤーの選び方
 
 1. 回帰として検出したい**観測可能な振る舞い**を一文にします。想定する失敗（入力、分岐、境界、接続、見た目）も特定します。
