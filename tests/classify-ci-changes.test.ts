@@ -36,6 +36,13 @@ describe("CI change classification", () => {
     });
   });
 
+  it("accepts documentation Markdown and standalone diagrams but treats other paths conservatively", () => {
+    expect(classifyPaths(["docs/architecture/system.mmd", ".agents/skills/example.md"]).codeChanged).toBe(false);
+    expect(classifyPaths(["docs/specs/openapi/example.mmd"]).openapiChanged).toBe(true);
+    expect(classifyPaths(["apps/web/content/guide.mdx"]).codeChanged).toBe(true);
+    expect(classifyPaths(["docs/assets/diagram.svg"]).codeChanged).toBe(true);
+  });
+
   it("runs full CI for code and markdown inside the app", () => {
     expect(classifyPaths(["apps/web/app/page.tsx", "apps/web/content/help.md"])).toEqual({
       codeChanged: true,
@@ -110,6 +117,10 @@ describe("CI change classification", () => {
     expect(shouldRunE2e(backend, { eventName: "pull_request", ref: "refs/pull/553/merge" })).toBe(false);
     expect(shouldRunE2e(classifyPaths(["README.md"]), { eventName: "pull_request" })).toBe(false);
     expect(shouldRunE2e(backend, { eventName: "push", ref: "refs/heads/main" })).toBe(true);
+    expect(shouldRunE2e(classifyPaths(["README.md"]), { eventName: "push", ref: "refs/heads/main" })).toBe(false);
+    expect(shouldRunE2e({ ...backend, releaseRelevant: true }, { eventName: "push", ref: "refs/heads/main" })).toBe(
+      true,
+    );
     expect(shouldRunE2e(backend, { eventName: "push", ref: "refs/heads/feature" })).toBe(false);
     expect(shouldRunE2e(ui, { eventName: "workflow_dispatch", ref: "refs/heads/main" })).toBe(false);
     expect(shouldRunE2e(backend, { eventName: "workflow_dispatch", runE2eInput: "true" })).toBe(true);

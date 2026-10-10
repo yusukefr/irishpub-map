@@ -1,10 +1,15 @@
 // 機密情報検出とGitHub操作スクリプトの安全条件を保証するテストです。
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { findSensitiveData, stagedAddedLines } from "../scripts/check-sensitive-data.mjs";
+import {
+  findSensitiveData,
+  findSensitiveDataInNpmLock,
+  stagedAddedLines,
+  stagedEntries,
+} from "../scripts/check-sensitive-data.mjs";
 
 describe("repository safety check", () => {
   it("detects external account information and secret-shaped values", () => {
@@ -33,11 +38,108 @@ describe("repository safety check", () => {
     expect(findSensitiveData("https://github.com/shuding/better-all")).toEqual([]);
   });
 
-  it("ignores package lock funding URLs in staged additions", () => {
+  it("checks funding metadata in a root lockfile without flagging public GitHub URLs", () => {
     const fundingUrl = ["https://github", ".com/", "prettier/prettier"].join("");
-    const diff = ["diff --git a/package-lock.json b/package-lock.json", `+${fundingUrl}`].join("\n");
+    const lock = JSON.stringify({ packages: { "": { funding: { type: "individual", url: fundingUrl } } } });
 
-    expect(findSensitiveData(stagedAddedLines(diff))).toEqual([]);
+    expect(findSensitiveDataInNpmLock(lock)).toEqual([]);
+  });
+
+  it("detects credentials and tokens in nested npm lockfile metadata", () => {
+    const fundingUrl = ["https://github", ".com/", "prettier/prettier"].join("");
+    const token = ["github_pat_", "abcdefghijklmnopqrstuvwxyz123456"].join("");
+    const authenticatedUrl = [
+      "https://username:",
+      "placeholder-password",
+      "@registry.npmjs.org/private-package.tgz",
+    ].join("");
+    const lock = JSON.stringify({
+      packages: {
+        "node_modules/public-package": { funding: { type: "individual", url: fundingUrl } },
+        "node_modules/private-package": {
+          resolved: authenticatedUrl,
+          integrity: `sha512-${token}`,
+        },
+      },
+    });
+
+    expect(findSensitiveDataInNpmLock(lock)).toContain("認証情報付き URL");
+    expect(findSensitiveDataInNpmLock(lock)).toContain("GitHub トークン");
+  });
+
+  it("reads the complete staged lockfile so funding metadata does not hide other sensitive values", () => {
+    const fundingUrl = ["https://github", ".com/", "prettier/prettier"].join("");
+    const token = ["github_pat_", "abcdefghijklmnopqrstuvwxyz123456"].join("");
+    const stagedLock = JSON.stringify({
+      packages: {
+        "": { funding: { url: fundingUrl } },
+        secret: { resolved: token },
+      },
+    });
+    const nameStatus = "M\0tools/docs-check/package-lock.json\0";
+
+    const entries = stagedEntries(nameStatus, () => stagedLock);
+    expect(entries).toHaveLength(1);
+    expect(findSensitiveDataInNpmLock(entries[0].content)).toContain("GitHub トークン");
+    expect(findSensitiveData(stagedAddedLines("diff --git a/a b/a\n+++ b/a\n+safe"))).toEqual([]);
+  });
+
+  it("checks a lockfile renamed from the repository root into a nested path", () => {
+    const directory = mkdtempSync(`${tmpdir()}/repository-safety-lock-rename-`);
+    const script = resolve("scripts/check-sensitive-data.mjs");
+    try {
+      initializeGitRepository(directory);
+      const fundingUrl = ["https://github", ".com/", "prettier/prettier"].join("");
+      writeFileSync(
+        `${directory}/package-lock.json`,
+        JSON.stringify({ packages: { "": { funding: { type: "individual", url: fundingUrl } } } }),
+      );
+      spawnSync("git", ["add", "package-lock.json"], { cwd: directory });
+      spawnSync("git", ["commit", "-m", "Add lockfile"], { cwd: directory });
+      mkdirSync(`${directory}/tools/docs-check`, { recursive: true });
+      const rename = spawnSync("git", ["mv", "package-lock.json", "tools/docs-check/package-lock.json"], {
+        cwd: directory,
+        encoding: "utf8",
+      });
+      expect(rename.status).toBe(0);
+
+      const result = spawnSync(process.execPath, [script, "--staged"], {
+        cwd: directory,
+        encoding: "utf8",
+      });
+
+      expect(result.status).toBe(0);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("detects sensitive values when a regular JSON file is renamed to a nested lockfile", () => {
+    const directory = mkdtempSync(`${tmpdir()}/repository-safety-lock-rename-`);
+    const script = resolve("scripts/check-sensitive-data.mjs");
+    try {
+      initializeGitRepository(directory);
+      const token = ["github_pat_", "abcdefghijklmnopqrstuvwxyz123456"].join("");
+      writeFileSync(`${directory}/ordinary.json`, JSON.stringify({ packages: { package: { resolved: token } } }));
+      spawnSync("git", ["add", "ordinary.json"], { cwd: directory });
+      spawnSync("git", ["commit", "-m", "Add JSON file"], { cwd: directory });
+      mkdirSync(`${directory}/packages/demo`, { recursive: true });
+      const rename = spawnSync("git", ["mv", "ordinary.json", "packages/demo/package-lock.json"], {
+        cwd: directory,
+        encoding: "utf8",
+      });
+      expect(rename.status).toBe(0);
+
+      const result = spawnSync(process.execPath, [script, "--staged"], {
+        cwd: directory,
+        encoding: "utf8",
+      });
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("GitHub トークン");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it("detects configured account identifiers without storing them in the repository", () => {
@@ -110,3 +212,10 @@ describe("repository safety check", () => {
     }
   });
 });
+
+function initializeGitRepository(directory: string) {
+  spawnSync("git", ["init"], { cwd: directory });
+  const email = ["test", "@", "example.test"].join("");
+  spawnSync("git", ["config", "user.email", email], { cwd: directory });
+  spawnSync("git", ["config", "user.name", "Test User"], { cwd: directory });
+}

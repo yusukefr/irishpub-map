@@ -21,14 +21,14 @@ CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`�
 
 | 変更内容 | `Lint, Test, Build`で実行する処理 | PRのE2E / Storybook browser tests |
 | --- | --- | --- |
-| Code変更（workflowを含む） | Sensitive data check、LLM security check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | UI / E2E関連変更があれば実行 |
-| `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Sensitive data check、LLM security check、npm ci、OpenAPI lint | 省略 |
-| docs-only | Sensitive data check、LLM security checkのみ | 省略 |
+| Code変更（workflowを含む） | Sensitive data check、LLM security check、Markdown / `.mmd` のMermaid構文 check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | UI / E2E関連変更があれば実行 |
+| `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Markdown / `.mmd` のPrettier check、Mermaid構文 check、Sensitive data check、LLM security check、OpenAPI lint | アプリのTest / Buildを省略 |
+| docs-only | Markdown / `.mmd` のPrettier check、Mermaid構文 check、Sensitive data check、LLM security check | Unit Test、ESLint、Typecheck、Next.js / Storybook Build、E2Eを省略 |
 | `workflow_dispatch` | Code変更と同じFull CI | デフォルトで省略。`run_e2e=true`の場合だけ実行 |
 
-docs-onlyは`docs/**`（OpenAPIを除く）、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`に限定します。アプリ配下のMarkdownを含む、それ以外のパスはCode変更として扱います。PRのE2E対象はWebの画面・コンポーネント・スタイル・静的素材・`packages/shared/**`・StorybookとPlaywrightのテスト・設定です。API routeや明確なserver専用処理だけの変更は対象外です。比較元を取得できないPRは安全側でE2Eを実行します。手動でE2Eを確認する場合は対象branchの`workflow_dispatch`で`run_e2e`を指定します。
+docs-onlyは`docs/**`（OpenAPIを除く）のMarkdownと`.mmd`、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`のMarkdownと`.mmd`に限定します。OpenAPI変更では文書チェックとOpenAPI lintを実行し、アプリ配下のMarkdown/MDXやそれ以外の未知パスはFull CIとして扱います。MermaidはMarkdown内の`mermaid` fenceと追跡対象の独立`.mmd`を構文検証します。軽量チェックは`tools/docs-check`の専用lockfileでPrettierとMermaid parserだけを導入します。PRのE2E対象はWebの画面・コンポーネント・スタイル・静的素材・`packages/shared/**`・StorybookとPlaywrightのテスト・設定です。API routeや明確なserver専用処理だけの変更は対象外です。比較元を取得できないPRは安全側でE2Eを実行します。手動でE2Eを確認する場合は対象branchの`workflow_dispatch`で`run_e2e`を指定します。
 
-`main`へのpushでは変更分類にかかわらずE2EとStorybook browser testsを実行します。未Releaseのアプリ変更があるdocs-only pushでは従来どおりFull CIも実行します。Production ReleaseはFull CIとE2Eの成功を引き続き条件とします。
+`main`へのdocs-only pushでは、未Releaseの成果物変更が残っていない場合にE2EとStorybook browser testsを省略します。未Releaseの成果物変更が残る場合はFull CI、E2E、Production Releaseを従来どおり実行します。明示された`workflow_dispatch`の`run_e2e=true`も引き続き実行します。Production ReleaseはFull CIとE2Eの成功を引き続き条件とします。
 
 LLM security checkはGit管理対象のAgent向け文書を動的に列挙し、禁止Unicode文字、NFC、instruction fileの配置を検査します。pre-commitではstage済みの内容だけを、CIでは管理対象全件を確認します。検出時は自動修正せず、表示されたファイル・位置と内容をレビューします。
 
@@ -36,7 +36,7 @@ LLM security checkはGit管理対象のAgent向け文書を動的に列挙し、
 
 同じPRで新しいrunが始まると、進行中の古いrunはキャンセルされます。`main`のrunはProduction Releaseまで続くため、後続pushではキャンセルしません。PR更新後は最新HEADの通常CIを確認し、`main`へのmerge後は通常CIとE2Eの両方を確認します。E2E失敗時のPlaywright artifactは引き続き保存します。
 
-PR作成・更新後は`scripts/verify-pr-ci.sh --pr <番号>`で最新HEADの`Lint, Test, Build`を確認します。checkが未作成なら最大90秒待ち、`queued`や`in_progress`なら既存checkの完了を待ちます。待機中にPRのHEADが変わった場合は中止するため、コマンドを再実行します。成功は正常終了、失敗・キャンセル・待機のタイムアウトはエラーになります。check未作成時のfallbackも必要なら`--dispatch`を付けます。この場合も90秒待ってcheckが作成されないときだけ`workflow_dispatch`で手動CIを起動し、対象PRのHEAD SHAと一致するrunを待ちます。通常CIの失敗時は原因を確認し、fallbackを自動起動しません。
+PR作成・更新後は`scripts/verify-pr-ci.sh --pr <番号>`で最新HEADの`Lint, Test, Build`を確認します。checkが未作成なら最大90秒待ち、`queued`や`in_progress`なら既存checkの完了を待ちます。待機中にPRのHEADが変わった場合は中止するため、コマンドを再実行します。成功は正常終了、失敗・キャンセル・待機のタイムアウトはエラーになります。`--dispatch`は変更ファイルをGitHubから再取得して分類し、Full CI対象に限って`workflow_dispatch`を起動します。docs-only / OpenAPI-onlyではFull CI fallbackを起動せず、PR用必須checkは`pull_request` Workflowの最新HEAD実行で確認します。手動`workflow_dispatch`はPR用Required Status Checkを満たす根拠にしません。通常CIの失敗時は原因を確認し、fallbackを自動起動しません。
 
 Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secrets and variables → Actionsで次を設定します。
 

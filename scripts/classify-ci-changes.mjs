@@ -113,10 +113,13 @@ export function classifyReleaseChanges({ cwd = process.cwd(), headSha } = {}) {
 function isDocsOnlyPath(path) {
   return (
     DOCS_ROOT_FILES.has(path) ||
-    (path.startsWith("docs/") && !path.startsWith("docs/specs/openapi/")) ||
-    path.startsWith(".agents/") ||
-    path.startsWith(".codex/")
+    (path.startsWith("docs/") && !path.startsWith("docs/specs/openapi/") && isMarkdownPath(path)) ||
+    ((path.startsWith(".agents/") || path.startsWith(".codex/")) && isMarkdownPath(path))
   );
+}
+
+function isMarkdownPath(path) {
+  return /\.(?:md|mmd)$/i.test(path);
 }
 
 function fullChange() {
@@ -142,7 +145,7 @@ export function shouldRunFullCi(result, eventName) {
  */
 export function shouldRunE2e(result, { eventName, ref, runE2eInput = "false" }) {
   return (
-    (eventName === "push" && ref === "refs/heads/main") ||
+    (eventName === "push" && ref === "refs/heads/main" && (result.e2eRelevant || result.releaseRelevant)) ||
     (eventName === "pull_request" && result.e2eRelevant) ||
     (eventName === "workflow_dispatch" && runE2eInput === "true")
   );

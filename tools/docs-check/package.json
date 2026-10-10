@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "jsdom": "30.1.1",
+    "mermaid": "12.1.0",
+    "prettier": "3.9.9"
+  }
+}

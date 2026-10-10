@@ -8,7 +8,7 @@ Usage:
 
 Waits for the latest commit of a pull request to receive a completed
 "Lint, Test, Build" check. With --dispatch, runs ci.yml via workflow_dispatch
-only if the check has not appeared after 90 seconds.
+only for changes that require Full CI if the check has not appeared after 90 seconds.
 
 Options:
   --pr PR              Pull request number or URL. Defaults to the current branch's PR.
@@ -109,6 +109,20 @@ echo "$pr_url" >&2
 
 if [[ "$dispatch" != true ]]; then
   echo "Run with --dispatch to start ci.yml for the latest branch HEAD." >&2
+  exit 1
+fi
+
+ensure_latest_head
+changed_paths="$(gh api --paginate "repos/$repo/pulls/$pr_number/files?per_page=100" --jq '.[] | .filename, .previous_filename? // empty' | node --input-type=module -e '
+  import { classifyPaths } from "./scripts/classify-ci-changes.mjs";
+  import { readFileSync } from "node:fs";
+  const paths = readFileSync(0, "utf8").trim().split("\n").filter(Boolean);
+  const classification = classifyPaths(paths);
+  process.stdout.write(classification.codeChanged ? "full" : "lightweight");
+')"
+if [[ "$changed_paths" != full ]]; then
+  echo "Full CI fallback skipped for docs-only or OpenAPI-only PR #$pr_number at $head_sha." >&2
+  echo "The pull_request workflow is responsible for the required check. Run the relevant documentation checks locally if needed." >&2
   exit 1
 fi
 

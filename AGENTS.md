@@ -40,7 +40,7 @@ Framework、Library、Vercelの仕様は、使用中のVersionに対応する公
 - コミット前に `npm run check:sensitive-data` を実行し、検出回避のためにhookを無効化したり値を難読化したりしません。
 - Agent向け文書の変更時は `npm run check:llm-security` を実行します。検出箇所は自動削除せず、内容と配置をレビューします。
 - PRは `main` をbaseとし、Templateを基にした日本語の本文ファイルを `scripts/create-pr.sh` へ渡して作成します。関連Issue、検証結果、省略理由、コードと文書の同期確認を記載します。
-- PR作成後または修正push後は `scripts/verify-pr-ci.sh --pr <number>` を実行します。最新HEADにCIがなければ `--dispatch` で手動CIを実行し、その旨を報告します。
+- PR作成後または修正push後は `scripts/verify-pr-ci.sh --pr <number>` を実行します。Full CI対象の最新HEADにCIがなく、手動実行が必要な場合だけ `--dispatch` を指定します。docs-only / OpenAPI-onlyではfallbackがFull CIを起動しないため、PR用必須checkの通常Workflow実行を確認します。
 
 ## Documentation Router
 
