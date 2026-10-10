@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   E2E_TEST_DATA,
+  getE2EAdminContent,
   getE2EAdminContentList,
   getE2EAdminQuizList,
   getE2EAdminPub,
@@ -83,6 +84,29 @@ describe("E2E test mode", () => {
     }
 
     for (const locale of ["ja", "en"] as const) {
+      const adminGuide = getE2EAdminContent(E2E_TEST_DATA.content.published.id);
+      const publicGuide = getE2EPublishedContentBySlug("guide", "split-the-g", locale);
+      expect(adminGuide).not.toBeNull();
+      expect(publicGuide).not.toBeNull();
+      if (!adminGuide || !publicGuide) throw new Error("Published E2E guide fixture is missing.");
+
+      const translation = adminGuide.translations[locale];
+      expect(publicGuide).toMatchObject({
+        publishedAt: adminGuide.publishedAt,
+        title: translation.title,
+        summary: translation.summary,
+        bodyMarkdown: translation.bodyMarkdown,
+        heroImage: adminGuide.heroImage
+          ? {
+              url: adminGuide.heroImage.url,
+              width: adminGuide.heroImage.width,
+              height: adminGuide.heroImage.height,
+              alt: translation.heroImageAlt,
+              caption: translation.heroImageCaption,
+            }
+          : null,
+      });
+
       const publicQuestion = getE2EPublishedQuizQuestions(locale)[0];
       const answer = gradeE2EPublishedQuizAnswer(publicQuestion.id, publicQuestion.choices[0].id, locale);
       expect(answer.relatedGuide).toBeDefined();
