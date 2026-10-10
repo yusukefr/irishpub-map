@@ -17,7 +17,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | `method`        | `text`                     | no       | —       |
 | `path`          | `text`                     | no       | —       |
 | `resource_type` | `text`                     | no       | —       |
-| `resource_id`   | `text`                     | yes      | —       |
+| `resource_id`   | `uuid`                     | yes      | —       |
 | `action`        | `text`                     | no       | —       |
 | `result`        | `text`                     | no       | —       |
 | `status_code`   | `integer`                  | no       | —       |
@@ -54,7 +54,7 @@ This document records the physical schema in PostgreSQL `public`: tables, column
 | `method`        | `text`                     | no       | —                                |
 | `path`          | `text`                     | no       | —                                |
 | `resource_type` | `text`                     | no       | —                                |
-| `resource_id`   | `text`                     | no       | —                                |
+| `resource_id`   | `uuid`                     | no       | —                                |
 | `status`        | `text`                     | no       | `'pending'::text`                |
 | `status_code`   | `integer`                  | yes      | —                                |
 | `response_body` | `jsonb`                    | yes      | —                                |

@@ -28,7 +28,11 @@ vi.mock("@neondatabase/serverless", () => ({
     },
 }));
 
-import { claimAutomationKey, completeAutomationKey } from "../../apps/web/app/lib/automation-reliability-repository";
+import {
+  claimAutomationKey,
+  completeAutomationKey,
+  insertAutomationAudit,
+} from "../../apps/web/app/lib/automation-reliability-repository";
 
 const originalDatabaseUrl = process.env.DATABASE_URL;
 
@@ -65,5 +69,35 @@ describe("automation reliability SQL", () => {
     await completeAutomationKey("550e8400-e29b-41d4-a716-446655440001", 201, { content: { id: "sample" } });
     expect(databaseMock.queries[0].sql).toMatch(/expires_at = now\(\) \+ INTERVAL '24 hours'/u);
     expect(databaseMock.queries[0].sql).toMatch(/WHERE id = \?::uuid AND status = 'pending'/u);
+  });
+
+  it("inserts UUID Resource IDs into the audit log and preserves nullable IDs", async () => {
+    await insertAutomationAudit({
+      requestId: "550e8400-e29b-41d4-a716-446655440002",
+      scope: "content:write",
+      method: "POST",
+      path: "/api/automation/v1/content",
+      resourceType: "content",
+      resourceId: null,
+      action: "create",
+      result: "failure",
+      statusCode: 500,
+    });
+    await insertAutomationAudit({
+      requestId: "550e8400-e29b-41d4-a716-446655440003",
+      scope: "content:write",
+      method: "POST",
+      path: "/api/automation/v1/content",
+      resourceType: "content",
+      resourceId: "550e8400-e29b-41d4-a716-446655440004",
+      action: "create",
+      result: "success",
+      statusCode: 201,
+    });
+
+    expect(databaseMock.queries[0].sql).toContain("INSERT INTO automation_audit_logs");
+    expect(databaseMock.queries[0].sql).toContain("?::uuid");
+    expect(databaseMock.queries[0].values[6]).toBeNull();
+    expect(databaseMock.queries[1].values[6]).toBe("550e8400-e29b-41d4-a716-446655440004");
   });
 });

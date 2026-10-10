@@ -63,7 +63,7 @@ export async function claimAutomationKey(
   const inserted = (await sql`
     INSERT INTO automation_idempotency_keys
       (id, key_hash, request_hash, method, path, resource_type, resource_id)
-    VALUES (${id}::uuid, ${keyHash}, ${requestHash}, ${method}, ${path}, ${resourceType}, ${resourceId})
+    VALUES (${id}::uuid, ${keyHash}, ${requestHash}, ${method}, ${path}, ${resourceType}, ${resourceId}::uuid)
     ON CONFLICT (key_hash) DO NOTHING
     RETURNING id::text, request_hash, resource_id, status, status_code, response_body
   `) as IdempotencyRecord[];
@@ -146,6 +146,6 @@ export async function insertAutomationAudit(entry: AuditEntry): Promise<void> {
     INSERT INTO automation_audit_logs
       (id, request_id, scope, method, path, resource_type, resource_id, action, result, status_code)
     VALUES (${id}::uuid, ${entry.requestId}::uuid, ${entry.scope}, ${entry.method}, ${entry.path},
-      ${entry.resourceType}, ${entry.resourceId}, ${entry.action}, ${entry.result}, ${entry.statusCode})
+      ${entry.resourceType}, ${entry.resourceId}::uuid, ${entry.action}, ${entry.result}, ${entry.statusCode})
   `;
 }
