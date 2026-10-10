@@ -41,7 +41,6 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Testing strategy / Test Layer | [テスト戦略](development/testing.md) | Current。テストの責務、追加・削除、Mock・Fixture、Coverageの判断基準 |
 | Test inventory snapshot (#534) | [現行テストの棚卸し](development/test-inventory-534.md) | Historical。HEAD `e6a3fef` 時点のテスト構成と整理候補 |
 | Test suite final review (#538) | [Test Suite最終確認](development/test-suite-review-538.md) | Historical。2026-10-10の実行時間・Coverage・CI整合性の確認結果 |
-| Test suite performance investigation (#606) | [Vitest jsdom性能調査](development/test-suite-performance-606.md) | Historical。Vitest 5.0.3の実測とpool候補の評価 |
 | Codexの並列開発 | [Git worktreeによる並列開発](development/codex-parallel-workflow.md) | Current。root `AGENTS.md` のMandatory Rulesを優先 |
 | Local development | [ローカル開発の開始](setup/development.md) | Current。最短の開発開始手順。低頻度作業はRunbookへ |
 | Standard deployment | [通常デプロイ](setup/deployment.md) | Current。Preview / Productionの通常フロー。障害対応はRunbookへ |
