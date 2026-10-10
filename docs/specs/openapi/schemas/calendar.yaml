@@ -315,7 +315,7 @@ AdminCalendarEvent:
     id:
       allOf:
         - $ref: "./automation.yaml#/Uuid"
-      description: Server-generated UUID for new events; existing stable IDs are retained.
+      description: Server-generated UUID. Immutable after creation.
     category:
       $ref: "#/CalendarCategory"
     dateRule:
