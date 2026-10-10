@@ -12,9 +12,11 @@ Irish Pub Mapの永続化先はNeon Postgresです。`DATABASE_URL` が設定さ
 
 `016_add_quiz_question_image` はQuiz Questionの任意の画像参照を `quiz_questions.image_asset_id` に追加し、`media_assets.id` を `ON DELETE SET NULL` で参照します。日英のaltとcaptionは `quiz_question_translations` に保持し、最大長をそれぞれ500文字・1,000文字に制限します。画像URLはQuiz側へ複製せず、RepositoryがMedia Assetから取得します。画像を参照する問題の公開時は日英のaltを検証します。
 
-`017_add_automation_reliability` はAutomation Createの重複防止用 `automation_idempotency_keys` と、変更操作の追跡用 `automation_audit_logs` を追加します。前者は生のKeyではなくSHA-256 hashを一意制約で保持し、method・path・Request fingerprint・固定Resource ID・状態・成功status/JSON Response・作成時刻・期限を保持します。完了時に期限を24時間後へ設定し、長時間pendingだった記録の回復時も同じ期間を確保します。完了済みの期限切れ行はCreate時に最大100行ずつ削除し、今回使用するKeyの期限切れ行は個別に削除してからclaimします。結果が確定していない処理中行は、自動削除すると二重作成の危険があるため残し、30秒経過後のRetryが同じResource IDで回復します。
+`017_add_automation_reliability` はAutomation Createの重複防止用 `automation_idempotency_keys` と、変更操作の追跡用 `automation_audit_logs` を追加します。前者は生のKeyではなくSHA-256 hashを一意制約で保持し、method・path・Request fingerprint・固定Resource UUID・状態・成功status/JSON Response・作成時刻・期限を保持します。`resource_id` はPostgreSQL `uuid` 型です。完了時に期限を24時間後へ設定し、長時間pendingだった記録の回復時も同じ期間を確保します。完了済みの期限切れ行はCreate時に最大100行ずつ削除し、今回使用するKeyの期限切れ行は個別に削除してからclaimします。結果が確定していない処理中行は、自動削除すると二重作成の危険があるため残し、30秒経過後のRetryが同じResource UUIDで回復します。
 
-`automation_audit_logs` はRequest ID、Scope、method、path、Resource種別・ID、action、結果、HTTP status、作成時刻を保持します。Resourceへの外部キーは設定せず、Resource削除後も監査履歴を保持します。Bearer Token、Authorization Header、Token hash、Cookie、Request/Response本文と環境変数は保存しません。監査Insert失敗時は成立済みの変更をrollbackせず、Request IDをServer Logへ記録します。
+`automation_audit_logs` はRequest ID、Scope、method、path、Resource種別・UUID（nullable）、action、結果、HTTP status、作成時刻を保持します。`resource_id` はPostgreSQL `uuid` 型で、Resourceへの外部キーは設定せず、Resource削除後も監査履歴を保持します。Bearer Token、Authorization Header、Token hash、Cookie、Request/Response本文と環境変数は保存しません。監査Insert失敗時は成立済みの変更をrollbackせず、Request IDをServer Logへ記録します。
+
+`025_convert_automation_resource_ids_to_uuid` は両Automation tableの既存 `resource_id` をUUIDへ変換します。Migration前に非UUID値があれば停止し、idempotency列のNOT NULL、audit列のNULL許容、Resourceへの外部キーなしを維持します。
 
 `018_convert_quiz_question_ids_to_uuid` は旧Question IDをUUIDへ対応付け、`quiz_questions.id` と3つの参照列をPostgreSQL UUID型へ変換します。既存UUIDは維持し、旧形式だけに新規UUIDを割り当てます。Question・翻訳・Choiceの対応と行数を単一transaction内で検証し、正解Choiceの遅延外部キーと関連Content・Media Asset参照を維持します。Choice IDとその参照列はTEXT型のままです。各環境では互換Applicationの配備を確認し、Migrationとverify SQLの成功後にUUID専用Applicationを配備します。
 

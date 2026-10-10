@@ -15,6 +15,19 @@ describe("pubs database migrations", () => {
     expect(new Set(numbers).size).toBe(numbers.length);
     expect(upMigrations).toContain("023_remove_resource_uuid_defaults_up.sql");
     expect(upMigrations).toContain("024_add_pub_types_up.sql");
+    expect(upMigrations).toContain("025_convert_automation_resource_ids_to_uuid_up.sql");
+  });
+
+  it("converts Automation Resource IDs to UUID without adding Resource foreign keys", async () => {
+    const upSql = await readMigration("025_convert_automation_resource_ids_to_uuid_up.sql");
+    const verifySql = await readMigration("025_convert_automation_resource_ids_to_uuid_verify.sql");
+
+    expect(upSql).toContain("migration 024_add_pub_types must be applied first");
+    expect(upSql).toContain("automation resource_id contains a non-UUID value");
+    expect(upSql).toContain("ALTER COLUMN resource_id TYPE UUID USING resource_id::uuid");
+    expect(verifySql).toContain("data_type = 'uuid' AND is_nullable = 'NO'");
+    expect(verifySql).toContain("data_type = 'uuid' AND is_nullable = 'YES'");
+    expect(verifySql).toContain("must not reference Resources with foreign keys");
   });
 
   it("adds normalized pub types and classifies legacy records as unclassified", async () => {
