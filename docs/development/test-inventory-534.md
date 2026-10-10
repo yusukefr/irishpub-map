@@ -7,7 +7,7 @@
 対象は `tests/**/*.test.{ts,tsx}`、`e2e/*.spec.ts`、`e2e/*.storybook.spec.ts` と、それらのPlaywright snapshotです。`tests/mocks/` と `e2e/support/` はテスト資材であり、独立したテストケースではありません。
 
 | Suite | ファイル数 | 主な責務 |
-| --- | ---: | --- |
+| --- | --: | --- |
 | Vitest (`tests/`) | 120（root 15、shared 8、web 97） | Domain / Component / Page / Service / Repository / API / Script / Migration |
 | Playwright E2E (`e2e/*.spec.ts`, Storybookを除く) | 17 | Build済みアプリを通る公開・管理の代表導線、Browser / Accessibility |
 | Storybook Browser Test (`e2e/*.storybook.spec.ts`) | 2 | Storybook上のComponent表示、操作、寸法、Accessibility |
