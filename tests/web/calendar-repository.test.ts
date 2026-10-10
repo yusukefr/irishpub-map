@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AdminCalendarWriteInput } from "../../apps/web/app/lib/calendar/types";
+import { E2E_TEST_DATA } from "../../apps/web/app/lib/e2e-test-fixtures";
 
 const mocks = vi.hoisted(() => ({
   queries: [] as Array<{ text: string; values: unknown[] }>,
@@ -115,6 +116,11 @@ describe("calendar public repository", () => {
     expect(isCalendarDatabaseConfigured()).toBe(true);
     await expect(getPublishedCalendarEvents()).resolves.toEqual([]);
     await expect(listAdminCalendarEvents()).resolves.toEqual([]);
+    await expect(getAdminCalendarEvent(E2E_TEST_DATA.calendar.draft.id)).resolves.toMatchObject({
+      id: E2E_TEST_DATA.calendar.draft.id,
+      isPublished: false,
+      translations: { ja: { name: E2E_TEST_DATA.calendar.draft.title } },
+    });
     await expect(getAdminCalendarEvent(id)).resolves.toBeNull();
     expect(mocks.queries).toEqual([]);
     expect(mocks.transactionCount).toBe(0);

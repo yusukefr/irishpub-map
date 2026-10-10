@@ -18,12 +18,16 @@ import type { AdminContent, AdminContentListItem } from "@irishpub-map/shared/ad
 import type { Locale } from "@irishpub-map/shared/locale";
 import type { Pub } from "@irishpub-map/shared/pub";
 import type { ContentKind, PublishedContent, PublishedContentSummary } from "./content/types";
+import type { AdminCalendarEvent } from "./calendar/types";
 import type { AdminQuizListItem, AdminQuizQuestion, PublicQuizQuestion, QuizAnswerResult } from "./quiz/types";
 
 export const E2E_TEST_DATA = {
   content: {
     draft: { id: "30000000-0000-4000-8000-000000000201", title: "E2E 下書きガイド" },
     published: { id: "30000000-0000-4000-8000-000000000202", title: "Split the Gを楽しむ" },
+  },
+  calendar: {
+    draft: { id: "30000000-0000-4000-8000-000000000401", title: "E2E Irish Calendar Draft" },
   },
   pubs: {
     nagoya: { id: "30000000-0000-4000-8000-000000000001", name: "E2E Irish Pub Nagoya" },
@@ -56,6 +60,25 @@ export const E2E_TEST_DATA = {
 } as const;
 
 const UPDATED_AT = "2026-01-15T12:00:00.000Z";
+const calendarDefinitions: AdminCalendarEvent[] = [
+  {
+    id: E2E_TEST_DATA.calendar.draft.id,
+    category: null,
+    dateRule: null,
+    isPublicHoliday: false,
+    featured: false,
+    aliases: [],
+    source: null,
+    sortOrder: 0,
+    isPublished: false,
+    translations: {
+      ja: { name: E2E_TEST_DATA.calendar.draft.title, description: "" },
+      en: { name: "", description: "" },
+    },
+    createdAt: UPDATED_AT,
+    updatedAt: UPDATED_AT,
+  },
+];
 const publishedContentDefinitions: Record<Locale, PublishedContent[]> = {
   ja: [
     {
@@ -478,6 +501,15 @@ export function getE2EAdminQuizList(): AdminQuizListItem[] {
  */
 export function getE2EAdminQuiz(id: string): AdminQuizQuestion | null {
   return quizDefinitions.find((question) => question.id === id) ?? null;
+}
+
+/**
+ * E2EでCalendar編集画面へ返す固定Draft詳細を取得します。
+ * @param {string} id - 取得対象のCalendar Event UUID。
+ * @returns {AdminCalendarEvent | null} 固定Calendar Event、または対象なし。
+ */
+export function getE2EAdminCalendarEvent(id: string): AdminCalendarEvent | null {
+  return calendarDefinitions.find((event) => event.id === id) ?? null;
 }
 
 /**

@@ -1,12 +1,13 @@
 import { expect, test } from "@playwright/test";
+import { E2E_TEST_DATA } from "../apps/web/app/lib/e2e-test-fixtures";
 import { loginAsE2EAdmin } from "./support/page-helpers";
 
 test("Calendar新規作成で未完成のDraftを保存する", async ({ page }) => {
-  const eventId = "30000000-0000-4000-8000-000000000401";
+  const eventId = E2E_TEST_DATA.calendar.draft.id;
   await loginAsE2EAdmin(page, "/admin/calendar/new");
   await expect(page.getByRole("heading", { name: "Calendar Eventを作成" })).toBeVisible();
 
-  await page.getByRole("group", { name: "日本語" }).getByLabel("イベント名").fill("E2E Irish Calendar Draft");
+  await page.getByRole("group", { name: "日本語" }).getByLabel("イベント名").fill(E2E_TEST_DATA.calendar.draft.title);
 
   const createRequest = page.waitForRequest(
     (request) => request.url().endsWith("/api/admin/calendar") && request.method() === "POST",
@@ -37,9 +38,14 @@ test("Calendar新規作成で未完成のDraftを保存する", async ({ page })
   const body = request.postDataJSON() as Record<string, unknown>;
   expect(body).not.toHaveProperty("id");
   expect(body).toMatchObject({
-    translations: { ja: { name: "E2E Irish Calendar Draft" }, en: { name: "" } },
+    translations: { ja: { name: E2E_TEST_DATA.calendar.draft.title }, en: { name: "" } },
     isPublicHoliday: false,
     featured: false,
   });
   await expect(page).toHaveURL(new RegExp(`/admin/calendar/${eventId}$`));
+  await expect(page.getByRole("heading", { name: "Calendar Eventを編集" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "日本語" }).getByLabel("イベント名")).toHaveValue(
+    E2E_TEST_DATA.calendar.draft.title,
+  );
+  await expect(page.getByText("下書き", { exact: true })).toBeVisible();
 });
