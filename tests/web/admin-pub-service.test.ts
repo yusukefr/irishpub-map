@@ -54,6 +54,27 @@ describe("admin pub service", () => {
     expect(repositoryMocks.validateAdminPubReferences).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [{ ...draftInput, googleMapsUrl: "https://maps.example.com/pub" }, { googleMapsUrl: "invalid_format" }],
+    [
+      {
+        ...draftInput,
+        translations: {
+          ja: { ...draftInput.translations.ja, address: "a".repeat(301) },
+          en: null,
+        },
+      },
+      { "translations.ja.address": "too_long" },
+    ],
+  ])("rejects shared URL and address failures before persistence", async (input, fieldErrors) => {
+    await expect(createAdminPub(input)).rejects.toMatchObject<AdminPubServiceError>({
+      code: "validation",
+      fieldErrors,
+    });
+    expect(repositoryMocks.validateAdminPubReferences).not.toHaveBeenCalled();
+    expect(repositoryMocks.insertAdminPub).not.toHaveBeenCalled();
+  });
+
   it("maps invalid references to a conflict before opening the write transaction", async () => {
     repositoryMocks.validateAdminPubReferences.mockResolvedValue({
       fieldErrors: { municipalityCode: "invalid_format" },

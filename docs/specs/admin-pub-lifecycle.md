@@ -73,6 +73,8 @@
 
 入力はDB行やレスポンスを流用せず、`AdminPubWriteInput` を使用します。作成・通常更新では公開状態を含めず、公開切替は `SetAdminPubPublicationInput` を使う専用操作に分離します。正確な型定義とValidationは `packages/shared/src/admin-pub.ts` を参照してください。
 
+URLは共通規則としてHTTP(S)、最大2,048文字、ユーザー情報と制御文字なしを検証し、公式サイトは任意ホストを許可します。Google MapsとInstagramはそれぞれの共有URL形式を検証します。日英住所はtrim後300文字以内で制御文字を含めず、日本語Draft住所だけ未入力を許可します。画面は `fieldErrors` のフィールドと理由コードを使って修正方法を表示します。
+
 作成・更新入力はフォーム全体のスナップショットです。`translations.en = null` は英語翻訳を削除し、`tagIds = []` はタグ関係をすべて解除します。通常更新で未指定とクリアを混同しないよう部分更新にはしません。
 
 ## Validationの責務

@@ -642,6 +642,15 @@ describe("Remote MCP contract", () => {
       ["create_pub", { idempotencyKey: "intent", ...pubWrite, isPublished: true }],
       ["update_pub", { id, ...pubWrite, updatedAt: timestamp }],
       ["update_pub", { id, ...pubWrite, status: 1 }],
+      ["create_pub", { idempotencyKey: "intent", ...pubWrite, googleMapsUrl: "https://maps.example.com/pub" }],
+      [
+        "update_pub",
+        {
+          id,
+          ...pubWrite,
+          translations: { ja: { name: "Pub", nameReading: null, address: "a".repeat(301) }, en: null },
+        },
+      ],
       [
         "create_pub",
         {

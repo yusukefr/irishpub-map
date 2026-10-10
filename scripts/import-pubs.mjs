@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { neon } from "@neondatabase/serverless";
 import { getTagLabel, normalizeTags } from "../packages/shared/src/tag.ts";
+import { parseAdminPubAddress, parseAdminPubUrl } from "../packages/shared/src/admin-pub.ts";
 import { isUuid } from "../packages/shared/src/uuid.ts";
 
 const DEFAULT_SOURCE_PATH = "pubs.json";
@@ -75,7 +76,14 @@ export function parsePubs(value) {
     ids.add(pub.id);
   }
 
-  return value.map((pub) => ({ ...pub, tags: normalizeTags(pub.tags) }));
+  return value.map((pub) => ({
+    ...pub,
+    address: parseAdminPubAddress(pub.address, true).value,
+    websiteUrl: parseAdminPubUrl(pub.websiteUrl, "websiteUrl").value,
+    googleMapsUrl: parseAdminPubUrl(pub.googleMapsUrl, "googleMapsUrl").value,
+    instagramUrl: parseAdminPubUrl(pub.instagramUrl, "instagramUrl").value,
+    tags: normalizeTags(pub.tags),
+  }));
 }
 
 /** Phase 4スキーマへ店舗と日本語翻訳を追加し、既存IDは更新せずにスキップします。 */
@@ -147,13 +155,13 @@ function isPub(value) {
     isNonEmptyString(pub.name) &&
     isOptionalKana(pub.kana) &&
     isNonEmptyString(pub.prefecture) &&
-    isNonEmptyString(pub.address) &&
+    isValidAddress(pub.address) &&
     isOptionalString(pub.city) &&
     isLatitude(pub.latitude) &&
     isLongitude(pub.longitude) &&
-    isOptionalUrl(pub.websiteUrl) &&
-    isOptionalUrl(pub.googleMapsUrl) &&
-    isOptionalUrl(pub.instagramUrl) &&
+    isValidUrl(pub.websiteUrl, "websiteUrl") &&
+    isValidUrl(pub.googleMapsUrl, "googleMapsUrl") &&
+    isValidUrl(pub.instagramUrl, "instagramUrl") &&
     Array.isArray(pub.tags) &&
     pub.tags.every((tag) => isNonEmptyString(tag)) &&
     PREFECTURE_NAMES.includes(pub.prefecture) &&
@@ -170,12 +178,12 @@ function isNonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-function isOptionalUrl(value) {
-  return (
-    value === undefined ||
-    value === null ||
-    (typeof value === "string" && (value.trim() === "" || /^https?:\/\//i.test(value.trim())))
-  );
+function isValidUrl(value, field) {
+  return !parseAdminPubUrl(value, field).error;
+}
+
+function isValidAddress(value) {
+  return typeof value === "string" && !parseAdminPubAddress(value, true).error;
 }
 
 function toNullable(value) {

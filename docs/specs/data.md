@@ -88,7 +88,8 @@ DBでは数値の `pubs.status_code` と `pub_statuses.code` で関連付け、�
 - 日本語翻訳は必須として `pub_translations` に保存し、英語翻訳は任意で保存します。英語翻訳が `null` の場合は既存の英語翻訳を削除します。
 - タグは既存のタグIDを受け取り、`pub_tags` のrelationとして保存します。`tagIds = []` の場合は店舗のタグrelationをすべて解除します。
 - 店舗本体、翻訳、タグrelationの作成・更新は単一transactionで処理します。
-- URL項目は `null` を許可し、HTTP(S) URLだけを受け付けます。
+- URL項目は未入力を `null` に正規化し、HTTP(S)、2,048文字以内、URL内ユーザー情報なし、制御文字なしを検証します。公式サイトは任意ホスト、Google Mapsは `www.google.com/maps/...`・`google.com/maps/...`・`maps.google.com/...`・`maps.app.goo.gl/<code>`、Instagramはプロフィール・`/p/<id>`・`/reel/<id>` のみを受け付けます。URLへのHTTPアクセスやリダイレクト追跡はしません。
+- 住所は前後空白を除去し、制御文字を拒否して300文字以内とします。Draftの日本語住所は任意ですが公開時は必須です。英語翻訳を登録する場合は英語住所を必須とします。
 - 削除時は店舗を削除し、店舗翻訳と `pub_tags` は外部キーのCASCADEにより削除します。
 
 ## 運用

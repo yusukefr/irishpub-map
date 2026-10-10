@@ -188,6 +188,9 @@ export function AdminPubEditor({
         address: ["address", "translations.ja.address"],
         englishName: ["translations.en.name"],
         englishAddress: ["translations.en.address"],
+        websiteUrl: ["websiteUrl"],
+        googleMapsUrl: ["googleMapsUrl"],
+        instagramUrl: ["instagramUrl"],
       };
       for (const path of paths[key] ?? [String(key)]) delete next[path];
       return next;
@@ -330,6 +333,28 @@ export function AdminPubEditor({
     return keys.find((key) => fieldErrors[key]);
   }
 
+  function fieldErrorMessage(field: string) {
+    const code = fieldErrors[field];
+    if (!code) return t.admin.errors.validation_error;
+    if (field === "translations.ja.address" || field === "translations.en.address") {
+      if (code === "too_long") return t.admin.pubValidation.addressTooLong;
+      if (code === "invalid_format") return t.admin.pubValidation.addressControlCharacters;
+    }
+    if (field === "googleMapsUrl") {
+      if (code === "too_long") return t.admin.pubValidation.urlTooLong;
+      if (code === "invalid_format") return t.admin.pubValidation.googleMapsUrl;
+    }
+    if (field === "instagramUrl") {
+      if (code === "too_long") return t.admin.pubValidation.urlTooLong;
+      if (code === "invalid_format") return t.admin.pubValidation.instagramUrl;
+    }
+    if (field === "websiteUrl") {
+      if (code === "too_long") return t.admin.pubValidation.urlTooLong;
+      if (code === "invalid_format") return t.admin.pubValidation.url;
+    }
+    return t.admin.errors.validation_error;
+  }
+
   const labels = t.admin.publicationFields as Record<string, string>;
   const missingLabel = missingFields.map((field) => labels[field] ?? field).join(", ");
   return (
@@ -360,7 +385,16 @@ export function AdminPubEditor({
         <ul className="admin-field-errors">
           {Object.keys(fieldErrors).map((field) => (
             <li key={field}>
-              {labels[field] ?? field}: {t.admin.errors.validation_error}
+              {labels[field] ??
+                {
+                  websiteUrl: t.admin.officialWebsite,
+                  googleMapsUrl: "Google Maps",
+                  instagramUrl: "Instagram",
+                  "translations.ja.address": t.admin.address,
+                  "translations.en.address": t.admin.englishAddress,
+                }[field] ??
+                field}
+              : {fieldErrorMessage(field)}
             </li>
           ))}
         </ul>
@@ -501,7 +535,10 @@ export function AdminPubEditor({
             />
           </label>
           {errorFor("address", "translations.ja.address") ? (
-            <FieldError id="admin-pub-address-error" message={t.admin.errors.validation_error} />
+            <FieldError
+              id="admin-pub-address-error"
+              message={fieldErrorMessage(errorFor("address", "translations.ja.address")!)}
+            />
           ) : null}
         </fieldset>
 
@@ -549,7 +586,10 @@ export function AdminPubEditor({
                 />
               </label>
               {errorFor("englishAddress", "translations.en.address") ? (
-                <FieldError id="admin-pub-english-address-error" message={t.admin.errors.validation_error} />
+                <FieldError
+                  id="admin-pub-english-address-error"
+                  message={fieldErrorMessage(errorFor("englishAddress", "translations.en.address")!)}
+                />
               ) : null}
             </>
           ) : (
@@ -567,8 +607,12 @@ export function AdminPubEditor({
               value={values.websiteUrl}
               onChange={(event) => setValue("websiteUrl", event.target.value)}
               aria-invalid={Boolean(errorFor("websiteUrl"))}
+              aria-describedby={errorFor("websiteUrl") ? "admin-pub-website-error" : undefined}
             />
           </label>
+          {errorFor("websiteUrl") ? (
+            <FieldError id="admin-pub-website-error" message={fieldErrorMessage("websiteUrl")} />
+          ) : null}
           <label htmlFor="admin-pub-google-maps">
             Google Maps
             <input
@@ -577,8 +621,12 @@ export function AdminPubEditor({
               value={values.googleMapsUrl}
               onChange={(event) => setValue("googleMapsUrl", event.target.value)}
               aria-invalid={Boolean(errorFor("googleMapsUrl"))}
+              aria-describedby={errorFor("googleMapsUrl") ? "admin-pub-google-maps-error" : undefined}
             />
           </label>
+          {errorFor("googleMapsUrl") ? (
+            <FieldError id="admin-pub-google-maps-error" message={fieldErrorMessage("googleMapsUrl")} />
+          ) : null}
           <label htmlFor="admin-pub-instagram">
             Instagram
             <input
@@ -587,8 +635,12 @@ export function AdminPubEditor({
               value={values.instagramUrl}
               onChange={(event) => setValue("instagramUrl", event.target.value)}
               aria-invalid={Boolean(errorFor("instagramUrl"))}
+              aria-describedby={errorFor("instagramUrl") ? "admin-pub-instagram-error" : undefined}
             />
           </label>
+          {errorFor("instagramUrl") ? (
+            <FieldError id="admin-pub-instagram-error" message={fieldErrorMessage("instagramUrl")} />
+          ) : null}
         </fieldset>
 
         <fieldset>

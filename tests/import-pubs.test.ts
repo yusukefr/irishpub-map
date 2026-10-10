@@ -16,11 +16,49 @@ const pub = {
 
 describe("parsePubs", () => {
   it("accepts valid pub data", () => {
-    expect(parsePubs([pub])).toEqual([pub]);
+    expect(parsePubs([pub])).toEqual([
+      { ...pub, websiteUrl: null, googleMapsUrl: null, instagramUrl: null, tags: ["guinness"] },
+    ]);
+  });
+
+  it("reuses shared URL and address rules while normalizing import values", () => {
+    expect(
+      parsePubs([
+        {
+          ...pub,
+          address: " 東京都千代田区 ",
+          websiteUrl: " https://example.com/pub ",
+          googleMapsUrl: "https://maps.app.goo.gl/AbCd",
+          instagramUrl: "https://instagram.com/pub_name/",
+        },
+      ])[0],
+    ).toMatchObject({
+      address: "東京都千代田区",
+      websiteUrl: "https://example.com/pub",
+      googleMapsUrl: "https://maps.app.goo.gl/AbCd",
+      instagramUrl: "https://instagram.com/pub_name/",
+    });
+    expect(() => parsePubs([{ ...pub, address: "住所\n改行" }])).toThrow("Invalid pub data found.");
+    expect(() => parsePubs([{ ...pub, address: "a".repeat(301) }])).toThrow("Invalid pub data found.");
+    expect(() => parsePubs([{ ...pub, googleMapsUrl: "https://maps.example.com/pub" }])).toThrow(
+      "Invalid pub data found.",
+    );
+    expect(() => parsePubs([{ ...pub, instagramUrl: "https://instagram.com.evil.example/pub" }])).toThrow(
+      "Invalid pub data found.",
+    );
   });
 
   it("accepts unclassified and rejects missing or unknown pub types", () => {
-    expect(parsePubs([{ ...pub, pubType: "unclassified" }])).toEqual([{ ...pub, pubType: "unclassified" }]);
+    expect(parsePubs([{ ...pub, pubType: "unclassified" }])).toEqual([
+      {
+        ...pub,
+        pubType: "unclassified",
+        websiteUrl: null,
+        googleMapsUrl: null,
+        instagramUrl: null,
+        tags: ["guinness"],
+      },
+    ]);
     expect(() => parsePubs([{ ...pub, pubType: undefined }])).toThrow("Invalid pub data found.");
     expect(() => parsePubs([{ ...pub, pubType: "unknown" }])).toThrow("Invalid pub data found.");
   });
