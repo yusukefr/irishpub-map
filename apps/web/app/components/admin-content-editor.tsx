@@ -21,6 +21,7 @@ import {
 } from "@irishpub-map/shared/admin-content";
 import type { MediaAsset } from "@irishpub-map/shared/media";
 import { MediaPicker } from "./media/media-picker";
+import { AdminPageHeader } from "./admin-page-header";
 import { getAdminContentApiErrorMessage } from "../lib/admin-api-client";
 import { SafeMarkdownRenderer } from "../lib/content/renderer";
 import { insertMediaImageMarkdown } from "../lib/content/editor-image";
@@ -288,16 +289,16 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
 
   return (
     <section className="admin-panel admin-wide admin-content-editor">
-      <div className="admin-content-editor-heading">
-        <div>
-          <p className="eyebrow">Editorial content</p>
-          <h1>{contentId ? c.editHeading : c.addHeading}</h1>
-          <p>{contentId ? c.editDescription : c.addDescription}</p>
-        </div>
-        <span className={`admin-publication-badge ${status === "published" ? "is-published" : "is-unpublished"}`}>
-          {status === "published" ? c.statusPublished : c.statusDraft}
-        </span>
-      </div>
+      <AdminPageHeader
+        sectionLabel="Editorial content"
+        title={contentId ? c.editHeading : c.addHeading}
+        description={contentId ? c.editDescription : c.addDescription}
+        actions={
+          <span className={`admin-publication-badge ${status === "published" ? "is-published" : "is-unpublished"}`}>
+            {status === "published" ? c.statusPublished : c.statusDraft}
+          </span>
+        }
+      />
 
       {!databaseConfigured ? <p className="admin-error">{t.editorUnavailable}</p> : null}
       {status === "published" ? <p className="admin-content-live-note">{c.publishedSaveNotice}</p> : null}
