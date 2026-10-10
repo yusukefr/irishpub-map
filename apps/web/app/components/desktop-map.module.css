@@ -240,44 +240,9 @@
   }
 }
 
-.layout :global(.pub-map-marker) {
-  width: var(--spacing-control);
-  height: var(--spacing-control);
-  border-color: var(--color-brand-primary);
-  background: var(--color-brand-interactive);
-  box-shadow: var(--shadow-elevation-1);
-}
-
-.layout :global(.pub-map-marker-guinness)::before {
-  background: var(--color-brand-interactive);
-  border-color: var(--color-brand-primary);
-}
-
-.layout :global(.pub-map-marker:not(.pub-map-marker-open)) {
-  width: var(--spacing-control);
-  height: var(--spacing-control);
-  border-style: dashed;
-  border-color: var(--color-text-secondary);
-  background: var(--color-surface-primary);
-}
-
-.layout :global(.pub-map-marker:not(.pub-map-marker-open) span) {
-  background: var(--color-text-secondary);
-}
-
 .layout :global(.pub-map-marker.pub-map-marker-selected) {
-  width: var(--spacing-space-12);
-  height: var(--spacing-space-12);
   outline: var(--focus-ring-width) solid var(--color-brand-primary);
   outline-offset: var(--focus-ring-offset);
-  border-color: var(--color-surface-primary);
-  background: var(--color-brand-primary);
-  filter: none;
-}
-
-.layout :global(.pub-map-marker-selected)::before {
-  background: var(--color-brand-primary);
-  border-color: var(--color-brand-primary);
 }
 
 .layout :global(.pub-map-marker:focus-visible) {

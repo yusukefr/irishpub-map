@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { type ErrorEvent, Map, Marker, NavigationControl, Popup, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Pub } from "@irishpub-map/shared/pub";
@@ -9,12 +10,11 @@ import { DEFAULT_LOCALE, formatMessage, getTranslation, type Locale, type Transl
 import { getSafeExternalUrl } from "../lib/external-url";
 import { Button } from "./ui/button";
 
-const NON_OPEN_PUB_MARKER_COLOR = "#858B95";
-const PUB_TYPE_MARKERS = {
-  irish: { color: "#168B49", symbol: "☘" },
-  british: { color: "#2563EB", symbol: "♛" },
-  other: { color: "#D97706", symbol: "🍺" },
-  unclassified: { color: "#D97706", symbol: "🍺" },
+const PUB_TYPE_MARKER_ASSETS = {
+  irish: "irish",
+  british: "british",
+  other: "other",
+  unclassified: "other",
 } as const;
 
 const DEFAULT_MAP_CENTER: [number, number] = [139.767, 35.681];
@@ -299,13 +299,13 @@ function PubMapCanvas({
     <div className="map-canvas" ref={containerRef} aria-label={t.map.locationsLabel}>
       <div className="pub-map-legend" aria-label={locale === "ja" ? "地図の凡例" : "Map legend"}>
         {[
-          ["irish", "#168B49", locale === "ja" ? "アイリッシュ" : "Irish"],
-          ["british", "#2563EB", locale === "ja" ? "ブリティッシュ" : "British"],
-          ["other", "#D97706", locale === "ja" ? "その他" : "Other"],
-          ["closed", "#858B95", locale === "ja" ? "営業中以外" : "Not open"],
-        ].map(([key, color, label]) => (
+          ["irish", locale === "ja" ? "アイリッシュ" : "Irish"],
+          ["british", locale === "ja" ? "ブリティッシュ" : "British"],
+          ["other", locale === "ja" ? "その他" : "Other"],
+          ["closed", locale === "ja" ? "営業中以外" : "Not open"],
+        ].map(([key, label]) => (
           <span key={key}>
-            <i style={{ "--pub-marker-color": color } as React.CSSProperties} aria-hidden="true" />
+            <Image src={`/map-markers/pub-marker-${key}.svg`} alt="" aria-hidden="true" width={18} height={24} />
             {label}
           </span>
         ))}
@@ -602,19 +602,14 @@ function createMarkerElement(
   marker.setAttribute("aria-pressed", String(isSelected));
   marker.addEventListener("click", onSelect);
 
-  const markerType = PUB_TYPE_MARKERS[pub.pubType] ?? PUB_TYPE_MARKERS.unclassified;
-  const symbol = document.createElement("span");
-  symbol.className = "pub-map-marker-symbol";
-  symbol.textContent = markerType.symbol;
-  if (pub.status !== "open") {
-    marker.style.setProperty("--pub-marker-color", NON_OPEN_PUB_MARKER_COLOR);
-    marker.append(symbol);
-
-    return marker;
-  }
-
-  marker.style.setProperty("--pub-marker-color", markerType.color);
-  marker.append(symbol);
+  const markerAsset =
+    pub.status === "open" ? (PUB_TYPE_MARKER_ASSETS[pub.pubType] ?? PUB_TYPE_MARKER_ASSETS.unclassified) : "closed";
+  const image = document.createElement("img");
+  image.className = "pub-map-marker-image";
+  image.src = `/map-markers/pub-marker-${markerAsset}.svg`;
+  image.alt = "";
+  image.setAttribute("aria-hidden", "true");
+  marker.append(image);
 
   return marker;
 }

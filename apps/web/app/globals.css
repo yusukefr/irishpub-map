@@ -342,13 +342,15 @@ h1 {
 }
 
 .pub-map-marker {
-  width: 34px;
-  height: 42px;
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 52px;
   padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
-  transform: translateY(-2px);
+  transform: none;
 }
 
 .pub-map-popup .maplibregl-popup-content {
@@ -455,111 +457,20 @@ h1 {
   pointer-events: none;
 }
 
-.pub-map-marker:not(.pub-map-marker-open) {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border: 3px solid #fffdf8;
-  border-radius: 50% 50% 50% 0;
-  background: var(--pub-marker-color);
-  box-shadow: 0 2px 8px rgb(23 33 29 / 28%);
-  transform: translateY(-2px) rotate(-45deg);
-}
-
-.pub-map-marker:not(.pub-map-marker-open) span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #fffdf8;
+.pub-map-marker-image {
+  position: absolute;
+  bottom: -2.6px;
+  left: 50%;
+  display: block;
+  width: 40px;
+  height: 52px;
+  transform: translateX(-50%);
 }
 
 .pub-map-marker-selected {
   filter: drop-shadow(0 0 0.35rem #f3c968);
   outline: 3px solid #f3c968;
   outline-offset: 3px;
-}
-
-.pub-map-marker-guinness {
-  position: relative;
-  display: grid;
-  place-items: center;
-  border: 2px solid #0b2f23;
-  border-radius: 18px 18px 20px 20px;
-  background: #0f7b54;
-  box-shadow: 0 2px 8px rgb(23 33 29 / 28%);
-  transform: translateY(-4px);
-}
-
-.pub-map-marker-open {
-  border: 2px solid #0b2f23;
-}
-
-.pub-map-marker-open.pub-map-marker-selected {
-  border-color: #f3c968;
-}
-
-.pub-map-marker-guinness::before {
-  position: absolute;
-  bottom: -8px;
-  width: 14px;
-  height: 14px;
-  border-right: 2px solid #0b2f23;
-  border-bottom: 2px solid #0b2f23;
-  background: #0f7b54;
-  content: "";
-  transform: rotate(45deg);
-}
-
-.pub-map-marker-guinness::after {
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ffffff;
-  content: "";
-  opacity: 0.18;
-}
-
-.pub-map-marker-glass {
-  position: relative;
-  display: block;
-  width: 18px;
-  height: 24px;
-  overflow: hidden;
-  border: 2px solid #f8fafc;
-  border-top-width: 4px;
-  border-radius: 5px 5px 7px 7px;
-  background: #1f1710;
-  z-index: 1;
-}
-
-.pub-map-marker-glass::after {
-  position: absolute;
-  top: 8px;
-  right: -8px;
-  width: 9px;
-  height: 10px;
-  border: 2px solid #f8fafc;
-  border-left: 0;
-  border-radius: 0 6px 6px 0;
-  content: "";
-}
-
-.pub-map-marker-foam {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 5px;
-  background: #f8fafc;
-}
-
-.pub-map-marker-stout {
-  position: absolute;
-  inset: 5px 2px 2px;
-  border-radius: 0 0 4px 4px;
-  background: linear-gradient(180deg, #2d2116 0%, #0c0906 100%);
 }
 
 .pub-list {
@@ -3984,51 +3895,6 @@ body {
   width: 100%;
 }
 
-/* Pub Typeの識別を営業状態より先に伝え、非営業は共通グレーへ落とします。 */
-.pub-map-marker:not(.pub-map-marker-open),
-.pub-map-marker-open {
-  position: relative;
-  display: grid;
-  width: 36px;
-  height: 44px;
-  place-items: center;
-  border: 3px solid #fffdf8;
-  border-radius: 50% 50% 50% 0;
-  background: var(--pub-marker-color);
-  box-shadow: 0 2px 8px rgb(23 33 29 / 28%);
-  transform: translateY(-4px) rotate(-45deg);
-}
-.pub-map-marker-open {
-  --pub-marker-color: #168b49;
-}
-.pub-map-marker-type-irish {
-  --pub-marker-color: #168b49;
-}
-.pub-map-marker-type-british {
-  --pub-marker-color: #2563eb;
-}
-.pub-map-marker-type-other,
-.pub-map-marker-type-unclassified {
-  --pub-marker-color: #d97706;
-}
-.pub-map-marker:not(.pub-map-marker-open) {
-  --pub-marker-color: #858b95;
-}
-.pub-map-marker-symbol {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border-radius: 50%;
-  background: #fffdf8;
-  color: #26382f;
-  font-size: 16px;
-  font-weight: 800;
-  transform: rotate(45deg);
-}
-.pub-map-marker:not(.pub-map-marker-open) .pub-map-marker-symbol {
-  opacity: 0.55;
-}
 .pub-map-legend {
   position: absolute;
   z-index: 2;
@@ -4045,6 +3911,7 @@ body {
   box-shadow: 0 4px 16px rgb(23 33 29 / 16%);
   color: var(--ink);
   font-size: 0.72rem;
+  pointer-events: none;
 }
 .pub-map-legend span {
   display: inline-flex;
@@ -4052,9 +3919,10 @@ body {
   gap: 4px;
   white-space: nowrap;
 }
-.pub-map-legend i {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--pub-marker-color);
+.pub-map-legend img {
+  width: 18px;
+  height: 24px;
+}
+.map-canvas:has(.map-loading, .map-error, .map-fallback) .pub-map-legend {
+  display: none;
 }
