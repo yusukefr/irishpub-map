@@ -45,7 +45,7 @@ Spacingは4px gridで4 / 8 / 12 / 16 / 20 / 24 / 32 / 40 / 48 / 64px、Radiusは
 
 `--background`、`--surface`、`--ink`、`--muted`、`--line`、`--accent`、`--accent-strong`、`--danger`、`--content-card-radius`は既存実装との互換マッピングとして維持します。Map／Bottom Sheetの位置計算、Marker形状、Admin固有値はGlobal Tokenの対象外です。
 
-互換変数は先頭の`:root`へ一元化し、後半でliteralによる再定義をしません。`--gold` / `--gold-soft` / `--focus`もそれぞれ`brand-accent` / `brand-accent-soft` / `focus-ring`を参照します。`body`のフォントは`var(--font-sans)`だけで定義し、共通`:focus-visible`はwidth / offset / colorのTokenを利用します。管理ナビゲーションの暗い背景用focusなど、個別のアクセシビリティ調整は維持します。
+互換変数は先頭の`:root`へ一元化し、後半でliteralによる再定義をしません。`--gold` / `--gold-soft` / `--focus`もそれぞれ`brand-accent` / `brand-accent-soft` / `focus-ring`を参照します。`body`のフォントは`var(--font-sans)`だけで定義し、共通`:focus-visible`はwidth / offset / colorのTokenを利用します。Modern Adminも既存Semantic Tokenと4px spacingを使い、暗いSidebarではbrand-accent-softをFocus ringに使います。Admin固有の値・適用範囲は[Modern Admin](admin/README.md)を参照してください。
 
 `tests/web/design-tokens.test.ts`が重複した互換変数とbody fontの再定義を検出します。`e2e/design-tokens.spec.ts`は日本語・英語、1440 / 1280 / 390 / 360pxでMapとDiscoverのcomputed style、実フォントの読み込み、横overflow、JavaScriptエラーを検査します。さらにToken値を一時変更し、bodyとfocusへ反映されることを検証します。
 

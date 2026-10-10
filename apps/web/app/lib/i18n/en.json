@@ -509,6 +509,7 @@
     "configurationDescription": "Set the administrator environment variables.",
     "heading": "Pub management",
     "navigationLabel": "Admin features",
+    "navigationMenu": "Admin menu",
     "releaseInfoHeading": "Release Information",
     "releaseVersion": "Version",
     "releaseDate": "Release Date",

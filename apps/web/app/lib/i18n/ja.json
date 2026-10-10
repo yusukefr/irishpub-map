@@ -509,6 +509,7 @@
     "configurationDescription": "管理者用の環境変数を設定してください。",
     "heading": "店舗管理",
     "navigationLabel": "管理機能",
+    "navigationMenu": "管理メニュー",
     "releaseInfoHeading": "リリース情報",
     "releaseVersion": "Version",
     "releaseDate": "Release Date",
