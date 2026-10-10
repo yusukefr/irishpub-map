@@ -32,6 +32,8 @@ Design Documentationと実装が一致しない場合は、意図されたDesign
 
 ## Documentation map
 
+Admin共通基盤は[Modern Admin](admin/README.md)を参照してください。
+
 | 目的                                    | 読む文書                                     |
 | --------------------------------------- | -------------------------------------------- |
 | ブランドと判断原則                      | [Design Principles](principles.md)           |

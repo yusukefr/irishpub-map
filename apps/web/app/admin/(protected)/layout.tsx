@@ -29,14 +29,14 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
 
   return (
     <div className="admin-layout">
-      <header className="admin-sidebar">
+      <div className="admin-sidebar">
         <div>
           <p className="eyebrow">Irish Pub Map</p>
           <p className="admin-brand">Admin</p>
         </div>
         <AdminNavigation locale={locale} />
         <AdminReleaseInfo locale={locale} />
-      </header>
+      </div>
       <main className="admin-content">{children}</main>
     </div>
   );

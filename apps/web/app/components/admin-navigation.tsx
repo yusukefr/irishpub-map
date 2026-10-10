@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import { getTranslation, type Locale } from "../lib/i18n";
 
 /**
@@ -14,6 +15,14 @@ export function AdminNavigation({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const router = useRouter();
   const t = getTranslation(locale).admin;
+  const [navigationState, setNavigationState] = useState({ pathname, isOpen: false });
+
+  if (navigationState.pathname !== pathname) {
+    setNavigationState({ pathname, isOpen: false });
+  }
+
+  const isNavigationOpen = navigationState.isOpen;
+
   const items = [
     { href: "/admin/pubs", label: t.navPubs },
     { href: "/admin/content", label: t.navContent },
@@ -30,22 +39,41 @@ export function AdminNavigation({ locale }: { locale: Locale }) {
   }
 
   return (
-    <nav aria-label={t.navigationLabel} className="admin-navigation">
-      <ul>
-        {items.map(({ href, label }) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
-          return (
-            <li key={href}>
-              <Link href={href} aria-current={active ? "page" : undefined}>
-                {label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-      <button type="button" onClick={logout}>
-        {t.logout}
+    <div className="admin-navigation-disclosure">
+      <button
+        className="admin-navigation-toggle"
+        type="button"
+        aria-expanded={isNavigationOpen}
+        aria-controls="admin-navigation-links"
+        onClick={() => setNavigationState({ pathname, isOpen: !isNavigationOpen })}
+      >
+        {t.navigationMenu}
       </button>
-    </nav>
+      <nav
+        id="admin-navigation-links"
+        aria-label={t.navigationLabel}
+        className={`admin-navigation${isNavigationOpen ? " is-open" : ""}`}
+      >
+        <ul>
+          {items.map(({ href, label }) => {
+            const active = pathname === href || pathname.startsWith(`${href}/`);
+            return (
+              <li key={href}>
+                <Link
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => setNavigationState({ pathname, isOpen: false })}
+                >
+                  {label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <button type="button" onClick={logout}>
+          {t.logout}
+        </button>
+      </nav>
+    </div>
   );
 }
