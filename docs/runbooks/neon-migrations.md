@@ -28,7 +28,7 @@
 npm run db:preflight -- --target preview --required-migration 024_add_pub_types
 ```
 
-`--required-migration`には`db/migrations/`内の`*_up.sql`ファイル名から`.sql`を除いた値を指定します。PreflightはRepository内のMigration一覧と`schema_migrations`を比較し、要求Versionまでの未適用履歴を列挙して停止します。DBへは`BEGIN READ ONLY`のSELECTだけを行い、Branch作成・切替やSchema変更をしません。Preflightが成功しても対象SQLの内容確認とverify SQLの実行は必要です。
+`--required-migration`には`db/migrations/`内の`*_up.sql`ファイル名から`_up.sql`を除いた値を指定します。PreflightはRepository内のMigration一覧と`schema_migrations`を比較し、対象より前に適用が必要なMigrationのうち未適用のものを列挙して停止します。対象Migration自身は適用前でも成功します。DBへは`BEGIN READ ONLY`のSELECTだけを行い、Branch作成・切替やSchema変更をしません。Preflightが成功しても対象SQLの内容確認とverify SQLの実行は必要です。
 
 2. 共通ResolverがRepository設定からProject / Branch名を読み、Neon CLIで認証・Branch ID・ready状態・Direct / Unpooled接続先を解決・検証する。Preflightの結果で接続する正確なBranch名とIDを確認する。
 3. Previewでup SQLとverify SQLを順に適用する。
@@ -86,7 +86,8 @@ Vercelは`db/migrations/`を自動適用しません。アプリをデプロイ�
 | Error | 次の手順 |
 | --- | --- |
 | `NEON_CLI_NOT_INSTALLED` | Repository rootで`npm ci`を実行し、再試行する。 |
-| `NEON_AUTH_UNAVAILABLE` | `NEON_API_KEY` Secret Injectionを確認する。対話可能な端末では`neon login`で認証してから再試行する。 |
+| `NEON_AUTH_UNAVAILABLE` | `NEON_API_KEY` Secret Injectionを確認する。対話可能な端末では`neon auth`で認証してから再試行する。 |
+| `NEON_PROJECT_ACCESS_DENIED` | Project IDを確認し、Neon Credentialに対象Projectへのアクセス権があることを確認する。 |
 | `NEON_BRANCH_NOT_FOUND` | Targetと`config/neon-targets.json`のBranch名、Project IDを確認する。 |
 | `NEON_BRANCH_NOT_READY` | 表示されたBranch状態をMCPまたはNeon Consoleで確認し、readyになるまで停止する。 |
 | `NEON_CONNECTION_FAILED` | Direct endpoint、接続権限、ネットワークを確認する。CLI stderrや接続URIは共有しない。 |
@@ -103,7 +104,7 @@ Vercelは`db/migrations/`を自動適用しません。アプリをデプロイ�
 - Neon MCPがAgentに公開されている場合、CLI障害時の読み取り専用補助経路として使用できます。`config/neon-targets.json`の`projectId`を指定し、`list_branches(project_id)`でBranch名・ID・状態を確認します。Project一覧取得Toolの公開を前提にしません。Project IDはRepository設定を使い、MCPがProject-scopedであっても設定値と一致するか確認します。
 - CLIとMCPの認証および公開Tool範囲は別です。CLIの認証がMCPを有効にするわけではなく、MCPの読み取りToolだけでRepository CLIのDB接続や書込みが可能になるわけでもありません。MCPが読み取り専用の場合、別の書込経路やProductionへ暗黙に切り替えません。
 - `preview` Targetは`config/neon-targets.json`に固定されたBranch名を指します。PRごとの`preview/<branch>`と同一とは限らず、Resolverは設定Branchがない場合やreadyでない場合に停止します。PR Branchを調査するときはBranch名/IDを明示して読み取り確認し、Target設定を変更したり別Branchへ自動切替したりしません。
-- 「接続できない」で終了する前に、順に確認します: (1) `npm ci`後のローカルCLI起動、(2) `neon me`による認証状態または`NEON_API_KEY` Secretの有無、(3) `config/neon-targets.json`のTarget / Project ID、(4) 正確なBranch名・IDと`ready`状態、(5) `db:preflight`のMigration履歴、(6) Neon MCPのTool公開状況とProject指定の読み取り代替可否。秘密値やCLI stderrはログに残さず、原因分類と次の対処を使います。
+- 「接続できない」で終了する前に、順に確認します: (1) `npm ci`後のローカルCLI起動、(2) `NEON_API_KEY` Secretまたはローカルでの`neon auth`、(3) `config/neon-targets.json`のTarget / Project ID、(4) 正確なBranch名・IDと`ready`状態、(5) `db:preflight`のMigration履歴、(6) Neon MCPのTool公開状況とProject指定の読み取り代替可否。秘密値やCLI stderrはログに残さず、原因分類と次の対処を使います。
 - Preflightの失敗を受けてBranchを作成・削除・復元したり、Migrationを適用したりしません。これらは独立した承認とRunbook手順が必要です。
 
 ## Related docs

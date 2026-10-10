@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
+import process from "node:process";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -34,8 +35,7 @@ export async function resolveNeonTarget(
   const projectId = config.projectId;
   let branches;
   try {
-    // `neon me` reports missing auth without opening the interactive login flow.
-    await runCli(["me", "--output", "json"]);
+    // API結果で認証とProject権限を判定し、CIモードで対話ログインを防ぎます。
     const response = await runCli(["branches", "list", "--project-id", projectId, "--output", "json"]);
     const branchResponse = parseJson(response);
     branches = Array.isArray(branchResponse) ? branchResponse : branchResponse?.branches;
@@ -61,6 +61,7 @@ export async function resolveNeonTarget(
     connectionString = String(await runCli(["connection-string", branch.id, "--project-id", projectId])).trim();
   } catch (error) {
     if (isAuthenticationError(error)) throw authUnavailableError();
+    if (isProjectPermissionError(error)) throw projectAccessDeniedError();
     throw new Error(`NEON_CONNECTION_FAILED: Could not resolve a direct connection for Neon target ${targetName}.`);
   }
 
@@ -102,13 +103,18 @@ function parseJson(value) {
 
 async function runNeonCli(args) {
   try {
-    const { stdout } = await execFileAsync("neon", args, { encoding: "utf8", maxBuffer: 1024 * 1024 });
+    const { stdout } = await execFileAsync("neon", args, {
+      encoding: "utf8",
+      maxBuffer: 1024 * 1024,
+      env: { ...process.env, CI: "true" },
+    });
     return stdout;
   } catch (error) {
     // Preserve only a classification; CLI output may contain credentials or connection details.
     const sanitized = new Error("Neon CLI command failed.");
     sanitized.code = error?.code;
     sanitized.isAuthenticationError = isAuthenticationError(error);
+    sanitized.isProjectPermissionError = isProjectPermissionError(error);
     throw sanitized;
   }
 }
@@ -118,6 +124,7 @@ function normalizeNeonCliError(error) {
     return new Error("NEON_CLI_NOT_INSTALLED: Install dependencies with npm ci so the local Neon CLI is available.");
   }
   if (isAuthenticationError(error)) return authUnavailableError();
+  if (isProjectPermissionError(error)) return projectAccessDeniedError();
   return new Error(
     "NEON_CONNECTION_FAILED: Could not resolve Neon branches. Check network access and project permissions.",
   );
@@ -126,13 +133,27 @@ function normalizeNeonCliError(error) {
 function isAuthenticationError(error) {
   if (error?.isAuthenticationError) return true;
   const message = `${error?.message ?? ""} ${error?.stderr ?? ""}`;
-  return /not signed in|not authenticated|unauthori[sz]ed|authentication required|\b401\b|api key.*(missing|invalid)/i.test(
+  return /not signed in|not authenticated|unauthori[sz]ed|authentication required|cannot run interactive auth in ci|\b401\b|no api key|api key.*(missing|invalid|required)/i.test(
+    message,
+  );
+}
+
+function isProjectPermissionError(error) {
+  if (error?.isProjectPermissionError) return true;
+  const message = `${error?.message ?? ""} ${error?.stderr ?? ""}`;
+  return /\b403\b|\b404\b|forbidden|not found|project.*does not exist|(?:not allowed|no access).*project|project.*(?:not allowed|no access)/i.test(
     message,
   );
 }
 
 function authUnavailableError() {
   return new Error(
-    "NEON_AUTH_UNAVAILABLE: Provide NEON_API_KEY as a secret or run `neon login` in an interactive session, then retry.",
+    "NEON_AUTH_UNAVAILABLE: Provide NEON_API_KEY as a secret or run `neon auth` in an interactive session, then retry.",
+  );
+}
+
+function projectAccessDeniedError() {
+  return new Error(
+    "NEON_PROJECT_ACCESS_DENIED: Check that the configured project ID is correct and the Neon credential can access that project.",
   );
 }

@@ -11,7 +11,6 @@ const config = {
 
 function cliFor(branchName = "preview", connectionString = "postgres://test-user@ep-direct/neondb") {
   return vi.fn(async (args: string[]) => {
-    if (args[0] === "me") return "{}";
     if (args[0] === "branches") {
       const branches = Array.from({ length: 30 }, (_, index) => ({
         id: `br-earlier-${index}`,
@@ -40,10 +39,20 @@ describe("resolveNeonTarget", () => {
       branchId: "br-current",
       connectionString: "postgres://test-user@ep-direct/neondb",
     });
-    expect(runCli).toHaveBeenCalledTimes(3);
-    expect(runCli.mock.calls[0][0]).toEqual(["me", "--output", "json"]);
-    expect(runCli.mock.calls[1][0]).toEqual(["branches", "list", "--project-id", "test-project", "--output", "json"]);
-    expect(runCli.mock.calls[2][0]).toEqual(["connection-string", "br-current", "--project-id", "test-project"]);
+    expect(runCli).toHaveBeenCalledTimes(2);
+    expect(runCli.mock.calls[0][0]).toEqual(["branches", "list", "--project-id", "test-project", "--output", "json"]);
+    expect(runCli.mock.calls[1][0]).toEqual(["connection-string", "br-current", "--project-id", "test-project"]);
+  });
+
+  it("resolves with a project-scoped API key when the Branch API allows access", async () => {
+    const runCli = cliFor();
+    await expect(
+      resolveNeonTarget("preview", {
+        readConfig: vi.fn(async () => JSON.stringify(config)),
+        runCli,
+      }),
+    ).resolves.toMatchObject({ branchName: "preview" });
+    expect(runCli.mock.calls[0][0][0]).toBe("branches");
   });
 
   it("does not need worktree env files", async () => {
@@ -70,14 +79,13 @@ describe("resolveNeonTarget", () => {
 
   it.each(["archived", "init", undefined])("stops unless the branch is ready (%s)", async (current_state) => {
     const runCli = vi.fn(async (args: string[]) => {
-      if (args[0] === "me") return "{}";
       if (args[0] === "branches") return JSON.stringify([{ id: "br-current", name: "preview", current_state }]);
       return "postgres://test-user@ep-direct/neondb";
     });
     await expect(
       resolveNeonTarget("preview", { readConfig: vi.fn(async () => JSON.stringify(config)), runCli }),
     ).rejects.toThrow(`NEON_BRANCH_NOT_READY: Neon branch preview (br-current) is ${current_state ?? "unknown"}`);
-    expect(runCli).toHaveBeenCalledTimes(2);
+    expect(runCli).toHaveBeenCalledTimes(1);
   });
 
   it("distinguishes missing CLI and unavailable authentication without exposing CLI output", async () => {
@@ -109,6 +117,29 @@ describe("resolveNeonTarget", () => {
       }),
     ).rejects.not.toThrow(secret);
   });
+
+  it.each(["403 Forbidden: project access denied", "404 Not Found"])(
+    "distinguishes project access denial from missing authentication (%s)",
+    async (message) => {
+      await expect(
+        resolveNeonTarget("preview", {
+          readConfig: vi.fn(async () => JSON.stringify(config)),
+          runCli: vi.fn(async () => {
+            throw new Error(message);
+          }),
+        }),
+      ).rejects.toThrow("NEON_PROJECT_ACCESS_DENIED:");
+
+      await expect(
+        resolveNeonTarget("preview", {
+          readConfig: vi.fn(async () => JSON.stringify(config)),
+          runCli: vi.fn(async () => {
+            throw new Error("Cannot run interactive auth in CI");
+          }),
+        }),
+      ).rejects.toThrow("NEON_AUTH_UNAVAILABLE:");
+    },
+  );
 
   it("rejects a pooled endpoint without exposing the connection string", async () => {
     const secret = "postgres://test-user@ep-direct-pooler/neondb";

@@ -24,7 +24,7 @@ export function parsePreflightArguments(inputArgs) {
   return { target, requiredMigration };
 }
 
-/** Returns migrations that must be recorded through the requested migration. */
+/** Returns migrations before the requested migration that must already be recorded. */
 export async function getRequiredMigrationVersions(
   requiredMigration,
   { readDirectory = readdir, cwd = process.cwd() } = {},
@@ -37,7 +37,7 @@ export async function getRequiredMigrationVersions(
     .sort();
   const requiredIndex = versions.indexOf(requiredMigration);
   if (requiredIndex < 0) throw new Error(`Unknown repository migration: ${requiredMigration}.`);
-  return versions.slice(0, requiredIndex + 1);
+  return versions.slice(0, requiredIndex);
 }
 
 /** Checks the selected branch's migration history using a read-only transaction. */
@@ -79,11 +79,11 @@ export async function runNeonPreflight(
   const missingVersions = requiredVersions.filter((version) => !appliedVersions.has(version));
   if (missingVersions.length > 0) {
     throw new Error(
-      `MIGRATION_PREREQUISITE_MISSING: ${resolvedTarget.branchName} is missing migrations required through ${requiredMigration}: ${missingVersions.join(", ")}. Apply and verify them in order on this branch.`,
+      `MIGRATION_PREREQUISITE_MISSING: ${resolvedTarget.branchName} is missing migrations required before ${requiredMigration}: ${missingVersions.join(", ")}. Apply and verify them in order on this branch.`,
     );
   }
 
-  console.log(`Migration:    ${requiredMigration} and prior repository migrations are recorded`);
+  console.log(`Migration:    prior repository migrations for ${requiredMigration} are recorded`);
   console.log("Database:     read-only check; no changes made");
 }
 

@@ -28,7 +28,7 @@ describe("parsePreflightArguments", () => {
 });
 
 describe("getRequiredMigrationVersions", () => {
-  it("selects known repository migrations in order through the requested version", async () => {
+  it("selects known repository migrations before the requested version", async () => {
     const versions = await getRequiredMigrationVersions("024_add_pub_types", {
       readDirectory: vi.fn(async () => [
         "023_remove_resource_uuid_defaults_up.sql",
@@ -39,7 +39,7 @@ describe("getRequiredMigrationVersions", () => {
       ]),
       cwd: "/workspace",
     });
-    expect(versions).toEqual(["023_remove_resource_uuid_defaults", "024_add_pub_types"]);
+    expect(versions).toEqual(["023_remove_resource_uuid_defaults"]);
   });
 
   it("rejects an unknown migration", async () => {
@@ -66,7 +66,7 @@ describe("runNeonPreflight", () => {
   }
 
   it("checks branch migration history in a read-only transaction", async () => {
-    const mock = clientFor(["023_remove_resource_uuid_defaults", "024_add_pub_types"]);
+    const mock = clientFor(["023_remove_resource_uuid_defaults"]);
     const readDirectory = vi.fn(async () => ["023_remove_resource_uuid_defaults_up.sql", "024_add_pub_types_up.sql"]);
     const logger = vi.spyOn(console, "log").mockImplementation(() => {});
     await expect(
@@ -89,6 +89,22 @@ describe("runNeonPreflight", () => {
     logger.mockRestore();
   });
 
+  it("allows the target migration itself to be unapplied", async () => {
+    const mock = clientFor(["023_remove_resource_uuid_defaults"]);
+    const logger = vi.spyOn(console, "log").mockImplementation(() => {});
+    await expect(
+      runNeonPreflight(
+        { target: "preview", requiredMigration: "024_add_pub_types" },
+        {
+          resolveTarget: vi.fn(async () => resolvedTarget),
+          readDirectory: vi.fn(async () => ["023_remove_resource_uuid_defaults_up.sql", "024_add_pub_types_up.sql"]),
+          createClient: vi.fn(() => mock.client),
+        },
+      ),
+    ).resolves.toBeUndefined();
+    logger.mockRestore();
+  });
+
   it("reports missing prior migrations before any write can occur", async () => {
     const mock = clientFor(["024_add_pub_types"]);
     await expect(
@@ -101,7 +117,7 @@ describe("runNeonPreflight", () => {
         },
       ),
     ).rejects.toThrow(
-      "MIGRATION_PREREQUISITE_MISSING: preview is missing migrations required through 024_add_pub_types: 023_remove_resource_uuid_defaults",
+      "MIGRATION_PREREQUISITE_MISSING: preview is missing migrations required before 024_add_pub_types: 023_remove_resource_uuid_defaults",
     );
     expect(mock.query).toHaveBeenCalledWith("BEGIN READ ONLY");
     expect(mock.query).toHaveBeenCalledWith("ROLLBACK");
