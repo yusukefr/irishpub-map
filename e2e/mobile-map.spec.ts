@@ -216,11 +216,19 @@ for (const locale of ["ja", "en"] as const) {
       await expect(page.locator('.pub-results-panel article[data-selected="true"]')).toHaveCount(1);
       await canvas.click({ position: { x: 10, y: 240 } });
       if (width === 390 && locale === "ja") {
-        await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", {
-          animations: "disabled",
-          maxDiffPixels: 200,
-          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
-        });
+        // 地図上のマーカーはPan/pinch後に位置が変動するため、Medium SheetはDOMと位置関係で検証します。
+        // マーカー自体の見た目は他のVisual Regressionで確認します。
+        const legend = page.locator(".pub-map-legend");
+        await expect(legend).toBeVisible();
+        const legendBox = (await legend.boundingBox())!;
+        const sheetBox = (await sheet.boundingBox())!;
+        expect(legendBox.y + legendBox.height).toBeLessThanOrEqual(sheetBox.y);
+        const selectedResult = page.locator('.pub-results-panel article[data-selected="true"]');
+        await expect(selectedResult).toBeInViewport();
+        await expect(page.getByRole("button", { name: t.list.closeResults })).toBeVisible();
+        // Medium sheetの高さも固定Viewport内で確認し、地図の非同期描画には依存しません。
+        expect(sheetBox.height).toBeGreaterThan(300);
+        expect(sheetBox.height).toBeLessThan(500);
       }
       const results = page.locator(".pub-results-panel");
       await results
