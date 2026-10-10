@@ -23,6 +23,20 @@ Durationの中央値は`115.74秒`、範囲は`111.31–117.40秒`です。warm 
 
 Issue #600のHEAD `0a42b8d`で報告された`npm test`約150秒、jsdom tracked time 218.94秒とは、Node/Vitestの版、実行時点、計測環境が同一であることを確認できません。今回の値との速度比較には使いません。ただし、今回もjsdomの作成がtracked timeの53–56%を占め、主要コストであることは再現しました。
 
+## テストファイル単位のprofile
+
+`npm test -- --reporter=json --outputFile=/tmp/issue-606-vitest-profile.json`による診断runを1回実行しました。JSONの各suiteの`endTime - startTime`と個別assertionの`duration`を確認しています。このrunはJSON reporterを使うため、ベースラインの中央値・範囲には含めません。suite時間にはそのファイルの環境生成・setup・テスト実行が含まれ、純粋なテスト本体の時間とは限りません。
+
+| 遅いsuite                                            | suite経過 | テスト数 |
+| ---------------------------------------------------- | --------: | -------: |
+| `tests/web/pub-explorer.test.tsx`                    |   13.36秒 |       47 |
+| `tests/web/admin-quiz-editor.test.tsx`               |    4.80秒 |       14 |
+| `tests/web/admin-content-editor.test.tsx`            |    3.44秒 |       11 |
+| `tests/web/mcp-contract.test.ts`                     |    2.52秒 |       38 |
+| `tests/web/admin-calendar-date-rule-editor.test.tsx` |    2.40秒 |        4 |
+
+最長の個別testは`tests/web/privacy-page.test.tsx`の1.07秒でした。続いて`tests/verify-pr-ci.test.ts`が1.04秒、`tests/web/admin-quiz-editor.test.tsx`が1.03秒です。suite内の遅い個別testもあわせ、次の調査候補として名前を特定できました。ただしこの1回だけでは安定したボトルネックとは断定せず、最適化のためにassertionを削除しません。
+
 ## 候補の比較
 
 | 候補 | 実測・結果 | 判断 |
