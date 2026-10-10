@@ -216,10 +216,16 @@ for (const locale of ["ja", "en"] as const) {
       await expect(page.locator('.pub-results-panel article[data-selected="true"]')).toHaveCount(1);
       await canvas.click({ position: { x: 10, y: 240 } });
       if (width === 390 && locale === "ja") {
-        await expect(page).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", {
+        // Pan/pinchで位置が変動する地図マーカーは、このSheetのVisual Regression対象から除外します。
+        // 代わりに凡例がSheetの上に収まっていることを位置で検証します。
+        const legend = page.locator(".pub-map-legend");
+        await expect(legend).toBeVisible();
+        const legendBox = (await legend.boundingBox())!;
+        const sheetBox = (await sheet.boundingBox())!;
+        expect(legendBox.y + legendBox.height).toBeLessThanOrEqual(sheetBox.y);
+        await expect(sheet).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", {
           animations: "disabled",
           maxDiffPixels: 200,
-          mask: [page.locator(".app-version-number"), page.locator(".app-version-release-date")],
         });
       }
       const results = page.locator(".pub-results-panel");
