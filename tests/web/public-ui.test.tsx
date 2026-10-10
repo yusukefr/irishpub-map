@@ -9,6 +9,8 @@ import { Search } from "../../apps/web/app/components/ui/search";
 import { FilterChip, FilterChipGroup } from "../../apps/web/app/components/ui/filter-chip";
 import { StatusBadge } from "../../apps/web/app/components/ui/status-badge";
 import { PubCard } from "../../apps/web/app/components/ui/pub-card";
+import { PubDetail } from "../../apps/web/app/components/pub-detail";
+import { getTranslation } from "../../apps/web/app/lib/i18n";
 import { ContentCard } from "../../apps/web/app/components/ui/content-card";
 import { MapControl } from "../../apps/web/app/components/ui/map-control";
 import {
@@ -158,9 +160,47 @@ describe("Public UI primitives", () => {
     expect(toggle).toHaveBeenCalledOnce();
   });
 
-  it.each(["open", "closed", "temporarily_closed", "unknown"] as const)("shows a text status for %s", (status) => {
-    render(<StatusBadge status={status} label={`営業状態: ${status}`} />);
-    expect(screen.getByText(`営業状態: ${status}`)).toHaveAttribute("data-status", status);
+  it("hides only the open badge based on the internal status key", () => {
+    const { rerender } = render(<StatusBadge status="open" label="営業中" />);
+    expect(screen.queryByText("営業中")).not.toBeInTheDocument();
+    rerender(<StatusBadge status="temporarily_closed" label="営業中" />);
+    expect(screen.getByText("営業中")).toHaveAttribute("data-status", "temporarily_closed");
+  });
+
+  it.each(["ja", "en"] as const)("shows localized non-open statuses in cards and details (%s)", (locale) => {
+    const labels = getTranslation(locale).list;
+    const localizedLabels = {
+      temporarily_closed: labels.statuses.temporarily_closed,
+      closed: labels.statuses.closed,
+      unknown: labels.statuses.unknown,
+    } as const;
+
+    for (const [status, label] of Object.entries(localizedLabels)) {
+      const currentPub = { ...pub, status: status as keyof typeof localizedLabels };
+      const { unmount } = render(<PubCard pub={currentPub} locale={locale} onSelect={() => undefined} />);
+      expect(screen.getByText(label)).toHaveAttribute("data-status", status);
+      unmount();
+
+      const detailPub = { ...currentPub, status: status as typeof pub.status };
+      const { unmount: unmountDetail } = render(<PubDetail pub={detailPub} locale={locale} labels={labels} />);
+      expect(screen.getByText(label, { selector: "span" })).toHaveAttribute("data-status", status);
+      expect(screen.getByText(label, { selector: "dd" })).toBeInTheDocument();
+      unmountDetail();
+    }
+  });
+
+  it.each(["ja", "en"] as const)("omits open from card and detail status labels (%s)", (locale) => {
+    const labels = getTranslation(locale).list;
+    const openPub = { ...pub, status: "open" as const, statusDisplayName: labels.statuses.open };
+    const { unmount } = render(<PubCard pub={openPub} locale={locale} onSelect={() => undefined} />);
+    expect(screen.getByRole("button", { name: new RegExp(openPub.name) })).toBeInTheDocument();
+    expect(screen.queryByText(labels.statuses.open)).not.toBeInTheDocument();
+    unmount();
+
+    render(<PubDetail pub={openPub} locale={locale} labels={labels} />);
+    expect(screen.getByRole("heading", { name: openPub.name })).toBeInTheDocument();
+    expect(screen.queryByText(labels.statuses.open)).not.toBeInTheDocument();
+    expect(screen.queryByText(labels.status)).not.toBeInTheDocument();
   });
 
   it("preserves card selection refs, optional information and separate detail actions", () => {

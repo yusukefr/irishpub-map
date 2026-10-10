@@ -4,7 +4,7 @@ import type { Pub } from "@irishpub-map/shared/pub";
 import { getTagLabel } from "../lib/i18n";
 import type { Locale, Translation } from "../lib/i18n";
 import { getSafeExternalUrl } from "../lib/external-url";
-import { StatusBadge } from "./ui/status-badge";
+import { isPublicStatusVisible, StatusBadge } from "./ui/status-badge";
 import { ShareButton } from "./share-button";
 import { getPubUrl } from "../lib/public-url";
 
@@ -59,10 +59,12 @@ export function PubDetail({ pub, locale, labels }: PubDetailProps) {
           <dt>{labels.name}</dt>
           <dd>{pub.name}</dd>
         </div>
-        <div>
-          <dt>{labels.status}</dt>
-          <dd>{pub.statusDisplayName ?? labels.statuses[pub.status]}</dd>
-        </div>
+        {isPublicStatusVisible(pub.status) ? (
+          <div>
+            <dt>{labels.status}</dt>
+            <dd>{pub.statusDisplayName ?? labels.statuses[pub.status]}</dd>
+          </div>
+        ) : null}
       </dl>
       <ExternalLinks pub={pub} labels={labels} />
       <ShareButton

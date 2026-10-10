@@ -16,7 +16,7 @@
 | Input / `input.tsx` | `label`必須、`error`は入力の説明へ関連付ける。`hideLabel`でもラベルを保持。native属性・ref・既存aria-describedbyを引き継ぐ。 |
 | Search / `search.tsx` | `value` / `onValueChange` / `label` / `clearLabel`を渡すcontrolled検索欄。clear後はinputへfocusを戻す。disabled / readOnly中はclearも無効。ロジック・通信・debounceは親の責務。 |
 | FilterChip / `filter-chip.tsx` | `selected`を色・check・aria-pressedで表現。多数ある場合は`FilterChipGroup label`内で横スクロールさせる。 |
-| StatusBadge / `status-badge.tsx` | `status`は共有PubStatus、`label`は翻訳済みの必須文字。操作ボタンではない。閉業は破線も併用。 |
+| StatusBadge / `status-badge.tsx` | `status`は共有PubStatus、`label`は翻訳済みの必須文字。公開画面では内部keyが`open`のとき表示せず、ほかの状態は操作ボタンではないバッジで表示する。閉業は破線も併用。 |
 | PubCard / `pub-card.tsx` | `pub` / `onSelect`が必須。`selected`は地図と親で同期する。`onShowDetails`は選択とは独立。任意の`media` / `metadata` / `distance`は表示専用で、DB形式を変えない。タグは2件と残り件数を表示。 |
 | ContentCard / `content-card.tsx` | `titleId` / `title`が必須。`description` / `eyebrow` / `metadata` / `media` / `action` / childrenを組み合わせる。`default` / `image` / `text-only` / `feature` / `compact`。section内では`headingLevel={3}`で見出し階層を保てる。featureのみEditorial見出し・限定的なGold罫線。店舗選択カードとは分ける。 |
 | MapControl / `map-control.tsx` | IconButtonを明るいsurface・radius-md・elevation-1で構成。`label`とアイコンを渡す。MapLibre生成DOMにもglobals.cssから同じ44px・focus・surfaceを適用する。 |
@@ -104,7 +104,7 @@ Map専用HeaderはモバイルのNavigationをネイティブdetailsのメニュ
 ### Filter Chip / Status Badge
 
 - **Purpose:** ChipはFilterの選択、Badgeは操作できない店舗状態を示す。
-- **Variants:** Chipはselected / unselected、Badgeはopen / temporarily closed / closed / unknown。
+- **Variants:** Chipはselected / unselected、Badgeはtemporarily closed / closed / unknown。公開画面では`open`のバッジを表示しない。
 - **States:** ChipはDefault / Hover / Focus / Active / Disabled。Badgeは操作stateを持たない。
 - **Usage:** 多数のChipはlabel付きGroupへ置く。Badge labelはlocaleに合わせて必ず渡す。
 - **Accessibility:** Chipは`aria-pressed`とcheck、BadgeはTextとBorderを使い、色だけに依存しない。

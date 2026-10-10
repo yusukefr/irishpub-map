@@ -28,7 +28,7 @@ PubCardまたはMarkerの選択はMapと一覧のselected stateを同期しま�
 
 ## StatusとExternal link
 
-StatusBadgeは翻訳済みTextとBorderを使い、closedは破線も併用します。外部リンクは目的と遷移先が分かるlabelを持ち、`target="_blank"`の場合は`rel="noreferrer"`を付けます。位置情報、内部ID、非公開データを表示用metadataへ流用しません。
+`open`は現在の営業時間内と誤認されるため、内部status keyを使ってStatusBadgeと営業状況項目の両方を省略します。temporarily_closed / closed / unknownは翻訳済みTextとBorderで表示し、closedは破線も併用します。外部リンクは目的と遷移先が分かるlabelを持ち、`target="_blank"`の場合は`rel="noreferrer"`を付けます。位置情報、内部ID、非公開データを表示用metadataへ流用しません。
 
 ## Responsive / accessibility
 
