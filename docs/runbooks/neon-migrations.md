@@ -52,6 +52,40 @@ npm run db:migrate -- --target production --confirm-production db/migrations/<mi
 
 Production Migrationは`--target production`と`--confirm-production`の両方が必須です。
 
+### 適用済み相当のスキーマとMigration履歴欠落を調査する
+
+PreflightがMigration履歴の欠落を報告しても、対象Migrationの`*_up.sql`や`*_verify.sql`をそのまま再実行しません。旧スキーマを前提とする処理や`DROP COLUMN`を含むMigrationは、現在のSchemaに適用できず、データを破壊する可能性があります。
+
+Migration 006 / 007の履歴欠落を調べる場合は、各Branchで以下の読み取り専用SQLを個別に実行します。
+
+```text
+db/operations/006_007_history_reconciliation_check.sql
+```
+
+SQLクライアントでは`BEGIN READ ONLY`から開始し、実行後に`ROLLBACK`します。接続Target、Branch名、Branch ID、状態を先に確認し、Production `main`、設定上の固定Preview `preview`、PR専用Previewを混同しないでください。このSQLは翻訳の網羅性、孤児行、`municipality_code`、006 / 007で導入・保持される関連制約とIndex、旧表示Columnの不在を検査します。各行の`passed`がtrueであることを確認します。006 / 007の`schema_migrations`有無は、他の検査結果と分けて表示されます。
+
+履歴補正を試す場合は、次をすべて満たすときに限ります。
+
+1. 同じTargetの最新状態を読み取り専用で確認し、006 / 007の履歴行チェック以外がすべてtrueで、006 / 007の履歴行だけが不足している。
+2. 後続Migrationの状態やGitHub Issue / PR / Git履歴も確認し、Branch固有の差分を別途記録している。後続Versionがあることだけで、006 / 007の実行証拠とみなさない。
+3. Production / Previewと異なる検証用Branchを明示し、そのBranchのProject、親Branch、Branch ID、状態を確認する。
+4. 検証用Branchでも事前検査を再実行し、次のSQLで返る行が不足Versionだけであることを確認する。書き込みは当該履歴行だけに限定し、翻訳・店舗・参照データ・Schemaには触れない。
+
+```sql
+INSERT INTO schema_migrations (version)
+VALUES ('006_localize_display_data'), ('007_finalize_localization')
+ON CONFLICT (version) DO NOTHING
+RETURNING version;
+```
+
+`RETURNING`が返すVersionを補正記録に残します。`applied_at`は補正時刻になるため、実際のMigration実行時刻として扱いません。
+
+5. 運用記録に「Migrationの実行を確認した」ではなく「現在の実態検査に基づき履歴を後追いで整合させた」と明記する。日時、Project / Branch名とID、実行者、承認者、検査結果、補正前後のVersion一覧を残す。原因が分からない場合は未確定と記す。
+
+検証用Branchで不整合、予期しない不足Version、接続先の曖昧さがあれば停止します。検証Branchで結果をレビューした後も、ProductionとPreviewへの書き込みはBranchごとの明示承認を取得するまで行いません。PRのマージ、CI、Preflightは履歴補正を実行しません。承認後は各Branchで直前に事前検査を再実行し、承認された対象だけを補正します。補正後は同SQLでデータとSchemaの状態を確認し、`db:preflight -- --required-migration 025_convert_automation_resource_ids_to_uuid`をTargetごとに実行します。別Versionの不足が見つかったら作業を拡張せず、別Issueとして扱います。
+
+補正を誤った可能性がある場合は、Productionで履歴行を即時削除したり、旧Migrationを逆実行したりしません。対象Branchと監査記録を再確認し、専用の回復手順と承認を決めます。
+
 Schema文書を更新するときはProductionをSource of Truthとして生成します。
 
 ```bash
