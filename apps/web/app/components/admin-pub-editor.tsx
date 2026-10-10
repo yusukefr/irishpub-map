@@ -13,6 +13,7 @@ import type {
 import { getAdminApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
+import { AdminPageHeader } from "./admin-page-header";
 
 type Props = {
   initialPub: AdminPub | null;
@@ -358,18 +359,18 @@ export function AdminPubEditor({
   const labels = t.admin.publicationFields as Record<string, string>;
   const missingLabel = missingFields.map((field) => labels[field] ?? field).join(", ");
   return (
-    <section className="admin-panel admin-wide admin-editor" aria-labelledby="admin-pub-editor-heading">
-      <div className="admin-heading">
-        <div>
-          <p className="eyebrow">Irish Pub Map</p>
-          <h1 id="admin-pub-editor-heading">{editing ? t.admin.editPub : t.admin.addPub}</h1>
-        </div>
-        {editing ? (
-          <span className={`admin-publication-badge ${isPublished ? "is-published" : "is-unpublished"}`}>
-            {isPublished ? t.admin.published : t.admin.unpublished}
-          </span>
-        ) : null}
-      </div>
+    <section className="admin-pub-editor">
+      <AdminPageHeader
+        sectionLabel="Irish Pub Map"
+        title={editing ? t.admin.editPub : t.admin.addPub}
+        actions={
+          editing ? (
+            <span className={`admin-publication-badge ${isPublished ? "is-published" : "is-unpublished"}`}>
+              {isPublished ? t.admin.published : t.admin.unpublished}
+            </span>
+          ) : null
+        }
+      />
       {!databaseConfigured ? <p className="admin-error">{t.admin.databaseUnavailable}</p> : null}
       {message ? (
         <p role="status" aria-live="polite">
@@ -404,7 +405,7 @@ export function AdminPubEditor({
       ) : null}
       {!databaseConfigured ? <p className="admin-error">{t.admin.editorUnavailable}</p> : null}
       <form
-        className="admin-form admin-editor-form"
+        className="admin-form admin-editor-form admin-pub-editor-form"
         aria-busy={busy}
         onSubmit={(event) => {
           event.preventDefault();

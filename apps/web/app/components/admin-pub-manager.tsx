@@ -11,6 +11,7 @@ import type {
 } from "@irishpub-map/shared/admin-master";
 import { getAdminApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
+import { AdminPageHeader } from "./admin-page-header";
 
 type Props = {
   initialPage: AdminPubPage;
@@ -151,16 +152,16 @@ export function AdminPubManager({
   const pageFrom = pubs.length === 0 ? 0 : pageOffset + 1;
   const pageTo = pubs.length === 0 ? 0 : Math.min(pageOffset + pubs.length, initialPage.total);
   return (
-    <section className="admin-panel admin-wide">
-      <div className="admin-heading">
-        <div>
-          <p className="eyebrow">Irish Pub Map</p>
-          <h1>{t.admin.heading}</h1>
-        </div>
-        <a className="admin-primary-link" href="/admin/pubs/new">
-          {t.admin.addPub}
-        </a>
-      </div>
+    <section className="admin-pubs-page">
+      <AdminPageHeader
+        sectionLabel="Irish Pub Map"
+        title={t.admin.heading}
+        actions={
+          <a className="admin-primary-link" href="/admin/pubs/new">
+            {t.admin.addPub}
+          </a>
+        }
+      />
       {!databaseConfigured ? <p className="admin-error">{t.admin.databaseUnavailable}</p> : null}
       {message ? (
         <p role="status" aria-live="polite">
