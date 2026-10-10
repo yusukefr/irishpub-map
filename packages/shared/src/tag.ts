@@ -1,4 +1,4 @@
-import definitions from "./tag-definitions.json";
+import definitions from "./tag-definitions.json" with { type: "json" };
 
 const TAG_LABELS: Record<string, string> = definitions.canonical;
 const TAG_ALIASES: Record<string, string> = definitions.aliases;

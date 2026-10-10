@@ -1,6 +1,6 @@
 import type { AdminFieldErrorCode } from "./admin-api-error";
 import type { PubStatus, PubType } from "./pub";
-import { isUuid } from "./uuid";
+import { isUuid } from "./uuid.ts";
 
 /** 管理店舗一覧で1ページに取得する最大件数です。 */
 export const ADMIN_PUB_PAGE_SIZE = 50;
@@ -94,13 +94,16 @@ export type AdminPubFieldErrors = Partial<Record<string, AdminFieldErrorCode>>;
 
 /** 管理店舗入力がDraft Validationまたは入力契約を満たさない場合のエラーです。 */
 export class AdminPubWriteValidationError extends Error {
+  readonly fieldErrors: AdminPubFieldErrors;
+
   /**
    * 検証済みのフィールド別エラーを保持します。
    * @param {AdminPubFieldErrors} fieldErrors - APIで安全に返せるフィールド別理由。
    */
-  constructor(readonly fieldErrors: AdminPubFieldErrors) {
+  constructor(fieldErrors: AdminPubFieldErrors) {
     super("Invalid admin pub write input.");
     this.name = "AdminPubWriteValidationError";
+    this.fieldErrors = fieldErrors;
   }
 }
 
