@@ -109,6 +109,7 @@ OpenAPI収録済みAPIのSchemaやStatusをここへ複製しません。APIの�
 | `PATCH` | `/api/admin/tags/:id` | `200` と `{ tag }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、ID不正は `400`、対象なしは `404`、重複は `409`、Content-Type不正は `415`、入力不正は `422`、DB未設定は `503` |
 | `DELETE` | `/api/admin/tags/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、ID不正は `400`、対象なしは `404`、使用中は `409`、DB未設定は `503` |
 | `GET` | `/api/admin/master/statuses` | `200` と `{ statuses }` | 未認証は `401`、取得失敗は `500` |
+| `GET` | `/api/admin/master/pub-types` | `200` と `{ pubTypes }` | 未認証は `401`、取得失敗は `500` |
 | `GET` | `/api/admin/statuses` | `200` と `{ statuses, databaseConfigured }`。固定keyと日英表示名を含む | 未認証は `401`、取得失敗は `500` |
 | `PATCH` | `/api/admin/statuses/:code` | `200` と `{ status }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、code不正は `400`、入力不正は `422`、対象なしは `404`、DB未設定は `503` |
 | `POST` | `/api/admin/pubs` | `201` と非公開の `{ pub }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、参照競合は `409`、DB未設定は `503` |
@@ -133,7 +134,7 @@ Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`tran
 
 公開状態変更本文は `{ "status": "draft" | "published" }` だけを受け付けます。レスポンスの `publishedAt` はDBで確定した公開日時を返し、Draftでは `null` です。公開時はkind、slug、category、日英すべてのtitle、summary、bodyMarkdownをサーバー側とtransaction内で検証します。Publishedの通常更新にも更新後の公開条件を適用します。本体と日英翻訳は単一transactionで作成・更新し、公開状態を変える操作とPublished更新の成功後に公開Contentの個別・一覧キャッシュタグを失効させます。
 
-`POST` と `PUT` は、`prefectureCode`、`municipalityCode`、座標、URL、`status`、`translations: { ja, en }`、`tagIds` を含む管理用全体スナップショットを受け付けます。日本語店舗名だけが下書きの必須項目で、その他の未入力値はNULL、英語翻訳なしは `translations.en = null`、タグ全解除は `tagIds = []` とします。`id`、`isPublished`、`updatedAt` は入力に含めません。新規IDはサーバーで生成し、常に非公開で作成します。
+`POST` と `PUT` は、`prefectureCode`、`municipalityCode`、座標、URL、`status`、`pubType`、`translations: { ja, en }`、`tagIds` を含む管理用全体スナップショットを受け付けます。日本語店舗名だけが下書きの必須項目で、その他の未入力値はNULL、英語翻訳なしは `translations.en = null`、タグ全解除は `tagIds = []` とします。`id`、`isPublished`、`updatedAt` は入力に含めません。新規IDはサーバーで生成し、常に非公開で作成します。新規公開時は `pubType` に `irish`、`british`、`other` のいずれかが必要です。既存の公開店舗が `unclassified` の場合は公開状態を維持でき、更新時に分類できます。
 
 管理店舗一覧は1ページ50件です。`name`、`prefecture`、`municipality`、`status`、`tag`、`published`、`page` をQuery Parameterとして受け付け、指定条件をANDで適用します。店舗名は日本語名の部分一致、都道府県は1〜47、市区町村は選択都道府県に所属する6桁コード、タグはUUID、公開状態は `true` / `false` だけを受け付けます。すべての値はパラメータ化クエリへ渡し、外部入力からSQL文字列を組み立てません。一覧APIは最終ページを超えた場合も絞り込み後の `total` を保持して `pubs` を空配列で返し、管理画面 `/admin/pubs` はその結果から最後の有効ページを求め、絞り込み条件を維持してリダイレクトします。
 
