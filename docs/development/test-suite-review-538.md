@@ -19,12 +19,15 @@ Node.js `v24.21.0`、ロックファイルに基づく`npm ci`後に各コマン
 
 Vitest CoverageはStatements 93.43%、Branches 90.31%、Functions 93.42%、Lines 95.55%で、設定済みの各90% thresholdを満たしました。計測出力はjsdom環境を123ファイルで生成し、環境初期化がtracked timeの56%（合計218.94秒）だったと報告しています。これはVitestの実行時間を改善する際の調査候補ですが、今回の作業ではpool設定・テスト隔離方式を変更していません。
 
-通常E2Eの12件はMap / Discover画面の`screenshot`比較で失敗し、残る67件は成功しました。基準画像は更新していません。Discover desktop Japaneseの比較を単独でも再実行し、同じ差分を再現しました。差分にはテキスト描画とFooter mask領域が含まれますが、Playwright Browser・OS環境差か実際の表示差かは、CIと同じコンテナで確認していないため確定していません。Storybook browser testは17件すべて成功しました。
+Node.js setupを追加する前のローカル実行では、Map / Discover画面の`screenshot`比較12件が失敗し、残る67件は成功しました。基準画像は更新していません。Discover desktop Japaneseの比較を単独でも再実行し、同じ差分を再現しました。Playwright Browser・OS環境差による描画差が候補でしたが、この時点では確定していません。Storybook browser testは17件すべて成功しました。
+
+その後、E2E用GitHub ActionsコンテナにNode.js setupがなく、`.nvmrc`のNode.js 24ではなくコンテナ既定のruntimeでBuildしていたことが分かりました。WorkflowにNode.js 24 setupを加えた最新HEADで`workflow_dispatch`（`run_e2e=true`）を実行し、Full CIとE2E jobが成功しました。E2E jobは4分05秒で、Playwright E2EとStorybook browser testsの両方を完了しています。通常のPR CIとWorkflow Lintも成功しました。
 
 ## 設定の確認
 
 - Coverage対象は`packages/shared/src`と`apps/web/app/components`です。共有Domainの検証と主要Componentを対象にし、Service・Repository・API全体へ90%を要求する設定ではありません。これらの層は個別のVitestテストがあり、Testing Strategyに記載されたCoverageの用途と一致しています。
 - CIのFull CIはSensitive Data、LLM Security、Format、OpenAPI lint、Lint、Vitest、Next.js Build、Storybook Buildを実行します。通常E2EとStorybook browser testはPRの変更分類に応じて実行し、`main` pushでは実行します。Testing Strategyへこの対応を追記しました。
+- E2E jobにも`.nvmrc`からNode.jsを選ぶsetupを追加しました。Node.js 24 setup後のWorkflow dispatchではFull CI、E2E、Storybook browser testsが成功しました。
 - 検証ではテスト削除、Coverage threshold変更、CI条件変更をしていません。
 
 ## 後続調査
