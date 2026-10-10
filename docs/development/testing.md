@@ -64,4 +64,10 @@ Irish Pub Mapのテストを追加・整理するときの判断基準です。�
 
 Vitest Coverageは未検証箇所を探す**補助指標**です。現行設定は`packages/shared/src`と`apps/web/app/components`を対象とし、lines / functions / branches / statementsに各90%のthresholdを設けています。対象外のService、Repository、APIなどまで90%を保証する設定ではありません。thresholdを満たすためだけにassertの弱いテストを増やさず、値が変わったときは重要な分岐・契約の保証を確認します。thresholdの変更は影響と理由を別途レビューします。
 
-ローカルの通常コマンドは`npm test`、`npm run typecheck`、`npm run lint`、`npm run build`です。UI・導線の変更に応じて`npm run test:e2e`、`npm run test:storybook`、Visual / Browser確認を追加します。現行CIは変更ファイルを分類し、docs-only PRでは機密情報とLLM securityの検査を実行して、Unit・Build・E2E・Storybook browser testは省略します。CIの具体的な条件と手動実行方法は[CI運用](../runbooks/release-operations.md)を参照してください。
+ローカルの通常コマンドは`npm test`、`npm run typecheck`、`npm run lint`、`npm run build`です。UI・導線の変更に応じて`npm run test:e2e`、`npm run test:storybook`、Visual / Browser確認を追加します。
+
+### CIとの対応
+
+CIは変更ファイルを分類して実行範囲を決めます。機密情報とLLM securityの検査は全変更で実行し、Full CIではFormat、OpenAPI lint、Lint、Vitest、Next.js Build、Storybook Buildを実行します。PRのPlaywright E2EとStorybook browser testは画面・Component・関連テストの変更時に実行し、`main`へのpushでは毎回実行します。docs-only PRでは機密情報とLLM securityの検査だけを実行します。`workflow_dispatch`はFull CIを実行し、E2Eは`run_e2e=true`を指定した場合に実行します。
+
+この対応は[CI運用](../runbooks/release-operations.md)の変更分類と`.github/workflows/ci.yml`を反映しています。条件の詳細と手動実行方法はCI運用文書を参照してください。
