@@ -216,8 +216,8 @@ for (const locale of ["ja", "en"] as const) {
       await expect(page.locator('.pub-results-panel article[data-selected="true"]')).toHaveCount(1);
       await canvas.click({ position: { x: 10, y: 240 } });
       if (width === 390 && locale === "ja") {
-        // Pan/pinchで位置が変動する地図マーカーは、このSheetのVisual Regression対象から除外します。
-        // 代わりに凡例がSheetの上に収まっていることを位置で検証します。
+        // 地図上のマーカーはPan/pinch後に位置が変動するため、Medium SheetはDOMと位置関係で検証します。
+        // マーカー自体の見た目は他のVisual Regressionで確認します。
         const legend = page.locator(".pub-map-legend");
         await expect(legend).toBeVisible();
         const legendBox = (await legend.boundingBox())!;
