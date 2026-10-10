@@ -1,6 +1,6 @@
 // 機密情報検出とGitHub操作スクリプトの安全条件を保証するテストです。
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -76,14 +76,70 @@ describe("repository safety check", () => {
         secret: { resolved: token },
       },
     });
-    const diff = ["diff --git a/tools/docs-check/package-lock.json b/tools/docs-check/package-lock.json", "+{}"].join(
-      "\n",
-    );
+    const nameStatus = "M\0tools/docs-check/package-lock.json\0";
 
-    const entries = stagedEntries(diff, () => stagedLock);
+    const entries = stagedEntries(nameStatus, () => stagedLock);
     expect(entries).toHaveLength(1);
     expect(findSensitiveDataInNpmLock(entries[0].content)).toContain("GitHub トークン");
-    expect(findSensitiveData(stagedAddedLines(diff))).toEqual([]);
+    expect(findSensitiveData(stagedAddedLines("diff --git a/a b/a\n+++ b/a\n+safe"))).toEqual([]);
+  });
+
+  it("checks a lockfile renamed from the repository root into a nested path", () => {
+    const directory = mkdtempSync(`${tmpdir()}/repository-safety-lock-rename-`);
+    const script = resolve("scripts/check-sensitive-data.mjs");
+    try {
+      initializeGitRepository(directory);
+      const fundingUrl = ["https://github", ".com/", "prettier/prettier"].join("");
+      writeFileSync(
+        `${directory}/package-lock.json`,
+        JSON.stringify({ packages: { "": { funding: { type: "individual", url: fundingUrl } } } }),
+      );
+      spawnSync("git", ["add", "package-lock.json"], { cwd: directory });
+      spawnSync("git", ["commit", "-m", "Add lockfile"], { cwd: directory });
+      mkdirSync(`${directory}/tools/docs-check`, { recursive: true });
+      const rename = spawnSync("git", ["mv", "package-lock.json", "tools/docs-check/package-lock.json"], {
+        cwd: directory,
+        encoding: "utf8",
+      });
+      expect(rename.status).toBe(0);
+
+      const result = spawnSync(process.execPath, [script, "--staged"], {
+        cwd: directory,
+        encoding: "utf8",
+      });
+
+      expect(result.status).toBe(0);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("detects sensitive values when a regular JSON file is renamed to a nested lockfile", () => {
+    const directory = mkdtempSync(`${tmpdir()}/repository-safety-lock-rename-`);
+    const script = resolve("scripts/check-sensitive-data.mjs");
+    try {
+      initializeGitRepository(directory);
+      const token = ["github_pat_", "abcdefghijklmnopqrstuvwxyz123456"].join("");
+      writeFileSync(`${directory}/ordinary.json`, JSON.stringify({ packages: { package: { resolved: token } } }));
+      spawnSync("git", ["add", "ordinary.json"], { cwd: directory });
+      spawnSync("git", ["commit", "-m", "Add JSON file"], { cwd: directory });
+      mkdirSync(`${directory}/packages/demo`, { recursive: true });
+      const rename = spawnSync("git", ["mv", "ordinary.json", "packages/demo/package-lock.json"], {
+        cwd: directory,
+        encoding: "utf8",
+      });
+      expect(rename.status).toBe(0);
+
+      const result = spawnSync(process.execPath, [script, "--staged"], {
+        cwd: directory,
+        encoding: "utf8",
+      });
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("GitHub トークン");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it("detects configured account identifiers without storing them in the repository", () => {
@@ -156,3 +212,10 @@ describe("repository safety check", () => {
     }
   });
 });
+
+function initializeGitRepository(directory: string) {
+  spawnSync("git", ["init"], { cwd: directory });
+  const email = ["test", "@", "example.test"].join("");
+  spawnSync("git", ["config", "user.email", email], { cwd: directory });
+  spawnSync("git", ["config", "user.name", "Test User"], { cwd: directory });
+}

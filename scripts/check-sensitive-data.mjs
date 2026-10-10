@@ -111,31 +111,42 @@ function isNpmLockFile(file) {
   return file === "package-lock.json" || file.endsWith("/package-lock.json");
 }
 
-/** lockfileはindex上の完全なJSONを読み、他のファイルは追加行だけを検査します。 */
-export function stagedEntries(diff, readStagedFile = (file) => runGit(["show", `:${file}`])) {
-  const entries = new Map();
-  let currentFile = "";
-  let additions = [];
-  let deleted = false;
-  const save = () => {
-    if (!currentFile || deleted) return;
-    entries.set(currentFile, isNpmLockFile(currentFile) ? null : additions.join("\n"));
-  };
+/** NUL区切りの変更一覧から、追加・変更・rename後のindexパスを返します。 */
+export function stagedFileChanges(nameStatus) {
+  const fields = nameStatus.split("\0");
+  const changes = [];
 
-  for (const line of diff.split("\n")) {
-    if (line.startsWith("diff --git ")) {
-      save();
-      currentFile = line.match(/^diff --git a\/(.+) b\/.*$/)?.[1] || "";
-      additions = [];
-      deleted = false;
-    } else if (line.startsWith("deleted file mode ")) {
-      deleted = true;
-    } else if (currentFile && !isNpmLockFile(currentFile) && line.startsWith("+") && !line.startsWith("+++")) {
-      additions.push(line.slice(1));
+  for (let index = 0; index < fields.length;) {
+    const status = fields[index++];
+    if (!status) continue;
+    const kind = status[0];
+    if (kind === "R" || kind === "C") {
+      index += 1; // rename/copy元はindex上の検査対象ではありません。
+      changes.push({ status, file: fields[index++] });
+    } else {
+      const file = fields[index++];
+      if (kind !== "D") changes.push({ status, file });
     }
   }
-  save();
-  return [...entries].map(([file, content]) => ({ file, content: content ?? readStagedFile(file) }));
+  return changes;
+}
+
+/** lockfileはrename後のindex上の完全なJSONを読み、他は追加行だけを検査します。
+ * @param {string} nameStatus `git diff --cached --name-status -z` の出力
+ * @param {(file: string) => string} readStagedFile rename後のindex上の内容を返す関数
+ * @param {(file: string) => string} readAddedFile 対象ファイルのstaged追加行を返す関数
+ * @returns {{file: string, content: string}[]} 検査対象ファイル
+ */
+export function stagedEntries(
+  nameStatus,
+  readStagedFile = (file) => runGitRaw(["show", `:./${file}`]),
+  readAddedFile = (file) =>
+    stagedAddedLines(runGit(["diff", "--cached", "--unified=0", "--no-ext-diff", "--", `:(literal)${file}`])),
+) {
+  return stagedFileChanges(nameStatus).map(({ file }) => ({
+    file,
+    content: isNpmLockFile(file) ? readStagedFile(file) : readAddedFile(file),
+  }));
 }
 
 export function runtimeIdentifiers(environment = process.env) {
@@ -165,6 +176,10 @@ function runGit(args, optional = false) {
     if (optional) return "";
     throw error;
   }
+}
+
+function runGitRaw(args) {
+  return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
 }
 
 function trackedContents() {
@@ -197,7 +212,7 @@ if (process.argv[1] && import.meta.url === new URL(process.argv[1], "file:").hre
   if (process.argv[2] === "--tracked") {
     checkEntries(trackedContents());
   } else {
-    const diff = runGit(["diff", "--cached", "--unified=0", "--no-ext-diff"]);
-    checkEntries(stagedEntries(diff));
+    const nameStatus = runGit(["diff", "--cached", "--name-status", "-z"]);
+    checkEntries(stagedEntries(nameStatus));
   }
 }
