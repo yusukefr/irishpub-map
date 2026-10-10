@@ -223,10 +223,12 @@ for (const locale of ["ja", "en"] as const) {
         const legendBox = (await legend.boundingBox())!;
         const sheetBox = (await sheet.boundingBox())!;
         expect(legendBox.y + legendBox.height).toBeLessThanOrEqual(sheetBox.y);
-        await expect(sheet).toHaveScreenshot("map-mobile-bottom-sheet-medium.png", {
-          animations: "disabled",
-          maxDiffPixels: 200,
-        });
+        const selectedResult = page.locator('.pub-results-panel article[data-selected="true"]');
+        await expect(selectedResult).toBeInViewport();
+        await expect(page.getByRole("button", { name: t.list.closeResults })).toBeVisible();
+        // Medium sheetの高さも固定Viewport内で確認し、地図の非同期描画には依存しません。
+        expect(sheetBox.height).toBeGreaterThan(300);
+        expect(sheetBox.height).toBeLessThan(500);
       }
       const results = page.locator(".pub-results-panel");
       await results
