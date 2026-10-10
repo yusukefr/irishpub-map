@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="52" viewBox="0 0 40 52" role="img" aria-label="Pub map marker">
+  <title>Pub map marker</title>
+  <path d="M20 2 C10 2 2 9.8 2 19.8 C2 32.6 20 49.4 20 49.4 C20 49.4 38 32.6 38 19.8 C38 9.8 30 2 20 2 Z"
+      fill="#D97706" stroke="#FFFFFF" stroke-width="2.6" stroke-linejoin="round"/>
+  <circle cx="20" cy="19.5" r="11.3" fill="#FFFFFF"/>
+  <!-- Beer mug: solid tankard + visible looped handle -->
+  <path d="M14.8 13.6 H24 V26.3 H14.8 Z" fill="#E19238"/>
+  <path d="M24.2 16.1 H27.2 C28.1 16.1 28.5 16.5 28.5 17.4 V22 C28.5 22.9 28 23.3 27.2 23.3 H24.2"
+      fill="none" stroke="#E19238" stroke-width="2.6" stroke-linejoin="round"/>
+  <path d="M16.1 15.0 V24.8" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="1"/>
+</svg>

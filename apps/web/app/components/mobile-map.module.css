@@ -22,6 +22,13 @@
     border: 0;
     border-radius: 0;
   }
+  .layout.layout :global(.pub-map-legend) {
+    top: auto;
+    bottom: calc(var(--mobile-sheet-height) + var(--spacing-space-16));
+  }
+  .layout[data-sheet-state="expanded"] :global(.pub-map-legend) {
+    display: none;
+  }
   .layout.layout :global(.map-search-controls) {
     inset: var(--spacing-space-3) max(var(--spacing-space-3), env(safe-area-inset-right)) var(--mobile-sheet-collapsed)
       max(var(--spacing-space-3), env(safe-area-inset-left));
@@ -286,6 +293,9 @@
   }
 }
 @media (max-width: 980px) and (max-height: 650px) {
+  .layout :global(.pub-map-legend) {
+    display: none;
+  }
   .layout[data-sheet-state="medium"] :global(.maplibregl-ctrl-top-right) {
     display: none;
   }

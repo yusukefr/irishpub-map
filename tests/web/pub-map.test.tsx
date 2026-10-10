@@ -141,13 +141,19 @@ describe("PubMap", () => {
     expect(openMarkerOptions.element).toHaveClass("pub-map-marker", "pub-map-marker-open", "pub-map-marker-type-irish");
     expect(openMarkerOptions.element).toHaveAccessibleName("店舗を選択: Tokyo Sample Pub. アイリッシュパブ");
     expect(openMarkerOptions.element).toHaveAttribute("aria-pressed", "false");
-    expect(openMarkerOptions.element.querySelector(".pub-map-marker-symbol")?.textContent).toBe("☘");
+    expect(openMarkerOptions.element.querySelector("img")).toHaveAttribute("src", "/map-markers/pub-marker-irish.svg");
     const unknownMarkerOptions = maplibreMock.markerConstructor.mock.calls[1][0] as { element: HTMLElement };
     const closedMarkerOptions = maplibreMock.markerConstructor.mock.calls[2][0] as { element: HTMLElement };
     expect(unknownMarkerOptions.element).toHaveClass("pub-map-marker-unknown");
-    expect(unknownMarkerOptions.element).toHaveStyle({ "--pub-marker-color": "#858B95" });
+    expect(unknownMarkerOptions.element.querySelector("img")).toHaveAttribute(
+      "src",
+      "/map-markers/pub-marker-closed.svg",
+    );
     expect(closedMarkerOptions.element).toHaveClass("pub-map-marker-closed");
-    expect(closedMarkerOptions.element).toHaveStyle({ "--pub-marker-color": "#858B95" });
+    expect(closedMarkerOptions.element.querySelector("img")).toHaveAttribute(
+      "src",
+      "/map-markers/pub-marker-closed.svg",
+    );
     expect(maplibreMock.popupSetHTML).not.toHaveBeenCalled();
     expect(maplibreMock.popupConstructor).toHaveBeenNthCalledWith(1, {
       offset: 18,
@@ -323,7 +329,29 @@ describe("PubMap", () => {
 
     const markerOptions = maplibreMock.markerConstructor.mock.calls[3][0] as { element: HTMLElement };
     expect(markerOptions.element).toHaveClass("pub-map-marker-temporarily_closed");
-    expect(markerOptions.element).toHaveStyle({ "--pub-marker-color": "#858B95" });
+    expect(markerOptions.element.querySelector("img")).toHaveAttribute("src", "/map-markers/pub-marker-closed.svg");
+  });
+
+  it("uses the matching attached SVG for every open pub type", () => {
+    const pubsByType: Pub[] = [
+      { ...pubs[0], id: "irish", pubType: "irish" },
+      { ...pubs[0], id: "british", pubType: "british" },
+      { ...pubs[0], id: "other", pubType: "other" },
+      { ...pubs[0], id: "unclassified", pubType: "unclassified" },
+    ];
+
+    render(<PubMap pubs={pubsByType} />);
+
+    const markerSources = maplibreMock.markerConstructor.mock.calls.map((call) => {
+      const element = (call[0] as { element: HTMLElement }).element;
+      return element.querySelector("img")?.getAttribute("src");
+    });
+    expect(markerSources).toEqual([
+      "/map-markers/pub-marker-irish.svg",
+      "/map-markers/pub-marker-british.svg",
+      "/map-markers/pub-marker-other.svg",
+      "/map-markers/pub-marker-other.svg",
+    ]);
   });
 
   it("moves the map to the provided current location", () => {
