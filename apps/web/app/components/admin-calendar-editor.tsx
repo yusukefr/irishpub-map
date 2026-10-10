@@ -15,6 +15,7 @@ import type {
   CalendarDateRuleDefinition,
 } from "../lib/calendar/types";
 import { AdminCalendarDateRuleEditor } from "./admin-calendar-date-rule-editor";
+import { AdminPageHeader } from "./admin-page-header";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
 
 type Props = {
@@ -231,17 +232,17 @@ export function AdminCalendarEditor({ initialEvent, databaseConfigured, locale }
   const fieldLabel = (path: string) => c.publicationFields[path as keyof typeof c.publicationFields] ?? path;
 
   return (
-    <section className="admin-panel admin-wide admin-calendar-editor">
-      <div className="admin-heading">
-        <div>
-          <p className="eyebrow">Irish Calendar</p>
-          <h1>{contentId ? c.editHeading : c.addHeading}</h1>
-          <p>{contentId ? c.editDescription : c.addDescription}</p>
-        </div>
-        <span className={`admin-publication-badge ${status === "published" ? "is-published" : "is-unpublished"}`}>
-          {status === "published" ? c.statusPublished : c.statusDraft}
-        </span>
-      </div>
+    <section className="admin-calendar-editor">
+      <AdminPageHeader
+        sectionLabel="Irish Calendar"
+        title={contentId ? c.editHeading : c.addHeading}
+        description={contentId ? c.editDescription : c.addDescription}
+        actions={
+          <span className={`admin-publication-badge ${status === "published" ? "is-published" : "is-unpublished"}`}>
+            {status === "published" ? c.statusPublished : c.statusDraft}
+          </span>
+        }
+      />
       {!databaseConfigured ? <p className="admin-error">{c.databaseUnavailable}</p> : null}
       {Object.keys(fieldErrors).length > 0 ? (
         <p role="alert" className="admin-field-error">
@@ -268,7 +269,7 @@ export function AdminCalendarEditor({ initialEvent, databaseConfigured, locale }
       ) : null}
       <form className="admin-form admin-editor-form admin-calendar-form" onSubmit={save} aria-busy={busy}>
         <fieldset disabled={busy || !databaseConfigured}>
-          <legend>{t.basicInformation}</legend>
+          <legend>{c.calendarDetails}</legend>
           {contentId ? (
             <p>
               {c.id}: <code>{contentId}</code>
@@ -308,34 +309,42 @@ export function AdminCalendarEditor({ initialEvent, databaseConfigured, locale }
           </div>
         </fieldset>
 
-        <AdminCalendarDateRuleEditor
-          value={values.dateRule}
-          locale={locale}
-          disabled={busy || !databaseConfigured}
-          onChange={(dateRule: CalendarDateRuleDefinition | null) => setRoot("dateRule", dateRule)}
-        />
-        <p className="admin-editor-note">{formatCalendarDateRuleSummary(values.dateRule, locale)}</p>
+        <section className="admin-calendar-form-section" aria-labelledby="admin-calendar-date-heading">
+          <h2 id="admin-calendar-date-heading">{c.dateDetails}</h2>
+          <AdminCalendarDateRuleEditor
+            value={values.dateRule}
+            locale={locale}
+            disabled={busy || !databaseConfigured}
+            onChange={(dateRule: CalendarDateRuleDefinition | null) => setRoot("dateRule", dateRule)}
+          />
+          <p className="admin-editor-note">{formatCalendarDateRuleSummary(values.dateRule, locale)}</p>
+        </section>
 
-        {(["ja", "en"] as const).map((language) => (
-          <fieldset key={language} disabled={busy || !databaseConfigured}>
-            <legend>{language === "ja" ? c.japanese : c.english}</legend>
-            <label>
-              {c.name}
-              <input
-                value={values.translations[language].name}
-                onChange={(event) => setTranslation(language, "name", event.target.value)}
-              />
-            </label>
-            <label>
-              {c.description}
-              <textarea
-                rows={5}
-                value={values.translations[language].description}
-                onChange={(event) => setTranslation(language, "description", event.target.value)}
-              />
-            </label>
-          </fieldset>
-        ))}
+        <section className="admin-calendar-form-section" aria-labelledby="admin-calendar-translations-heading">
+          <h2 id="admin-calendar-translations-heading">{c.translations}</h2>
+          <div className="admin-calendar-translations">
+            {(["ja", "en"] as const).map((language) => (
+              <fieldset key={language} disabled={busy || !databaseConfigured}>
+                <legend>{language === "ja" ? c.japanese : c.english}</legend>
+                <label>
+                  {c.name}
+                  <input
+                    value={values.translations[language].name}
+                    onChange={(event) => setTranslation(language, "name", event.target.value)}
+                  />
+                </label>
+                <label>
+                  {c.description}
+                  <textarea
+                    rows={5}
+                    value={values.translations[language].description}
+                    onChange={(event) => setTranslation(language, "description", event.target.value)}
+                  />
+                </label>
+              </fieldset>
+            ))}
+          </div>
+        </section>
 
         <fieldset disabled={busy || !databaseConfigured}>
           <legend>{c.aliases}</legend>

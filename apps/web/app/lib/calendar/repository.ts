@@ -1,7 +1,7 @@
 import { neon, type NeonQueryFunctionInTransaction } from "@neondatabase/serverless";
 import { isCalendarEventId, parseCalendarDateRule, parseCalendarDateRuleDefinition } from "./validation";
 import { isE2ETestMode, rejectE2ETestMutation } from "../e2e-test-mode";
-import { getE2EAdminCalendarEvent } from "../e2e-test-fixtures";
+import { getE2EAdminCalendarEvent, getE2EAdminCalendarList } from "../e2e-test-fixtures";
 import type {
   AdminCalendarEvent,
   AdminCalendarListItem,
@@ -66,7 +66,8 @@ export async function getPublishedCalendarEvents(): Promise<readonly CalendarEve
  * @returns 管理Calendar Event一覧。
  */
 export async function listAdminCalendarEvents(): Promise<readonly AdminCalendarListItem[]> {
-  if (isE2ETestMode() || !process.env.DATABASE_URL) return [];
+  if (isE2ETestMode()) return getE2EAdminCalendarList();
+  if (!process.env.DATABASE_URL) return [];
   const rows = await queryRows(
     getRequiredSql(),
     "SELECT event.id, event.category, event.date_rule, event.is_public_holiday, event.featured, event.aliases, event.source, " +

@@ -28,6 +28,7 @@ export const E2E_TEST_DATA = {
   },
   calendar: {
     draft: { id: "30000000-0000-4000-8000-000000000401", title: "E2E Irish Calendar Draft" },
+    published: { id: "30000000-0000-4000-8000-000000000402", title: "E2E Published Calendar Event" },
   },
   pubs: {
     nagoya: { id: "30000000-0000-4000-8000-000000000001", name: "E2E Irish Pub Nagoya" },
@@ -64,7 +65,7 @@ const calendarDefinitions: AdminCalendarEvent[] = [
   {
     id: E2E_TEST_DATA.calendar.draft.id,
     category: null,
-    dateRule: null,
+    dateRule: { type: "annual_variable", usualMonth: 3, requiresOfficialConfirmation: true },
     isPublicHoliday: false,
     featured: false,
     aliases: [],
@@ -73,10 +74,27 @@ const calendarDefinitions: AdminCalendarEvent[] = [
     isPublished: false,
     translations: {
       ja: { name: E2E_TEST_DATA.calendar.draft.title, description: "" },
-      en: { name: "", description: "" },
+      en: { name: "E2E Irish Calendar Draft with a deliberately long English event name", description: "" },
     },
     createdAt: UPDATED_AT,
     updatedAt: UPDATED_AT,
+  },
+  {
+    id: E2E_TEST_DATA.calendar.published.id,
+    category: "public_holiday",
+    dateRule: { type: "annual_variable", usualMonth: 3, requiresOfficialConfirmation: true },
+    isPublicHoliday: true,
+    featured: true,
+    aliases: [],
+    source: null,
+    sortOrder: 1,
+    isPublished: true,
+    translations: {
+      ja: { name: "聖パトリックの日・祝日開催の特別イベント", description: "" },
+      en: { name: "St. Patrick's Day Public Holiday Celebration and Special Events", description: "" },
+    },
+    createdAt: UPDATED_AT,
+    updatedAt: "2026-02-15T12:00:00.000Z",
   },
 ];
 const publishedContentDefinitions: Record<Locale, PublishedContent[]> = {
@@ -510,6 +528,30 @@ export function getE2EAdminQuiz(id: string): AdminQuizQuestion | null {
  */
 export function getE2EAdminCalendarEvent(id: string): AdminCalendarEvent | null {
   return calendarDefinitions.find((event) => event.id === id) ?? null;
+}
+
+/**
+ * E2EでCalendar管理一覧へ返す固定Draft・Publishedデータを取得します。
+ * @returns 固定Calendar Event一覧。
+ */
+export function getE2EAdminCalendarList() {
+  return calendarDefinitions
+    .map((event) => ({
+      id: event.id,
+      category: event.category,
+      dateRule: event.dateRule,
+      isPublicHoliday: event.isPublicHoliday,
+      featured: event.featured,
+      aliases: event.aliases,
+      source: event.source,
+      sortOrder: event.sortOrder,
+      isPublished: event.isPublished,
+      nameJa: event.translations.ja.name,
+      nameEn: event.translations.en.name,
+      createdAt: event.createdAt,
+      updatedAt: event.updatedAt,
+    }))
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt) || left.id.localeCompare(right.id));
 }
 
 /**

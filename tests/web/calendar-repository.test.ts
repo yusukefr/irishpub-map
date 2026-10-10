@@ -115,7 +115,18 @@ describe("calendar public repository", () => {
 
     expect(isCalendarDatabaseConfigured()).toBe(true);
     await expect(getPublishedCalendarEvents()).resolves.toEqual([]);
-    await expect(listAdminCalendarEvents()).resolves.toEqual([]);
+    await expect(listAdminCalendarEvents()).resolves.toMatchObject([
+      {
+        id: E2E_TEST_DATA.calendar.published.id,
+        isPublished: true,
+        nameJa: "聖パトリックの日・祝日開催の特別イベント",
+      },
+      {
+        id: E2E_TEST_DATA.calendar.draft.id,
+        isPublished: false,
+        nameJa: E2E_TEST_DATA.calendar.draft.title,
+      },
+    ]);
     await expect(getAdminCalendarEvent(E2E_TEST_DATA.calendar.draft.id)).resolves.toMatchObject({
       id: E2E_TEST_DATA.calendar.draft.id,
       isPublished: false,
