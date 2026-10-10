@@ -10,6 +10,7 @@ import {
 import { getAdminStatusApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
+import { AdminPageHeader } from "./admin-page-header";
 
 type Props = { initialStatuses: AdminPubStatus[]; databaseConfigured: boolean; locale: Locale };
 type ApiResponse = { status?: AdminPubStatus; errorCode?: unknown; fieldErrors?: AdminStatusFieldErrors };
@@ -74,10 +75,8 @@ export function AdminStatusManager({ initialStatuses, databaseConfigured, locale
   }
 
   return (
-    <section className="admin-panel admin-wide">
-      <p className="eyebrow">Master data</p>
-      <h1>{t.statusesHeading}</h1>
-      <p>{t.statusesDescription}</p>
+    <section className="admin-statuses-page">
+      <AdminPageHeader sectionLabel="Master data" title={t.statusesHeading} description={t.statusesDescription} />
       {!databaseConfigured ? <p className="admin-error">{t.databaseUnavailable}</p> : null}
       {message ? (
         <p role="status" aria-live="polite">
@@ -163,42 +162,47 @@ export function AdminStatusManager({ initialStatuses, databaseConfigured, locale
       <section className="admin-status-section" aria-labelledby="admin-status-list-heading">
         <h2 id="admin-status-list-heading">{formatMessage(t.listedStatuses, { count: statuses.length })}</h2>
         {statuses.length === 0 ? <p>{t.noStatuses}</p> : null}
-        <ul className="admin-status-list">
-          {statuses.map((status) => (
-            <li key={status.code}>
-              <dl>
-                <div>
-                  <dt>{t.statusKey}</dt>
-                  <dd>
-                    <code>{status.key}</code>
-                  </dd>
-                </div>
-                <div>
-                  <dt>{t.statusNameJa}</dt>
-                  <dd>{status.nameJa}</dd>
-                </div>
-                <div>
-                  <dt>{t.statusNameEn}</dt>
-                  <dd>{status.nameEn || t.notRegistered}</dd>
-                </div>
-              </dl>
-              <div className="admin-status-actions">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (formDirty && !window.confirm(t.unsavedChanges)) return;
-                    setEditing(status);
-                    setFormDirty(false);
-                    resetFeedback();
-                  }}
-                  disabled={saving || !databaseConfigured}
-                >
-                  {t.edit}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {statuses.length > 0 ? (
+          <div className="admin-pub-table-wrap admin-master-table-wrap">
+            <table className="admin-pub-table admin-master-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t.statusKey}</th>
+                  <th scope="col">{t.statusNameJa}</th>
+                  <th scope="col">{t.statusNameEn}</th>
+                  <th scope="col">{t.operations}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {statuses.map((status) => (
+                  <tr key={status.code}>
+                    <th scope="row" data-label={t.statusKey}>
+                      <code>{status.key}</code>
+                    </th>
+                    <td data-label={t.statusNameJa}>{status.nameJa}</td>
+                    <td data-label={t.statusNameEn}>{status.nameEn || t.notRegistered}</td>
+                    <td data-label={t.operations}>
+                      <div className="admin-status-actions">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (formDirty && !window.confirm(t.unsavedChanges)) return;
+                            setEditing(status);
+                            setFormDirty(false);
+                            resetFeedback();
+                          }}
+                          disabled={saving || !databaseConfigured}
+                        >
+                          {t.edit}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </section>
     </section>
   );

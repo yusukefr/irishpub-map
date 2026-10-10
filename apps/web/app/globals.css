@@ -909,7 +909,11 @@ h1 {
   background: transparent;
 }
 .admin-calendar-page,
-.admin-calendar-editor {
+.admin-calendar-editor,
+.admin-pubs-page,
+.admin-pub-editor,
+.admin-tags-page,
+.admin-statuses-page {
   min-width: 0;
 }
 .admin-calendar-editor > .admin-page-header {
@@ -1099,6 +1103,7 @@ h1 {
 .admin-danger-action {
   border-color: var(--danger) !important;
   background: var(--danger) !important;
+  color: #fff !important;
 }
 .admin-editor-publication-actions {
   display: flex;
@@ -1410,6 +1415,12 @@ h1 {
     gap: 10px;
     padding: 10px 0;
     overflow-wrap: anywhere;
+  }
+  .admin-master-table th:first-child,
+  .admin-master-table td:first-child,
+  .admin-master-table th:last-child,
+  .admin-master-table td:last-child {
+    width: 100%;
   }
   .admin-pub-table th::before,
   .admin-pub-table td::before {
@@ -2478,6 +2489,14 @@ body {
   padding: 8px 0;
 }
 
+.admin-tags-page .admin-tag-form,
+.admin-statuses-page .admin-status-form {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
 .admin-tag-form fieldset,
 .admin-status-form fieldset {
   display: grid;
@@ -2498,6 +2517,13 @@ body {
 .admin-status-form fieldset > label > input {
   width: 100%;
   min-width: 0;
+  min-height: var(--spacing-control);
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-text-primary);
+  font: inherit;
 }
 .admin-tag-form fieldset > .admin-actions,
 .admin-status-form fieldset > .admin-actions {
@@ -2513,51 +2539,29 @@ body {
 .admin-status-section {
   margin-top: 32px;
 }
-.admin-tag-list,
-.admin-status-list {
-  display: grid;
-  gap: 10px;
-  padding: 0;
-  list-style: none;
+.admin-master-table-wrap {
+  margin-top: 16px;
 }
-.admin-tag-list > li,
-.admin-status-list > li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
-  align-items: center;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+.admin-master-table {
+  table-layout: fixed;
 }
-.admin-tag-list dl,
-.admin-status-list dl {
-  display: grid;
-  grid-template-columns: minmax(120px, 0.8fr) repeat(2, minmax(150px, 1fr)) minmax(90px, 0.5fr);
-  gap: 12px;
-  margin: 0;
-}
-.admin-status-list dl {
-  grid-template-columns: minmax(160px, 1fr) repeat(2, minmax(180px, 1fr));
-}
-.admin-tag-list dl > div,
-.admin-status-list dl > div {
-  min-width: 0;
-}
-.admin-tag-list dt,
-.admin-status-list dt {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-.admin-tag-list dd,
-.admin-status-list dd {
+.admin-master-table th,
+.admin-master-table td {
   overflow-wrap: anywhere;
-  margin: 4px 0 0;
+}
+.admin-master-table th:first-child,
+.admin-master-table td:first-child {
+  width: 19%;
+}
+.admin-master-table th:last-child,
+.admin-master-table td:last-child {
+  width: 190px;
 }
 .admin-tag-actions,
 .admin-status-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
 }
 .admin-tag-actions .admin-action-note {
@@ -2583,6 +2587,10 @@ body {
   cursor: not-allowed;
   opacity: 0.55;
 }
+.admin-tag-actions button,
+.admin-status-actions button {
+  min-width: 72px;
+}
 .admin-tag-actions .admin-danger-action {
   border-color: var(--danger);
   background: var(--danger);
@@ -2590,32 +2598,45 @@ body {
 
 @media (max-width: 800px) {
   .admin-tag-form fieldset,
-  .admin-status-form fieldset,
-  .admin-tag-list dl,
-  .admin-status-list dl {
-    grid-template-columns: 1fr 1fr;
-  }
-  .admin-tag-list > li,
-  .admin-status-list > li {
-    grid-template-columns: 1fr;
+  .admin-status-form fieldset {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .admin-tag-actions,
   .admin-status-actions {
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 }
 
 @media (max-width: 480px) {
+  .admin-tags-page .admin-tag-form,
+  .admin-statuses-page .admin-status-form {
+    padding: 16px;
+  }
   .admin-tag-form fieldset,
-  .admin-status-form fieldset,
-  .admin-tag-list dl,
-  .admin-status-list dl {
-    grid-template-columns: 1fr;
+  .admin-status-form fieldset {
+    grid-template-columns: minmax(0, 1fr);
   }
   .admin-tag-actions,
   .admin-status-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-master-table {
+    table-layout: auto;
+  }
+  .admin-master-table th:first-child,
+  .admin-master-table td:first-child,
+  .admin-master-table th:last-child,
+  .admin-master-table td:last-child {
+    width: 100%;
+  }
+  .admin-master-table th:first-child code {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
   }
 }
 

@@ -13,6 +13,7 @@ import { REQUIRED_TRANSLATION_LOCALE } from "@irishpub-map/shared/locale";
 import { getAdminTagApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, LANGUAGE_OPTIONS, type Locale } from "../lib/i18n";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
+import { AdminPageHeader } from "./admin-page-header";
 
 type Props = { initialTags: AdminTag[]; databaseConfigured: boolean; locale: Locale };
 type ApiResponse = { tag?: AdminTag; errorCode?: unknown; fieldErrors?: AdminTagFieldErrors };
@@ -117,13 +118,8 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
 
   const values = editing ?? { key: "", translations: {} };
   return (
-    <section className="admin-panel admin-wide">
-      <div className="admin-heading">
-        <div>
-          <p className="eyebrow">Master data</p>
-          <h1>{t.tagsHeading}</h1>
-        </div>
-      </div>
+    <section className="admin-tags-page">
+      <AdminPageHeader sectionLabel="Master data" title={t.tagsHeading} />
       {!databaseConfigured ? <p className="admin-error">{t.databaseUnavailable}</p> : null}
       {message ? (
         <p role="status" aria-live="polite">
@@ -202,56 +198,67 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
       <section className="admin-tag-section" aria-labelledby="admin-tag-list-heading">
         <h2 id="admin-tag-list-heading">{formatMessage(t.listedTags, { count: tags.length })}</h2>
         {tags.length === 0 ? <p>{t.noTags}</p> : null}
-        <ul className="admin-tag-list">
-          {tags.map((tag) => (
-            <li key={tag.id}>
-              <dl>
-                <div>
-                  <dt>{t.tagKey}</dt>
-                  <dd>
-                    <code>{tag.key}</code>
-                  </dd>
-                </div>
-                {LANGUAGE_OPTIONS.map(({ locale: translationLocale }) => (
-                  <div key={translationLocale}>
-                    <dt>{languageLabels[translationLocale]}</dt>
-                    <dd>{tag.translations[translationLocale] ?? t.notRegistered}</dd>
-                  </div>
+        {tags.length > 0 ? (
+          <div className="admin-pub-table-wrap admin-master-table-wrap">
+            <table className="admin-pub-table admin-master-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t.tagKey}</th>
+                  {LANGUAGE_OPTIONS.map(({ locale: translationLocale }) => (
+                    <th scope="col" key={translationLocale}>
+                      {languageLabels[translationLocale]}
+                    </th>
+                  ))}
+                  <th scope="col">{t.tagPubCount}</th>
+                  <th scope="col">{t.operations}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tags.map((tag) => (
+                  <tr key={tag.id}>
+                    <th scope="row" data-label={t.tagKey}>
+                      <code>{tag.key}</code>
+                    </th>
+                    {LANGUAGE_OPTIONS.map(({ locale: translationLocale }) => (
+                      <td key={translationLocale} data-label={languageLabels[translationLocale]}>
+                        {tag.translations[translationLocale] ?? t.notRegistered}
+                      </td>
+                    ))}
+                    <td data-label={t.tagPubCount}>{tag.pubCount}</td>
+                    <td data-label={t.operations}>
+                      <div className="admin-tag-actions">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (formDirty && !window.confirm(t.unsavedChanges)) return;
+                            setEditing(tag);
+                            setFormDirty(false);
+                            resetFeedback();
+                          }}
+                          disabled={Boolean(busyAction) || !databaseConfigured}
+                        >
+                          {t.edit}
+                        </button>
+                        {tag.pubCount === 0 ? (
+                          <button
+                            type="button"
+                            className="admin-danger-action"
+                            onClick={() => void remove(tag)}
+                            disabled={Boolean(busyAction) || !databaseConfigured}
+                          >
+                            {busyAction === `delete:${tag.id}` ? t.deleting : t.delete}
+                          </button>
+                        ) : (
+                          <span className="admin-action-note">{t.tagInUse}</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-                <div>
-                  <dt>{t.tagPubCount}</dt>
-                  <dd>{tag.pubCount}</dd>
-                </div>
-              </dl>
-              <div className="admin-tag-actions">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (formDirty && !window.confirm(t.unsavedChanges)) return;
-                    setEditing(tag);
-                    setFormDirty(false);
-                    resetFeedback();
-                  }}
-                  disabled={Boolean(busyAction) || !databaseConfigured}
-                >
-                  {t.edit}
-                </button>
-                {tag.pubCount === 0 ? (
-                  <button
-                    type="button"
-                    className="admin-danger-action"
-                    onClick={() => void remove(tag)}
-                    disabled={Boolean(busyAction) || !databaseConfigured}
-                  >
-                    {busyAction === `delete:${tag.id}` ? t.deleting : t.delete}
-                  </button>
-                ) : (
-                  <span className="admin-action-note">{t.tagInUse}</span>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </section>
     </section>
   );
