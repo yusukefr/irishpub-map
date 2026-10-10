@@ -6,6 +6,7 @@ import { isE2ETestMode } from "../../../lib/e2e-test-mode";
 import { requireAdminSession } from "../../../lib/admin-server";
 import { getTranslation, type Locale } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
+import { AdminPageHeader } from "../../../components/admin-page-header";
 
 /**
  * DraftとPublishedを含むCalendar管理一覧を表示します。
@@ -19,17 +20,17 @@ export default async function AdminCalendarPage() {
   const databaseConfigured = isCalendarDatabaseConfigured() || isE2ETestMode();
 
   return (
-    <section className="admin-panel admin-wide">
-      <div className="admin-heading">
-        <div>
-          <p className="eyebrow">Irish Calendar</p>
-          <h1>{c.listHeading}</h1>
-          <p>{c.listDescription}</p>
-        </div>
-        <Link className="admin-primary-link" href="/admin/calendar/new">
-          {c.addCalendar}
-        </Link>
-      </div>
+    <section className="admin-calendar-page">
+      <AdminPageHeader
+        sectionLabel="Irish Calendar"
+        title={c.listHeading}
+        description={c.listDescription}
+        actions={
+          <Link className="admin-primary-link" href="/admin/calendar/new">
+            {c.addCalendar}
+          </Link>
+        }
+      />
       {!databaseConfigured ? <p className="admin-error">{c.databaseUnavailable}</p> : null}
       {events.length === 0 ? (
         <div className="admin-empty">
@@ -37,8 +38,8 @@ export default async function AdminCalendarPage() {
           <Link href="/admin/calendar/new">{c.addFirstCalendar}</Link>
         </div>
       ) : (
-        <div className="admin-pub-table-wrap admin-content-table-wrap">
-          <table className="admin-pub-table admin-content-table">
+        <div className="admin-pub-table-wrap admin-calendar-table-wrap">
+          <table className="admin-pub-table admin-calendar-table">
             <thead>
               <tr>
                 <th>{c.name}</th>
@@ -64,8 +65,8 @@ export default async function AdminCalendarPage() {
                   </td>
                   <td data-label={c.category}>{event.category ? c.categories[event.category] : c.notSet}</td>
                   <td data-label={c.dateRule}>{formatCalendarDateRuleSummary(event.dateRule, locale)}</td>
-                  <td data-label={c.publicHoliday}>{event.isPublicHoliday ? "✓" : "—"}</td>
-                  <td data-label={c.featured}>{event.featured ? "✓" : "—"}</td>
+                  <td data-label={c.publicHoliday}>{event.isPublicHoliday ? c.yes : c.no}</td>
+                  <td data-label={c.featured}>{event.featured ? c.yes : c.no}</td>
                   <td data-label={t.status}>
                     <span
                       className={`admin-publication-badge ${event.isPublished ? "is-published" : "is-unpublished"}`}

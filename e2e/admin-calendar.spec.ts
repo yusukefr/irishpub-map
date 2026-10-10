@@ -49,3 +49,45 @@ test("Calendar新規作成で未完成のDraftを保存する", async ({ page })
   );
   await expect(page.getByText("下書き", { exact: true })).toBeVisible();
 });
+
+test("Calendar管理画面は日英とDesktop・Mobileで横overflowせず表示できる", async ({ page }) => {
+  await loginAsE2EAdmin(page, "/admin/calendar");
+
+  const pages = [
+    { path: "/admin/calendar", name: "list" },
+    { path: "/admin/calendar/new", name: "new" },
+    { path: `/admin/calendar/${E2E_TEST_DATA.calendar.draft.id}`, name: "edit" },
+  ];
+  const viewports = [
+    { width: 1440, height: 1000 },
+    { width: 1280, height: 900 },
+    { width: 390, height: 844 },
+    { width: 360, height: 780 },
+  ];
+
+  for (const locale of ["ja", "en"] as const) {
+    await page.context().addCookies([{ name: "irishpub-map-locale", value: locale, url: "http://localhost:3100" }]);
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+
+      for (const route of pages) {
+        await page.goto(route.path);
+        await expect(page.locator("h1")).toBeVisible();
+        const dimensions = await page.evaluate(() => ({
+          documentWidth: document.documentElement.scrollWidth,
+          viewportWidth: window.innerWidth,
+        }));
+        expect(dimensions.documentWidth, `${locale} ${route.name} at ${viewport.width}px`).toBeLessThanOrEqual(
+          dimensions.viewportWidth,
+        );
+
+        if (viewport.width === 1280 || viewport.width === 390) {
+          await expect(page).toHaveScreenshot(`calendar-${locale}-${route.name}-${viewport.width}.png`, {
+            fullPage: true,
+          });
+        }
+      }
+    }
+  }
+});

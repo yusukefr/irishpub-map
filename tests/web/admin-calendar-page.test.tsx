@@ -43,7 +43,11 @@ describe("Admin Calendar page", () => {
 
     render(await AdminCalendarPage());
 
-    expect(screen.getByRole("heading", { name: "Calendar管理" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Calendar Event一覧" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "イベント名" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "日付ルール" })).toBeInTheDocument();
+    expect(screen.getByText("はい")).toBeInTheDocument();
+    expect(screen.getByText("いいえ")).toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Event ID" })).not.toBeInTheDocument();
     expect(screen.queryByText(event.id)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "編集" })).toHaveAttribute("href", `/admin/calendar/${event.id}`);
