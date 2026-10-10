@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { collectMermaidDiagrams, validateMermaidDiagrams } from "../tools/docs-check/check-mermaid.mjs";
+import { markdownFormatFiles } from "../tools/docs-check/check-doc-format.mjs";
 
 describe("Mermaid documentation checks", () => {
+  it("formats Markdown while leaving standalone Mermaid files to the Mermaid parser", () => {
+    expect(markdownFormatFiles(["docs/guide.md", "docs/diagram.mmd", "docs/UPPERCASE.MMD"])).toEqual(["docs/guide.md"]);
+  });
+
   it("collects backtick fences, tilde fences, and standalone mmd files", () => {
     const contents = new Map([
       [
@@ -37,5 +42,14 @@ describe("Mermaid documentation checks", () => {
     await expect(
       validateMermaidDiagrams([{ file: "docs/valid.mmd", line: 1, source: "flowchart LR\n  A --> B" }]),
     ).resolves.toEqual([]);
+  });
+
+  it("rejects malformed syntax in a standalone Mermaid file", async () => {
+    const contents = new Map([["docs/broken.mmd", "flowchart LR\n  A -->"]]);
+    const diagrams = collectMermaidDiagrams([...contents.keys()], (path) => contents.get(path) ?? "");
+
+    const errors = await validateMermaidDiagrams(diagrams);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(/^docs\/broken\.mmd:1:/);
   });
 });

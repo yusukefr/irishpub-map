@@ -4,7 +4,12 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { findSensitiveData, stagedAddedLines } from "../scripts/check-sensitive-data.mjs";
+import {
+  findSensitiveData,
+  findSensitiveDataInNpmLock,
+  stagedAddedLines,
+  stagedEntries,
+} from "../scripts/check-sensitive-data.mjs";
 
 describe("repository safety check", () => {
   it("detects external account information and secret-shaped values", () => {
@@ -33,20 +38,51 @@ describe("repository safety check", () => {
     expect(findSensitiveData("https://github.com/shuding/better-all")).toEqual([]);
   });
 
-  it("ignores package lock funding URLs in staged additions", () => {
+  it("checks funding metadata in a root lockfile without flagging public GitHub URLs", () => {
     const fundingUrl = ["https://github", ".com/", "prettier/prettier"].join("");
-    const diff = ["diff --git a/package-lock.json b/package-lock.json", `+${fundingUrl}`].join("\n");
+    const lock = JSON.stringify({ packages: { "": { funding: { type: "individual", url: fundingUrl } } } });
 
-    expect(findSensitiveData(stagedAddedLines(diff))).toEqual([]);
+    expect(findSensitiveDataInNpmLock(lock)).toEqual([]);
   });
 
-  it("ignores funding URLs in nested npm package locks as well", () => {
+  it("detects credentials and tokens in nested npm lockfile metadata", () => {
     const fundingUrl = ["https://github", ".com/", "prettier/prettier"].join("");
-    const diff = [
-      "diff --git a/tools/docs-check/package-lock.json b/tools/docs-check/package-lock.json",
-      `+${fundingUrl}`,
-    ].join("\n");
+    const token = ["github_pat_", "abcdefghijklmnopqrstuvwxyz123456"].join("");
+    const authenticatedUrl = [
+      "https://username:",
+      "placeholder-password",
+      "@registry.npmjs.org/private-package.tgz",
+    ].join("");
+    const lock = JSON.stringify({
+      packages: {
+        "node_modules/public-package": { funding: { type: "individual", url: fundingUrl } },
+        "node_modules/private-package": {
+          resolved: authenticatedUrl,
+          integrity: `sha512-${token}`,
+        },
+      },
+    });
 
+    expect(findSensitiveDataInNpmLock(lock)).toContain("認証情報付き URL");
+    expect(findSensitiveDataInNpmLock(lock)).toContain("GitHub トークン");
+  });
+
+  it("reads the complete staged lockfile so funding metadata does not hide other sensitive values", () => {
+    const fundingUrl = ["https://github", ".com/", "prettier/prettier"].join("");
+    const token = ["github_pat_", "abcdefghijklmnopqrstuvwxyz123456"].join("");
+    const stagedLock = JSON.stringify({
+      packages: {
+        "": { funding: { url: fundingUrl } },
+        secret: { resolved: token },
+      },
+    });
+    const diff = ["diff --git a/tools/docs-check/package-lock.json b/tools/docs-check/package-lock.json", "+{}"].join(
+      "\n",
+    );
+
+    const entries = stagedEntries(diff, () => stagedLock);
+    expect(entries).toHaveLength(1);
+    expect(findSensitiveDataInNpmLock(entries[0].content)).toContain("GitHub トークン");
     expect(findSensitiveData(stagedAddedLines(diff))).toEqual([]);
   });
 
