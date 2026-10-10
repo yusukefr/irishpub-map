@@ -53,6 +53,13 @@ test("Calendar新規作成で未完成のDraftを保存する", async ({ page })
 test("Calendar管理画面は日英とDesktop・Mobileで横overflowせず表示できる", async ({ page }) => {
   await loginAsE2EAdmin(page, "/admin/calendar");
 
+  await expect(page.getByText("聖パトリックの日・祝日開催の特別イベント")).toBeVisible();
+  await expect(page.getByText("St. Patrick's Day Public Holiday Celebration and Special Events")).toBeVisible();
+  await expect(page.getByText("公開中", { exact: true })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "はい", exact: true })).toHaveCount(2);
+  await expect(page.getByRole("cell", { name: "いいえ", exact: true })).toHaveCount(2);
+  await expect(page.getByText("下書き", { exact: true })).toBeVisible();
+
   const pages = [
     { path: "/admin/calendar", name: "list" },
     { path: "/admin/calendar/new", name: "new" },
@@ -81,6 +88,16 @@ test("Calendar管理画面は日英とDesktop・Mobileで横overflowせず表示
         expect(dimensions.documentWidth, `${locale} ${route.name} at ${viewport.width}px`).toBeLessThanOrEqual(
           dimensions.viewportWidth,
         );
+
+        if (route.name === "list" && viewport.width === 390) {
+          const cellWidths = await page
+            .locator(".admin-calendar-table tbody td")
+            .evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect().width));
+          expect(cellWidths).toHaveLength(16);
+          expect(cellWidths.every((width) => width >= 260)).toBe(true);
+          await expect(page.locator(".admin-calendar-table .admin-row-link")).toHaveCount(2);
+          await expect(page.locator(".admin-calendar-table .admin-publication-badge")).toHaveCount(2);
+        }
 
         if (viewport.width === 1280 || viewport.width === 390) {
           await expect(page).toHaveScreenshot(`calendar-${locale}-${route.name}-${viewport.width}.png`, {

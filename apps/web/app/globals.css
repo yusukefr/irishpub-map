@@ -3915,30 +3915,33 @@ body {
 }
 
 .admin-calendar-table {
-  min-width: 900px;
+  min-width: 960px;
   table-layout: fixed;
 }
 
 .admin-calendar-table th:nth-child(1),
 .admin-calendar-table td:nth-child(1) {
-  width: 19%;
+  width: 17%;
 }
 
 .admin-calendar-table th:nth-child(2),
 .admin-calendar-table td:nth-child(2) {
-  width: 12%;
+  width: 10%;
 }
 
 .admin-calendar-table th:nth-child(3),
 .admin-calendar-table td:nth-child(3) {
-  width: 21%;
+  width: 19%;
 }
 
 .admin-calendar-table th:nth-child(4),
-.admin-calendar-table td:nth-child(4),
+.admin-calendar-table td:nth-child(4) {
+  width: 13%;
+}
+
 .admin-calendar-table th:nth-child(5),
 .admin-calendar-table td:nth-child(5) {
-  width: 9%;
+  width: 12%;
 }
 
 .admin-calendar-table th:nth-child(6),
@@ -3948,12 +3951,12 @@ body {
 
 .admin-calendar-table th:nth-child(7),
 .admin-calendar-table td:nth-child(7) {
-  width: 13%;
+  width: 11%;
 }
 
 .admin-calendar-table th:nth-child(8),
 .admin-calendar-table td:nth-child(8) {
-  width: 7%;
+  width: 8%;
 }
 
 .admin-calendar-table td {
@@ -4119,6 +4122,11 @@ body {
 
   .admin-calendar-table {
     min-width: 0;
+  }
+
+  .admin-calendar-table th:nth-child(n),
+  .admin-calendar-table td:nth-child(n) {
+    width: 100%;
   }
 
   .admin-calendar-table td:nth-child(4),
