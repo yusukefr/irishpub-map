@@ -3,6 +3,11 @@
   gap: 28px;
 }
 
+.manager > :global(.admin-page-header) {
+  width: 100%;
+  margin-inline: 0;
+}
+
 .heading h1 {
   margin: 0;
   font-size: var(--text-heading-lg);
