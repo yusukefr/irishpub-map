@@ -62,7 +62,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 ## Automation APIの認証・認可
 
-Automation APIと、収録済みAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現在はAutomation API全体、Admin Calendar、Admin Master（都道府県、市区町村、タグ、営業ステータス、Pub Type）、Admin Pub、Admin Tag、Admin Statusを収録しています。公開 `GET /api/pubs`、Editorial Content、Quiz、Media、Login / Logoutは未収録であり、OpenAPIが全APIを網羅しているとは扱いません。現行Admin Routeと収録状況は[Admin API収録一覧](openapi/admin-api-coverage.md)、残るDomainの作業は同一覧に記載したIssueを参照してください。Public API契約と共通Clientの整備は #541 の対象です。
+Automation APIと、収録済みAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現在はAutomation API全体、Admin Calendar、Admin Master（都道府県、市区町村、タグ、営業ステータス、Pub Type）、Admin Pub、Editorial Content、Admin Tag、Admin Statusを収録しています。公開 `GET /api/pubs`、Quiz、Media、Login / Logoutは未収録であり、OpenAPIが全APIを網羅しているとは扱いません。現行Admin Routeと収録状況は[Admin API収録一覧](openapi/admin-api-coverage.md)、残るDomainの作業は同一覧に記載したIssueを参照してください。Public API契約と共通Clientの整備は #541 の対象です。
 
 `/api/automation/v1/*` は外部Automation用です。Bearer Tokenを要求し、Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数やRepositoryへ保存しません。設定、発行、Token Rotation、Scope運用とCreate / Publishフローは[Automation API Runbook](../runbooks/automation-api-access.md)を参照してください。
 
@@ -134,7 +134,7 @@ Irish Calendarの公開表示は `/discover/calendar` のServer ComponentがPubl
 
 Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`translations: { ja, en }` を含む全体スナップショットを受け付けます。各翻訳は `title`、`summary`、`bodyMarkdown` を持ちます。Draftでは言語非依存項目を `null`、翻訳文言を空文字で保存できます。kindは `story` / `guide`、categoryは既知分類、localeは `ja` / `en`、slugは小文字英数字と単語間のハイフンだけを許可します。bodyMarkdownは先頭・末尾の空白を含む原文を保持します。MarkdownはRendererと同じCommonMark・GFM ParserでAST化し、link・image・definitionのURLにはHTTP(S)、ルート相対、ページ内アンカーだけを許可します。
 
-公開状態変更本文は `{ "status": "draft" | "published" }` だけを受け付けます。レスポンスの `publishedAt` はDBで確定した公開日時を返し、Draftでは `null` です。公開時はkind、slug、category、日英すべてのtitle、summary、bodyMarkdownをサーバー側とtransaction内で検証します。Publishedの通常更新にも更新後の公開条件を適用します。本体と日英翻訳は単一transactionで作成・更新し、公開状態を変える操作とPublished更新の成功後に公開Contentの個別・一覧キャッシュタグを失効させます。
+公開状態変更本文は `{ "status": "draft" | "published" }` だけを受け付けます。レスポンスの `publishedAt` はDBで確定した公開日時を返し、Draftでは `null` です。公開時はkind、slug、category、日英すべてのtitle、summary、bodyMarkdownをサーバー側とtransaction内で検証します。Hero画像が指定されている場合は、日英両方の `heroImageAlt` も必須です。Publishedの通常更新にも更新後の公開条件を適用します。本体と日英翻訳は単一transactionで作成・更新し、公開状態を変える操作とPublished更新の成功後に公開Contentの個別・一覧キャッシュタグを失効させます。
 
 `POST` と `PUT` は、`prefectureCode`、`municipalityCode`、座標、URL、`status`、`pubType`、`translations: { ja, en }`、`tagIds` を含む管理用全体スナップショットを受け付けます。日本語店舗名だけが下書きの必須項目で、その他の未入力値はNULL、英語翻訳なしは `translations.en = null`、タグ全解除は `tagIds = []` とします。`id`、`isPublished`、`updatedAt` は入力に含めません。新規IDはサーバーで生成し、常に非公開で作成します。新規公開時は `pubType` に `irish`、`british`、`other` のいずれかが必要です。既存の公開店舗が `unclassified` の場合は公開状態を維持でき、更新時に分類できます。
 

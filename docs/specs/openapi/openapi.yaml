@@ -5,7 +5,7 @@ info:
   license:
     name: MIT
     identifier: MIT
-  description: Machine-readable contracts for Admin Calendar, Admin Master, Admin Pubs, Admin Tags, Admin Statuses, and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
+  description: Machine-readable contracts for Admin Calendar, Admin Master, Admin Pubs, Admin Editorial Content, Admin Tags, Admin Statuses, and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
 servers:
   - url: /
     description: Current application origin
@@ -18,6 +18,8 @@ tags:
     description: Search and manage pub records with an authenticated administrator session.
   - name: Admin Tags
     description: Create, list, update translations, and delete tags with an authenticated administrator session.
+  - name: Admin Editorial Content
+    description: Create, edit, and publish translated editorial content with an authenticated administrator session.
   - name: Admin Statuses
     description: Read fixed pub status keys and update their Japanese and English display names with an authenticated administrator session.
   - name: Automation Master
@@ -43,6 +45,12 @@ paths:
     $ref: ./paths/admin-pubs.yaml#/Item
   /api/admin/pubs/{id}/publication:
     $ref: ./paths/admin-pubs.yaml#/Publication
+  /api/admin/content:
+    $ref: ./paths/admin-content.yaml#/Collection
+  /api/admin/content/{id}:
+    $ref: ./paths/admin-content.yaml#/Item
+  /api/admin/content/{id}/publication:
+    $ref: ./paths/admin-content.yaml#/Publication
   /api/admin/tags:
     $ref: ./paths/admin-tags.yaml#/Collection
   /api/admin/tags/{id}:

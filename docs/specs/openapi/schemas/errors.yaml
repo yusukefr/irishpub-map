@@ -154,7 +154,7 @@ PublicationRequirementsNotMetBody:
             type: string
 
 ValidationOrPublicationRequirementsNotMet:
-  description: The request is invalid or the event does not meet publication requirements.
+  description: The request is invalid or the resource does not meet publication requirements.
   content:
     application/json:
       schema:
@@ -181,6 +181,15 @@ PublicationRequirementsNotMet:
                 type: array
                 items:
                   type: string
+
+ValidationOrContentPublicationRequirementsNotMet:
+  description: The Editorial Content request is invalid or the content does not meet publication requirements. The validation_error response contains optional fieldErrors; the publication_requirements_not_met response contains missingFields.
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: "#/ValidationErrorBody"
+          - $ref: "#/PublicationRequirementsNotMetBody"
 
 PubPublicationRequirementsNotMetBody:
   type: object
@@ -252,6 +261,34 @@ PubNotFound:
             properties:
               errorCode:
                 const: pub_not_found
+
+ContentNotFound:
+  description: The editorial content does not exist.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: content_not_found
+
+ContentConflict:
+  description: The editorial content slug conflicts with an existing item.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: content_conflict
+              fieldErrors:
+                type: object
+                additionalProperties:
+                  type: string
 
 DatabaseUnavailable:
   description: The database is not configured or available.
