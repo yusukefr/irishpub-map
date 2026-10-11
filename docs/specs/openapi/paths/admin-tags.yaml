@@ -1,0 +1,129 @@
+Collection:
+  get:
+    tags: [Admin Tags]
+    operationId: listAdminTags
+    summary: List tags
+    description: Returns administrator tag DTOs with translations in the supported locales and the number of pubs using each tag. `databaseConfigured` is false and `tags` is empty when the database is not configured.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Tags and database configuration state
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-tags.yaml#/AdminTagsResponse" }
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+  post:
+    tags: [Admin Tags]
+    operationId: createAdminTag
+    summary: Create a tag
+    description: Requires an administrator session and a same-origin request. Japanese translation is required; English translation is optional. Duplicate keys or names return a conflict.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/admin-tags.yaml#/CreateAdminTagRequest" }
+    responses:
+      "201":
+        description: Created tag
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-tags.yaml#/AdminTagResponse" }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidJson
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "409":
+        $ref: ../schemas/admin-tags.yaml#/TagConflict
+      "422":
+        $ref: ../schemas/errors.yaml#/ValidationError
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+Item:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: Tag UUID.
+      schema: { $ref: "../schemas/automation.yaml#/Uuid" }
+  patch:
+    tags: [Admin Tags]
+    operationId: updateAdminTag
+    summary: Update tag translations
+    description: Requires an administrator session and a same-origin request. The tag key is immutable. Japanese translation is required; English translation is optional.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/admin-tags.yaml#/UpdateAdminTagRequest" }
+    responses:
+      "200":
+        description: Updated tag
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-tags.yaml#/AdminTagResponse" }
+      "400":
+        description: The tag ID is not a UUID or the request body is not valid JSON.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "../schemas/admin-tags.yaml#/InvalidTagId"
+                - $ref: "../schemas/errors.yaml#/InvalidJsonBody"
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: ../schemas/admin-tags.yaml#/TagNotFound
+      "409":
+        $ref: ../schemas/admin-tags.yaml#/TagConflict
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/ValidationError
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+  delete:
+    tags: [Admin Tags]
+    operationId: deleteAdminTag
+    summary: Delete an unused tag
+    description: Requires an administrator session and a same-origin request. A tag referenced by any pub cannot be deleted.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Tag deleted
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-tags.yaml#/DeleteAdminTagResponse" }
+      "400":
+        $ref: ../schemas/admin-tags.yaml#/InvalidTagIdResponse
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: ../schemas/admin-tags.yaml#/TagNotFound
+      "409":
+        $ref: ../schemas/admin-tags.yaml#/TagInUse
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError

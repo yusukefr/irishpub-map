@@ -62,7 +62,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 ## Automation APIの認証・認可
 
-Automation APIと、収録済みAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現在はAutomation API全体、Admin Calendar、Admin Master（都道府県、市区町村、タグ、営業ステータス、Pub Type）を収録しています。公開 `GET /api/pubs` とAdmin Pub CRUD、Tag CRUD、Status管理、Editorial Content、Quiz、Media、Login / Logoutは未収録であり、OpenAPIが全APIを網羅しているとは扱いません。現行Admin Routeと収録状況は[Admin API収録一覧](openapi/admin-api-coverage.md)、残るDomainの作業は同一覧に記載したIssueを参照してください。Public API契約と共通Clientの整備は #541 の対象です。
+Automation APIと、収録済みAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現在はAutomation API全体、Admin Calendar、Admin Master（都道府県、市区町村、タグ、営業ステータス、Pub Type）、Admin Pub、Admin Tagを収録しています。公開 `GET /api/pubs` とAdmin Status管理、Editorial Content、Quiz、Media、Login / Logoutは未収録であり、OpenAPIが全APIを網羅しているとは扱いません。現行Admin Routeと収録状況は[Admin API収録一覧](openapi/admin-api-coverage.md)、残るDomainの作業は同一覧に記載したIssueを参照してください。Public API契約と共通Clientの整備は #541 の対象です。
 
 `/api/automation/v1/*` は外部Automation用です。Bearer Tokenを要求し、Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数やRepositoryへ保存しません。設定、発行、Token Rotation、Scope運用とCreate / Publishフローは[Automation API Runbook](../runbooks/automation-api-access.md)を参照してください。
 
@@ -75,7 +75,7 @@ CreateのIdempotency-Keyは成功済みの同一Requestを重複作成から保�
 | API | 役割 | 契約の参照先 |
 | --- | --- | --- |
 | Public Pub API | Mobile / Web向けの公開店舗読取り | 本文書の[Public API](#公開-api)と[店舗データ仕様](data.md)。OpenAPI収録は #541 の対象 |
-| Admin API | Web管理画面向けの認証済み管理操作 | 収録済みのCalendar / Masterは[OpenAPI定義](openapi/openapi.yaml)。その他の現行Route契約は本節と各ドメイン仕様を参照 |
+| Admin API | Web管理画面向けの認証済み管理操作 | 収録済みDomainは[OpenAPI定義](openapi/openapi.yaml)。その他の現行Route契約は本節と各ドメイン仕様を参照 |
 | Automation API | 外部Connector向けのScope制御された管理操作 | [OpenAPI定義](openapi/openapi.yaml)と[Automation API Runbook](../runbooks/automation-api-access.md) |
 | Admin Calendar API | Web管理画面向けCalendar操作 | [OpenAPI定義](openapi/openapi.yaml)、画面Behaviorは[Product仕様](product.md) |
 
@@ -110,10 +110,6 @@ OpenAPI収録済みAPIのSchemaやStatusをここへ複製しません。APIの�
 | `GET` | `/api/admin/master/prefectures` | `200` と `{ prefectures }` | 未認証は `401`、取得失敗は `500` |
 | `GET` | `/api/admin/master/municipalities?prefectureCode=:code` | `200` と `{ municipalities }` | 未認証は `401`、都道府県コード不正は `400`、取得失敗は `500` |
 | `GET` | `/api/admin/master/tags` | `200` と `{ tags }` | 未認証は `401`、取得失敗は `500` |
-| `GET` | `/api/admin/tags` | `200` と `{ tags, databaseConfigured }`。サポートlocaleの翻訳と使用店舗数を含む | 未認証は `401`、取得失敗は `500` |
-| `POST` | `/api/admin/tags` | `201` と `{ tag }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、重複は `409`、DB未設定は `503` |
-| `PATCH` | `/api/admin/tags/:id` | `200` と `{ tag }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、ID不正は `400`、対象なしは `404`、重複は `409`、Content-Type不正は `415`、入力不正は `422`、DB未設定は `503` |
-| `DELETE` | `/api/admin/tags/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、ID不正は `400`、対象なしは `404`、使用中は `409`、DB未設定は `503` |
 | `GET` | `/api/admin/master/statuses` | `200` と `{ statuses }` | 未認証は `401`、取得失敗は `500` |
 | `GET` | `/api/admin/master/pub-types` | `200` と `{ pubTypes }` | 未認証は `401`、取得失敗は `500` |
 | `GET` | `/api/admin/statuses` | `200` と `{ statuses, databaseConfigured }`。固定keyと日英表示名を含む | 未認証は `401`、取得失敗は `500` |
