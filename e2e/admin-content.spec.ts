@@ -213,6 +213,29 @@ test("Content・Media・Quizの一覧と編集画面は日英と主要Viewport�
         );
         const visualName = visualRoutes.get(path);
         if (visualName && (width === 1280 || width === 390)) {
+          if (visualName === "quiz-edit") {
+            const choiceGroup = page.getByRole("group", { name: locale === "ja" ? "選択肢" : "Choices" });
+            const actionButtons = choiceGroup.locator('button[aria-label$="choice-1"]');
+            const buttonBounds = await actionButtons.evaluateAll((buttons) =>
+              buttons.map((button) => {
+                const { x, y, width: buttonWidth, height } = button.getBoundingClientRect();
+                return { x, y, width: buttonWidth, height };
+              }),
+            );
+            expect(buttonBounds).toHaveLength(3);
+            for (let firstIndex = 0; firstIndex < buttonBounds.length; firstIndex += 1) {
+              for (let secondIndex = firstIndex + 1; secondIndex < buttonBounds.length; secondIndex += 1) {
+                const first = buttonBounds[firstIndex];
+                const second = buttonBounds[secondIndex];
+                const overlaps =
+                  first.x < second.x + second.width &&
+                  first.x + first.width > second.x &&
+                  first.y < second.y + second.height &&
+                  first.y + first.height > second.y;
+                expect(overlaps, `${locale} choice action buttons at ${width}px`).toBe(false);
+              }
+            }
+          }
           await expect(page).toHaveScreenshot(`admin-${visualName}-${locale}-${width}.png`, { fullPage: true });
         }
       }

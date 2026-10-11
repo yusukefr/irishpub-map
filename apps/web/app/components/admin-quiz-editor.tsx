@@ -510,33 +510,35 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
                     onChange={(event) => updateChoice(index, "en", event.target.value)}
                   />
                 </label>
-                <button
-                  type="button"
-                  className="admin-secondary-action"
-                  aria-label={`${q.moveUp}: ${choice.id || index + 1}`}
-                  onClick={() => moveChoice(index, -1)}
-                  disabled={index === 0}
-                >
-                  {q.moveUp}
-                </button>
-                <button
-                  type="button"
-                  className="admin-secondary-action"
-                  aria-label={`${q.moveDown}: ${choice.id || index + 1}`}
-                  onClick={() => moveChoice(index, 1)}
-                  disabled={index === values.choices.length - 1}
-                >
-                  {q.moveDown}
-                </button>
-                <button
-                  type="button"
-                  className="admin-secondary-action"
-                  aria-label={`${q.removeChoice}: ${choice.id || index + 1}`}
-                  onClick={() => removeChoice(index)}
-                  disabled={choice.id === values.correctChoiceId}
-                >
-                  {q.removeChoice}
-                </button>
+                <div className={styles.choiceActions}>
+                  <button
+                    type="button"
+                    className="admin-secondary-action"
+                    aria-label={`${q.moveUp}: ${choice.id || index + 1}`}
+                    onClick={() => moveChoice(index, -1)}
+                    disabled={index === 0}
+                  >
+                    {q.moveUp}
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-secondary-action"
+                    aria-label={`${q.moveDown}: ${choice.id || index + 1}`}
+                    onClick={() => moveChoice(index, 1)}
+                    disabled={index === values.choices.length - 1}
+                  >
+                    {q.moveDown}
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-secondary-action"
+                    aria-label={`${q.removeChoice}: ${choice.id || index + 1}`}
+                    onClick={() => removeChoice(index)}
+                    disabled={choice.id === values.correctChoiceId}
+                  >
+                    {q.removeChoice}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

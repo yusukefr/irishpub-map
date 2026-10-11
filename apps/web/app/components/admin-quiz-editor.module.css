@@ -36,8 +36,13 @@
   min-width: 0;
 }
 
-.choice > button {
-  justify-self: start;
+.choiceActions {
+  display: flex;
+  grid-column: 2 / -1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 @media (max-width: 760px) {
@@ -46,7 +51,7 @@
   }
 
   .choice > label,
-  .choice > button {
+  .choiceActions {
     grid-column: 2;
   }
 }
