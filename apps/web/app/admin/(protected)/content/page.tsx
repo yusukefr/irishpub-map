@@ -3,8 +3,9 @@ import { readAdminContentList } from "../../../lib/admin-content-service";
 import { isContentDatabaseConfigured } from "../../../lib/admin-content-repository";
 import { isE2ETestMode } from "../../../lib/e2e-test-mode";
 import { requireAdminSession } from "../../../lib/admin-server";
-import { getTranslation, type Locale } from "../../../lib/i18n";
+import { getTranslation } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
+import { formatAdminContentDate } from "../../../lib/admin-content-date";
 import { AdminPageHeader } from "../../../components/admin-page-header";
 
 /**
@@ -76,11 +77,11 @@ export default async function AdminContentPage() {
                     </span>
                   </td>
                   <td data-label={c.updatedAt}>
-                    <time dateTime={item.updatedAt}>{formatDate(item.updatedAt, locale)}</time>
+                    <time dateTime={item.updatedAt}>{formatAdminContentDate(item.updatedAt, locale)}</time>
                   </td>
                   <td data-label={c.publishedDate}>
                     {item.publishedAt ? (
-                      <time dateTime={item.publishedAt}>{formatDate(item.publishedAt, locale)}</time>
+                      <time dateTime={item.publishedAt}>{formatAdminContentDate(item.publishedAt, locale)}</time>
                     ) : (
                       c.notPublished
                     )}
@@ -98,8 +99,4 @@ export default async function AdminContentPage() {
       )}
     </section>
   );
-}
-
-function formatDate(value: string, locale: Locale) {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
