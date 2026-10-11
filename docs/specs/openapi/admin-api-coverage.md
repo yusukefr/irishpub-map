@@ -1,6 +1,6 @@
 # Admin API OpenAPI 収録一覧
 
-この一覧は `apps/web/app/api/admin/**/route.ts` と [OpenAPI定義](openapi.yaml) の対応状況を示します。現行のRoute HandlerとテストがContractの根拠です。Calendarは既収録で、Admin MasterはIssue #617の初回Domainとして収録しています。
+この一覧は `apps/web/app/api/admin/**/route.ts` と [OpenAPI定義](openapi.yaml) の対応状況を示します。現行のRoute HandlerとテストがContractの根拠です。Calendar、Admin Master、Pubを収録しています。
 
 | Domain            | Path                                   | Method                 | OpenAPI収録 / 作業Issue |
 | ----------------- | -------------------------------------- | ---------------------- | ----------------------- |
@@ -12,9 +12,9 @@
 | Master            | `/api/admin/master/tags`               | `GET`                  | 収録済み                |
 | Master            | `/api/admin/master/statuses`           | `GET`                  | 収録済み                |
 | Master            | `/api/admin/master/pub-types`          | `GET`                  | 収録済み                |
-| Pub               | `/api/admin/pubs`                      | `GET`, `POST`          | 未収録・#625            |
-| Pub               | `/api/admin/pubs/{id}`                 | `GET`, `PUT`, `DELETE` | 未収録・#625            |
-| Pub               | `/api/admin/pubs/{id}/publication`     | `PATCH`                | 未収録・#625            |
+| Pub               | `/api/admin/pubs`                      | `GET`, `POST`          | 収録済み                |
+| Pub               | `/api/admin/pubs/{id}`                 | `GET`, `PUT`, `DELETE` | 収録済み                |
+| Pub               | `/api/admin/pubs/{id}/publication`     | `PATCH`                | 収録済み                |
 | Tag               | `/api/admin/tags`                      | `GET`, `POST`          | 未収録・#626            |
 | Tag               | `/api/admin/tags/{id}`                 | `PATCH`, `DELETE`      | 未収録・#626            |
 | Status            | `/api/admin/statuses`                  | `GET`                  | 未収録・#627            |

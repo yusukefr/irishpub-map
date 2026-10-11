@@ -182,6 +182,37 @@ PublicationRequirementsNotMet:
                 items:
                   type: string
 
+PubPublicationRequirementsNotMetBody:
+  type: object
+  additionalProperties: false
+  required: [errorCode, missingFields]
+  properties:
+    errorCode:
+      type: string
+      const: publication_requirements_not_met
+    missingFields:
+      type: array
+      uniqueItems: true
+      items:
+        type: string
+        enum: [name, address, prefecture, municipality, latitude, longitude, status, pubType, tags]
+
+PubPublicationRequirementsNotMet:
+  description: The pub is missing fields required for publication. Possible field codes are name, address, prefecture, municipality, latitude, longitude, status, pubType, and tags.
+  content:
+    application/json:
+      schema:
+        $ref: "#/PubPublicationRequirementsNotMetBody"
+
+PubValidationOrPublicationRequirementsNotMet:
+  description: The request is invalid or the pub is missing fields required for publication.
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: "#/ValidationErrorBody"
+          - $ref: "#/PubPublicationRequirementsNotMetBody"
+
 CalendarConflict:
   description: A calendar event conflicts with an existing event.
   content:
@@ -209,6 +240,18 @@ CalendarNotFound:
             properties:
               errorCode:
                 const: calendar_not_found
+
+PubNotFound:
+  description: The pub does not exist.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: pub_not_found
 
 DatabaseUnavailable:
   description: The database is not configured or available.
