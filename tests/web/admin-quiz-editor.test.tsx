@@ -132,7 +132,7 @@ describe("AdminQuizEditor", () => {
     expect(within(choices).getAllByRole("textbox")).toHaveLength(12);
     const correctChoice = within(choices).getAllByLabelText("Choice ID")[0];
     expect(correctChoice).toHaveValue("choice-1");
-    expect(within(choices).getAllByRole("button", { name: "選択肢を削除" })[0]).toBeDisabled();
+    expect(within(choices).getAllByRole("button", { name: /選択肢を削除/ })[0]).toBeDisabled();
   });
   it("adds, reorders, and removes choices and includes no sortOrder in the save payload", async () => {
     render(<AdminQuizEditor initialQuestion={null} relatedGuides={guides} databaseConfigured locale="ja" />);
@@ -141,8 +141,8 @@ describe("AdminQuizEditor", () => {
     fireEvent.click(within(choices).getByRole("button", { name: "選択肢を追加" }));
     fireEvent.click(within(choices).getByRole("button", { name: "選択肢を追加" }));
     expect(within(choices).getAllByRole("textbox")).toHaveLength(6);
-    fireEvent.click(within(choices).getAllByRole("button", { name: "上へ" })[1]);
-    fireEvent.click(within(choices).getAllByRole("button", { name: "選択肢を削除" })[0]);
+    fireEvent.click(within(choices).getAllByRole("button", { name: /上へ/ })[1]);
+    fireEvent.click(within(choices).getAllByRole("button", { name: /選択肢を削除/ })[0]);
     const created = {
       ...question,
       id: "550e8400-e29b-41d4-a716-446655440015",
@@ -289,7 +289,7 @@ describe("AdminQuizEditor", () => {
   it("generates an unused choice ID after a choice is deleted", () => {
     render(<AdminQuizEditor initialQuestion={question} relatedGuides={guides} databaseConfigured locale="ja" />);
     const choices = screen.getByRole("group", { name: "選択肢" });
-    fireEvent.click(within(choices).getAllByRole("button", { name: "選択肢を削除" })[1]);
+    fireEvent.click(within(choices).getAllByRole("button", { name: /選択肢を削除/ })[1]);
     fireEvent.click(within(choices).getByRole("button", { name: "選択肢を追加" }));
     expect(within(choices).getAllByLabelText("Choice ID")).toHaveLength(4);
     expect(within(choices).getAllByLabelText("Choice ID")[3]).toHaveValue("choice-2");

@@ -3,8 +3,10 @@ import { readAdminQuizList } from "../../../lib/admin-quiz-service";
 import { isQuizDatabaseConfigured } from "../../../lib/quiz/repository";
 import { isE2ETestMode } from "../../../lib/e2e-test-mode";
 import { requireAdminSession } from "../../../lib/admin-server";
-import { getTranslation, type Locale } from "../../../lib/i18n";
+import { getTranslation } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
+import { formatAdminDate } from "../../../lib/admin-date-format";
+import { AdminPageHeader } from "../../../components/admin-page-header";
 /**
  * DraftとPublishedを含むQuiz管理一覧を表示します。
  * @returns {JSX.Element} Quiz管理一覧。
@@ -17,17 +19,17 @@ export default async function AdminQuizPage() {
   const q = t.quiz;
   const databaseConfigured = isQuizDatabaseConfigured() || isE2ETestMode();
   return (
-    <section className="admin-panel admin-wide">
-      <div className="admin-heading">
-        <div>
-          <p className="eyebrow">Irish Quiz</p>
-          <h1>{q.listHeading}</h1>
-          <p>{q.listDescription}</p>
-        </div>
-        <Link className="admin-primary-link" href="/admin/quiz/new">
-          {q.addQuiz}
-        </Link>
-      </div>
+    <section className="admin-quiz-list">
+      <AdminPageHeader
+        sectionLabel="Irish Quiz"
+        title={q.listHeading}
+        description={q.listDescription}
+        actions={
+          <Link className="admin-primary-link" href="/admin/quiz/new">
+            {q.addQuiz}
+          </Link>
+        }
+      />
       {!databaseConfigured ? <p className="admin-error">{t.databaseUnavailable}</p> : null}
       {questions.length === 0 ? (
         <div className="admin-empty">
@@ -76,7 +78,7 @@ export default async function AdminQuizPage() {
                     </span>
                   </td>
                   <td data-label={t.updatedAt}>
-                    <time dateTime={question.updatedAt}>{formatDate(question.updatedAt, locale)}</time>
+                    <time dateTime={question.updatedAt}>{formatAdminDate(question.updatedAt, locale)}</time>
                   </td>
                   <td data-label={t.operations}>
                     <Link className="admin-row-link" href={`/admin/quiz/${question.id}`}>
@@ -91,7 +93,4 @@ export default async function AdminQuizPage() {
       )}
     </section>
   );
-}
-function formatDate(value: string, locale: Locale) {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }

@@ -10,8 +10,10 @@ test("Quiz一覧からDraft保存、Choice操作、Publishを確認する", asyn
     .getByRole("link", { name: "編集" })
     .click();
   await expect(page.getByRole("heading", { name: "Quizを編集" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "正解" })).toBeVisible();
   await page.getByRole("group", { name: "日本語" }).getByLabel("問題文").fill("E2E 更新Quiz");
   await page.getByRole("group", { name: "選択肢" }).getByRole("button", { name: "選択肢を追加" }).click();
+  await expect(page.getByRole("button", { name: "上へ: choice-1" })).toBeDisabled();
   const updated = {
     id: "11111111-1111-4111-8111-000000000003",
     category: null,

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AdminContent } from "@irishpub-map/shared/admin-content";
 import { AdminContentEditor } from "../../apps/web/app/components/admin-content-editor";
+import { formatAdminDate } from "../../apps/web/app/lib/admin-date-format";
 
 const navigation = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }));
 const fetchMock = vi.fn();
@@ -257,10 +258,7 @@ describe("AdminContentEditor", () => {
       `/api/admin/content/${content.id}/publication`,
       expect.objectContaining({ method: "PATCH", body: JSON.stringify({ status: "published" }) }),
     );
-    const formattedPublishedAt = new Intl.DateTimeFormat("ja", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(databasePublishedAt));
+    const formattedPublishedAt = formatAdminDate(databasePublishedAt, "ja");
     expect(screen.getByText(`公開日時: ${formattedPublishedAt}`)).toBeInTheDocument();
 
     unmount();

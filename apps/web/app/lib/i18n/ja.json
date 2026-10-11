@@ -312,6 +312,7 @@
       "addDescription": "入力途中でも下書きとして保存できます。",
       "editHeading": "Quizを編集",
       "editDescription": "日英の問題と選択肢を確認し、保存後に公開状態を変更します。",
+      "details": "基本情報",
       "id": "Question ID",
       "idHelp": "Question IDはServerがUUIDを生成します。",
       "category": "カテゴリー",

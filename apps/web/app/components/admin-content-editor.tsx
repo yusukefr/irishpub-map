@@ -21,10 +21,12 @@ import {
 } from "@irishpub-map/shared/admin-content";
 import type { MediaAsset } from "@irishpub-map/shared/media";
 import { MediaPicker } from "./media/media-picker";
+import { AdminPageHeader } from "./admin-page-header";
 import { getAdminContentApiErrorMessage } from "../lib/admin-api-client";
 import { SafeMarkdownRenderer } from "../lib/content/renderer";
 import { insertMediaImageMarkdown } from "../lib/content/editor-image";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
+import { formatAdminDate } from "../lib/admin-date-format";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
 
 type Props = {
@@ -288,16 +290,16 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
 
   return (
     <section className="admin-panel admin-wide admin-content-editor">
-      <div className="admin-content-editor-heading">
-        <div>
-          <p className="eyebrow">Editorial content</p>
-          <h1>{contentId ? c.editHeading : c.addHeading}</h1>
-          <p>{contentId ? c.editDescription : c.addDescription}</p>
-        </div>
-        <span className={`admin-publication-badge ${status === "published" ? "is-published" : "is-unpublished"}`}>
-          {status === "published" ? c.statusPublished : c.statusDraft}
-        </span>
-      </div>
+      <AdminPageHeader
+        sectionLabel="Editorial content"
+        title={contentId ? c.editHeading : c.addHeading}
+        description={contentId ? c.editDescription : c.addDescription}
+        actions={
+          <span className={`admin-publication-badge ${status === "published" ? "is-published" : "is-unpublished"}`}>
+            {status === "published" ? c.statusPublished : c.statusDraft}
+          </span>
+        }
+      />
 
       {!databaseConfigured ? <p className="admin-error">{t.editorUnavailable}</p> : null}
       {status === "published" ? <p className="admin-content-live-note">{c.publishedSaveNotice}</p> : null}
@@ -637,7 +639,7 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
                   fields: missingFields.map((field) => fieldLabel(field, c)).join(", "),
                 })}
           </p>
-          {publishedAt ? <p>{formatMessage(c.publishedAt, { date: formatDate(publishedAt, locale) })}</p> : null}
+          {publishedAt ? <p>{formatMessage(c.publishedAt, { date: formatAdminDate(publishedAt, locale) })}</p> : null}
           {isDirty && contentId ? <p className="admin-content-unsaved">{c.saveBeforePublish}</p> : null}
         </div>
         {status === "published" ? (
@@ -702,10 +704,6 @@ function fieldLabel(path: string, content: ReturnType<typeof getTranslation>["ad
             ? content.heroImageCaption
             : content.bodyMarkdown;
   return `${languageLabel}: ${fieldName}`;
-}
-
-function formatDate(value: string, locale: Locale) {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
 function FieldError({

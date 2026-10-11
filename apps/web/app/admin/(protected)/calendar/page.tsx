@@ -4,8 +4,9 @@ import { isCalendarDatabaseConfigured } from "../../../lib/calendar/repository";
 import { formatCalendarDateRuleSummary } from "../../../lib/calendar/date-rule-summary";
 import { isE2ETestMode } from "../../../lib/e2e-test-mode";
 import { requireAdminSession } from "../../../lib/admin-server";
-import { getTranslation, type Locale } from "../../../lib/i18n";
+import { getTranslation } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
+import { formatAdminDate } from "../../../lib/admin-date-format";
 import { AdminPageHeader } from "../../../components/admin-page-header";
 
 /**
@@ -75,7 +76,7 @@ export default async function AdminCalendarPage() {
                     </span>
                   </td>
                   <td data-label={t.updatedAt}>
-                    <time dateTime={event.updatedAt}>{formatDate(event.updatedAt, locale)}</time>
+                    <time dateTime={event.updatedAt}>{formatAdminDate(event.updatedAt, locale)}</time>
                   </td>
                   <td data-label={t.operations}>
                     <Link className="admin-row-link" href={`/admin/calendar/${event.id}`}>
@@ -90,8 +91,4 @@ export default async function AdminCalendarPage() {
       )}
     </section>
   );
-}
-
-function formatDate(value: string, locale: Locale) {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }

@@ -1,0 +1,57 @@
+.errorSummary {
+  margin: 0;
+  padding: 14px 18px 14px 38px;
+  border-inline-start: 4px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface-raised));
+}
+
+.choices {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 12px;
+}
+
+.choice {
+  display: grid;
+  grid-template-columns: 32px repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.choice > strong {
+  display: grid;
+  min-height: 44px;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+}
+
+.choice > label {
+  min-width: 0;
+}
+
+.choiceActions {
+  display: flex;
+  grid-column: 2 / -1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .choice {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .choice > label,
+  .choiceActions {
+    grid-column: 2;
+  }
+}

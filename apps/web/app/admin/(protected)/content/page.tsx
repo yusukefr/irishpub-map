@@ -3,8 +3,10 @@ import { readAdminContentList } from "../../../lib/admin-content-service";
 import { isContentDatabaseConfigured } from "../../../lib/admin-content-repository";
 import { isE2ETestMode } from "../../../lib/e2e-test-mode";
 import { requireAdminSession } from "../../../lib/admin-server";
-import { getTranslation, type Locale } from "../../../lib/i18n";
+import { getTranslation } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
+import { formatAdminDate } from "../../../lib/admin-date-format";
+import { AdminPageHeader } from "../../../components/admin-page-header";
 
 /**
  * Draftを含むEditorial Content一覧を管理者へ表示します。
@@ -18,17 +20,17 @@ export default async function AdminContentPage() {
   const databaseConfigured = isContentDatabaseConfigured() || isE2ETestMode();
 
   return (
-    <section className="admin-panel admin-wide">
-      <div className="admin-heading">
-        <div>
-          <p className="eyebrow">Editorial content</p>
-          <h1>{c.listHeading}</h1>
-          <p>{c.listDescription}</p>
-        </div>
-        <Link className="admin-primary-link" href="/admin/content/new">
-          {c.addContent}
-        </Link>
-      </div>
+    <section className="admin-content-list">
+      <AdminPageHeader
+        sectionLabel="Editorial content"
+        title={c.listHeading}
+        description={c.listDescription}
+        actions={
+          <Link className="admin-primary-link" href="/admin/content/new">
+            {c.addContent}
+          </Link>
+        }
+      />
       {!databaseConfigured ? <p className="admin-error">{getTranslation(locale).admin.databaseUnavailable}</p> : null}
 
       {content.length === 0 ? (
@@ -75,11 +77,11 @@ export default async function AdminContentPage() {
                     </span>
                   </td>
                   <td data-label={c.updatedAt}>
-                    <time dateTime={item.updatedAt}>{formatDate(item.updatedAt, locale)}</time>
+                    <time dateTime={item.updatedAt}>{formatAdminDate(item.updatedAt, locale)}</time>
                   </td>
                   <td data-label={c.publishedDate}>
                     {item.publishedAt ? (
-                      <time dateTime={item.publishedAt}>{formatDate(item.publishedAt, locale)}</time>
+                      <time dateTime={item.publishedAt}>{formatAdminDate(item.publishedAt, locale)}</time>
                     ) : (
                       c.notPublished
                     )}
@@ -97,8 +99,4 @@ export default async function AdminContentPage() {
       )}
     </section>
   );
-}
-
-function formatDate(value: string, locale: Locale) {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
