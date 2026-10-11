@@ -1,0 +1,128 @@
+Collection:
+  get:
+    tags: [Admin Quiz]
+    operationId: listAdminQuiz
+    summary: List draft and published quiz questions
+    description: Returns draft and published questions. When the database is not configured, returns an empty list and databaseConfigured false.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Quiz questions and database configuration state
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-quiz.yaml#/AdminQuizListResponse }
+      "401": { $ref: ../schemas/errors.yaml#/Unauthorized }
+      "500": { $ref: ../schemas/errors.yaml#/InternalError }
+  post:
+    tags: [Admin Quiz]
+    operationId: createAdminQuiz
+    summary: Create a quiz draft
+    description: Creates a draft with a server-generated UUID from the complete editable snapshot. Drafts may have zero to four choices; the server derives each choice sortOrder from array order. Related content must reference an existing guide, and imageAssetId must reference an existing media asset. State-changing requests require an Origin exactly matching the request URL origin and an application/json content type.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: ../schemas/admin-quiz.yaml#/AdminQuizWriteInput }
+    responses:
+      "201":
+        description: Created quiz draft
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-quiz.yaml#/AdminQuizResponse }
+      "400": { $ref: ../schemas/errors.yaml#/InvalidJson }
+      "401": { $ref: ../schemas/errors.yaml#/Unauthorized }
+      "403": { $ref: ../schemas/errors.yaml#/Forbidden }
+      "409": { $ref: ../schemas/errors.yaml#/QuizConflict }
+      "415": { $ref: ../schemas/errors.yaml#/InvalidContentType }
+      "422": { $ref: ../schemas/errors.yaml#/ValidationError }
+      "503": { $ref: ../schemas/errors.yaml#/DatabaseUnavailable }
+      "500": { $ref: ../schemas/errors.yaml#/InternalError }
+
+Item:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: Quiz Question UUID.
+      schema: { $ref: ../schemas/automation.yaml#/Uuid }
+  get:
+    tags: [Admin Quiz]
+    operationId: getAdminQuiz
+    summary: Get quiz question details
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Quiz question details including both locale translations, choices, and media asset details
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-quiz.yaml#/AdminQuizResponse }
+      "400": { $ref: ../schemas/errors.yaml#/InvalidRequest }
+      "401": { $ref: ../schemas/errors.yaml#/Unauthorized }
+      "404": { $ref: ../schemas/errors.yaml#/QuizNotFound }
+      "503": { $ref: ../schemas/errors.yaml#/DatabaseUnavailable }
+      "500": { $ref: ../schemas/errors.yaml#/InternalError }
+  put:
+    tags: [Admin Quiz]
+    operationId: updateAdminQuiz
+    summary: Replace editable quiz fields
+    description: Replaces the complete editable snapshot and preserves publication state. A published question must continue to meet publication requirements. Sending a question ID or choice sortOrder is rejected. State-changing requests require an Origin exactly matching the request URL origin and an application/json content type.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: ../schemas/admin-quiz.yaml#/AdminQuizWriteInput }
+    responses:
+      "200":
+        description: Updated quiz question
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-quiz.yaml#/AdminQuizResponse }
+      "400": { $ref: ../schemas/errors.yaml#/InvalidRequestOrInvalidJson }
+      "401": { $ref: ../schemas/errors.yaml#/Unauthorized }
+      "403": { $ref: ../schemas/errors.yaml#/Forbidden }
+      "404": { $ref: ../schemas/errors.yaml#/QuizNotFound }
+      "409": { $ref: ../schemas/errors.yaml#/QuizConflict }
+      "415": { $ref: ../schemas/errors.yaml#/InvalidContentType }
+      "422": { $ref: ../schemas/errors.yaml#/ValidationOrPublicationRequirementsNotMet }
+      "503": { $ref: ../schemas/errors.yaml#/DatabaseUnavailable }
+      "500": { $ref: ../schemas/errors.yaml#/InternalError }
+
+Publication:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: Quiz Question UUID.
+      schema: { $ref: ../schemas/automation.yaml#/Uuid }
+  patch:
+    tags: [Admin Quiz]
+    operationId: changeAdminQuizPublication
+    summary: Publish or unpublish a quiz question
+    description: Publishing requires a category, both locales' question, explanation and source label, an HTTPS source URL, exactly four complete choices, a correct choice among them, and image alt text in both locales when an image is set. Successful publication state changes invalidate the public quiz cache. State-changing requests require an Origin exactly matching the request URL origin and an application/json content type.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: ../schemas/admin-quiz.yaml#/AdminQuizPublicationInput }
+    responses:
+      "200":
+        description: Publication state changed or was already current
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-quiz.yaml#/AdminQuizPublicationResponse }
+      "400": { $ref: ../schemas/errors.yaml#/InvalidRequestOrInvalidJson }
+      "401": { $ref: ../schemas/errors.yaml#/Unauthorized }
+      "403": { $ref: ../schemas/errors.yaml#/Forbidden }
+      "404": { $ref: ../schemas/errors.yaml#/QuizNotFound }
+      "415": { $ref: ../schemas/errors.yaml#/InvalidContentType }
+      "422": { $ref: ../schemas/errors.yaml#/ValidationOrQuizPublicationRequirementsNotMet }
+      "503": { $ref: ../schemas/errors.yaml#/DatabaseUnavailable }
+      "500": { $ref: ../schemas/errors.yaml#/InternalError }

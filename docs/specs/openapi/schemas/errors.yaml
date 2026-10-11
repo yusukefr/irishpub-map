@@ -191,6 +191,15 @@ ValidationOrContentPublicationRequirementsNotMet:
           - $ref: "#/ValidationErrorBody"
           - $ref: "#/PublicationRequirementsNotMetBody"
 
+ValidationOrQuizPublicationRequirementsNotMet:
+  description: The Quiz request is invalid or the question does not meet publication requirements. Validation errors contain optional fieldErrors; publication requirement failures contain missingFields.
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: "#/ValidationErrorBody"
+          - $ref: "#/PublicationRequirementsNotMetBody"
+
 PubPublicationRequirementsNotMetBody:
   type: object
   additionalProperties: false
@@ -285,6 +294,34 @@ ContentConflict:
             properties:
               errorCode:
                 const: content_conflict
+              fieldErrors:
+                type: object
+                additionalProperties:
+                  type: string
+
+QuizNotFound:
+  description: The quiz question does not exist.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: quiz_not_found
+
+QuizConflict:
+  description: A quiz question conflicts with an existing question.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: quiz_conflict
               fieldErrors:
                 type: object
                 additionalProperties:
