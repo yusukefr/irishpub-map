@@ -48,7 +48,7 @@ export function LoginForm({ locale }: LoginFormProps) {
   }
 
   return (
-    <form className="admin-form" onSubmit={submit}>
+    <form className="admin-form admin-login-form" onSubmit={submit}>
       <label>
         {t.admin.id}
         <input name="username" required autoComplete="username" />
