@@ -1,0 +1,70 @@
+Collection:
+  get:
+    tags: [Admin Statuses]
+    operationId: listAdminStatuses
+    summary: List pub statuses
+    description: >-
+      Returns each system-defined status with its immutable key and Japanese and English display names. When the database is not configured, returns an empty list and `databaseConfigured: false`.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Statuses and database configuration state
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-statuses.yaml#/AdminStatusesResponse" }
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+Item:
+  parameters:
+    - name: code
+      in: path
+      required: true
+      description: Canonical positive base-10 PostgreSQL SMALLINT status code without leading zeroes.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 32767
+  patch:
+    tags: [Admin Statuses]
+    operationId: updateAdminStatus
+    summary: Update pub status display names
+    description: Requires an administrator session, a same-origin request, and application/json. The status code and key are system-defined and cannot be changed. Both names are trimmed before storage; the Japanese name is required, while an omitted, null, or blank English name removes the English translation.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: "../schemas/admin-statuses.yaml#/UpdateAdminStatusRequest" }
+    responses:
+      "200":
+        description: Updated status
+        content:
+          application/json:
+            schema: { $ref: "../schemas/admin-statuses.yaml#/AdminStatusResponse" }
+      "400":
+        description: The status code is invalid or the request body is not valid JSON.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "../schemas/admin-statuses.yaml#/InvalidStatusCode"
+                - $ref: "../schemas/errors.yaml#/InvalidJsonBody"
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: "../schemas/admin-statuses.yaml#/StatusNotFoundResponse"
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/ValidationError
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError

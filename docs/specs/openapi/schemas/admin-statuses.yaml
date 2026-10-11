@@ -1,0 +1,61 @@
+AdminStatus:
+  type: object
+  additionalProperties: false
+  required: [code, key, nameJa, nameEn]
+  properties:
+    code: { type: integer, minimum: 1, maximum: 32767 }
+    key:
+      type: string
+      minLength: 1
+      description: Immutable system key. It is returned for reference and is never changed by this API.
+    nameJa: { type: string, minLength: 1, maxLength: 100 }
+    nameEn: { type: [string, "null"], minLength: 1, maxLength: 100 }
+
+UpdateAdminStatusRequest:
+  type: object
+  description: Japanese display name is required. English display name is optional; omitted, null, or blank values remove its translation. Values are trimmed before storage. Unknown fields, including key, are ignored and do not change system-defined identifiers.
+  required: [nameJa]
+  properties:
+    nameJa:
+      type: string
+      description: Required after trimming. Whitespace-only or more than 100 trimmed characters returns 422.
+    nameEn:
+      type: [string, "null"]
+      description: Optional. Null, omitted, empty, or whitespace-only values remove the English translation; a non-empty value is trimmed and limited to 100 characters.
+
+AdminStatusesResponse:
+  type: object
+  additionalProperties: false
+  required: [statuses, databaseConfigured]
+  properties:
+    statuses:
+      type: array
+      items: { $ref: "#/AdminStatus" }
+    databaseConfigured: { type: boolean }
+
+AdminStatusResponse:
+  type: object
+  additionalProperties: false
+  required: [status]
+  properties:
+    status: { $ref: "#/AdminStatus" }
+
+InvalidStatusCode:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { const: invalid_status_code }
+
+StatusNotFound:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { const: status_not_found }
+
+StatusNotFoundResponse:
+  description: The status code does not identify an existing system status.
+  content:
+    application/json:
+      schema: { $ref: "#/StatusNotFound" }
