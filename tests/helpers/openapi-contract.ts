@@ -41,12 +41,12 @@ export async function expectOpenApiResponse(response: Response, operation: OpenA
   for (const [name, headerContract] of Object.entries(contractHeaders ?? {})) {
     const headerValue = response.headers.get(name);
     const headerSchema = (headerContract as OpenApiObject).schema as OpenApiObject | undefined;
-    if (headerValue === null) {
+    if (headerValue === null && (headerContract as OpenApiObject).required === true) {
       throw new Error(
         `OpenAPI response header missing for ${operation.operationId ?? "route"} HTTP ${response.status}: ${name}`,
       );
     }
-    if (headerSchema && !ajv.validate(headerSchema, headerValue)) {
+    if (headerValue !== null && headerSchema && !ajv.validate(headerSchema, headerValue)) {
       const details = ajv.errorsText();
       throw new Error(
         `OpenAPI response header mismatch for ${operation.operationId ?? "route"} HTTP ${response.status} ${name}: ${details}`,

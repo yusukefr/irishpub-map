@@ -146,4 +146,30 @@ describe("OpenAPI runtime contracts", () => {
       /listAutomationPrefectures HTTP 200: \/prefectures\/0/,
     );
   });
+
+  it("respects optional and required OpenAPI response headers", async () => {
+    const operation = {
+      operationId: "headerContractRegression",
+      responses: {
+        "200": {
+          headers: {
+            "X-Optional": { schema: { type: "string", const: "optional" } },
+            "X-Required": { required: true, schema: { type: "string", const: "required" } },
+          },
+          content: { "application/json": { schema: { type: "object" } } },
+        },
+      },
+    };
+
+    await expect(
+      expectOpenApiResponse(Response.json({}, { headers: { "X-Required": "required" } }), operation),
+    ).resolves.toEqual({});
+    await expect(expectOpenApiResponse(Response.json({}), operation)).rejects.toThrow(/header missing .*X-Required/);
+    await expect(
+      expectOpenApiResponse(
+        Response.json({}, { headers: { "X-Optional": "invalid", "X-Required": "required" } }),
+        operation,
+      ),
+    ).rejects.toThrow(/header mismatch .*X-Optional/);
+  });
 });
