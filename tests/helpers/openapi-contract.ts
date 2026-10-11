@@ -37,6 +37,23 @@ export async function expectOpenApiResponse(response: Response, operation: OpenA
     throw new Error(`OpenAPI response missing for ${operation.operationId ?? "route"}: HTTP ${response.status}`);
   }
 
+  const contractHeaders = responseContract.headers as OpenApiObject | undefined;
+  for (const [name, headerContract] of Object.entries(contractHeaders ?? {})) {
+    const headerValue = response.headers.get(name);
+    const headerSchema = (headerContract as OpenApiObject).schema as OpenApiObject | undefined;
+    if (headerValue === null) {
+      throw new Error(
+        `OpenAPI response header missing for ${operation.operationId ?? "route"} HTTP ${response.status}: ${name}`,
+      );
+    }
+    if (headerSchema && !ajv.validate(headerSchema, headerValue)) {
+      const details = ajv.errorsText();
+      throw new Error(
+        `OpenAPI response header mismatch for ${operation.operationId ?? "route"} HTTP ${response.status} ${name}: ${details}`,
+      );
+    }
+  }
+
   const content = responseContract.content as OpenApiObject | undefined;
   const jsonContract = content?.["application/json"] as OpenApiObject | undefined;
   if (!jsonContract) return undefined;
