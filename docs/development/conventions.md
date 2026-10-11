@@ -45,14 +45,14 @@
 
 ### 作業の流れ
 
-1. 作業前に `nvm use` で Node.js 24 系を選び、依存関係をインストールします。
+1. 作業前に `nvm use` でNode.js 24系（`.nvmrc`）を選び、lockfileどおり`npm ci`で依存関係をインストールします。nvmがない環境では`.nvmrc`と同じmajor versionを使います。
 2. 変更対象と影響範囲を確認し、小さく分けて実装します。
 3. 挙動を変更したら[テスト戦略](testing.md)に従い、適切なレイヤーの既存テストを更新または必要なテストを追加します。
 4. 変更内容に応じて検証を実行し、実行結果を PR 本文へ記載します。
 
 テストの責務、E2Eを追加する条件、重複・削除、Mock・Fixture・Coverageの方針は[テスト戦略](testing.md)を参照してください。
 
-通常の検証コマンドは次のとおりです。
+通常の検証コマンドは次のとおりです（機能変更の範囲に応じた選択基準は[テスト戦略](testing.md)、CIの変更分類は[Release and CI Runbook](../runbooks/release-operations.md)を参照）。
 
 ```bash
 npm test
@@ -60,6 +60,8 @@ npm run typecheck
 npm run lint
 npm run build
 ```
+
+追加コマンドは`npm run test:e2e`（Playwright Chromium）、`npm run test:storybook`（Storybook browser tests）、`npm run build-storybook`（Storybook build）、`npm run format:check`、`npm run lint:openapi`です。CIは`main`向けPR / `main`へのpush / `workflow_dispatch`で起動します。PRでは差分、`main`へのpushでは未Release成果物差分を分類し、E2E対象とFull CIを決めます。docs-onlyでは文書・機密情報・LLM security検査に絞ります。詳しい分類はRelease and CI RunbookをSource of Truthとします。
 
 Agent向け文書を変更した場合は`npm run check:llm-security`を実行します。pre-commit hookはstage済みファイルのGit indexを、CIはGit管理対象全体を検査します。禁止Unicode文字と非NFC文字列は自動修正せず、表示された位置を確認します。`AGENTS.md`、`AGENTS.override.md`、`SKILL.md`の新たな配置はallowlistのレビューが必要です。機密情報の検査は引き続き`npm run check:sensitive-data`が担当します。
 

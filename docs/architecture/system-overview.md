@@ -31,6 +31,11 @@ flowchart TB
     masterRepository[master-repository]
   end
 
+  subgraph workspace[Repository / npm workspaces]
+    webApp[apps/web<br/>Next.js pages / Route Handlers / server logic / browser UI]
+    shared[packages/shared<br/>Webと将来のNativeで共有する型・純粋ロジック]
+  end
+
   neon[(Neon Postgres<br/>店舗・Editorial Content・Quiz・Irish Calendar・各種マスタテーブル)]
 
   visitor --> publicPage
@@ -63,14 +68,20 @@ flowchart TB
   masterRepository -->|"DATABASE_URL 設定時"| neon
 
   github --> actions
-  github --> vercel
+  github -->|PR Preview| vercel
+  actions -->|Production Release| vercel
   actions -.->|"Webhook が設定されている場合"| slack
+
+  webApp -.->|build artifact| vercel
+  webApp --> shared
 ```
+
+Repositoryはnpm workspacesで`apps/*`と`packages/*`を管理します。現在のWebクライアント、Next.js Page / Route Handler、Server専用処理は`apps/web`に置きます。`packages/shared`は店舗などの共有型、入力検証、プラットフォームAPIに依存しない純粋ロジックを所有します。共有パッケージからNext.js、React DOM、Node.js専用API、ブラウザAPIを参照しません。将来Nativeから利用する際の公開形式・依存追加・テスト実行環境は、Nativeの採用技術と合わせて別途決定します。
 
 ## データの扱い
 
 - `DATABASE_URL` が設定された環境では、`pub-repository` がNeonの店舗・マスタテーブルを読み書きします。未設定時は公開APIと画面が空の店舗一覧を返します。
-- 公開Guideは`content-repository`がNeonのPublished Contentだけを取得し、安全なMarkdown Rendererへ渡します。Repository内MDX、Static Loader、MDX fallbackは使用しません。
+- 公開Guide / Storyは`content-repository`がNeonのPublished Contentを唯一のSource of Truthとして取得し、許可要素・安全なURLに限定したMarkdown Rendererへ渡します。Repository内の静的コンテンツへfallbackしません。
 - 公開Calendarは`calendar-repository`がNeonのPublished Eventだけを取得し、`calendar-public-data`が取得結果をCacheします。JSON fallbackは使用しません。
 - `quiz-repository`は公開Quizと管理QuizのNeonアクセス、回答前DTO、採点、日次選択を分離して提供します。静的Quizへのfallbackは行いません。
 - 管理MediaのUploadは `apps/web/app/lib/media/service.ts` が画像検証後にVercel Blobへ保存し、Media AssetをNeonへ登録します。DB登録に失敗した場合は保存済みBlobを削除して補償し、補償削除にも失敗した場合は成功扱いせず、失敗段階を区別した一般化エラーを返します。
@@ -78,6 +89,7 @@ flowchart TB
 - API とリポジトリ層は、共有パッケージの `asPubs` で読み出した店舗データを検証します。型の詳細は[店舗データ仕様](../specs/data.md)を参照してください。
 - 現在地は利用目的を確認した明示操作後にだけ取得し、生の座標はブラウザ内でだけ保持します。アプリのAPIやDBへ送信・保存しません。ただし、現在地周辺を描画するOpenFreeMapへのタイル要求から、おおよその閲覧地域を送信先が推測できる可能性があります。
 - Web AnalyticsとSpeed Insightsを利用し、利用状況と実利用環境の性能を把握しています。ホスティングと外部送信の詳細は[外部送信・プライバシー実態整理](../operations/privacy-and-external-transmission.md)を参照してください。
+- 開発時は`.nvmrc`のNode.js 24系とnpm workspacesを使います。VercelのPreview / Productionは別Environment Variablesで構成し、Preview DBは固定Neon Branchを利用します。Production deployはGitHub ActionsのRelease Workflowが行います。環境別の設定とCI条件は[ローカル開発](../setup/development.md)、[通常デプロイ](../setup/deployment.md)、[Release and CI Runbook](../runbooks/release-operations.md)を参照してください。
 
 ## 主要な境界
 
@@ -92,5 +104,7 @@ flowchart TB
 | `master-repository`   | 都道府県、市区町村、タグ、営業ステータスを管理用DTOへ変換して参照                 |
 | `admin-auth`          | 認証情報の検証、署名付き管理者セッション Cookie の発行・検証                      |
 | GitHub Actions        | 追跡済みファイルの機密情報検査、Lint、テスト、ビルド、任意の Slack 通知           |
+
+Web専用UIやHTTP / Database連携を`packages/shared`へ移動せず、クライアント間で共有できる型・純粋ロジックだけを置きます。MobileのFramework、Native UI、地図SDK、認証、通信層の採用判断はこの図では確定していません。
 
 代表的な処理の時系列は[シーケンス図](sequences.md)を参照してください。
