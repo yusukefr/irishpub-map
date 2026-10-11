@@ -22,4 +22,6 @@ Neonでは `tags` がUUIDと一意なkey、`tag_translations` がタグごとの
 
 作成はタグ行と翻訳を単一transactionで保存し、更新はlocaleごとのUPSERT / DELETEを単一transactionで行います。使用中のタグはAPIとUIで削除を拒否します。Repositoryはタグ行をロックして使用件数を確認し、未使用の場合のみ条件付きDELETEします。拒否時は `409` とし、店舗との関係を変更しません。店舗編集では既存タグをIDで選択し、未知のタグを自動生成しません。
 
-管理APIのHTTP契約は[Admin Tag OpenAPI](openapi/paths/admin-tags.yaml)を参照してください。管理画面は署名済み管理セッションを要求し、書込みはOrigin一致とJSON Content-Type検証を行います。詳細な型やRepositoryのSQLをここへ複製しません。
+管理画面では使用中タグの削除操作を表示せず、使用中の理由を示します。未使用タグの削除前と、未保存の編集をキャンセル・切替する前に確認し、保存・削除中は操作を無効化します。成功は `role=status`、失敗は `role=alert` で通知します。
+
+管理APIのHTTP契約は[Admin Tag OpenAPI](openapi/paths/admin-tags.yaml)を参照してください。全操作で署名済み管理セッションと同一Originを必須とします。JSON Content-TypeはJSON本文を送るPOST/PATCHで検証し、DELETEは本文を要求しません。詳細な型やRepositoryのSQLをここへ複製しません。
