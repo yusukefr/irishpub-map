@@ -68,10 +68,11 @@ flowchart TB
   masterRepository -->|"DATABASE_URL 設定時"| neon
 
   github --> actions
-  github --> vercel
+  github -->|PR Preview| vercel
+  actions -->|Production Release| vercel
   actions -.->|"Webhook が設定されている場合"| slack
 
-  webApp -.->|deploy| vercel
+  webApp -.->|build artifact| vercel
   webApp --> shared
 ```
 
@@ -80,7 +81,7 @@ Repositoryはnpm workspacesで`apps/*`と`packages/*`を管理します。現在
 ## データの扱い
 
 - `DATABASE_URL` が設定された環境では、`pub-repository` がNeonの店舗・マスタテーブルを読み書きします。未設定時は公開APIと画面が空の店舗一覧を返します。
-- 公開Guideは`content-repository`がNeonのPublished Contentだけを取得し、安全なMarkdown Rendererへ渡します。Repository内MDX、Static Loader、MDX fallbackは使用しません。
+- 公開Guide / Storyは`content-repository`がNeonのPublished Contentを唯一のSource of Truthとして取得し、許可要素・安全なURLに限定したMarkdown Rendererへ渡します。Repository内の静的コンテンツへfallbackしません。
 - 公開Calendarは`calendar-repository`がNeonのPublished Eventだけを取得し、`calendar-public-data`が取得結果をCacheします。JSON fallbackは使用しません。
 - `quiz-repository`は公開Quizと管理QuizのNeonアクセス、回答前DTO、採点、日次選択を分離して提供します。静的Quizへのfallbackは行いません。
 - 管理MediaのUploadは `apps/web/app/lib/media/service.ts` が画像検証後にVercel Blobへ保存し、Media AssetをNeonへ登録します。DB登録に失敗した場合は保存済みBlobを削除して補償し、補償削除にも失敗した場合は成功扱いせず、失敗段階を区別した一般化エラーを返します。
