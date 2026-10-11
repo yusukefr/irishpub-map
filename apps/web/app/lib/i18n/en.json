@@ -312,6 +312,7 @@
       "addDescription": "You can save incomplete work as a draft.",
       "editHeading": "Edit quiz",
       "editDescription": "Review both languages and choices, then manage publication after saving.",
+      "details": "Quiz details",
       "id": "Question ID",
       "idHelp": "The server generates the Question ID as a UUID.",
       "category": "Category",

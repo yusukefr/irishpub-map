@@ -18,6 +18,8 @@ import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
 import { getQuizPublicationMissingFields } from "../lib/quiz/publication";
 import { MediaPicker } from "./media/media-picker";
+import { AdminPageHeader } from "./admin-page-header";
+import styles from "./admin-quiz-editor.module.css";
 type Props = {
   initialQuestion: AdminQuizQuestion | null;
   databaseConfigured: boolean;
@@ -293,24 +295,28 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
   const publishBlocked = !questionId || isDirty || missingFields.length > 0 || busy || !databaseConfigured;
   return (
     <section className="admin-panel admin-wide admin-quiz-editor">
-      <div className="admin-heading">
-        <div>
-          <p className="eyebrow">Irish Quiz</p>
-          <h1>{questionId ? q.editHeading : q.addHeading}</h1>
-          <p>{questionId ? q.editDescription : q.addDescription}</p>
-        </div>
-        <span className={"admin-publication-badge " + (status === "published" ? "is-published" : "is-unpublished")}>
-          {status === "published" ? q.statusPublished : q.statusDraft}
-        </span>
-      </div>
+      <AdminPageHeader
+        sectionLabel="Irish Quiz"
+        title={questionId ? q.editHeading : q.addHeading}
+        description={questionId ? q.editDescription : q.addDescription}
+        actions={
+          <span className={"admin-publication-badge " + (status === "published" ? "is-published" : "is-unpublished")}>
+            {status === "published" ? q.statusPublished : q.statusDraft}
+          </span>
+        }
+      />
       {!databaseConfigured ? <p className="admin-error">{q.databaseUnavailable}</p> : null}
       {Object.keys(fieldErrors).length > 0 ? (
-        <p role="alert" className="admin-field-error">
-          {formatMessage(q.fieldError, {
-            field: Object.keys(fieldErrors).join(", "),
-            reason: Object.values(fieldErrors).join(", "),
-          })}
-        </p>
+        <ul role="alert" className={`admin-field-errors ${styles.errorSummary}`}>
+          {Object.entries(fieldErrors).map(([field, code]) => (
+            <li key={field}>
+              {formatMessage(q.fieldError, {
+                field: fieldLabel(field, q.publicationFields),
+                reason: q.fieldErrorReasons[code as keyof typeof q.fieldErrorReasons] ?? code,
+              })}
+            </li>
+          ))}
+        </ul>
       ) : null}
       {message ? (
         <p role="status" aria-live="polite">
@@ -331,6 +337,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
       ) : null}
       <form className="admin-form admin-editor-form admin-quiz-form" onSubmit={save} aria-busy={busy}>
         <fieldset disabled={busy || !databaseConfigured}>
+          <legend>{q.details}</legend>
           <div className="admin-editor-grid">
             <label>
               {q.category}
@@ -477,57 +484,64 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
         ))}
         <fieldset disabled={busy || !databaseConfigured}>
           <legend>{q.choices}</legend>
-          {values.choices.map((choice, index) => (
-            <div className="admin-quiz-choice" key={choice.id + index}>
-              <strong>{index + 1}</strong>
-              <label>
-                {q.choiceId}
-                <input
-                  value={choice.id}
-                  maxLength={QUIZ_CHOICE_ID_MAX_LENGTH}
-                  onChange={(event) => updateChoice(index, "id", event.target.value)}
-                />
-              </label>
-              <label>
-                {q.choiceLabel}（{t.japanese}）
-                <input
-                  value={choice.translations.ja}
-                  onChange={(event) => updateChoice(index, "ja", event.target.value)}
-                />
-              </label>
-              <label>
-                {q.choiceLabel}（{t.english}）
-                <input
-                  value={choice.translations.en}
-                  onChange={(event) => updateChoice(index, "en", event.target.value)}
-                />
-              </label>
-              <button
-                type="button"
-                className="admin-secondary-action"
-                onClick={() => moveChoice(index, -1)}
-                disabled={index === 0}
-              >
-                {q.moveUp}
-              </button>
-              <button
-                type="button"
-                className="admin-secondary-action"
-                onClick={() => moveChoice(index, 1)}
-                disabled={index === values.choices.length - 1}
-              >
-                {q.moveDown}
-              </button>
-              <button
-                type="button"
-                className="admin-secondary-action"
-                onClick={() => removeChoice(index)}
-                disabled={choice.id === values.correctChoiceId}
-              >
-                {q.removeChoice}
-              </button>
-            </div>
-          ))}
+          <div className={styles.choices}>
+            {values.choices.map((choice, index) => (
+              <div className={styles.choice} key={choice.id + index}>
+                <strong>{index + 1}</strong>
+                <label>
+                  {q.choiceId}
+                  <input
+                    value={choice.id}
+                    maxLength={QUIZ_CHOICE_ID_MAX_LENGTH}
+                    onChange={(event) => updateChoice(index, "id", event.target.value)}
+                  />
+                </label>
+                <label>
+                  {q.choiceLabel}（{t.japanese}）
+                  <input
+                    value={choice.translations.ja}
+                    onChange={(event) => updateChoice(index, "ja", event.target.value)}
+                  />
+                </label>
+                <label>
+                  {q.choiceLabel}（{t.english}）
+                  <input
+                    value={choice.translations.en}
+                    onChange={(event) => updateChoice(index, "en", event.target.value)}
+                  />
+                </label>
+                <div className={styles.choiceActions}>
+                  <button
+                    type="button"
+                    className="admin-secondary-action"
+                    aria-label={`${q.moveUp}: ${choice.id || index + 1}`}
+                    onClick={() => moveChoice(index, -1)}
+                    disabled={index === 0}
+                  >
+                    {q.moveUp}
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-secondary-action"
+                    aria-label={`${q.moveDown}: ${choice.id || index + 1}`}
+                    onClick={() => moveChoice(index, 1)}
+                    disabled={index === values.choices.length - 1}
+                  >
+                    {q.moveDown}
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-secondary-action"
+                    aria-label={`${q.removeChoice}: ${choice.id || index + 1}`}
+                    onClick={() => removeChoice(index)}
+                    disabled={choice.id === values.correctChoiceId}
+                  >
+                    {q.removeChoice}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
           <button
             type="button"
             className="admin-secondary-action"
@@ -539,17 +553,20 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
         </fieldset>
         <fieldset disabled={busy || !databaseConfigured}>
           <legend>{q.correctAnswer}</legend>
-          <select
-            value={values.correctChoiceId ?? ""}
-            onChange={(event) => setRoot("correctChoiceId", event.target.value || null)}
-          >
-            <option value="">{t.notRegistered}</option>
-            {values.choices.map((choice) => (
-              <option key={choice.id} value={choice.id}>
-                {choice.id}
-              </option>
-            ))}
-          </select>
+          <label>
+            {q.correctAnswer}
+            <select
+              value={values.correctChoiceId ?? ""}
+              onChange={(event) => setRoot("correctChoiceId", event.target.value || null)}
+            >
+              <option value="">{t.notRegistered}</option>
+              {values.choices.map((choice) => (
+                <option key={choice.id} value={choice.id}>
+                  {choice.id}
+                </option>
+              ))}
+            </select>
+          </label>
         </fieldset>
         <fieldset disabled={busy || !databaseConfigured}>
           <legend>{q.sourceUrl}</legend>

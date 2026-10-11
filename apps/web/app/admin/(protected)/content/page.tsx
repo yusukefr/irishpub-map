@@ -5,6 +5,7 @@ import { isE2ETestMode } from "../../../lib/e2e-test-mode";
 import { requireAdminSession } from "../../../lib/admin-server";
 import { getTranslation, type Locale } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
+import { AdminPageHeader } from "../../../components/admin-page-header";
 
 /**
  * Draftを含むEditorial Content一覧を管理者へ表示します。
@@ -18,17 +19,17 @@ export default async function AdminContentPage() {
   const databaseConfigured = isContentDatabaseConfigured() || isE2ETestMode();
 
   return (
-    <section className="admin-panel admin-wide">
-      <div className="admin-heading">
-        <div>
-          <p className="eyebrow">Editorial content</p>
-          <h1>{c.listHeading}</h1>
-          <p>{c.listDescription}</p>
-        </div>
-        <Link className="admin-primary-link" href="/admin/content/new">
-          {c.addContent}
-        </Link>
-      </div>
+    <section className="admin-content-list">
+      <AdminPageHeader
+        sectionLabel="Editorial content"
+        title={c.listHeading}
+        description={c.listDescription}
+        actions={
+          <Link className="admin-primary-link" href="/admin/content/new">
+            {c.addContent}
+          </Link>
+        }
+      />
       {!databaseConfigured ? <p className="admin-error">{getTranslation(locale).admin.databaseUnavailable}</p> : null}
 
       {content.length === 0 ? (

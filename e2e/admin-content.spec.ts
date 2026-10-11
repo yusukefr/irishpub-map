@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { LOCALE_COOKIE } from "../apps/web/app/lib/i18n";
 import { E2E_TEST_DATA } from "../apps/web/app/lib/e2e-test-fixtures";
 import { loginAsE2EAdmin } from "./support/page-helpers";
 
@@ -174,4 +175,70 @@ test("日英本文のカーソル位置へMedia画像と各言語のaltを挿入
   const preview = page.locator("#admin-content-preview");
   await expect(preview.getByRole("img", { name: "日本語の店内写真" })).toBeVisible();
   await expect(preview.getByRole("img", { name: "A photo of the pub interior" })).toBeVisible();
+});
+
+test("Content・Media・Quizの一覧と編集画面は日英と主要Viewportで横overflowしない", async ({ page }) => {
+  await loginAsE2EAdmin(page, "/admin/content");
+  const origin = new URL(page.url()).origin;
+  const routes = [
+    "/admin/content",
+    "/admin/content/new",
+    `/admin/content/${E2E_TEST_DATA.content.draft.id}`,
+    "/admin/media",
+    "/admin/quiz",
+    "/admin/quiz/new",
+    "/admin/quiz/11111111-1111-4111-8111-000000000002",
+  ];
+  const viewports = [1440, 1280, 390, 360];
+  const visualRoutes = new Map([
+    ["/admin/content", "content-list"],
+    [`/admin/content/${E2E_TEST_DATA.content.draft.id}`, "content-edit"],
+    ["/admin/quiz", "quiz-list"],
+    ["/admin/quiz/11111111-1111-4111-8111-000000000002", "quiz-edit"],
+  ]);
+
+  for (const locale of ["ja", "en"] as const) {
+    await page.context().addCookies([{ name: LOCALE_COOKIE, value: locale, url: origin }]);
+    for (const width of viewports) {
+      await page.setViewportSize({ width, height: width < 500 ? 844 : 1000 });
+      for (const path of routes) {
+        await page.goto(path);
+        await expect(page.locator("h1")).toBeVisible();
+        const dimensions = await page.evaluate(() => ({
+          documentWidth: document.documentElement.scrollWidth,
+          viewportWidth: window.innerWidth,
+        }));
+        expect(dimensions.documentWidth, `${locale} ${path} at ${width}px`).toBeLessThanOrEqual(
+          dimensions.viewportWidth,
+        );
+        const visualName = visualRoutes.get(path);
+        if (visualName && (width === 1280 || width === 390)) {
+          if (visualName === "quiz-edit") {
+            const choiceGroup = page.getByRole("group", { name: locale === "ja" ? "選択肢" : "Choices" });
+            const actionButtons = choiceGroup.locator('button[aria-label$="choice-1"]');
+            const buttonBounds = await actionButtons.evaluateAll((buttons) =>
+              buttons.map((button) => {
+                const { x, y, width: buttonWidth, height } = button.getBoundingClientRect();
+                return { x, y, width: buttonWidth, height };
+              }),
+            );
+            expect(buttonBounds).toHaveLength(3);
+            for (let firstIndex = 0; firstIndex < buttonBounds.length; firstIndex += 1) {
+              for (let secondIndex = firstIndex + 1; secondIndex < buttonBounds.length; secondIndex += 1) {
+                const first = buttonBounds[firstIndex];
+                const second = buttonBounds[secondIndex];
+                const overlaps =
+                  first.x < second.x + second.width &&
+                  first.x + first.width > second.x &&
+                  first.y < second.y + second.height &&
+                  first.y + first.height > second.y;
+                expect(overlaps, `${locale} choice action buttons at ${width}px`).toBe(false);
+              }
+            }
+          }
+          await expect(page).toHaveScreenshot(`admin-${visualName}-${locale}-${width}.png`, { fullPage: true });
+        }
+      }
+    }
+  }
 });

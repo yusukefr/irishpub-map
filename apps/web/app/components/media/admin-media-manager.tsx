@@ -6,6 +6,7 @@ import { useMediaLibrary } from "../../lib/media/use-media-library";
 import { MediaLibrary } from "./media-library";
 import { MediaUploader } from "./media-uploader";
 import styles from "./media.module.css";
+import { AdminPageHeader } from "../admin-page-header";
 
 /** /admin/mediaの見出し、Upload、共有Libraryを組み立てます。
  * @param {object} root0 - Component props。
@@ -23,11 +24,8 @@ export function AdminMediaManager({ locale }: { locale: Locale }) {
   }
 
   return (
-    <section className={`admin-panel admin-wide ${styles.manager}`}>
-      <header className={styles.heading}>
-        <h1>{t.heading}</h1>
-        <p>{t.description}</p>
-      </header>
+    <section className={`${styles.manager} admin-media-page`}>
+      <AdminPageHeader sectionLabel="Media library" title={t.heading} description={t.description} />
       {uploaded ? (
         <p className={styles.message} role="status" aria-live="polite">
           {t.uploadSuccess}
