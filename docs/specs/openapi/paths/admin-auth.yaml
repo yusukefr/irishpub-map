@@ -11,7 +11,7 @@ Login:
         application/json:
           schema:
             type: object
-            additionalProperties: false
+            description: Additional properties are ignored by the current login route.
             required: [username, password]
             properties:
               username:
