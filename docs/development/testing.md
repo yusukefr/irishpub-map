@@ -9,6 +9,8 @@ Irish Pub Mapのテストを追加・整理するときの判断基準です。�
 - ファイル名や配置だけでレイヤーを決めません。実際に動かす対象、置き換える依存、検証する契約で選びます。1つの機能に複数レイヤーが必要な場合も、それぞれ異なる失敗を検出する理由を明確にします。
 - 仕様変更時は、該当する既存テストと関連文書を先に確認します。新しいテストを足す前に、既存テストの更新で保証できるか検討します。
 
+将来別のクライアントを追加するときも、テスト層はファイル名ではなく検証する契約で選びます。`packages/shared`のプラットフォーム非依存な型・純粋関数はUnit / Domainで検証し、Native UI、OS API、権限、アプリ内Navigationなどの統合は採用するFrameworkに対応したComponent / Integration / E2E層で扱います。現在のVitest、Playwright、Storybookの設定はWeb向けです。NativeのRunner、Simulator、端末マトリクス、権限の実機検証、CI接続方法は未決定であり、Mobile実装Issueで技術選定とともに決めます。Web用MockやE2E FixtureをNative検証へ流用できるとは仮定しません。
+
 ## レイヤーごとの責務
 
 | レイヤー | 主に保証すること | ここで広げすぎないこと |
@@ -66,10 +68,10 @@ Vitestは全テストをjsdomで実行し、既定poolのper-file isolationを�
 
 Vitest Coverageは未検証箇所を探す**補助指標**です。現行設定は`packages/shared/src`と`apps/web/app/components`を対象とし、lines / functions / branches / statementsに各90%のthresholdを設けています。対象外のService、Repository、APIなどまで90%を保証する設定ではありません。thresholdを満たすためだけにassertの弱いテストを増やさず、値が変わったときは重要な分岐・契約の保証を確認します。thresholdの変更は影響と理由を別途レビューします。
 
-ローカルの通常コマンドは`npm test`、`npm run typecheck`、`npm run lint`、`npm run build`です。UI・導線の変更に応じて`npm run test:e2e`、`npm run test:storybook`、Visual / Browser確認を追加します。
+ローカルの通常コマンドは`npm test`、`npm run format:check`、`npm run typecheck`、`npm run lint`、`npm run build`です。UI・導線の変更に応じて`npm run test:e2e`、`npm run test:storybook`、Visual / Browser確認を追加します。実行環境とセットアップは[ローカル開発](../setup/development.md)、CI分類とPR検証は[Release and CI Runbook](../runbooks/release-operations.md)に集約します。
 
 ### CIとの対応
 
-CIは変更ファイルを分類して実行範囲を決めます。機密情報とLLM securityの検査は全変更で実行し、Full CIではFormat、OpenAPI lint、Lint、Vitest、Next.js Build、Storybook Buildを実行します。PRのPlaywright E2EとStorybook browser testは画面・Component・関連テストの変更時に実行し、`main`へのpushでは毎回実行します。docs-only PRでは機密情報とLLM securityの検査だけを実行します。`workflow_dispatch`はFull CIを実行し、E2Eは`run_e2e=true`を指定した場合に実行します。
+CIは変更ファイルを分類して実行範囲を決めます。機密情報とLLM securityの検査は全変更で実行し、Full CIではFormat、OpenAPI lint、Lint、Vitest、Next.js Build、Storybook Buildを実行します。PRのPlaywright E2EとStorybook browser testは画面・Component・関連テストの変更時に実行します。`main`へのpushでは未Release成果物差分がある場合にFull CIとE2Eを実行し、未Release差分がないdocs-only pushは文書検査に絞ります。docs-only PRでは機密情報とLLM security検査、文書formatとMermaid検査を実行します。`workflow_dispatch`はFull CIを実行し、E2Eは`run_e2e=true`を指定した場合に実行します。
 
-この対応は[CI運用](../runbooks/release-operations.md)の変更分類と`.github/workflows/ci.yml`を反映しています。条件の詳細と手動実行方法はCI運用文書を参照してください。
+この対応は[CI運用](../runbooks/release-operations.md)の変更分類と`.github/workflows/ci.yml`を反映しています。`main`へのpushでも未Release成果物差分の有無でFull CIとE2Eを分類します。docs-onlyでも未Releaseのアプリ変更が残る場合はFull CIとE2Eを実行し、未Release変更がなければ文書検査だけに絞ります。条件の詳細と手動実行方法はCI運用文書を参照してください。

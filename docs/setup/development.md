@@ -10,7 +10,7 @@
 
 ```bash
 nvm use
-npm install
+npm ci
 ```
 
 `nvm`を利用しない環境では、`.nvmrc`と同じNode.js major versionを選択します。
@@ -67,6 +67,17 @@ npm run check:sensitive-data
 - [Neon migrationを適用する](../runbooks/neon-migrations.md)
 - [管理者アクセスを初期設定する](../runbooks/admin-access.md)
 - [リリース・CI運用を行う](../runbooks/release-operations.md)
+
+## Mobile実装へ引き継ぐ現行仕様
+
+このRepositoryはnpm workspacesでWebアプリと共有パッケージを管理します。Mobileのセットアップ、Framework、Native地図SDK、Simulator / 端末、CIの決定はMobile実装Issueの範囲です。既存Webの境界や運用前提を確認する場合は、以下を参照してください。
+
+- [System overview](../architecture/system-overview.md): `apps/web`、`packages/shared`、Server / Browserの責務
+- [Testing strategy](../development/testing.md):共有ロジックとPlatform固有テストの責務、および未決のNative Test環境
+- [通常デプロイ](deployment.md)と[Release and CI](../runbooks/release-operations.md): Local / Preview / Production、環境変数、CI条件
+- [Map provider policy](../operations/map-provider.md): OpenFreeMap、帰属、Web以外のクライアントで再確認する条件
+- [Privacy and external transmission](../operations/privacy-and-external-transmission.md): 位置情報の取得、利用、非送信とタイル要求に伴う外部送信
+- [Design System](../design/README.md): Web Componentではなく共有するDesign原則とSemantic Role
 
 ## 関連資料
 

@@ -149,4 +149,4 @@ Design System impact:
 
 実装変更のたびに、Design DocumentationとReference Screenの更新要否を確認します。Reference Screenが古い場合は、実装を画像へ戻さず[更新手順](reference/README.md)に従って画像を更新します。
 
-Webと将来のNative Appで共有する対象はBrand Concept、Semantic Design Tokens、Typography Role、Spacing / Radius scale、IconとInteractionの原則です。Web Component自体の共有は前提にせず、Mobile App実装が具体化した時点でdesign token packageへの切り出しを再検討します。
+Webと将来のNative Appで共有する対象はBrand Concept、Semantic Design Tokens、Typography Role、Spacing / Radius scale、IconとInteractionの原則です。Map Explorer Patternは現行Web UIのPatternであり、NativeのNavigationやMap操作へそのまま移植する契約ではありません。Web Component自体の共有は前提にせず、Mobile App実装が具体化した時点でdesign token packageへの切り出しを再検討します。

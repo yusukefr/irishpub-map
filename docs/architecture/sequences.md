@@ -10,6 +10,7 @@ sequenceDiagram
   participant Repository as pub-repository
   participant Neon as Neon Postgres
   participant Explorer as PubExplorer / MapLibre
+  participant MapProvider as OpenFreeMap
 
   Visitor->>Page: GET /
   Page->>API: サーバー側 fetch（必要時は API key を付与）
@@ -24,13 +25,22 @@ sequenceDiagram
   API-->>Page: { pubs }
   Page-->>Visitor: HTML と店舗データ
   Visitor->>Explorer: 検索・都道府県・タグ・閉業店舗表示を操作
-  opt 「現在地から探す」を選択
+  opt 利用者が「現在地から探す」を選択
     Explorer->>Visitor: ブラウザの位置情報利用を要求
-    Visitor->>Explorer: 位置情報利用を許可
-    Explorer->>Explorer: 最寄りの掲載都道府県を選択し、地図へ反映
+    alt 対応し、利用者が許可して位置を取得
+      Visitor-->>Explorer: 座標
+      Explorer->>Explorer: メモリ上で最寄りの掲載都道府県を選択し、地図へ反映
+      Explorer->>MapProvider: 表示範囲のスタイル・タイルを取得
+      Note over Explorer,MapProvider: 周辺タイル要求から閲覧地域を推測できる場合がある
+    else 拒否・取得失敗・API非対応
+      Visitor-->>Explorer: エラーまたは位置情報なし
+      Explorer-->>Visitor: 状態を通知し、座標を保持しない
+    end
   end
   Explorer-->>Visitor: 地図と店舗一覧を更新
 ```
+
+位置情報は初回表示時に要求しません。座標をアプリのAPI、Neon、Cookie、Local Storageへ送信・保存せず、ページ終了または再読み込みで破棄します。ブラウザ/OSが位置を特定するために行う処理はアプリから確認できません。現在地取得後の地図タイル要求に伴う外部送信は[外部送信・プライバシー実態整理](../operations/privacy-and-external-transmission.md)を、タイル取得と帰属の条件は[地図プロバイダー利用方針](../operations/map-provider.md)を参照してください。
 
 VercelのPreview Deployment Protectionが公開APIのサーバー側fetchをSSOへリダイレクトした場合、公開ページは静的データを複製せず店舗0件で表示します。実データを表示するにはSSO回避用の設定とDATABASE_URLを構成します。WebGLを初期化できないブラウザでは、地図の代わりに店舗一覧を案内します。
 
