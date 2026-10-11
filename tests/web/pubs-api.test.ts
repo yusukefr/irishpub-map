@@ -65,7 +65,7 @@ describe("GET /api/pubs", () => {
 
     expect(response.status).toBe(200);
     expect(body).toEqual({ pubs: [] });
-    expect(response.headers.get("Cache-Control")).toBe("public, max-age=0, s-maxage=60, stale-while-revalidate=60");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 
   it.each(["ja", "en"] as const)("accepts the %s locale anonymously", async (locale) => {
@@ -75,6 +75,7 @@ describe("GET /api/pubs", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ pubs: [publicPub] });
     expect(getPublishedPubsMock).toHaveBeenCalledWith(locale);
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=0, s-maxage=60, stale-while-revalidate=60");
   });
 
   it("returns only the public Pub DTO without publication metadata", async () => {
@@ -97,6 +98,7 @@ describe("GET /api/pubs", () => {
 
     expect(response.status).toBe(200);
     expect(getPublishedPubsMock).toHaveBeenCalledWith("ja");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 
   it("rejects an unsupported locale before querying the repository", async () => {

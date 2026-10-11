@@ -22,3 +22,4 @@ apps/web/public/maplibre/
 !.github/workflows/
 !.github/workflows/*.yml
 storybook-static
+.env.local

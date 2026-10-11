@@ -15,6 +15,6 @@ export async function GET(request: Request) {
 
   return Response.json(
     { pubs: await getPublishedPubs(query.locale ?? DEFAULT_LOCALE) },
-    { headers: { "Cache-Control": PUBLIC_CACHE_CONTROL } },
+    { headers: { "Cache-Control": query.locale === null ? "no-store" : PUBLIC_CACHE_CONTROL } },
   );
 }
