@@ -5,7 +5,7 @@ info:
   license:
     name: MIT
     identifier: MIT
-  description: Machine-readable contracts for Admin Calendar and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
+  description: Machine-readable contracts for Admin Calendar, Admin Master, and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
 servers:
   - url: /
     description: Current application origin
