@@ -93,6 +93,10 @@ jobs:
         if: steps.changes.outputs.full_ci == 'true' || steps.changes.outputs.openapi_changed == 'true'
         run: npm run lint:openapi
 
+      - name: OpenAPI runtime contract test
+        if: steps.changes.outputs.openapi_changed == 'true' && steps.changes.outputs.full_ci != 'true'
+        run: npm run test:openapi-contract
+
       - name: Lint
         if: steps.changes.outputs.full_ci == 'true'
         run: npm run lint

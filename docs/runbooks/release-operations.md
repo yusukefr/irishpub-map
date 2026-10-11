@@ -22,7 +22,7 @@ CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`�
 | 変更内容 | `Lint, Test, Build`で実行する処理 | PRのE2E / Storybook browser tests |
 | --- | --- | --- |
 | Code変更（workflowを含む） | Sensitive data check、LLM security check、Markdown / `.mmd` のMermaid構文 check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | UI / E2E関連変更があれば実行 |
-| `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Markdown / `.mmd` のPrettier check、Mermaid構文 check、Sensitive data check、LLM security check、OpenAPI lint | アプリのTest / Buildを省略 |
+| `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Markdown / `.mmd` のPrettier check、Mermaid構文 check、Sensitive data check、LLM security check、OpenAPI lint、代表RouteのOpenAPI runtime contract test | アプリの全Test / Buildを省略 |
 | docs-only | Markdown / `.mmd` のPrettier check、Mermaid構文 check、Sensitive data check、LLM security check | Unit Test、ESLint、Typecheck、Next.js / Storybook Build、E2Eを省略 |
 | `workflow_dispatch` | Code変更と同じFull CI | デフォルトで省略。`run_e2e=true`の場合だけ実行 |
 
