@@ -1,0 +1,123 @@
+Collection:
+  get:
+    tags: [Admin Media]
+    operationId: listAdminMedia
+    summary: List media assets
+    description: Returns media assets ordered by creation time descending, then UUID descending, in fixed pages of 50. If the database is not configured, the response is an empty page with databaseConfigured false.
+    security:
+      - AdminSession: []
+    parameters:
+      - name: page
+        in: query
+        required: false
+        description: One-based page number. No other query parameters are accepted.
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+    responses:
+      "200":
+        description: Media page and database/storage configuration state
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-media.yaml#/AdminMediaListResponse }
+      "400":
+        description: The page query is invalid or an unknown query parameter was provided.
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-media.yaml#/InvalidRequestError }
+      "401": { $ref: ../schemas/errors.yaml#/Unauthorized }
+      "500": { $ref: ../schemas/errors.yaml#/InternalError }
+  post:
+    tags: [Admin Media]
+    operationId: uploadAdminMedia
+    summary: Upload a media image
+    description: Uploads one JPEG, PNG, or WebP image. The server checks the decoded format and rejects animation, mismatched claimed MIME type or filename extension, files over 4 MiB, width or height over 8192 pixels, or more than 40 million pixels. The database and Blob storage must be configured. State-changing requests require an Origin exactly matching the request URL origin.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [file]
+            properties:
+              file:
+                type: string
+                format: binary
+                description: A single JPEG, PNG, or WebP image file.
+    responses:
+      "201":
+        description: Created media asset
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-media.yaml#/AdminMediaResponse }
+      "400":
+        description: The multipart body is malformed or does not contain exactly one file field named file.
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-media.yaml#/InvalidRequestError }
+      "401": { $ref: ../schemas/errors.yaml#/Unauthorized }
+      "403": { $ref: ../schemas/errors.yaml#/Forbidden }
+      "413":
+        description: The image exceeds 4 MiB.
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-media.yaml#/MediaFileTooLargeError }
+      "415":
+        description: The request is not multipart/form-data or the image format is unsupported or mismatched.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: ../schemas/admin-media.yaml#/InvalidContentTypeError
+                - $ref: ../schemas/admin-media.yaml#/MediaUnsupportedFormatError
+      "422":
+        description: The file is not a valid image or exceeds the dimension or pixel limit.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: ../schemas/admin-media.yaml#/MediaInvalidImageError
+                - $ref: ../schemas/admin-media.yaml#/MediaDimensionsExceededError
+      "500": { $ref: ../schemas/errors.yaml#/InternalError }
+      "503":
+        description: The database or media storage is unavailable.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: ../schemas/admin-media.yaml#/DatabaseUnavailableError
+                - $ref: ../schemas/admin-media.yaml#/MediaStorageUnavailableError
+
+Item:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: Media asset UUID.
+      schema: { $ref: ../schemas/automation.yaml#/Uuid }
+  get:
+    tags: [Admin Media]
+    operationId: getAdminMedia
+    summary: Get media asset details
+    description: Returns the public media DTO and never exposes the private storage key.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Media asset details
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-media.yaml#/AdminMediaResponse }
+      "400": { $ref: ../schemas/errors.yaml#/InvalidRequest }
+      "401": { $ref: ../schemas/errors.yaml#/Unauthorized }
+      "404":
+        description: No media asset exists for this UUID.
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-media.yaml#/NotFoundError }
+      "500": { $ref: ../schemas/errors.yaml#/InternalError }
+      "503": { $ref: ../schemas/admin-media.yaml#/DatabaseUnavailableResponse }

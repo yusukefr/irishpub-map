@@ -62,7 +62,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 ## Automation APIの認証・認可
 
-Automation APIと、収録済みAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現在はAutomation API全体、Admin Calendar、Admin Master（都道府県、市区町村、タグ、営業ステータス、Pub Type）、Admin Pub、Editorial Content、Quiz、Admin Tag、Admin Statusを収録しています。公開 `GET /api/pubs`、Media、Login / Logoutは未収録であり、OpenAPIが全APIを網羅しているとは扱いません。現行Admin Routeと収録状況は[Admin API収録一覧](openapi/admin-api-coverage.md)、残るDomainの作業は同一覧に記載したIssueを参照してください。Public API契約と共通Clientの整備は #541 の対象です。
+Automation APIと、収録済みAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現在はAutomation API全体、Admin Calendar、Admin Master（都道府県、市区町村、タグ、営業ステータス、Pub Type）、Admin Pub、Editorial Content、Quiz、Media、Admin Tag、Admin Statusを収録しています。公開 `GET /api/pubs`、Login / Logoutは未収録であり、OpenAPIが全APIを網羅しているとは扱いません。現行Admin Routeと収録状況は[Admin API収録一覧](openapi/admin-api-coverage.md)、残るDomainの作業は同一覧に記載したIssueを参照してください。Public API契約と共通Clientの整備は #541 の対象です。
 
 `/api/automation/v1/*` は外部Automation用です。Bearer Tokenを要求し、Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数やRepositoryへ保存しません。設定、発行、Token Rotation、Scope運用とCreate / Publishフローは[Automation API Runbook](../runbooks/automation-api-access.md)を参照してください。
 
@@ -148,7 +148,7 @@ Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`tran
 
 Quiz管理APIの `POST` と `PUT` は、カテゴリ、特別日、関連Guide UUID、日英翻訳、0〜4件のChoice、正解、HTTPSの情報源URLを含む全体Snapshotを受け付けます。Question IDは `POST` でServerがUUIDを生成し、Request Bodyでは受け付けません。`GET`、`PUT`、公開状態変更のURLはUUIDのみ受け付け、旧kebab-case Question IDは `400 invalid_request` です。`PUT` はURLのIDを対象にし、Request BodyからIDを変更できません。Choice IDはQuestion内で一意なkebab-caseです。通常のテキストはTrimして保存し、IDの空白は正規化せず入力エラーにします。Choice Requestに `sortOrder` は含めず、配列順を利用します。関連ContentはGuideだけを選択でき、Publishedの更新は公開条件を満たさない場合に拒否します。画像付きQuizのSnapshotには `imageAssetId` と日英の `imageAlt` / `imageCaption` を含め、画像を維持する更新では値を引き継ぎます。公開時はカテゴリ、日英すべての問題文・解説・情報源ラベル、HTTPS情報源URL、4件のChoiceと各日英ラベル、正解、妥当な特別日を検証し、画像を含む場合は日英の代替テキストも必須です。`imageCaption` は任意です。`DELETE` とChoice単位のサブAPIは提供しません。
 
-Media Asset APIは管理者専用です。`POST /api/admin/media` は同一Originの `multipart/form-data` で `file` 1件だけを受け付けます。JPEG、PNG、WebPの実データをSharpで検証し、4 MiB、縦横8192px、総画素数4000万を上限とします。GIF、AVIF、SVG、アニメーション画像、動画、形式・拡張子の偽装は拒否します。成功時は `201` と `media` DTOを返し、Blobへの保存に失敗すると `503 media_storage_unavailable` または一般化した内部エラーを返します。Blob保存後にDB登録が失敗した場合はBlobを削除して補償します。
+Media Asset APIは管理者専用です。Path、Request / Response Schema、Status、Error Codeは[Media Admin API OpenAPI](openapi/openapi.yaml)を参照してください。`POST /api/admin/media` は同一Originの `multipart/form-data` で `file` 1件だけを受け付けます。JPEG、PNG、WebPの実データをSharpで検証し、4 MiB、縦横8192px、総画素数4000万を上限とします。GIF、AVIF、SVG、アニメーション画像、動画、形式・拡張子の偽装は拒否します。成功時は `201` と `media` DTOを返し、Blobへの保存に失敗すると `503 media_storage_unavailable` または一般化した内部エラーを返します。Blob保存後にDB登録が失敗した場合はBlobを削除して補償します。
 
 `GET /api/admin/media?page=1` は作成日時降順・UUID降順の固定50件ページを返し、未知のQuery Parameterや不正なページ番号は `400` です。応答には `databaseConfigured` と `storageConfigured` を含み、Storage keyは公開しません。`storageConfigured` は `BLOB_READ_WRITE_TOKEN` または接続済みBlob Storeを示す `BLOB_STORE_ID` が設定されている場合に `true` です。Vercel OIDC tokenをアプリが直接参照できることは前提とせず、認証の成否はアップロード時のBlob操作で処理します。DB未設定時は空一覧と `databaseConfigured: false` を返します。`GET /api/admin/media/{uuid}` は詳細を返し、DB未設定は `503`、不正UUIDは `400`、未登録IDは `404` です。管理UIは `/admin/media` にあり、削除APIは提供しません。
 

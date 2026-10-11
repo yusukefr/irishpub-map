@@ -5,7 +5,7 @@ info:
   license:
     name: MIT
     identifier: MIT
-  description: Machine-readable contracts for Admin Calendar, Admin Master, Admin Pubs, Admin Editorial Content, Admin Quiz, Admin Tags, Admin Statuses, and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
+  description: Machine-readable contracts for Admin Calendar, Admin Master, Admin Pubs, Admin Editorial Content, Admin Quiz, Admin Media, Admin Tags, Admin Statuses, and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
 servers:
   - url: /
     description: Current application origin
@@ -22,6 +22,8 @@ tags:
     description: Create, edit, and publish translated editorial content with an authenticated administrator session.
   - name: Admin Quiz
     description: Create and manage translated quiz questions with an authenticated administrator session.
+  - name: Admin Media
+    description: Upload and browse validated image assets with an authenticated administrator session.
   - name: Admin Statuses
     description: Read fixed pub status keys and update their Japanese and English display names with an authenticated administrator session.
   - name: Automation Master
@@ -59,6 +61,10 @@ paths:
     $ref: ./paths/admin-quiz.yaml#/Item
   /api/admin/quiz/{id}/publication:
     $ref: ./paths/admin-quiz.yaml#/Publication
+  /api/admin/media:
+    $ref: ./paths/admin-media.yaml#/Collection
+  /api/admin/media/{id}:
+    $ref: ./paths/admin-media.yaml#/Item
   /api/admin/tags:
     $ref: ./paths/admin-tags.yaml#/Collection
   /api/admin/tags/{id}:
