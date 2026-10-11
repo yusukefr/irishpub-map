@@ -75,11 +75,11 @@ CreateのIdempotency-Keyは成功済みの同一Requestを重複作成から保�
 | API | 役割 | 契約の参照先 |
 | --- | --- | --- |
 | Public Pub API | Mobile / Web向けの公開店舗読取り | 本文書の[Public API](#公開-api)と[店舗データ仕様](data.md)。OpenAPI収録は #541 の対象 |
-| Admin API | Web管理画面向けの認証済み管理操作 | 収録済みDomainは[OpenAPI定義](openapi/openapi.yaml)。その他の現行Route契約は本節と各ドメイン仕様を参照 |
+| Admin API | Web管理画面向けの認証済み管理操作とログイン・ログアウト | 認証・収録済みDomainは[OpenAPI定義](openapi/openapi.yaml)。その他の現行Route契約は本節と各ドメイン仕様を参照 |
 | Automation API | 外部Connector向けのScope制御された管理操作 | [OpenAPI定義](openapi/openapi.yaml)と[Automation API Runbook](../runbooks/automation-api-access.md) |
 | Admin Calendar API | Web管理画面向けCalendar操作 | [OpenAPI定義](openapi/openapi.yaml)、画面Behaviorは[Product仕様](product.md) |
 
-OpenAPI収録済みAPIのSchemaやStatusをここへ複製しません。APIの全体方針と認証境界は本書、機械可読なContractはOpenAPI、運用手順はRunbook、ドメイン固有の業務条件は各Specに記載します。
+OpenAPI収録済みAPIのSchemaやStatusをここへ複製しません。ログイン・ログアウトを含む機械可読なContractはOpenAPI、APIの全体方針と認証境界は本書、運用手順はRunbook、ドメイン固有の業務条件は各Specに記載します。
 
 ## 管理 API
 
