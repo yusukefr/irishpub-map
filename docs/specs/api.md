@@ -62,7 +62,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 ## Automation APIの認証・認可
 
-Automation APIと、収録済みAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現在はAutomation API全体、Admin Calendar、Admin Master（都道府県、市区町村、タグ、営業ステータス、Pub Type）、Admin Pub、Editorial Content、Quiz、Media、Admin Tag、Admin Statusを収録しています。公開 `GET /api/pubs`、Login / Logoutは未収録であり、OpenAPIが全APIを網羅しているとは扱いません。現行Admin Routeと収録状況は[Admin API収録一覧](openapi/admin-api-coverage.md)、残るDomainの作業は同一覧に記載したIssueを参照してください。Public API契約と共通Clientの整備は #541 の対象です。
+Automation APIとAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現行の管理用Routeは、Login / Logoutを含めてすべて収録済みです。公開 `GET /api/pubs` と `GET /media/{uuid}` はこのOpenAPIに未収録です。公開Pub API契約と共通Clientの整備は #541 の対象です。
 
 `/api/automation/v1/*` は外部Automation用です。Bearer Tokenを要求し、Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数やRepositoryへ保存しません。設定、発行、Token Rotation、Scope運用とCreate / Publishフローは[Automation API Runbook](../runbooks/automation-api-access.md)を参照してください。
 
@@ -75,7 +75,7 @@ CreateのIdempotency-Keyは成功済みの同一Requestを重複作成から保�
 | API | 役割 | 契約の参照先 |
 | --- | --- | --- |
 | Public Pub API | Mobile / Web向けの公開店舗読取り | 本文書の[Public API](#公開-api)と[店舗データ仕様](data.md)。OpenAPI収録は #541 の対象 |
-| Admin API | Web管理画面向けの認証済み管理操作とログイン・ログアウト | 認証・収録済みDomainは[OpenAPI定義](openapi/openapi.yaml)。その他の現行Route契約は本節と各ドメイン仕様を参照 |
+| Admin API | Web管理画面向けの管理操作とLogin / Logout | [OpenAPI定義](openapi/openapi.yaml)。業務ルールは各ドメイン仕様を参照 |
 | Automation API | 外部Connector向けのScope制御された管理操作 | [OpenAPI定義](openapi/openapi.yaml)と[Automation API Runbook](../runbooks/automation-api-access.md) |
 | Admin Calendar API | Web管理画面向けCalendar操作 | [OpenAPI定義](openapi/openapi.yaml)、画面Behaviorは[Product仕様](product.md) |
 
@@ -83,82 +83,29 @@ OpenAPI収録済みAPIのSchemaやStatusをここへ複製しません。ログ�
 
 ## 管理 API
 
-管理 API は有効な管理者セッション Cookie を必要とします。ログイン用の環境変数が未設定の場合、ログイン API は `503` を返します。`DATABASE_URL` が未設定の場合、管理画面での一覧取得はできますが、更新系 API は `503` を返します。
+### 認証・セキュリティとエラーの方針
 
-失敗レスポンスは表示文言ではなく、安定した `errorCode` を返します。管理画面のClientが現在のlocaleに応じて日本語または英語へ翻訳します。Validationでは必要に応じてフィールド別の理由コード、公開条件不足では `missingFields` も返します。
+管理操作には、署名と有効期限をサーバー側で検証する管理者セッションCookieが必要です。例外としてLogin / Logoutは未認証でも呼び出せます。管理者セッションはAutomation APIのBearer Tokenと別の認証境界で扱い、相互に代用しません。
 
-```json
-{ "errorCode": "invalid_credentials" }
-```
+Login / Logoutを含め、状態を変更する管理APIはリクエスト先と完全一致する `Origin` を要求します。管理者認証にはServer側の設定が必要で、Credential・Session Secret・Cookieの実値をAPIレスポンス、仕様例、ログへ含めません。Cookieの発行・失効・属性や各Endpointの認証要件は[OpenAPI定義](openapi/openapi.yaml)を参照してください。
 
-```json
-{
-  "errorCode": "validation_error",
-  "fieldErrors": { "key": "invalid_format" }
-}
-```
+管理APIの失敗レスポンスは、表示文言ではなく機械可読な `errorCode` を返し、必要に応じて `fieldErrors` や `missingFields` を含めます。管理画面のClientが選択Localeに応じて表示文言へ変換し、不明なコードやJSONではないレスポンスは一般化します。認証・入力・対象不在・設定不足などのStatus、Error Code、各DomainのRequest / Response SchemaはOpenAPIに集約し、ここには複製しません。DB・SQL・接続情報はAPIエラーへ含めません。
 
-共通コードは `unauthorized`、`forbidden`、`invalid_json`、`invalid_content_type`、`database_unavailable`、`internal_error` です。ログイン、店舗、タグ、マスタ固有のコードには `invalid_credentials`、`auth_not_configured`、`invalid_pub_data`、`pub_not_found`、`publication_requirements_not_met`、`content_conflict`、`content_not_found`、`quiz_conflict`、`quiz_not_found`、`tag_conflict`、`tag_not_found`、`tag_in_use`、`invalid_tag_id`、`invalid_prefecture_code` があります。フィールド理由は `required`、`too_long`、`invalid_format`、`invalid_type`、`leading_or_trailing_space`、`immutable` です。未知のコードやJSONでないレスポンスはClientで一般化し、APIは例外文、DB・SQL・接続情報を返しません。HTTPステータスは認証 `401`、権限 `403`、入力 `400` / `415` / `422`、対象なし `404`、競合 `409`、設定不足 `503`、内部エラー `500` を使います。
+`DATABASE_URL` 未設定時の一覧・詳細・変更操作の挙動はDomainごとに異なるため、各EndpointのOpenAPI契約と現行Route Handlerを確認してください。管理画面の機能や操作手順は[プロダクト仕様](product.md)を参照してください。
 
-営業ステータス管理固有のコードは、不正なURLパラメーターの `invalid_status_code` と、更新対象が存在しない `status_not_found` です。
+### API契約とドメイン仕様への入口
 
-| メソッド | パス | 成功時 | 主な失敗時 |
-| --- | --- | --- | --- |
-| `POST` | `/api/admin/login` | `200` と `Set-Cookie` | Origin不正は `403`、資格情報不一致は `401`、管理者設定なしは `503` |
-| `POST` | `/api/admin/logout` | `200` と期限切れの Cookie | Origin不正は `403` |
-| `GET` | `/api/admin/pubs` | `200` と `{ pubs, total, page, pageSize, databaseConfigured }`。各店舗に `isPublished`、マスタ識別子、タグ、更新日時を含む | 未認証は `401`、Query不正は `400` |
-| `GET` | `/api/admin/master/prefectures` | `200` と `{ prefectures }` | 未認証は `401`、取得失敗は `500` |
-| `GET` | `/api/admin/master/municipalities?prefectureCode=:code` | `200` と `{ municipalities }` | 未認証は `401`、都道府県コード不正は `400`、取得失敗は `500` |
-| `GET` | `/api/admin/master/tags` | `200` と `{ tags }` | 未認証は `401`、取得失敗は `500` |
-| `GET` | `/api/admin/master/statuses` | `200` と `{ statuses }` | 未認証は `401`、取得失敗は `500` |
-| `GET` | `/api/admin/master/pub-types` | `200` と `{ pubTypes }` | 未認証は `401`、取得失敗は `500` |
-| `GET` | `/api/admin/statuses` | `200` と `{ statuses, databaseConfigured }`。固定keyと日英表示名を含む | 未認証は `401`、取得失敗は `500` |
-| `PATCH` | `/api/admin/statuses/:code` | `200` と `{ status }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、code不正は `400`、入力不正は `422`、対象なしは `404`、DB未設定は `503` |
-| `POST` | `/api/admin/pubs` | `201` と非公開の `{ pub }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、参照競合は `409`、DB未設定は `503` |
-| `GET` | `/api/admin/pubs/:id` | `200` とNULL・日英翻訳・タグIDを含む `{ pub }` | 未認証は `401`、ID不正は `400`、対象なしは `404`、DB未設定は `503` |
-| `PUT` | `/api/admin/pubs/:id` | `200` と公開状態を維持した `{ pub }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、参照競合は `409`、対象なしは `404`、DB未設定は `503` |
-| `PATCH` | `/api/admin/pubs/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
-| `DELETE` | `/api/admin/pubs/:id` | `200` と `{ ok: true }` | 未認証は `401`、Origin不正は `403`、対象なしは `404`、DB 未設定は `503` |
-| `GET` | `/api/admin/content` | `200` と `{ content, databaseConfigured }`。DraftとPublishedを含む | 未認証は `401`、取得失敗は `500` |
-| `POST` | `/api/admin/content` | `201` とDraftの `{ content }` | 未認証は `401`、Origin不正は `403`、入力不正は `422`、重複は `409`、DB未設定は `503` |
-| `GET` | `/api/admin/content/:id` | `200` と日英翻訳を含む `{ content }` | 未認証は `401`、ID不正は `400`、対象なしは `404`、DB未設定は `503` |
-| `PUT` | `/api/admin/content/:id` | `200` と公開状態を維持した `{ content }` | 未認証は `401`、Origin不正は `403`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404` |
-| `PATCH` | `/api/admin/content/:id/publication` | `200` と `{ publication: { id, status, unchanged, publishedAt } }` | 未認証は `401`、Origin不正は `403`、入力不正・公開条件不足は `422`、対象なしは `404` |
-| `GET` | `/api/admin/quiz` | `200` と `{ questions, databaseConfigured }`。DraftとPublishedを含む | 未認証は `401`、取得失敗は `500` |
-| `POST` | `/api/admin/quiz` | `201` とServer生成UUIDを持つDraftの `{ question }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正は `422`、重複は `409`、DB未設定は `503` |
-| `GET` | `/api/admin/quiz/:id` | `200` と日英翻訳・Choiceを含む `{ question }` | 未認証は `401`、ID不正は `400`、対象なしは `404`、DB未設定は `503` |
-| `PUT` | `/api/admin/quiz/:id` | `200` と公開状態を維持した `{ question }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、重複は `409`、対象なしは `404`、DB未設定は `503` |
-| `PATCH` | `/api/admin/quiz/:id/publication` | `200` と `{ publication: { id, isPublished, unchanged } }` | 未認証は `401`、Origin不正は `403`、Content-Type不正は `415`、入力不正・公開条件不足は `422`、対象なしは `404`、DB未設定は `503` |
+- **APIのPath / Method / Query / Body / Response / Error / Cookie:** [OpenAPI定義](openapi/openapi.yaml)
+- **店舗のDraft / Publish・入力検証:** [管理店舗の下書き・公開設計](admin-pub-lifecycle.md)、[店舗データ仕様](data.md)
+- **タグ・営業ステータス:** [管理タグ仕様](tag-management.md)、[タグの正規化](tag-normalization.md)、[管理ステータス仕様](status-management.md)
+- **Editorial Content / Calendar:** [プロダクト仕様](product.md)、[Editorial Contentキャッシュ方針](editorial-content-cache.md)
+- **Quiz:** [Today's Ireland Quizデータ仕様](quiz.md)
+- **Media管理・保存時の整合性・外部送信:** [プロダクト仕様](product.md)、[システム構成](../architecture/system-overview.md)、[外部送信・プライバシー実態整理](../operations/privacy-and-external-transmission.md)
+- **Automation APIの認証・監査・再送:** [Automation API Runbook](../runbooks/automation-api-access.md)
 
-Irish Calendarの公開表示は `/discover/calendar` のServer ComponentがPublic Calendar Data Loader経由でPublished Eventを取得します。管理Calendar APIの契約は[OpenAPI定義](openapi/openapi.yaml)、画面Behaviorは[Product仕様](product.md)を参照してください。
+## 公開Media参照
 
-Editorial Contentの `POST` と `PUT` は、`kind`、`slug`、`category`、`translations: { ja, en }` を含む全体スナップショットを受け付けます。各翻訳は `title`、`summary`、`bodyMarkdown` を持ちます。Draftでは言語非依存項目を `null`、翻訳文言を空文字で保存できます。kindは `story` / `guide`、categoryは既知分類、localeは `ja` / `en`、slugは小文字英数字と単語間のハイフンだけを許可します。bodyMarkdownは先頭・末尾の空白を含む原文を保持します。MarkdownはRendererと同じCommonMark・GFM ParserでAST化し、link・image・definitionのURLにはHTTP(S)、ルート相対、ページ内アンカーだけを許可します。
-
-公開状態変更本文は `{ "status": "draft" | "published" }` だけを受け付けます。レスポンスの `publishedAt` はDBで確定した公開日時を返し、Draftでは `null` です。公開時はkind、slug、category、日英すべてのtitle、summary、bodyMarkdownをサーバー側とtransaction内で検証します。Hero画像が指定されている場合は、日英両方の `heroImageAlt` も必須です。Publishedの通常更新にも更新後の公開条件を適用します。本体と日英翻訳は単一transactionで作成・更新し、公開状態を変える操作とPublished更新の成功後に公開Contentの個別・一覧キャッシュタグを失効させます。
-
-`POST` と `PUT` は、`prefectureCode`、`municipalityCode`、座標、URL、`status`、`pubType`、`translations: { ja, en }`、`tagIds` を含む管理用全体スナップショットを受け付けます。日本語店舗名だけが下書きの必須項目で、その他の未入力値はNULL、英語翻訳なしは `translations.en = null`、タグ全解除は `tagIds = []` とします。`id`、`isPublished`、`updatedAt` は入力に含めません。新規IDはサーバーで生成し、常に非公開で作成します。新規公開時は `pubType` に `irish`、`british`、`other` のいずれかが必要です。既存の公開店舗が `unclassified` の場合は公開状態を維持でき、更新時に分類できます。
-
-管理店舗一覧は1ページ50件です。`name`、`prefecture`、`municipality`、`status`、`tag`、`published`、`page` をQuery Parameterとして受け付け、指定条件をANDで適用します。店舗名は日本語名の部分一致、都道府県は1〜47、市区町村は選択都道府県に所属する6桁コード、タグはUUID、公開状態は `true` / `false` だけを受け付けます。すべての値はパラメータ化クエリへ渡し、外部入力からSQL文字列を組み立てません。一覧APIは最終ページを超えた場合も絞り込み後の `total` を保持して `pubs` を空配列で返し、管理画面 `/admin/pubs` はその結果から最後の有効ページを求め、絞り込み条件を維持してリダイレクトします。
-
-公開状態変更本文は `{ "isPublished": true | false }` だけを受け付けます。現在値と対象存在を確認し、同じ状態への要求は `unchanged: true` として更新しません。非公開化に公開条件は適用しません。公開時は日本語店舗名・住所、都道府県、市区町村と所属関係、緯度、経度、営業ステータス、`pubType`（`irish` / `british` / `other`）、および各日本語表示名をサーバー側で再検証します。既に公開中の店舗は `pubType = unclassified` の状態を維持できます。不足時は更新せず、`publication_requirements_not_met` と `missingFields` を `422` で返します。
-
-タグ管理APIの入力、transaction、使用中削除拒否は[管理タグ仕様](tag-management.md)を参照してください。作成時は `key` と `translations.ja`、任意の `translations.<locale>` を受け付け、更新時は `translations` だけを受け付けます。
-
-営業ステータス管理APIの固定key、日英表示名、transaction更新は[管理ステータス仕様](status-management.md)を参照してください。更新本文は必須の `nameJa` と任意の `nameEn` だけを利用し、余分な `key` は更新対象にしません。
-
-Quiz管理APIの `POST` と `PUT` は、カテゴリ、特別日、関連Guide UUID、日英翻訳、0〜4件のChoice、正解、HTTPSの情報源URLを含む全体Snapshotを受け付けます。Question IDは `POST` でServerがUUIDを生成し、Request Bodyでは受け付けません。`GET`、`PUT`、公開状態変更のURLはUUIDのみ受け付け、旧kebab-case Question IDは `400 invalid_request` です。`PUT` はURLのIDを対象にし、Request BodyからIDを変更できません。Choice IDはQuestion内で一意なkebab-caseです。通常のテキストはTrimして保存し、IDの空白は正規化せず入力エラーにします。Choice Requestに `sortOrder` は含めず、配列順を利用します。関連ContentはGuideだけを選択でき、Publishedの更新は公開条件を満たさない場合に拒否します。画像付きQuizのSnapshotには `imageAssetId` と日英の `imageAlt` / `imageCaption` を含め、画像を維持する更新では値を引き継ぎます。公開時はカテゴリ、日英すべての問題文・解説・情報源ラベル、HTTPS情報源URL、4件のChoiceと各日英ラベル、正解、妥当な特別日を検証し、画像を含む場合は日英の代替テキストも必須です。`imageCaption` は任意です。`DELETE` とChoice単位のサブAPIは提供しません。
-
-Media Asset APIは管理者専用です。Path、Request / Response Schema、Status、Error Codeは[Media Admin API OpenAPI](openapi/openapi.yaml)を参照してください。`POST /api/admin/media` は同一Originの `multipart/form-data` で `file` 1件だけを受け付けます。JPEG、PNG、WebPの実データをSharpで検証し、4 MiB、縦横8192px、総画素数4000万を上限とします。GIF、AVIF、SVG、アニメーション画像、動画、形式・拡張子の偽装は拒否します。成功時は `201` と `media` DTOを返し、Blobへの保存に失敗すると `503 media_storage_unavailable` または一般化した内部エラーを返します。Blob保存後にDB登録が失敗した場合はBlobを削除して補償します。
-
-`GET /api/admin/media?page=1` は作成日時降順・UUID降順の固定50件ページを返し、未知のQuery Parameterや不正なページ番号は `400` です。応答には `databaseConfigured` と `storageConfigured` を含み、Storage keyは公開しません。`storageConfigured` は `BLOB_READ_WRITE_TOKEN` または接続済みBlob Storeを示す `BLOB_STORE_ID` が設定されている場合に `true` です。Vercel OIDC tokenをアプリが直接参照できることは前提とせず、認証の成否はアップロード時のBlob操作で処理します。DB未設定時は空一覧と `databaseConfigured: false` を返します。`GET /api/admin/media/{uuid}` は詳細を返し、DB未設定は `503`、不正UUIDは `400`、未登録IDは `404` です。管理UIは `/admin/media` にあり、削除APIは提供しません。
-
-公開用の `GET /media/{uuid}` は本文Markdownの安定した画像参照です。登録済みMedia Assetだけを許可済みVercel Blob URLへ `307` redirectし、画像バイナリはアプリ経由でproxyしません。redirectは `max-age=300` と `s-maxage=300` でブラウザと共有CDNに5分間Cacheします。不正UUID・未登録ID・許可外URLは `404`、DB未設定・取得障害は `503` です。Storage keyとDB接続情報は返しません。
-
-参照マスタAPIはDB行を直接返さず、`packages/shared/src/admin-master.ts` のDTOへ変換します。都道府県は `{ code, name }`、市区町村は `{ code, prefectureCode, name }`、タグは `{ id, key, name }`、営業ステータスとPub Typeは `{ code, key, name }` です。表示名は日本語を既定とし、日本語へフォールバックします。画面操作で再取得する市区町村APIと管理店舗一覧APIは、言語Cookieを優先し、未指定時は `Accept-Language` の候補を `q` 値と記載順で評価して表示ロケールを決定します。`prefectureCode` は1〜47の10進整数だけを受け付け、DBクエリへパラメータとして渡します。
-
-管理APIは共通認証ヘルパーで、管理者設定が揃い、有効な署名済みセッションを持つリクエストだけを許可します。変更系リクエストは共通の同一Origin検証も通し、`Origin` の欠落・不一致を `403` で拒否します。現行は単一管理者モデルのため、このセッションを管理権限として扱います。Repositoryの例外時はDB・SQL・接続情報を含まない一般化したエラーを返します。
-
-店舗のDraft / Publishルール、管理DTO、保存の責務分離は[管理店舗の下書き・公開設計](admin-pub-lifecycle.md)を参照してください。
+公開本文の画像参照には `GET /media/{uuid}` を使用します。登録済みMedia Assetだけを許可済みVercel Blob URLへ `307` redirectし、画像バイナリはアプリ経由でProxyしません。Redirectは `max-age=300` と `s-maxage=300` でブラウザと共有CDNに5分間Cacheします。不正UUID・未登録ID・許可外URLは `404`、DB未設定・取得障害は `503` です。Storage KeyとDB接続情報は返しません。この公開RouteはAdmin APIのOpenAPI収録対象外です。
 
 ## 今後の拡張候補
 
