@@ -57,7 +57,7 @@ Item:
       in: path
       required: true
       description: Tag UUID.
-      schema: { $ref: "../schemas/admin-tags.yaml#/Uuid" }
+      schema: { $ref: "../schemas/automation.yaml#/Uuid" }
   patch:
     tags: [Admin Tags]
     operationId: updateAdminTag
