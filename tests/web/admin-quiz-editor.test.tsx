@@ -84,6 +84,8 @@ describe("AdminQuizEditor", () => {
     render(<AdminQuizEditor initialQuestion={question} relatedGuides={guides} databaseConfigured locale="ja" />);
     const japanese = screen.getByRole("group", { name: "日本語" });
     const english = screen.getByRole("group", { name: "英語" });
+    expect(within(japanese).getByLabelText("問題文")).toHaveClass(/longTextInput/);
+    expect(within(english).getByLabelText("解説")).toHaveClass(/longTextInput/);
     expect(within(japanese).getByLabelText("問題画像の代替テキスト")).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "画像を選択" }));
@@ -98,6 +100,9 @@ describe("AdminQuizEditor", () => {
       target: { value: "City scene" },
     });
     expect(screen.getByRole("img", { name: "石造りの建物" })).toBeInTheDocument();
+    const preview = screen.getByRole("img", { name: "石造りの建物" }).closest("figure");
+    expect(preview?.parentElement).toHaveClass(/imageEditor/);
+    expect(preview?.parentElement?.querySelector(".admin-content-hero-actions")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "下書きを保存" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const payload = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));

@@ -407,30 +407,32 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
         <fieldset disabled={busy || !databaseConfigured}>
           <legend>{q.image}</legend>
           <p className="admin-editor-note">{q.imageEditorialNote}</p>
-          {selectedImage ? (
-            <figure className="admin-content-hero-preview">
-              <Image
-                src={selectedImage.url}
-                alt={values.translations[locale].imageAlt || q.imagePreviewAlt}
-                width={selectedImage.width}
-                height={selectedImage.height}
-                sizes="(max-width: 760px) calc(100vw - 32px), 520px"
-              />
-              <figcaption>{q.imageSelected}</figcaption>
-            </figure>
-          ) : null}
-          <div className="admin-content-hero-actions">
-            <MediaPicker
-              locale={locale}
-              selectedId={values.imageAssetId}
-              triggerLabel={selectedImage ? q.changeImage : q.selectImage}
-              onSelect={selectImage}
-            />
+          <div className={styles.imageEditor}>
             {selectedImage ? (
-              <button type="button" className="admin-secondary-action" onClick={() => selectImage(null)}>
-                {q.clearImage}
-              </button>
+              <figure className="admin-content-hero-preview">
+                <Image
+                  src={selectedImage.url}
+                  alt={values.translations[locale].imageAlt || q.imagePreviewAlt}
+                  width={selectedImage.width}
+                  height={selectedImage.height}
+                  sizes="(max-width: 760px) calc(100vw - 32px), 520px"
+                />
+                <figcaption>{q.imageSelected}</figcaption>
+              </figure>
             ) : null}
+            <div className="admin-content-hero-actions">
+              <MediaPicker
+                locale={locale}
+                selectedId={values.imageAssetId}
+                triggerLabel={selectedImage ? q.changeImage : q.selectImage}
+                onSelect={selectImage}
+              />
+              {selectedImage ? (
+                <button type="button" className="admin-secondary-action" onClick={() => selectImage(null)}>
+                  {q.clearImage}
+                </button>
+              ) : null}
+            </div>
           </div>
         </fieldset>
         {(["ja", "en"] as const).map((language) => (
@@ -439,6 +441,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
             <label>
               {q.question}
               <textarea
+                className={styles.longTextInput}
                 rows={3}
                 value={values.translations[language].question}
                 onChange={(event) => setTranslation(language, "question", event.target.value)}
@@ -447,6 +450,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
             <label>
               {q.explanation}
               <textarea
+                className={styles.longTextInput}
                 rows={5}
                 value={values.translations[language].explanation}
                 onChange={(event) => setTranslation(language, "explanation", event.target.value)}
