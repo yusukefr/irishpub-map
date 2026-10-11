@@ -294,6 +294,10 @@ ContentConflict:
             properties:
               errorCode:
                 const: content_conflict
+              fieldErrors:
+                type: object
+                additionalProperties:
+                  type: string
 
 QuizNotFound:
   description: The quiz question does not exist.

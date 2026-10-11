@@ -111,7 +111,7 @@ Publication:
       required: true
       content:
         application/json:
-          schema: { $ref: ../schemas/automation.yaml#/BooleanPublicationInput }
+          schema: { $ref: ../schemas/admin-quiz.yaml#/AdminQuizPublicationInput }
     responses:
       "200":
         description: Publication state changed or was already current
