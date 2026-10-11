@@ -5,7 +5,7 @@ import { isE2ETestMode } from "../../../lib/e2e-test-mode";
 import { requireAdminSession } from "../../../lib/admin-server";
 import { getTranslation } from "../../../lib/i18n";
 import { getRequestLocale } from "../../../lib/i18n/server";
-import { formatAdminContentDate } from "../../../lib/admin-content-date";
+import { formatAdminDate } from "../../../lib/admin-date-format";
 import { AdminPageHeader } from "../../../components/admin-page-header";
 
 /**
@@ -77,11 +77,11 @@ export default async function AdminContentPage() {
                     </span>
                   </td>
                   <td data-label={c.updatedAt}>
-                    <time dateTime={item.updatedAt}>{formatAdminContentDate(item.updatedAt, locale)}</time>
+                    <time dateTime={item.updatedAt}>{formatAdminDate(item.updatedAt, locale)}</time>
                   </td>
                   <td data-label={c.publishedDate}>
                     {item.publishedAt ? (
-                      <time dateTime={item.publishedAt}>{formatAdminContentDate(item.publishedAt, locale)}</time>
+                      <time dateTime={item.publishedAt}>{formatAdminDate(item.publishedAt, locale)}</time>
                     ) : (
                       c.notPublished
                     )}

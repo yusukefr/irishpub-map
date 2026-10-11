@@ -26,6 +26,7 @@ import { getAdminContentApiErrorMessage } from "../lib/admin-api-client";
 import { SafeMarkdownRenderer } from "../lib/content/renderer";
 import { insertMediaImageMarkdown } from "../lib/content/editor-image";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
+import { formatAdminDate } from "../lib/admin-date-format";
 import { useUnsavedChangesWarning } from "../lib/use-unsaved-changes-warning";
 
 type Props = {
@@ -638,7 +639,7 @@ export function AdminContentEditor({ initialContent, databaseConfigured, locale 
                   fields: missingFields.map((field) => fieldLabel(field, c)).join(", "),
                 })}
           </p>
-          {publishedAt ? <p>{formatMessage(c.publishedAt, { date: formatDate(publishedAt, locale) })}</p> : null}
+          {publishedAt ? <p>{formatMessage(c.publishedAt, { date: formatAdminDate(publishedAt, locale) })}</p> : null}
           {isDirty && contentId ? <p className="admin-content-unsaved">{c.saveBeforePublish}</p> : null}
         </div>
         {status === "published" ? (
@@ -703,10 +704,6 @@ function fieldLabel(path: string, content: ReturnType<typeof getTranslation>["ad
             ? content.heroImageCaption
             : content.bodyMarkdown;
   return `${languageLabel}: ${fieldName}`;
-}
-
-function formatDate(value: string, locale: Locale) {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
 function FieldError({

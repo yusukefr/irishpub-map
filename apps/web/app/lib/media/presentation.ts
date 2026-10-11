@@ -1,5 +1,6 @@
 import type { MediaAsset, MediaMimeType } from "@irishpub-map/shared/media";
 import type { Locale } from "../i18n";
+import { formatAdminDate } from "../admin-date-format";
 
 const MEDIA_FORMATS: Record<MediaMimeType, string> = {
   "image/jpeg": "JPEG",
@@ -36,7 +37,7 @@ export function formatMediaFileSize(fileSize: number, locale: Locale) {
  * @returns {string} ローカライズした日時。
  */
 export function formatMediaDate(createdAt: string, locale: Locale) {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(createdAt));
+  return formatAdminDate(createdAt, locale);
 }
 
 /**
