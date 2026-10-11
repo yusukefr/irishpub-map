@@ -2,18 +2,17 @@
 
 ## Purpose
 
-GitHub ActionsのCI、Git Tagを正とするProduction Release、Vercel Analytics / Speed Insights、API key生成など、通常デプロイ以外のリリース運用を確認します。
+GitHub ActionsのCI、Git Tagを正とするProduction Release、Vercel Analytics / Speed Insightsなど、通常デプロイ以外のリリース運用を確認します。
 
 ## When to use
 
 - CI通知、Production Release、Required Status Checkを確認するとき
-- API keyを生成またはローテーションするとき
 - Vercel Analytics / Speed Insightsを有効化・再開するとき
 
 ## Prerequisites
 
 - 対象がGitHub Actions、Vercel Preview、Vercel Productionのどれかを明確にしている。
-- Secret、Webhook URL、API keyの実値を安全に保管できる。
+- Secret、Webhook URL、Tokenの実値を安全に保管できる。
 
 ## GitHub Actions
 
@@ -93,16 +92,6 @@ git rev-parse "${BASELINE_TAG}^{commit}"
 
 `main`のCIとE2E、Release Workflow、Tagの対象SHA、VercelのProduction DeploymentがREADYであり全Production hostnameがそのDeploymentを指すこと、３つのmetadataがTagと一致することを確認します。ProductionのPublic FooterのVersion・JST日時がTag messageと一致し、AdminのSHAがTag対象commitと一致することを確認します。Localはmetadata未設定時にDevelopmentを表示し、Previewはmetadataの有無にかかわらずPreviewを表示します。Local/PreviewはRelease Tagを作りません。Version更新専用のGitHub App、Actions Secret、Dependabot Secretは不要です。
 
-## API key生成
-
-`IRISHPUB_MAP_API_KEY`を新規作成する場合は、秘密値を標準出力へ表示しないscriptを使います。
-
-```bash
-node scripts/generate-api-keys.mjs 1 /secure/path/api-keys.txt
-```
-
-生成ファイルは所有者だけが読める権限で保存されます。必要な値だけを対象Environmentへ登録し、完了後は安全な保管・破棄方針に従います。
-
 ## Analytics / Speed Insights
 
 有効化または再開前に、[外部送信・プライバシー実態整理](../operations/privacy-and-external-transmission.md)を確認します。送信情報、送信先、目的、保持期間、停止方法、利用プラン、同意要否を確認し、PRでレビューします。
@@ -110,12 +99,12 @@ node scripts/generate-api-keys.mjs 1 /secure/path/api-keys.txt
 ## Validation
 
 - CIとRequired Status Checkが最新HEADに対して成功している。
-- 生成したAPI key、Slack webhook、Vercelのsecret値がログやRepositoryへ露出していない。
+- Slack webhook、Vercelのsecret値がログやRepositoryへ露出していない。
 - Analytics / Speed Insightsを変更した場合は、ブラウザ通信とプライバシー文書を確認している。
 
 ## Security notes
 
-- API key、Webhook URL、token、secretをIssue、PR、CI log、Repositoryへ記録しない。
+- Webhook URL、token、secretをIssue、PR、CI log、Repositoryへ記録しない。
 - ProductionとPreviewの設定対象を必ず分ける。
 
 ## Related docs

@@ -46,17 +46,17 @@ UUIDとして不正なPath IDは各Routeの既存エラー契約に従います�
 }
 ```
 
-Route Handlerは `Cache-Control` や再検証時間を明示していません。クライアントは固定のキャッシュ期間をAPI契約として仮定できません。
+Route Handlerは `Cache-Control: public, max-age=0, s-maxage=60, stale-while-revalidate=300` を返します。ブラウザーでは毎回再検証し、共有CDNでは最大60秒Cacheしながら、期限後は再検証中に最大300秒古い応答を返せます。localeはQueryに含まれるため、各言語の応答は別URLとしてCacheされます。応答は利用者固有情報を含みません。
 
-## 公開 API の現在の認証
+## 公開 API の認証・濫用対策
 
-現行の `GET /api/pubs` は `IRISHPUB_MAP_API_KEY` を使います。Production (`VERCEL_ENV=production`) では値が未設定または空白のみの場合、`{ "error": "API authentication is not configured." }` と `503` を返し、Vercel Production向けビルド検証でも設定漏れを検出します。キーが設定されている場合は `x-api-key` ヘッダーを照合し、欠落・不一致なら `{ "error": "Unauthorized" }` と `401` を返します。Production以外では未設定ならKey検証を行わず、設定されていれば照合します。認証判定が `locale` 検証より先です。
+`GET /api/pubs` は全環境で匿名の読み取り専用APIです。固定Client Secretを要求せず、書き込みMethodは提供しません。`locale` を検証し、Repositoryが公開済み店舗だけを取得して共有 `Pub` DTOへ変換します。DB Credential、管理情報、Server SecretはResponseへ含めません。
 
 ```bash
-curl -H "x-api-key: $IRISHPUB_MAP_API_KEY" "http://localhost:3000/api/pubs?locale=ja"
+curl "http://localhost:3000/api/pubs?locale=ja"
 ```
 
-API Keyの実値はレスポンスやログへ出力しません。Webトップページからの取得はサーバー側で行い、API Keyをブラウザへ渡しません。Mobileアプリへ固定Secretを埋め込む設計は安全に秘密を保持できないため、この現行方式をMobile用の認証手段として使用しません。#540 は公開APIを固定Client Secret不要のRead-only APIへ変更する別Issueで、完了するまでは将来仕様です。
+APIは公開データのみを返します。短時間の共有CDN Cache、公開Fieldの限定、入力Validationを濫用対策として使います。分散Rate Limit基盤を利用していないため、プロセス内Memoryだけで分散環境のRate Limitを実装したとは扱いません。Native Mobileからの利用に固定Secretは不要です。ブラウザー向けCORS許可は追加していません。
 
 Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL_AUTOMATION_BYPASS_SECRET` に Protection Bypass for Automation secret を設定してください。設定されている場合、サーバー側 fetch は `x-vercel-protection-bypass` ヘッダーを送信します。未設定でSSOへリダイレクトされた場合、トップページは静的データを複製せず店舗0件で表示します。実データを表示するには、SSOを回避できる設定とDATABASE_URLの両方を適切に構成してください。
 

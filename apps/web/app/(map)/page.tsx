@@ -4,15 +4,10 @@ import { PubExplorer } from "../components/pub-explorer";
 import { asPubs } from "@irishpub-map/shared/pub";
 import { getRequestLocale } from "../lib/i18n/server";
 
-const API_KEY_HEADER = "x-api-key";
 const VERCEL_PROTECTION_BYPASS_HEADER = "x-vercel-protection-bypass";
 
 function createPubsApiHeaders() {
   const apiHeaders: Record<string, string> = {};
-
-  if (process.env.IRISHPUB_MAP_API_KEY) {
-    apiHeaders[API_KEY_HEADER] = process.env.IRISHPUB_MAP_API_KEY;
-  }
 
   if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
     apiHeaders[VERCEL_PROTECTION_BYPASS_HEADER] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
