@@ -1,7 +1,7 @@
 import { getPublishedPubs } from "../../lib/pub-repository";
 import { DEFAULT_LOCALE, isSupportedLocale } from "../../lib/i18n";
 
-const PUBLIC_CACHE_CONTROL = "public, max-age=0, s-maxage=60, stale-while-revalidate=300";
+const PUBLIC_CACHE_CONTROL = "public, max-age=0, s-maxage=60, stale-while-revalidate=60";
 
 /**
  * 公開店舗一覧を匿名で返し、共有CDNで短時間Cacheします。
@@ -9,7 +9,13 @@ const PUBLIC_CACHE_CONTROL = "public, max-age=0, s-maxage=60, stale-while-revali
  * @returns {Promise<Response>} 公開店舗一覧、または入力エラー。
  */
 export async function GET(request: Request) {
-  const locale = new URL(request.url).searchParams.get("locale");
+  const searchParams = new URL(request.url).searchParams;
+  const localeValues = searchParams.getAll("locale");
+  if ([...searchParams.keys()].some((key) => key !== "locale") || localeValues.length > 1) {
+    return Response.json({ error: "Unsupported query parameter." }, { status: 400 });
+  }
+
+  const locale = localeValues[0] ?? null;
   if (locale !== null && !isSupportedLocale(locale)) {
     return Response.json({ error: "Unsupported locale." }, { status: 400 });
   }

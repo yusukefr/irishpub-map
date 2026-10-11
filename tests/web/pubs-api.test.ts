@@ -1,47 +1,102 @@
-// 公開店舗APIの匿名アクセス、locale検証、共有Cacheを保証するテストです。
-import { afterEach, describe, expect, it } from "vitest";
+// 公開店舗APIの匿名アクセス、公開DTO、Query制限、共有Cacheを保証するテストです。
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Pub } from "@irishpub-map/shared/pub";
 import { GET } from "../../apps/web/app/api/pubs/route";
+import { getPublishedPubs } from "../../apps/web/app/lib/pub-repository";
+
+const repositoryMock = vi.hoisted(() => ({ getPublishedPubs: vi.fn() }));
+
+vi.mock("../../apps/web/app/lib/pub-repository", () => repositoryMock);
+
+const getPublishedPubsMock = vi.mocked(getPublishedPubs);
 
 const originalVercelEnv = process.env.VERCEL_ENV;
-const originalDatabaseUrl = process.env.DATABASE_URL;
+const originalApiKey = process.env.IRISHPUB_MAP_API_KEY;
 
-function restoreEnvironmentVariable(name: "VERCEL_ENV" | "DATABASE_URL", value: string | undefined) {
+const publicPub = {
+  id: "550e8400-e29b-41d4-a716-446655440001",
+  name: "Dubliners",
+  prefecture: "東京都",
+  address: "東京都新宿区",
+  latitude: 35.6911443,
+  longitude: 139.7025086,
+  tags: ["guinness"],
+  tagDisplayNames: { guinness: "Guinness" },
+  status: "open",
+  statusDisplayName: "Open",
+  pubType: "irish",
+  pubTypeDisplayName: "Irish Pub",
+} satisfies Pub;
+
+function restoreEnvironmentVariable(name: "VERCEL_ENV" | "IRISHPUB_MAP_API_KEY", value: string | undefined) {
   if (value === undefined) delete process.env[name];
   else process.env[name] = value;
 }
 
 describe("GET /api/pubs", () => {
-  afterEach(() => {
-    restoreEnvironmentVariable("VERCEL_ENV", originalVercelEnv);
-    restoreEnvironmentVariable("DATABASE_URL", originalDatabaseUrl);
+  beforeEach(() => {
+    getPublishedPubsMock.mockReset();
+    getPublishedPubsMock.mockResolvedValue([]);
   });
 
-  it("returns an empty list anonymously in Production when the database is not configured", async () => {
+  afterEach(() => {
+    restoreEnvironmentVariable("VERCEL_ENV", originalVercelEnv);
+    restoreEnvironmentVariable("IRISHPUB_MAP_API_KEY", originalApiKey);
+  });
+
+  it("returns an empty list anonymously in Production without API-key configuration", async () => {
     process.env.VERCEL_ENV = "production";
-    delete process.env.DATABASE_URL;
+    delete process.env.IRISHPUB_MAP_API_KEY;
 
     const response = await GET(new Request("http://localhost/api/pubs"));
     const body = (await response.json()) as { pubs: unknown[] };
 
     expect(response.status).toBe(200);
     expect(body).toEqual({ pubs: [] });
-    expect(response.headers.get("Cache-Control")).toBe("public, max-age=0, s-maxage=60, stale-while-revalidate=300");
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=0, s-maxage=60, stale-while-revalidate=60");
   });
 
   it.each(["ja", "en"] as const)("accepts the %s locale anonymously", async (locale) => {
-    delete process.env.DATABASE_URL;
+    getPublishedPubsMock.mockResolvedValue([publicPub]);
     const response = await GET(new Request(`http://localhost/api/pubs?locale=${locale}`));
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ pubs: [] });
+    await expect(response.json()).resolves.toEqual({ pubs: [publicPub] });
+    expect(getPublishedPubsMock).toHaveBeenCalledWith(locale);
+  });
+
+  it("returns only the public Pub DTO without publication metadata", async () => {
+    process.env.VERCEL_ENV = "production";
+    getPublishedPubsMock.mockResolvedValue([publicPub]);
+
+    const response = await GET(new Request("http://localhost/api/pubs?locale=en"));
+    const body = (await response.json()) as { pubs: Array<Record<string, unknown>> };
+
+    expect(response.status).toBe(200);
+    expect(body.pubs).toEqual([publicPub]);
+    expect(body.pubs[0]).not.toHaveProperty("isPublished");
+    expect(body.pubs[0]).not.toHaveProperty("is_published");
+    expect(body.pubs[0]).not.toHaveProperty("databaseUrl");
   });
 
   it("rejects an unsupported locale before querying the repository", async () => {
-    delete process.env.DATABASE_URL;
     const response = await GET(new Request("http://localhost/api/pubs?locale=fr"));
 
     await expect(response.json()).resolves.toEqual({ error: "Unsupported locale." });
     expect(response.status).toBe(400);
     expect(response.headers.get("Cache-Control")).toBeNull();
+    expect(getPublishedPubsMock).not.toHaveBeenCalled();
   });
+
+  it.each(["?nonce=1", "?locale=ja&nonce=1", "?locale=ja&locale=en"])(
+    "rejects query strings outside the single-locale allowlist (%s)",
+    async (query) => {
+      const response = await GET(new Request(`http://localhost/api/pubs${query}`));
+
+      await expect(response.json()).resolves.toEqual({ error: "Unsupported query parameter." });
+      expect(response.status).toBe(400);
+      expect(response.headers.get("Cache-Control")).toBeNull();
+      expect(getPublishedPubsMock).not.toHaveBeenCalled();
+    },
+  );
 });

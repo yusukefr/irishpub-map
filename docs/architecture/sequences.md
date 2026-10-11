@@ -15,7 +15,7 @@ sequenceDiagram
   Visitor->>Page: GET /
   Page->>API: サーバー側 fetch（Preview Protection利用時はbypass headerを付与）
   API->>Repository: getPublishedPubs()
-  Note over API: 公開GET応答を共有CDNで60秒Cache
+  Note over API: 公開GET応答を共有CDNで60秒Cacheし、stale配信は最大60秒
   alt DATABASE_URL が設定済み
     Repository->>Neon: pubs を読み出す
     Neon-->>Repository: 店舗データ

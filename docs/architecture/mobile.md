@@ -31,7 +31,7 @@ MapLibreなどNative依存を追加・更新した節目でiOS EAS Buildを行�
 | Public API | WebとMobileに公開データを提供するServer側境界。Mobileは合意済みのPublic APIを呼び出す |
 | Neon | Server側の永続化先。Mobileから直接接続しない |
 
-MobileからNeonへ直接接続せず、Database URL、DB credential、Server secretをアプリへ含めません。Client bundleに固定API KeyなどのSecretを含めません。Public Pub APIは全環境で固定Client Secret不要のRead-only APIとして公開し、公開Fieldの限定、locale Validation、短時間の共有Cacheを濫用対策に使います。分散Rate Limitは導入していません。
+MobileからNeonへ直接接続せず、Database URL、DB credential、Server secretをアプリへ含めません。Client bundleに固定API KeyなどのSecretを含めません。Public Pub APIは全環境で固定Client Secret不要のRead-only APIとして公開し、公開Fieldの限定、locale Validation、Query allowlist、短時間の共有Cacheを濫用対策に使います。分散Rate Limitは導入していません。
 
 UI ComponentはWebとMobileで共有せず、共有するのは型や純粋ロジックを中心とします。Public API Clientの共有・配置はAPI Contract整理Issue #541で既存コード量とPlatform依存を見て決定します。
 
