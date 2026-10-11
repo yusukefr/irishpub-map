@@ -231,7 +231,7 @@ Publication:
       "415":
         $ref: ../schemas/errors.yaml#/InvalidContentType
       "422":
-        $ref: ../schemas/errors.yaml#/PubPublicationRequirementsNotMet
+        $ref: ../schemas/errors.yaml#/PubValidationOrPublicationRequirementsNotMet
       "503":
         $ref: ../schemas/errors.yaml#/DatabaseUnavailable
       "500":
