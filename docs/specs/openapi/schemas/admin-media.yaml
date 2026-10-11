@@ -1,0 +1,97 @@
+AdminMediaResponse:
+  type: object
+  additionalProperties: false
+  required: [media]
+  properties:
+    media: { $ref: ./automation.yaml#/MediaAsset }
+
+AdminMediaListResponse:
+  type: object
+  additionalProperties: false
+  required: [media, total, page, pageSize, databaseConfigured, storageConfigured]
+  properties:
+    media:
+      type: array
+      items: { $ref: ./automation.yaml#/MediaAsset }
+    total:
+      type: integer
+      minimum: 0
+    page:
+      type: integer
+      minimum: 1
+    pageSize:
+      type: integer
+      const: 50
+    databaseConfigured: { type: boolean }
+    storageConfigured:
+      type: boolean
+      description: True when a Blob read/write token or configured Blob store is available. No storage credential or key is returned.
+
+InvalidRequestError:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { type: string, const: invalid_request }
+
+InvalidContentTypeError:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { type: string, const: invalid_content_type }
+
+MediaStorageUnavailableError:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { type: string, const: media_storage_unavailable }
+
+MediaFileTooLargeError:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { type: string, const: media_file_too_large }
+
+MediaInvalidImageError:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { type: string, const: media_invalid_image }
+
+MediaDimensionsExceededError:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { type: string, const: media_dimensions_exceeded }
+
+MediaUnsupportedFormatError:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { type: string, const: media_unsupported_format }
+
+DatabaseUnavailableError:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { type: string, const: database_unavailable }
+
+NotFoundError:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { type: string, const: not_found }
+
+DatabaseUnavailableResponse:
+  description: The database is not configured.
+  content:
+    application/json:
+      schema: { $ref: "#/DatabaseUnavailableError" }
