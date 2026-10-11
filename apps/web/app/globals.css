@@ -875,6 +875,9 @@ h1 {
   margin: 0 0 12px;
   font-size: var(--text-label);
 }
+.admin-release-info-toggle {
+  display: none;
+}
 .admin-release-info dl {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -1315,8 +1318,14 @@ h1 {
     min-height: auto;
     align-self: stretch;
     overflow: visible;
-    gap: 14px;
-    padding: 16px;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  .admin-sidebar .eyebrow {
+    margin-bottom: 2px;
+  }
+  .admin-brand {
+    font-size: 1.125rem;
   }
   .admin-navigation-toggle {
     display: flex;
@@ -1373,6 +1382,59 @@ h1 {
   }
   .admin-release-info dd {
     text-align: left;
+  }
+  .admin-release-info h2 {
+    display: none;
+  }
+  .admin-release-info-toggle {
+    display: flex;
+    width: 100%;
+    min-height: var(--spacing-control);
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--text-caption);
+    text-align: left;
+  }
+  .admin-release-info-toggle span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .admin-release-info-toggle::after {
+    content: "+";
+    margin-left: auto;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+  .admin-release-info-toggle[aria-expanded="true"]::after {
+    content: "−";
+  }
+  .admin-release-info-details {
+    display: none;
+    padding: 0 0 8px;
+  }
+  .admin-release-info-details.is-open {
+    display: block;
+  }
+  .admin-release-info-details dl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .admin-release-info-details dd {
+    margin-bottom: 8px;
+  }
+  .admin-release-info-details dd:last-child {
+    margin-bottom: 0;
+  }
+  .admin-release-info-toggle:focus-visible {
+    outline: var(--focus-ring-width) solid var(--color-brand-accent-soft);
+    outline-offset: var(--focus-ring-offset);
   }
   .admin-pub-form {
     grid-template-columns: 1fr;
