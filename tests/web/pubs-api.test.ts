@@ -88,15 +88,22 @@ describe("GET /api/pubs", () => {
     expect(getPublishedPubsMock).not.toHaveBeenCalled();
   });
 
-  it.each(["?nonce=1", "?locale=ja&nonce=1", "?locale=ja&locale=en"])(
-    "rejects query strings outside the single-locale allowlist (%s)",
-    async (query) => {
-      const response = await GET(new Request(`http://localhost/api/pubs${query}`));
+  it.each([
+    "?nonce=1",
+    "?locale=ja&nonce=1",
+    "?locale=ja&locale=en",
+    "?",
+    "?locale=ja&",
+    "?locale=ja&&&&",
+    "?locale=%6a%61",
+    "?%6cocale=ja",
+    "?&&&&",
+  ])("rejects query strings outside the canonical-locale allowlist (%s)", async (query) => {
+    const response = await GET(new Request(`http://localhost/api/pubs${query}`));
 
-      await expect(response.json()).resolves.toEqual({ error: "Unsupported query parameter." });
-      expect(response.status).toBe(400);
-      expect(response.headers.get("Cache-Control")).toBeNull();
-      expect(getPublishedPubsMock).not.toHaveBeenCalled();
-    },
-  );
+    await expect(response.json()).resolves.toEqual({ error: "Unsupported query parameter." });
+    expect(response.status).toBe(400);
+    expect(response.headers.get("Cache-Control")).toBeNull();
+    expect(getPublishedPubsMock).not.toHaveBeenCalled();
+  });
 });

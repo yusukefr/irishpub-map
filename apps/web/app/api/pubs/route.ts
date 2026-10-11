@@ -9,13 +9,14 @@ const PUBLIC_CACHE_CONTROL = "public, max-age=0, s-maxage=60, stale-while-revali
  * @returns {Promise<Response>} 公開店舗一覧、または入力エラー。
  */
 export async function GET(request: Request) {
-  const searchParams = new URL(request.url).searchParams;
-  const localeValues = searchParams.getAll("locale");
-  if ([...searchParams.keys()].some((key) => key !== "locale") || localeValues.length > 1) {
+  const requestUrl = request.url;
+  const queryStart = requestUrl.indexOf("?");
+  const search = queryStart < 0 ? "" : requestUrl.slice(queryStart);
+  const locale = search === "" ? null : (/^\?locale=([^&%+]+)$/.exec(search)?.[1] ?? null);
+  if (search !== "" && locale === null) {
     return Response.json({ error: "Unsupported query parameter." }, { status: 400 });
   }
 
-  const locale = localeValues[0] ?? null;
   if (locale !== null && !isSupportedLocale(locale)) {
     return Response.json({ error: "Unsupported locale." }, { status: 400 });
   }

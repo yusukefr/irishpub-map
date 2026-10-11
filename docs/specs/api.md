@@ -16,7 +16,7 @@ UUIDとして不正なPath IDは各Routeの既存エラー契約に従います�
 
 公開中の店舗一覧を `{ "pubs": Pub[] }` で返します。RepositoryのSQLが `pubs.is_published = TRUE` で絞り込み、公開状態の列 `isPublished` はレスポンスへ含めません。`DATABASE_URL` 未設定時は `200` と空の `pubs` 配列を返します。DB接続やデータ処理に失敗した場合、Route Handlerは例外を変換しないため、Next.jsの通常の `500` 応答になります。DBの個々の行が共有 `Pub` 型に適合しない場合はその行を省略して続行し、全行が不正なら `500` になります。
 
-`locale` Queryは省略可能で、指定できる値は `ja` と `en` です。既定値は `ja` です。不正値は `{ "error": "Unsupported locale." }` と `400` を返します。`locale` を複数指定した場合、または `locale` 以外のQueryを指定した場合は `{ "error": "Unsupported query parameter." }` と `400` を返します。これにより共有Cache keyに使うQueryを限定します。翻訳テーブルに要求localeの行がなければ日本語へフォールバックします。店舗名・住所、都道府県、市区町村、営業状態、タグ、Pub Typeの表示文言にこの優先順位を適用します。サーバー側の絞り込みは行わず、検索・絞り込みは取得後のクライアント側で行います。
+`locale` Queryは省略可能で、指定できる値は `ja` と `en` です。既定値は `ja` です。共有Cache keyを限定するため、元のQuery文字列は省略、`?locale=ja`、`?locale=en` の3通りだけを成功リクエストとして受け付けます。percent-encoding、空のQuery separator、重複locale、locale以外のQueryは `{ "error": "Unsupported query parameter." }` と `400` を返します。不正なlocale値は `{ "error": "Unsupported locale." }` と `400` を返します。翻訳テーブルに要求localeの行がなければ日本語へフォールバックします。店舗名・住所、都道府県、市区町村、営業状態、タグ、Pub Typeの表示文言にこの優先順位を適用します。サーバー側の絞り込みは行わず、検索・絞り込みは取得後のクライアント側で行います。
 
 レスポンスの各店舗は `packages/shared/src/pub.ts` の `Pub` を使い、Repositoryが `asPubs` で検証・正規化します。IDはUUID文字列、`status` は `open` / `temporarily_closed` / `closed` / `unknown`、`pubType` は `irish` / `british` / `other` / `unclassified` です。Gastropub等の特徴はタグで表します。必須項目、optional fieldの省略、URLのnullabilityと各値の詳細は[店舗データ仕様](data.md)を参照してください。
 
