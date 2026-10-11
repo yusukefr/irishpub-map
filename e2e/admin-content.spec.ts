@@ -213,6 +213,18 @@ test("Content・Media・Quizの一覧と編集画面は日英と主要Viewport�
         );
         const visualName = visualRoutes.get(path);
         if (visualName && (width === 1280 || width === 390)) {
+          if (visualName === "content-edit") {
+            const japaneseBody = page
+              .getByRole("group", { name: locale === "ja" ? "日本語" : "Japanese" })
+              .getByLabel(locale === "ja" ? "本文（Markdown）" : "Body (Markdown)");
+            await expect(japaneseBody).toHaveValue("## 下書き本文\n\n[安全なリンク](/discover)");
+            await expect(page).toHaveScreenshot(`admin-${visualName}-${locale}-${width}.png`, {
+              fullPage: true,
+              mask: [japaneseBody],
+              maskColor: "#fffdf8",
+            });
+            continue;
+          }
           if (visualName === "quiz-edit") {
             const choiceGroup = page.getByRole("group", { name: locale === "ja" ? "選択肢" : "Choices" });
             const actionButtons = choiceGroup.locator('button[aria-label$="choice-1"]');
