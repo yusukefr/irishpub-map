@@ -1,6 +1,6 @@
 # 管理店舗の下書き・公開設計
 
-この文書は、管理店舗のDraft / Publish業務ルールを定義します。型と入力Validationは `packages/shared/src/admin-pub.ts`、HTTP契約は[API方針](api.md)、DBの物理制約は[生成済みスキーマ](../generated/database-schema.md)を正とします。
+この文書は、管理店舗のDraft / Publish業務ルールを定義します。型と入力Validationは `packages/shared/src/admin-pub.ts`、HTTP契約は[OpenAPI定義](openapi/openapi.yaml)、API全体方針は[API方針](api.md)、DBの物理制約は[生成済みスキーマ](../generated/database-schema.md)を正とします。
 
 ## 結論
 
