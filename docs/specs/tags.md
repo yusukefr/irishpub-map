@@ -24,4 +24,4 @@ Neonでは `tags` がUUIDと一意なkey、`tag_translations` がタグごとの
 
 管理画面では使用中タグの削除操作を表示せず、使用中の理由を示します。未使用タグの削除前と、未保存の編集をキャンセル・切替する前に確認し、保存・削除中は操作を無効化します。成功は `role=status`、失敗は `role=alert` で通知します。
 
-管理APIのHTTP契約は[Admin Tag OpenAPI](openapi/paths/admin-tags.yaml)を参照してください。全操作で署名済み管理セッションと同一Originを必須とします。JSON Content-TypeはJSON本文を送るPOST/PATCHで検証し、DELETEは本文を要求しません。詳細な型やRepositoryのSQLをここへ複製しません。
+管理APIのHTTP契約は[Admin Tag OpenAPI](openapi/paths/admin-tags.yaml)を参照してください。全操作で署名済み管理セッションを必須とします。POST/PATCH/DELETEではリクエスト先との同一Origin検証も必須です。JSON本文を持つPOST/PATCHには `Content-Type: application/json` を要求し、DELETEは本文を要求しません。詳細な型やRepositoryのSQLをここへ複製しません。
