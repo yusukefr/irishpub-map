@@ -36,7 +36,10 @@ AdminContent:
     category: { type: [string, "null"], enum: [history, culture, pub-culture, food-drink, null] }
     status: { type: string, enum: [draft, published] }
     publishedAt: { type: [string, "null"], format: date-time }
-    heroImageAssetId: { type: [string, "null"], format: uuid }
+    heroImageAssetId:
+      anyOf:
+        - $ref: ./automation.yaml#/Uuid
+        - type: "null"
     heroImage:
       anyOf:
         - $ref: ./automation.yaml#/MediaAsset
@@ -79,7 +82,10 @@ AdminContentWriteInput:
       pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
       description: Lowercase ASCII letters and digits separated by single hyphens, or null.
     category: { type: [string, "null"], enum: [history, culture, pub-culture, food-drink, null] }
-    heroImageAssetId: { type: [string, "null"], format: uuid }
+    heroImageAssetId:
+      anyOf:
+        - $ref: ./automation.yaml#/Uuid
+        - type: "null"
     translations:
       type: object
       additionalProperties: false

@@ -128,7 +128,7 @@ Publication:
     tags: [Admin Editorial Content]
     operationId: changeAdminContentPublication
     summary: Change editorial content publication state
-    description: Publishing requires a valid kind, slug, category, and complete Japanese and English title, summary, and body. Successful state changes invalidate the public item and list cache tags. State-changing requests require a matching Origin and application/json content type.
+    description: Publishing requires a valid kind, slug, and category, plus non-empty Japanese and English titles, summaries, and Markdown bodies. When a hero image is set, both locale-specific hero image alt texts must also be non-empty. Successful state changes invalidate the public item and list cache tags. State-changing requests require a matching Origin and application/json content type.
     security:
       - AdminSession: []
     requestBody:
@@ -153,7 +153,7 @@ Publication:
       "415":
         $ref: ../schemas/errors.yaml#/InvalidContentType
       "422":
-        $ref: ../schemas/errors.yaml#/PublicationRequirementsNotMet
+        $ref: ../schemas/errors.yaml#/ValidationOrContentPublicationRequirementsNotMet
       "503":
         $ref: ../schemas/errors.yaml#/DatabaseUnavailable
       "500":

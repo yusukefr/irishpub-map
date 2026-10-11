@@ -154,7 +154,7 @@ PublicationRequirementsNotMetBody:
             type: string
 
 ValidationOrPublicationRequirementsNotMet:
-  description: The request is invalid or the event does not meet publication requirements.
+  description: The request is invalid or the resource does not meet publication requirements.
   content:
     application/json:
       schema:
@@ -181,6 +181,15 @@ PublicationRequirementsNotMet:
                 type: array
                 items:
                   type: string
+
+ValidationOrContentPublicationRequirementsNotMet:
+  description: The Editorial Content request is invalid or the content does not meet publication requirements. The validation_error response contains optional fieldErrors; the publication_requirements_not_met response contains missingFields.
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: "#/ValidationErrorBody"
+          - $ref: "#/PublicationRequirementsNotMetBody"
 
 PubPublicationRequirementsNotMetBody:
   type: object
