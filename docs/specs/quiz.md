@@ -42,6 +42,8 @@ submitQuizAnswer()はServer-sideのgradePublishedQuizAnswer()を呼び、Questio
 
 Admin Quizは /admin/quiz、/admin/quiz/new、/admin/quiz/:id で認証済みユーザーがDraftとPublishedを管理します。作成・全体更新はQuestion本体、日英翻訳、Choiceを単一transactionで保存します。PublishとUnpublishは更新成功後にPublic Quiz Cacheを失効させます。
 
+管理画面用の `GET` / `POST /api/admin/quiz`、`GET` / `PUT /api/admin/quiz/{id}`、`PATCH /api/admin/quiz/{id}/publication` のRequest / Response、Status、Error、認証契約は[Admin Quiz OpenAPI](openapi/paths/admin-quiz.yaml)を参照してください。関連Guideと問題画像は既存のGuide / Media Assetを参照し、公開条件はRoute経由のServiceで再検証します。
+
 Published Question一覧だけをLocale単位でunstable_cacheにより5分間Cacheします。Asia/Tokyoの日付決定はCacheの外で行います。Draftの変更、状態変更なし、更新失敗ではCacheを失効させません。
 
 DATABASE_URL未設定時はPublic Quizを利用不可状態、Published Questionが0件の場合は空状態として表示します。DB障害時も別のStatic Dataへfallbackせず、利用者には一般化したエラーだけを表示します。
