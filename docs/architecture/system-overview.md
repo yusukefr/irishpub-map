@@ -106,6 +106,6 @@ Repositoryはnpm workspacesで`apps/*`と`packages/*`を管理します。現在
 | `admin-auth`          | 認証情報の検証、署名付き管理者セッション Cookie の発行・検証                      |
 | GitHub Actions        | 追跡済みファイルの機密情報検査、Lint、テスト、ビルド、任意の Slack 通知           |
 
-Web専用UIやHTTP / Database連携を`packages/shared`へ移動せず、クライアント間で共有できる型・純粋ロジックだけを置きます。MobileのFramework、Native UI、地図SDK、認証、通信層の採用判断はこの図では確定していません。
+Web専用UIやHTTP / Database連携を`packages/shared`へ移動せず、クライアント間で共有できる型・純粋ロジックだけを置きます。Expo / React Native、MapLibre、Development Build等のMobile基盤方針は[Mobile Architecture](mobile.md)を参照してください。Mobile実装は未着手のため、詳細や検証状況は各実装Issueで決定します。
 
 代表的な処理の時系列は[シーケンス図](sequences.md)を参照してください。
