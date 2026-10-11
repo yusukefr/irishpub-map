@@ -39,6 +39,7 @@ AutomationUnauthorized:
   description: Bearer token is missing, invalid, or not configured.
   headers:
     WWW-Authenticate:
+      required: true
       schema: { type: string, const: Bearer }
   content:
     application/json:
