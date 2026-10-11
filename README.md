@@ -19,7 +19,7 @@
 
 ```bash
 nvm use
-npm install
+npm ci
 npm run dev
 ```
 
@@ -33,8 +33,11 @@ npm run format:check
 npm run typecheck
 npm run lint
 npm run build
+npm run check:mermaid
 npm run check:sensitive-data
 ```
+
+ルートの `npm ci` で単体テストに必要な Mermaid もインストールされます。`npm run check:mermaid` はドキュメント検査用の独立した依存関係を使うため、実行前に一度 `npm ci --prefix tools/docs-check --ignore-scripts` を実行してください。
 
 E2Eや依存関係変更時の確認を含む詳しい検証方針は[コード規約・開発規約](docs/development/conventions.md)を参照してください。
 
