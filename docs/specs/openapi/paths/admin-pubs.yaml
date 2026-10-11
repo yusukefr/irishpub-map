@@ -1,0 +1,238 @@
+Collection:
+  get:
+    tags: [Admin Pubs]
+    operationId: listAdminPubs
+    summary: Search admin pubs
+    description: Search parameters are combined with AND. Duplicate or unknown parameters are rejected. An empty name is treated as omitted. The response includes drafts and reports whether a database is configured.
+    security:
+      - AdminSession: []
+    parameters:
+      - name: name
+        in: query
+        description: Name substring; the server trims it, treats an empty value as omitted, and rejects values longer than 100 characters after trimming.
+        schema: { type: string }
+      - name: prefecture
+        in: query
+        description: Decimal prefecture code from 1 through 47; leading zeroes are rejected.
+        schema: { type: integer, minimum: 1, maximum: 47 }
+      - name: municipality
+        in: query
+        description: Six digit municipality code. Requires prefecture and its first two digits must match the prefecture code.
+        schema: { type: string, pattern: '^\d{6}$' }
+      - name: status
+        in: query
+        description: Pub status key.
+        schema: { type: string, enum: [open, temporarily_closed, closed, unknown] }
+      - name: tag
+        in: query
+        description: Tag UUID.
+        schema: { $ref: ../schemas/automation.yaml#/Uuid }
+      - name: published
+        in: query
+        description: Include only published or draft pubs.
+        schema: { type: boolean }
+      - name: page
+        in: query
+        description: One-based page number, from 1 through 100000; defaults to 1.
+        schema: { type: integer, minimum: 1, maximum: 100000, default: 1 }
+    responses:
+      "200":
+        description: Matching pubs and pagination metadata
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-pubs.yaml#/AdminPubPageResponse }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidRequest
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+  post:
+    tags: [Admin Pubs]
+    operationId: createAdminPub
+    summary: Create an unpublished pub
+    description: Creates a pub as a draft. State-changing requests require an Origin exactly matching the request URL origin and an application/json content type.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: ../schemas/admin-pubs.yaml#/AdminPubWriteInput }
+    responses:
+      "201":
+        description: Created pub draft
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-pubs.yaml#/AdminPubResponse }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidJson
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "409":
+        $ref: ../schemas/errors.yaml#/ValidationError
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/ValidationError
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+Item:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: Pub UUID.
+      schema: { $ref: ../schemas/automation.yaml#/Uuid }
+  get:
+    tags: [Admin Pubs]
+    operationId: getAdminPub
+    summary: Get a pub
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Pub details, including nullable fields and translations
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-pubs.yaml#/AdminPubResponse }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidRequest
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "404":
+        $ref: ../schemas/errors.yaml#/PubNotFound
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+  put:
+    tags: [Admin Pubs]
+    operationId: updateAdminPub
+    summary: Replace pub editable fields
+    description: Replaces the editable snapshot and preserves publication state. Updating a published pub is rejected when publication requirements are no longer met. State-changing requests require a matching Origin and application/json content type.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: ../schemas/admin-pubs.yaml#/AdminPubWriteInput }
+    responses:
+      "200":
+        description: Updated pub
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-pubs.yaml#/AdminPubResponse }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidRequestOrInvalidJson
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: ../schemas/errors.yaml#/PubNotFound
+      "409":
+        $ref: ../schemas/errors.yaml#/ValidationError
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/PubValidationOrPublicationRequirementsNotMet
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+  delete:
+    tags: [Admin Pubs]
+    operationId: deleteAdminPub
+    summary: Delete a pub
+    description: State-changing requests require an Origin exactly matching the request URL origin.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Pub deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [ok]
+              properties:
+                ok: { type: boolean, const: true }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidRequest
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: ../schemas/errors.yaml#/PubNotFound
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+Publication:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: Pub UUID.
+      schema: { $ref: ../schemas/automation.yaml#/Uuid }
+  patch:
+    tags: [Admin Pubs]
+    operationId: changeAdminPubPublication
+    summary: Change pub publication state
+    description: Publishing is rejected if required pub data is missing; unpublishing removes that publication requirement. State-changing requests require an Origin exactly matching the request URL origin and an application/json content type.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [isPublished]
+            properties:
+              isPublished: { type: boolean }
+    responses:
+      "200":
+        description: Publication state changed or was already current
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [publication]
+              properties:
+                publication:
+                  type: object
+                  additionalProperties: false
+                  required: [id, isPublished, unchanged]
+                  properties:
+                    id: { $ref: ../schemas/automation.yaml#/Uuid }
+                    isPublished: { type: boolean }
+                    unchanged: { type: boolean }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidRequestOrInvalidJson
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: ../schemas/errors.yaml#/PubNotFound
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/PubValidationOrPublicationRequirementsNotMet
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError

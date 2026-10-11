@@ -1,0 +1,227 @@
+AdminPubListTag:
+  type: object
+  additionalProperties: false
+  required: [id, key, name]
+  properties:
+    id: { $ref: ./automation.yaml#/Uuid }
+    key: { type: string }
+    name: { type: string }
+
+AdminPubListItem:
+  type: object
+  additionalProperties: false
+  required:
+    [
+      id,
+      name,
+      kana,
+      prefecture,
+      city,
+      municipalityCode,
+      address,
+      latitude,
+      longitude,
+      websiteUrl,
+      googleMapsUrl,
+      instagramUrl,
+      tags,
+      tagDisplayNames,
+      status,
+      prefectureCode,
+      statusCode,
+      statusDisplayName,
+      pubType,
+      pubTypeDisplayName,
+      tagItems,
+      isPublished,
+      updatedAt,
+    ]
+  properties:
+    id: { $ref: ./automation.yaml#/Uuid }
+    name: { type: string }
+    kana: { type: [string, "null"] }
+    prefecture: { type: [string, "null"] }
+    city: { type: [string, "null"] }
+    municipalityCode: { type: [string, "null"], pattern: '^\d{6}$' }
+    address: { type: [string, "null"] }
+    latitude: { type: [number, "null"], minimum: -90, maximum: 90 }
+    longitude: { type: [number, "null"], minimum: -180, maximum: 180 }
+    websiteUrl:
+      type: [string, "null"]
+      format: uri
+      description: HTTP(S) URL without embedded credentials, or null.
+    googleMapsUrl:
+      type: [string, "null"]
+      format: uri
+      description: Google Maps URL on an accepted Google Maps host, or null.
+    instagramUrl:
+      type: [string, "null"]
+      format: uri
+      description: Instagram profile, post, or reel URL on instagram.com, or null.
+    tags: { type: array, items: { type: string } }
+    tagDisplayNames:
+      type: object
+      additionalProperties: { type: string }
+    status: { type: [string, "null"], enum: [open, temporarily_closed, closed, unknown, null] }
+    prefectureCode: { type: [integer, "null"], minimum: 1, maximum: 47 }
+    statusCode: { type: [integer, "null"] }
+    statusDisplayName: { type: [string, "null"] }
+    pubType: { type: [string, "null"], enum: [irish, british, other, unclassified, null] }
+    pubTypeDisplayName: { type: [string, "null"] }
+    tagItems: { type: array, items: { $ref: "#/AdminPubListTag" } }
+    isPublished: { type: boolean }
+    updatedAt: { type: string, format: date-time }
+
+AdminPubPageResponse:
+  type: object
+  additionalProperties: false
+  required: [pubs, total, page, pageSize, databaseConfigured]
+  properties:
+    pubs: { type: array, items: { $ref: "#/AdminPubListItem" } }
+    total: { type: integer, minimum: 0 }
+    page: { type: integer, minimum: 1, maximum: 100000 }
+    pageSize: { type: integer, const: 50 }
+    databaseConfigured: { type: boolean }
+
+AdminPubTranslationInput:
+  type: object
+  additionalProperties: false
+  required: [name, nameReading, address]
+  properties:
+    name: { type: string, minLength: 1 }
+    nameReading: { type: [string, "null"] }
+    address: { type: [string, "null"], maxLength: 300 }
+
+AdminPubEnglishTranslationInput:
+  type: object
+  additionalProperties: false
+  required: [name, nameReading, address]
+  properties:
+    name: { type: string, minLength: 1 }
+    nameReading: { type: [string, "null"] }
+    address: { type: string, minLength: 1, maxLength: 300 }
+
+AdminPubWriteInput:
+  type: object
+  additionalProperties: false
+  required:
+    [
+      prefectureCode,
+      municipalityCode,
+      latitude,
+      longitude,
+      websiteUrl,
+      googleMapsUrl,
+      instagramUrl,
+      status,
+      pubType,
+      translations,
+      tagIds,
+    ]
+  properties:
+    prefectureCode: { type: [integer, "null"], minimum: 1, maximum: 47 }
+    municipalityCode: { type: [string, "null"], pattern: '^\d{6}$' }
+    latitude: { type: [number, "null"], minimum: -90, maximum: 90 }
+    longitude: { type: [number, "null"], minimum: -180, maximum: 180 }
+    websiteUrl:
+      type: [string, "null"]
+      format: uri
+      maxLength: 2048
+      description: HTTP(S) URL without embedded credentials, or null.
+    googleMapsUrl:
+      type: [string, "null"]
+      format: uri
+      maxLength: 2048
+      description: Google Maps URL on an accepted Google Maps host, or null.
+    instagramUrl:
+      type: [string, "null"]
+      format: uri
+      maxLength: 2048
+      description: Instagram profile, post, or reel URL on instagram.com, or null.
+    status: { type: [string, "null"], enum: [open, temporarily_closed, closed, unknown, null] }
+    pubType: { type: [string, "null"], enum: [irish, british, other, unclassified, null] }
+    translations:
+      type: object
+      additionalProperties: false
+      required: [ja, en]
+      properties:
+        ja: { $ref: "#/AdminPubTranslationInput" }
+        en:
+          oneOf:
+            - $ref: "#/AdminPubEnglishTranslationInput"
+            - type: "null"
+    tagIds:
+      type: array
+      uniqueItems: true
+      description: Tag UUIDs; duplicate values are also rejected case-insensitively.
+      items: { $ref: ./automation.yaml#/Uuid }
+
+AdminPubTranslation:
+  type: object
+  additionalProperties: false
+  required: [name, nameReading, address]
+  properties:
+    name: { type: string }
+    nameReading: { type: [string, "null"] }
+    address: { type: [string, "null"] }
+
+AdminPub:
+  type: object
+  additionalProperties: false
+  required:
+    [
+      id,
+      isPublished,
+      prefectureCode,
+      municipalityCode,
+      latitude,
+      longitude,
+      websiteUrl,
+      googleMapsUrl,
+      instagramUrl,
+      status,
+      pubType,
+      translations,
+      tagIds,
+      updatedAt,
+    ]
+  properties:
+    id: { $ref: ./automation.yaml#/Uuid }
+    isPublished: { type: boolean }
+    prefectureCode: { type: [integer, "null"], minimum: 1, maximum: 47 }
+    municipalityCode: { type: [string, "null"], pattern: '^\d{6}$' }
+    latitude: { type: [number, "null"], minimum: -90, maximum: 90 }
+    longitude: { type: [number, "null"], minimum: -180, maximum: 180 }
+    websiteUrl:
+      type: [string, "null"]
+      format: uri
+      description: HTTP(S) URL without embedded credentials, or null.
+    googleMapsUrl:
+      type: [string, "null"]
+      format: uri
+      description: Google Maps URL on an accepted Google Maps host, or null.
+    instagramUrl:
+      type: [string, "null"]
+      format: uri
+      description: Instagram profile, post, or reel URL on instagram.com, or null.
+    status: { type: [string, "null"], enum: [open, temporarily_closed, closed, unknown, null] }
+    pubType: { type: [string, "null"], enum: [irish, british, other, unclassified, null] }
+    translations:
+      type: object
+      additionalProperties: false
+      required: [ja, en]
+      properties:
+        ja: { $ref: "#/AdminPubTranslation" }
+        en:
+          oneOf:
+            - $ref: "#/AdminPubTranslation"
+            - type: "null"
+    tagIds: { type: array, items: { $ref: ./automation.yaml#/Uuid } }
+    updatedAt: { type: string, format: date-time }
+
+AdminPubResponse:
+  type: object
+  additionalProperties: false
+  required: [pub]
+  properties:
+    pub: { $ref: "#/AdminPub" }
