@@ -28,6 +28,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | --- | --- | --- |
 | Product仕様・画面Behavior | [Product specification](specs/product.md) | Current。現行Behaviorは実装・テストを優先 |
 | Architecture | [System overview](architecture/system-overview.md)、[Sequences](architecture/sequences.md) | Current。実装とInfrastructureを優先 |
+| Mobile Architecture | [Mobile Architecture](architecture/mobile.md) | Current。Expo / React NativeのVersion、Native Build、Web / Mobile / Shared境界 |
 | API (Public / Admin / Automation) | [API specification](specs/api.md)、[OpenAPI contract](specs/openapi/openapi.yaml) | Current。API全体方針とPublic Pub APIはMarkdown、AdminとAutomationの機械可読な契約はOpenAPIを参照。現行BehaviorはRoute Handlerとテストを優先 |
 | Pub data contract | [Data specification](specs/data.md) | Current。共有型、Validation、DBを優先 |
 | Database | [Database specification](specs/database.md)、[Generated schema](generated/database-schema.md) | 設計はCurrent、物理SchemaはGenerated。Neonの現行Schemaを優先 |
