@@ -1,39 +1,9 @@
-MediaAsset:
-  type: object
-  additionalProperties: false
-  required: [id, url, mimeType, width, height, fileSize, createdAt]
-  properties:
-    id: { $ref: ./automation.yaml#/Uuid }
-    url:
-      type: string
-      format: uri
-    mimeType:
-      type: string
-      enum: [image/jpeg, image/png, image/webp]
-    width:
-      type: integer
-      minimum: 1
-      maximum: 8192
-    height:
-      type: integer
-      minimum: 1
-      maximum: 8192
-    fileSize:
-      type: integer
-      minimum: 1
-      maximum: 4194304
-      description: File size in bytes.
-    createdAt:
-      type: string
-      format: date-time
-      description: Creation time in ISO 8601 format.
-
 AdminMediaResponse:
   type: object
   additionalProperties: false
   required: [media]
   properties:
-    media: { $ref: "#/MediaAsset" }
+    media: { $ref: ./automation.yaml#/MediaAsset }
 
 AdminMediaListResponse:
   type: object
@@ -42,7 +12,7 @@ AdminMediaListResponse:
   properties:
     media:
       type: array
-      items: { $ref: "#/MediaAsset" }
+      items: { $ref: ./automation.yaml#/MediaAsset }
     total:
       type: integer
       minimum: 0
