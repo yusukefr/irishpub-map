@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { AxeBuilder } from "@axe-core/playwright";
 import { LOCALE_COOKIE } from "../apps/web/app/lib/i18n";
 import { E2E_TEST_DATA } from "../apps/web/app/lib/e2e-test-fixtures";
 import { loginAsE2EAdmin } from "./support/page-helpers";
@@ -246,6 +247,58 @@ test("Content・Media・Quizの一覧と編集画面は日英と主要Viewport�
             const day = page.getByRole("combobox", { name: dayLabel });
             await expect(month).toHaveValue("3");
             await expect(day).toHaveValue("17");
+            const imagePreview = page
+              .getByRole("img", { name: locale === "ja" ? "緑色の問題用画像" : "A green quiz image" })
+              .locator("..");
+            await expect(imagePreview).toBeVisible();
+            const imageActions = imagePreview.locator("..").locator(".admin-content-hero-actions");
+            const previewBounds = await imagePreview.boundingBox();
+            const actionsBounds = await imageActions.boundingBox();
+            expect(previewBounds).not.toBeNull();
+            expect(actionsBounds).not.toBeNull();
+            expect(actionsBounds!.y).toBeGreaterThanOrEqual(previewBounds!.y + previewBounds!.height);
+            const imageActionBounds = await imageActions.getByRole("button").evaluateAll((buttons) =>
+              buttons.map((button) => {
+                const { x, y, width: buttonWidth, height } = button.getBoundingClientRect();
+                return { x, y, width: buttonWidth, height };
+              }),
+            );
+            expect(imageActionBounds).toHaveLength(2);
+            for (let firstIndex = 0; firstIndex < imageActionBounds.length; firstIndex += 1) {
+              const button = imageActionBounds[firstIndex];
+              expect(button.height, `${locale} image action target at ${width}px`).toBeGreaterThanOrEqual(44);
+              expect(button.height, `${locale} image action height at ${width}px`).toBeLessThan(60);
+              for (let secondIndex = firstIndex + 1; secondIndex < imageActionBounds.length; secondIndex += 1) {
+                const other = imageActionBounds[secondIndex];
+                const overlaps =
+                  button.x < other.x + other.width &&
+                  button.x + button.width > other.x &&
+                  button.y < other.y + other.height &&
+                  button.y + button.height > other.y;
+                expect(overlaps, `${locale} image action buttons at ${width}px`).toBe(false);
+              }
+            }
+            if (width === 1280) {
+              const accessibility = await new AxeBuilder({ page }).include("main").analyze();
+              expect(
+                accessibility.violations.filter(({ impact }) => impact === "serious" || impact === "critical"),
+              ).toEqual([]);
+              const languageGroup = page.getByRole("group", {
+                name: locale === "ja" ? "日本語" : "English",
+              });
+              const questionField = languageGroup.getByRole("textbox").nth(0);
+              const explanationField = languageGroup.getByRole("textbox").nth(1);
+              await questionField.focus();
+              await page.keyboard.press("Tab");
+              await expect(explanationField).toBeFocused();
+              const focusStyle = await explanationField.evaluate((field) => {
+                const style = window.getComputedStyle(field);
+                return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+              });
+              expect(focusStyle).toEqual({ outlineStyle: "solid", outlineWidth: "3px" });
+              await explanationField.evaluate((field) => field.blur());
+              await page.evaluate(() => window.scrollTo(0, 0));
+            }
             await month.selectOption("2");
             await expect(day.locator("option")).toHaveCount(30);
             await month.selectOption("3");
