@@ -134,6 +134,16 @@ describe("AdminQuizEditor", () => {
     expect(correctChoice).toHaveValue("choice-1");
     expect(within(choices).getAllByRole("button", { name: /選択肢を削除/ })[0]).toBeDisabled();
   });
+  it("labels the special date month and day separately and limits days when the month changes", () => {
+    render(<AdminQuizEditor initialQuestion={question} relatedGuides={guides} databaseConfigured locale="ja" />);
+    const month = screen.getByRole("combobox", { name: "月" });
+    const day = screen.getByRole("combobox", { name: "日" });
+    expect(month).toHaveValue("3");
+    expect(day).toHaveValue("17");
+    fireEvent.change(month, { target: { value: "2" } });
+    expect(day.querySelectorAll("option")).toHaveLength(30);
+    expect(day).toHaveValue("17");
+  });
   it("adds, reorders, and removes choices and includes no sortOrder in the save payload", async () => {
     render(<AdminQuizEditor initialQuestion={null} relatedGuides={guides} databaseConfigured locale="ja" />);
     expect(screen.queryByRole("textbox", { name: /Question ID/ })).not.toBeInTheDocument();

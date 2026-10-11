@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { E2E_TEST_DATA } from "../apps/web/app/lib/e2e-test-fixtures";
+import { LOCALE_COOKIE } from "../apps/web/app/lib/i18n";
 import { loginAsE2EAdmin } from "./support/page-helpers";
 test("Quiz一覧からDraft保存、Choice操作、Publishを確認する", async ({ page }) => {
   await loginAsE2EAdmin(page, "/admin/quiz");
@@ -79,6 +80,23 @@ test("Quiz新規作成ではQuestion IDを入力せずServer生成UUIDへ遷移�
   });
   await page.getByRole("button", { name: "下書きを保存" }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/quiz/${generatedId}$`));
+});
+
+test("Quiz特別日は日英で月と日を個別に案内し、未設定から月を選べる", async ({ page }) => {
+  await loginAsE2EAdmin(page, "/admin/quiz/new");
+  const origin = new URL(page.url()).origin;
+
+  for (const locale of ["ja", "en"] as const) {
+    await page.context().addCookies([{ name: LOCALE_COOKIE, value: locale, url: origin }]);
+    await page.goto("/admin/quiz/new");
+    const month = page.getByRole("combobox", { name: locale === "ja" ? "月" : "Month" });
+    const day = page.getByRole("combobox", { name: locale === "ja" ? "日" : "Day" });
+    await expect(month).toHaveValue("");
+    await expect(day).toBeDisabled();
+    await month.selectOption("2");
+    await expect(day).toBeEnabled();
+    await expect(day.locator("option")).toHaveCount(30);
+  }
 });
 
 test("Quiz Editorで画像を選択し、日英の説明を保存して解除できる", async ({ page }) => {

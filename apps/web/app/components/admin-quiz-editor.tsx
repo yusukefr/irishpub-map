@@ -371,7 +371,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
           </div>
           <div className="admin-editor-grid">
             <label>
-              {q.specialDate}
+              {q.month}
               <select
                 value={values.specialDate?.month ?? ""}
                 onChange={(event) => setSpecialDatePart("month", event.target.value)}
@@ -385,7 +385,7 @@ export function AdminQuizEditor({ initialQuestion, databaseConfigured, locale, r
               </select>
             </label>
             <label>
-              {q.specialDate}
+              {q.day}
               <select
                 value={values.specialDate?.day ?? ""}
                 disabled={!values.specialDate}

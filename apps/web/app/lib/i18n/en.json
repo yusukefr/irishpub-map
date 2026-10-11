@@ -212,6 +212,7 @@
     "homeLink": "Find pubs on the map"
   },
   "admin": {
+    "publicationStatus": "Publication status",
     "content": {
       "listHeading": "Content management",
       "listDescription": "Manage drafts, previews, and publication for culture and experience articles.",
@@ -317,6 +318,7 @@
       "idHelp": "The server generates the Question ID as a UUID.",
       "category": "Category",
       "specialDate": "Special date",
+      "month": "Month",
       "day": "Day",
       "noSpecialDate": "None",
       "question": "Question",

@@ -48,7 +48,7 @@ export default async function AdminCalendarPage() {
                 <th>{c.dateRule}</th>
                 <th>{c.publicHoliday}</th>
                 <th>{c.featured}</th>
-                <th>{t.status}</th>
+                <th>{t.publicationStatus}</th>
                 <th>{t.updatedAt}</th>
                 <th>{t.operations}</th>
               </tr>
@@ -68,7 +68,7 @@ export default async function AdminCalendarPage() {
                   <td data-label={c.dateRule}>{formatCalendarDateRuleSummary(event.dateRule, locale)}</td>
                   <td data-label={c.publicHoliday}>{event.isPublicHoliday ? c.yes : c.no}</td>
                   <td data-label={c.featured}>{event.featured ? c.yes : c.no}</td>
-                  <td data-label={t.status}>
+                  <td data-label={t.publicationStatus}>
                     <span
                       className={`admin-publication-badge ${event.isPublished ? "is-published" : "is-unpublished"}`}
                     >

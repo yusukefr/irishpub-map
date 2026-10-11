@@ -212,6 +212,7 @@
     "homeLink": "地図からパブを探す"
   },
   "admin": {
+    "publicationStatus": "公開状態",
     "content": {
       "listHeading": "Content管理",
       "listDescription": "文化・体験記事の下書き、Preview、公開状態を管理します。",
@@ -317,6 +318,7 @@
       "idHelp": "Question IDはServerがUUIDを生成します。",
       "category": "カテゴリー",
       "specialDate": "特別日",
+      "month": "月",
       "day": "日",
       "noSpecialDate": "なし",
       "question": "問題文",
