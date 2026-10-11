@@ -1,0 +1,119 @@
+Uuid:
+  type: string
+  format: uuid
+
+AdminTagTranslations:
+  type: object
+  additionalProperties: false
+  required: [ja]
+  properties:
+    ja: { type: string, minLength: 1, maxLength: 100 }
+    en: { type: string, minLength: 1, maxLength: 100 }
+
+AdminTagTranslationInput:
+  type: object
+  required: [ja]
+  properties:
+    ja:
+      type: string
+      minLength: 1
+      description: Trimmed before storage, then limited to 100 characters; blank after trimming returns 422.
+    en:
+      type: [string, "null"]
+      description: Optional. Trimmed before storage and limited to 100 characters when non-empty; empty or whitespace-only values are normalized to an omitted translation.
+
+AdminTag:
+  type: object
+  additionalProperties: false
+  required: [id, key, translations, pubCount]
+  properties:
+    id: { $ref: "#/Uuid" }
+    key: { type: string, minLength: 1, maxLength: 64, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+    translations: { $ref: "#/AdminTagTranslations" }
+    pubCount: { type: integer, minimum: 0 }
+
+CreateAdminTagRequest:
+  type: object
+  required: [key, translations]
+  properties:
+    key: { type: string, minLength: 1, maxLength: 64, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+    translations: { $ref: "#/AdminTagTranslationInput" }
+
+UpdateAdminTagRequest:
+  type: object
+  required: [translations]
+  properties:
+    key:
+      type: string
+      description: Immutable. If supplied, the request returns 422 with fieldErrors.key set to immutable.
+    translations: { $ref: "#/AdminTagTranslationInput" }
+
+AdminTagsResponse:
+  type: object
+  additionalProperties: false
+  required: [tags, databaseConfigured]
+  properties:
+    tags:
+      type: array
+      items: { $ref: "#/AdminTag" }
+    databaseConfigured: { type: boolean }
+
+AdminTagResponse:
+  type: object
+  additionalProperties: false
+  required: [tag]
+  properties:
+    tag: { $ref: "#/AdminTag" }
+
+DeleteAdminTagResponse:
+  type: object
+  additionalProperties: false
+  required: [ok]
+  properties:
+    ok: { const: true }
+
+TagConflict:
+  description: A tag with the key or one of the submitted names already exists.
+  content:
+    application/json:
+      schema:
+        type: object
+        additionalProperties: false
+        required: [errorCode]
+        properties:
+          errorCode: { const: tag_conflict }
+
+TagInUse:
+  description: The tag is currently used by one or more pubs.
+  content:
+    application/json:
+      schema:
+        type: object
+        additionalProperties: false
+        required: [errorCode]
+        properties:
+          errorCode: { const: tag_in_use }
+
+TagNotFound:
+  description: The tag does not exist.
+  content:
+    application/json:
+      schema:
+        type: object
+        additionalProperties: false
+        required: [errorCode]
+        properties:
+          errorCode: { const: tag_not_found }
+
+InvalidTagId:
+  type: object
+  additionalProperties: false
+  required: [errorCode]
+  properties:
+    errorCode: { const: invalid_tag_id }
+
+InvalidTagIdResponse:
+  description: The tag ID is not a UUID.
+  content:
+    application/json:
+      schema: { $ref: "#/InvalidTagId" }
