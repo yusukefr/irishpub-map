@@ -62,7 +62,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 ## Automation APIの認証・認可
 
-Automation APIとAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現行の管理用Routeは、Login / Logoutを含めてすべて収録済みです。[Admin API収録一覧](openapi/admin-api-coverage.md)で現行Routeとの対応を確認できます。公開 `GET /api/pubs` と `GET /media/{uuid}` はこのOpenAPIに未収録です。公開Pub API契約と共通Clientの整備は #541 の対象です。
+Automation APIとAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現行の管理用Routeは、Login / Logoutを含めてすべて収録済みです。公開 `GET /api/pubs` と `GET /media/{uuid}` はこのOpenAPIに未収録です。公開Pub API契約と共通Clientの整備は #541 の対象です。
 
 `/api/automation/v1/*` は外部Automation用です。Bearer Tokenを要求し、Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数やRepositoryへ保存しません。設定、発行、Token Rotation、Scope運用とCreate / Publishフローは[Automation API Runbook](../runbooks/automation-api-access.md)を参照してください。
 
@@ -75,7 +75,7 @@ CreateのIdempotency-Keyは成功済みの同一Requestを重複作成から保�
 | API | 役割 | 契約の参照先 |
 | --- | --- | --- |
 | Public Pub API | Mobile / Web向けの公開店舗読取り | 本文書の[Public API](#公開-api)と[店舗データ仕様](data.md)。OpenAPI収録は #541 の対象 |
-| Admin API | Web管理画面向けの管理操作とLogin / Logout | [OpenAPI定義](openapi/openapi.yaml)と[Admin API収録一覧](openapi/admin-api-coverage.md)。業務ルールは各ドメイン仕様を参照 |
+| Admin API | Web管理画面向けの管理操作とLogin / Logout | [OpenAPI定義](openapi/openapi.yaml)。業務ルールは各ドメイン仕様を参照 |
 | Automation API | 外部Connector向けのScope制御された管理操作 | [OpenAPI定義](openapi/openapi.yaml)と[Automation API Runbook](../runbooks/automation-api-access.md) |
 | Admin Calendar API | Web管理画面向けCalendar操作 | [OpenAPI定義](openapi/openapi.yaml)、画面Behaviorは[Product仕様](product.md) |
 
@@ -96,12 +96,11 @@ Login / Logoutを含め、状態を変更する管理APIはリクエスト先と
 ### API契約とドメイン仕様への入口
 
 - **APIのPath / Method / Query / Body / Response / Error / Cookie:** [OpenAPI定義](openapi/openapi.yaml)
-- **現行管理Routeの全25パスの収録状況:** [Admin API収録一覧](openapi/admin-api-coverage.md)
 - **店舗のDraft / Publish・入力検証:** [管理店舗の下書き・公開設計](admin-pub-lifecycle.md)、[店舗データ仕様](data.md)
 - **タグ・営業ステータス:** [管理タグ仕様](tag-management.md)、[タグの正規化](tag-normalization.md)、[管理ステータス仕様](status-management.md)
 - **Editorial Content / Calendar:** [プロダクト仕様](product.md)、[Editorial Contentキャッシュ方針](editorial-content-cache.md)
 - **Quiz:** [Today's Ireland Quizデータ仕様](quiz.md)
-- **Media管理・外部送信:** [プロダクト仕様](product.md)、[外部送信・プライバシー実態整理](../operations/privacy-and-external-transmission.md)
+- **Media管理・保存時の整合性・外部送信:** [プロダクト仕様](product.md)、[システム構成](../architecture/system-overview.md)、[外部送信・プライバシー実態整理](../operations/privacy-and-external-transmission.md)
 - **Automation APIの認証・監査・再送:** [Automation API Runbook](../runbooks/automation-api-access.md)
 
 ## 公開Media参照

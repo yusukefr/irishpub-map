@@ -107,3 +107,5 @@ Today's Ireland Quizは`/discover/quiz`で、Asia/Tokyo基準の日付から決�
 Irish Calendarは`/discover/calendar`で、Asia/Tokyo基準の当日と選択月に該当するアイルランド共和国の祝日・文化イベントを日英表示します。月別一覧は`?year=<年>&month=<月>`で当月の前後12か月を移動でき、範囲端ではそれ以上の移動を無効にします。不正または範囲外の年月は当月へ戻し、「今日のアイルランド」は選択月にかかわらず実際の当日を表示します。イベント内容はNeonのPublished Calendar EventをSource of Truthとし、Public Calendar Data Loaderが一覧全体をCacheして取得します。`DATABASE_URL`未設定時はイベント0件とし、DB取得失敗や不正データはfallbackせずエラーとして扱います。Calendar domain layerが暦日計算、当日・月別検索を担当します。開催日が年ごとに公式発表されるイベントは通常月の月別一覧に未確定と明示し、具体日を推測しません。公開Content RepositoryやPublic APIには接続しません。
 
 公開本文と管理画面のMarkdown PreviewはRaw HTML・MDX・JavaScriptを実行せず、許可済み要素と安全なURLだけを描画します。公開GuideとStoryはNeonだけをSource of Truthとし、Repository内MDX、Static Loader、DB → MDX fallbackは保持しません。RendererはApplication側の固定Allow Listでkindに対応させ、DB値からComponent名やmodule pathを解決しません。RollbackにはGit履歴とNeonのBackup / Branchを利用します。
+
+管理Editorial ContentのMarkdown URL検証は、公開Rendererと同じCommonMark・GFM ParserでAST化し、link・image・definitionのURLを確認します。HTTP(S)、ルート相対URL、ページ内アンカーだけを許可し、検証と表示の解釈差による危険なリンクの混入を防ぎます。

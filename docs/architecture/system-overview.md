@@ -73,6 +73,7 @@ flowchart TB
 - 公開Guideは`content-repository`がNeonのPublished Contentだけを取得し、安全なMarkdown Rendererへ渡します。Repository内MDX、Static Loader、MDX fallbackは使用しません。
 - 公開Calendarは`calendar-repository`がNeonのPublished Eventだけを取得し、`calendar-public-data`が取得結果をCacheします。JSON fallbackは使用しません。
 - `quiz-repository`は公開Quizと管理QuizのNeonアクセス、回答前DTO、採点、日次選択を分離して提供します。静的Quizへのfallbackは行いません。
+- 管理MediaのUploadは `apps/web/app/lib/media/service.ts` が画像検証後にVercel Blobへ保存し、Media AssetをNeonへ登録します。DB登録に失敗した場合は保存済みBlobを削除して補償し、補償削除にも失敗した場合は成功扱いせず、失敗段階を区別した一般化エラーを返します。
 - 店舗テーブルが空の場合も自動投入は行わず、管理画面またはNeonインポート手順による明示的な投入を必要とします。市区町村コードは `municipality_codes` と結合して解決します。
 - API とリポジトリ層は、共有パッケージの `asPubs` で読み出した店舗データを検証します。型の詳細は[店舗データ仕様](../specs/data.md)を参照してください。
 - 現在地は利用目的を確認した明示操作後にだけ取得し、生の座標はブラウザ内でだけ保持します。アプリのAPIやDBへ送信・保存しません。ただし、現在地周辺を描画するOpenFreeMapへのタイル要求から、おおよその閲覧地域を送信先が推測できる可能性があります。
