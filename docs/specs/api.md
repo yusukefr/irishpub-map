@@ -97,8 +97,8 @@ Login / Logoutを含め、状態を変更する管理APIはリクエスト先と
 
 - **APIのPath / Method / Query / Body / Response / Error / Cookie:** [OpenAPI定義](openapi/openapi.yaml)
 - **店舗のDraft / Publish・入力検証:** [管理店舗の下書き・公開設計](admin-pub-lifecycle.md)、[店舗データ仕様](data.md)
-- **タグ・営業ステータス:** [管理タグ仕様](tag-management.md)、[タグの正規化](tag-normalization.md)、[管理ステータス仕様](status-management.md)
-- **Editorial Content / Calendar:** [プロダクト仕様](product.md)、[Editorial Contentキャッシュ方針](editorial-content-cache.md)
+- **タグ・営業ステータス:** [タグ仕様](tags.md)、[管理ステータス仕様](status-management.md)
+- **Editorial Content / Calendar:** [プロダクト仕様](product.md)、Editorial Content Cacheの責務は[システム構成](../architecture/system-overview.md)を参照
 - **Quiz:** [Today's Ireland Quizデータ仕様](quiz.md)
 - **Media管理・保存時の整合性・外部送信:** [プロダクト仕様](product.md)、[システム構成](../architecture/system-overview.md)、[外部送信・プライバシー実態整理](../operations/privacy-and-external-transmission.md)
 - **Automation APIの認証・監査・再送:** [Automation API Runbook](../runbooks/automation-api-access.md)

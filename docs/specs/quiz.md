@@ -4,8 +4,6 @@
 
 /discover/quiz は、Quiz Repository経由でNeonのPublished QuestionからAsia/Tokyo基準の「今日の1問」を表示します。QuizのQuestionとChoiceのSource of TruthはNeon PostgreSQLです。ユーザー登録、回答履歴、長期スコアは使用しません。
 
-Issue #391で旧JSONからNeonへの一度限りのData Migrationを実施し、Issue #393でPublic Quizの取得経路をNeonへ切り替え、Issue #394で旧JSONとMigration Artifactを削除しました。
-
 ## Domain Model
 
 Quizは quiz_questions、quiz_question_translations、quiz_choices、quiz_choice_translations の4テーブルで管理します。QuestionはCategory、Special Date、Correct Choice、Source URL、Related Content、任意の画像参照、公開状態を持ち、各QuestionとChoiceはja/en翻訳を持ちます。問題画像は `media_assets` を参照し、日英の代替テキストと任意のキャプションをQuestion翻訳に保持します。画像未設定なら両言語の画像説明も空にします。別画像への変更時は説明を再入力します。
@@ -44,12 +42,10 @@ Admin Quizは /admin/quiz、/admin/quiz/new、/admin/quiz/:id で認証済みユ
 
 管理画面用の `GET` / `POST /api/admin/quiz`、`GET` / `PUT /api/admin/quiz/{id}`、`PATCH /api/admin/quiz/{id}/publication` のRequest / Response、Status、Error、認証契約は[Admin Quiz OpenAPI](openapi/paths/admin-quiz.yaml)を参照してください。関連Guideと問題画像は既存のGuide / Media Assetを参照し、公開条件はRoute経由のServiceで再検証します。
 
-Published Question一覧だけをLocale単位でunstable_cacheにより5分間Cacheします。Asia/Tokyoの日付決定はCacheの外で行います。Draftの変更、状態変更なし、更新失敗ではCacheを失効させません。
+Published Question一覧だけをLocale単位で `unstable_cache` により5分間Cacheします。Cache KeyはLocaleで分離し、Asia/Tokyoの日付決定はCacheの外で行います。Publish / Unpublishと、公開済みQuestionの更新が成功した場合はPublic Quiz Cacheを即時失効させます。Draftのみの変更、状態変更なし、更新失敗では失効させません。
 
 DATABASE_URL未設定時はPublic Quizを利用不可状態、Published Questionが0件の場合は空状態として表示します。DB障害時も別のStatic Dataへfallbackせず、利用者には一般化したエラーだけを表示します。
 
-## E2EとMigration履歴
+## E2E
 
 E2EはProduction DBを使わず、E2E_TEST_MODEのfixtureでPublic・Admin・採点と画像表示を検証します。Draft QuestionはPublic fixtureからも除外します。
-
-旧JSONからNeonへの一度限りのData MigrationはIssue #391で実施済みです。移行対象は9 Questions、36 Choicesで、PreviewとProductionのRead-only Dry Runで完全移行済みを確認しました。Migration Scriptと旧JSONはIssue #394で削除し、移行の経緯はIssue #391とGit履歴で確認できます。Question IDのUUID化はMigration 018でQuestion本体と3つの参照列を同じtransaction内で変換します。各環境ではPhase A互換Applicationの配備を確認し、Migration 018とverify SQLの成功後にUUID専用Applicationを配備します。通常のDeploymentでMigrationを自動実行しません。

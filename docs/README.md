@@ -33,9 +33,9 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Database | [Database specification](specs/database.md)、[Generated schema](generated/database-schema.md) | 設計はCurrent、物理SchemaはGenerated。Neonの現行Schemaを優先 |
 | Pub draft / publish | [Admin pub lifecycle](specs/admin-pub-lifecycle.md) | Current。管理APIとテストを優先 |
 | Status management | [Status management](specs/status-management.md) | Current。実装・テストを優先 |
-| Tag management / normalization | [Tag management](specs/tag-management.md)、[Tag normalization](specs/tag-normalization.md) | Current。共有型、DB、実装を優先 |
+| Tag management / normalization | [Tag specification](specs/tags.md) | Current。共有型、DB、実装を優先 |
 | Quiz | [Quiz specification](specs/quiz.md) | Current。実装・テストを優先 |
-| Editorial content cache | [Editorial content cache](specs/editorial-content-cache.md) | Current。実装・テストを優先 |
+| Editorial Content Cache | [System overview](architecture/system-overview.md) | Current。Cacheの責務と実装参照を記載 |
 | Public UI | [Irish Pub Map Design System](design/README.md) | Current。Token、Component、Pattern、Reference Screenの入口 |
 | Development rules / GitHub / JSDoc | [Development conventions](development/conventions.md) | Current。root `AGENTS.md` のMandatory Rulesを優先 |
 | Testing strategy / Test Layer | [テスト戦略](development/testing.md) | Current。テストの責務、追加・削除、Mock・Fixture、Coverageの判断基準 |
