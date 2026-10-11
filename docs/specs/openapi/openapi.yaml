@@ -5,13 +5,15 @@ info:
   license:
     name: MIT
     identifier: MIT
-  description: Machine-readable contracts for Admin Calendar and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
+  description: Machine-readable contracts for Admin Calendar, Admin Master, and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
 servers:
   - url: /
     description: Current application origin
 tags:
   - name: Admin Calendar
     description: Calendar event management for authenticated administrators.
+  - name: Admin Master
+    description: Read-only reference data for authenticated administrators.
   - name: Automation Master
     description: Read-only master data. Scopes are server-side allow-list entries, not OAuth scopes.
   - name: Automation Tags
@@ -29,6 +31,16 @@ paths:
     $ref: ./paths/admin-calendar.yaml#/CalendarItem
   /api/admin/calendar/{id}/publication:
     $ref: ./paths/admin-calendar.yaml#/CalendarPublication
+  /api/admin/master/prefectures:
+    $ref: ./paths/admin-master.yaml#/Prefectures
+  /api/admin/master/municipalities:
+    $ref: ./paths/admin-master.yaml#/Municipalities
+  /api/admin/master/tags:
+    $ref: ./paths/admin-master.yaml#/Tags
+  /api/admin/master/statuses:
+    $ref: ./paths/admin-master.yaml#/Statuses
+  /api/admin/master/pub-types:
+    $ref: ./paths/admin-master.yaml#/PubTypes
   /api/automation/v1/master/prefectures:
     $ref: ./paths/automation-master.yaml#/Prefectures
   /api/automation/v1/master/municipalities:

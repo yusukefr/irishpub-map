@@ -1,0 +1,78 @@
+Prefecture:
+  type: object
+  additionalProperties: false
+  required: [code, name]
+  properties:
+    code: { type: integer, minimum: 1, maximum: 47 }
+    name: { type: string }
+
+Municipality:
+  type: object
+  additionalProperties: false
+  required: [code, prefectureCode, name]
+  properties:
+    code: { type: string, pattern: '^\d{6}$' }
+    prefectureCode: { type: integer, minimum: 1, maximum: 47 }
+    name: { type: string }
+
+TagOption:
+  type: object
+  additionalProperties: false
+  required: [id, key, name]
+  properties:
+    id: { $ref: "./automation.yaml#/Uuid" }
+    key: { type: string, minLength: 1 }
+    name: { type: string, minLength: 1 }
+
+PubStatus:
+  type: object
+  additionalProperties: false
+  required: [code, key, name]
+  properties:
+    code: { type: integer }
+    key: { type: string, enum: [open, temporarily_closed, closed, unknown] }
+    name: { type: string }
+
+PubType:
+  type: object
+  additionalProperties: false
+  required: [code, key, name]
+  properties:
+    code: { type: integer }
+    key: { type: string, enum: [irish, british, other, unclassified] }
+    name: { type: string }
+
+PrefecturesResponse:
+  type: object
+  additionalProperties: false
+  required: [prefectures]
+  properties:
+    prefectures: { type: array, items: { $ref: "#/Prefecture" } }
+
+MunicipalitiesResponse:
+  type: object
+  additionalProperties: false
+  required: [municipalities]
+  properties:
+    municipalities: { type: array, items: { $ref: "#/Municipality" } }
+
+TagsResponse:
+  type: object
+  additionalProperties: false
+  required: [tags]
+  properties:
+    tags: { type: array, items: { $ref: "#/TagOption" } }
+
+StatusesResponse:
+  type: object
+  additionalProperties: false
+  required: [statuses]
+  properties:
+    statuses: { type: array, items: { $ref: "#/PubStatus" } }
+
+PubTypesResponse:
+  type: object
+  additionalProperties: false
+  required: [pubTypes]
+  properties:
+    pubTypes: { type: array, items: { $ref: "#/PubType" } }
