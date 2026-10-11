@@ -19,7 +19,7 @@
 
 ```bash
 nvm use
-npm install
+npm ci
 npm run dev
 ```
 
@@ -33,8 +33,11 @@ npm run format:check
 npm run typecheck
 npm run lint
 npm run build
+npm run check:mermaid
 npm run check:sensitive-data
 ```
+
+`npm ci` installs Mermaid for the unit test suite. The standalone `npm run check:mermaid` command uses the isolated docs-check dependencies; install them once with `npm ci --prefix tools/docs-check --ignore-scripts` before running it.
 
 E2Eや依存関係変更時の確認を含む詳しい検証方針は[コード規約・開発規約](docs/development/conventions.md)を参照してください。
 

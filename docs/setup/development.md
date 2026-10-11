@@ -15,6 +15,12 @@ npm ci
 
 `nvm`を利用しない環境では、`.nvmrc`と同じNode.js major versionを選択します。
 
+ルートの `npm ci` でUnit Testと Mermaid parser の依存関係もインストールされます。ドキュメント全体の図を単独で検証する `npm run check:mermaid` は、docs-only CIと同じ独立環境を使うため、実行前に次のコマンドでツールをインストールします。
+
+```bash
+npm ci --prefix tools/docs-check --ignore-scripts
+```
+
 ## ローカル環境変数
 
 `.env.example`をコピーして`.env.local`を作成します。実値をGit、Issue、PR、スクリーンショットへ記録しません。
@@ -50,6 +56,8 @@ Next.jsアプリは`apps/web`で起動します。
 
 ```bash
 npm test
+npx vitest run tests/check-mermaid.test.ts
+npm run check:mermaid
 npm run format:check
 npm run typecheck
 npm run lint
