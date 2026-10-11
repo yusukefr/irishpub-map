@@ -1,5 +1,6 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
+  skipProxyUrlNormalize: true,
   transpilePackages: ["@irishpub-map/shared"],
   images: {
     remotePatterns: [

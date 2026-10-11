@@ -36,7 +36,7 @@ Mobile対応Issueへ着手するときの入口です。仕様本文を複製せ
 
 ## 現行 Public Pub API とセキュリティ境界
 
-Public APIのSource of Truthは [API仕様](../specs/api.md) と [店舗データ仕様](../specs/data.md)、実際の契約はRoute Handler・Repository・テストです。現在の読取りEndpointは `GET /api/pubs?locale=ja|en`、locale省略時は `ja` です。成功リクエストのQuery文字列は省略、`?locale=ja`、`?locale=en` の3通りに限定します。percent-encoding、空のQuery separator、localeの重複、未対応Queryは `400` です。不正localeも `400` です。匿名の成功時は `{ "pubs": Pub[] }` を返し、DB未設定時は空配列です。翻訳は要求localeを優先し、日本語へフォールバックします。公開店舗のみ返し、`isPublished` はDTOに含みません。共有CDNでは `s-maxage=60` と `stale-while-revalidate=60` を使います。
+Public APIのSource of Truthは [API仕様](../specs/api.md) と [店舗データ仕様](../specs/data.md)、実際の契約はProxy・Route Handler・Repository・テストです。現在の読取りEndpointは `GET /api/pubs?locale=ja|en`、locale省略時は `ja` です。Cache lookup前のProxyとRoute Handlerが、成功リクエストの元Query文字列を省略、`?locale=ja`、`?locale=en` の3通りに限定します。percent-encoding、空のQuery separator、localeの重複、未対応Queryは `400` です。不正localeも `400` です。匿名の成功時は `{ "pubs": Pub[] }` を返し、DB未設定時は空配列です。翻訳は要求localeを優先し、日本語へフォールバックします。公開店舗のみ返し、`isPublished` はDTOに含みません。共有CDNでは `s-maxage=60` と `stale-while-revalidate=60` を使います。
 
 Public Pub APIは全環境で固定Client Secret不要のRead-only APIです。分散Rate Limitは導入しておらず、濫用対策は公開DTOの限定、Query allowlist、短時間の共有Cacheを使います。店舗公開状態の変更が共有Cacheへ反映されるまで最大約120秒の可能性があります。#541 の公開API OpenAPI収録と共通Clientは未実装です。ClientからNeonへ直接接続せず、DB Credential、Admin Session / API Credential、Automation Bearer Tokenを含めません。APIの現行契約は[API仕様](../specs/api.md)を確認してください。
 

@@ -1,6 +1,8 @@
 // 公開店舗APIの匿名アクセス、公開DTO、Query制限、共有Cacheを保証するテストです。
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 import type { Pub } from "@irishpub-map/shared/pub";
+import { proxy } from "../../apps/web/proxy";
 import { GET } from "../../apps/web/app/api/pubs/route";
 import { getPublishedPubs } from "../../apps/web/app/lib/pub-repository";
 
@@ -9,6 +11,16 @@ const repositoryMock = vi.hoisted(() => ({ getPublishedPubs: vi.fn() }));
 vi.mock("../../apps/web/app/lib/pub-repository", () => repositoryMock);
 
 const getPublishedPubsMock = vi.mocked(getPublishedPubs);
+const nonCanonicalQueries = [
+  "?nonce=1",
+  "?locale=ja&nonce=1",
+  "?locale=ja&locale=en",
+  "?locale=ja&",
+  "?locale=ja&&&&",
+  "?locale=%6a%61",
+  "?%6cocale=ja",
+  "?&&&&",
+];
 
 const originalVercelEnv = process.env.VERCEL_ENV;
 const originalApiKey = process.env.IRISHPUB_MAP_API_KEY;
@@ -79,6 +91,14 @@ describe("GET /api/pubs", () => {
     expect(body.pubs[0]).not.toHaveProperty("databaseUrl");
   });
 
+  it("treats an empty query marker as the default locale", async () => {
+    const request = new Request("http://localhost/api/pubs?");
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(getPublishedPubsMock).toHaveBeenCalledWith("ja");
+  });
+
   it("rejects an unsupported locale before querying the repository", async () => {
     const response = await GET(new Request("http://localhost/api/pubs?locale=fr"));
 
@@ -88,22 +108,20 @@ describe("GET /api/pubs", () => {
     expect(getPublishedPubsMock).not.toHaveBeenCalled();
   });
 
-  it.each([
-    "?nonce=1",
-    "?locale=ja&nonce=1",
-    "?locale=ja&locale=en",
-    "?",
-    "?locale=ja&",
-    "?locale=ja&&&&",
-    "?locale=%6a%61",
-    "?%6cocale=ja",
-    "?&&&&",
-  ])("rejects query strings outside the canonical-locale allowlist (%s)", async (query) => {
+  it.each(nonCanonicalQueries)("rejects query strings outside the canonical-locale allowlist (%s)", async (query) => {
     const response = await GET(new Request(`http://localhost/api/pubs${query}`));
 
     await expect(response.json()).resolves.toEqual({ error: "Unsupported query parameter." });
     expect(response.status).toBe(400);
     expect(response.headers.get("Cache-Control")).toBeNull();
     expect(getPublishedPubsMock).not.toHaveBeenCalled();
+  });
+
+  it.each(nonCanonicalQueries)("rejects non-canonical queries before CDN cache lookup (%s)", async (query) => {
+    const response = proxy(new NextRequest(`http://localhost/api/pubs${query}`));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Unsupported query parameter." });
+    expect(response.headers.get("Cache-Control")).toBeNull();
   });
 });
