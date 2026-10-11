@@ -11,8 +11,8 @@ export default async function AdminLoginPage() {
   const t = getTranslation(locale);
   return (
     <main className="admin-shell">
-      <section className="admin-panel">
-        <p className="eyebrow">Irish Pub Map</p>
+      <section className="admin-panel admin-login-panel">
+        <p className="eyebrow admin-login-brand">Irish Pub Map</p>
         <h1>{t.admin.loginHeading}</h1>
         <LoginForm locale={locale} />
       </section>

@@ -31,6 +31,10 @@ Desktopは見出し・説明を左、主要操作を右へ配置します。Mobi
 - 行内操作には名前付きLink / Buttonを使い、44px程度の操作領域とVisible Focusを確保します。クリック可能な`tr`だけを操作手段にしません。
 - 760px以下では表の情報を無言で削らず、既存の`data-label`等を使う縦並び表示へ切り替えるか、対象画面の仕様に合うListへ変えます。未実装Filterや動かないControlを追加しません。
 
+## Login
+
+ログイン画面は保護画面のSidebarを表示せず、Warm Cream上に最大560pxのWhite surfaceを中央配置します。ブランド名は小さなlabel、ログインタイトルはAdmin用`heading-lg`とし、Public HeroのDisplay Fontを使いません。IDとパスワードは明示的なlabelと44px以上の入力領域を持ち、送信中は二重送信を防ぎ、認証失敗はフォーム直下の`role="alert"`で表示します。認証方式、API応答、入力保持の挙動は変更しません。
+
 ## Form
 
 - 既存のForm、Button、入力Componentを優先します。Page単位のFormは目的ごとにFieldset / Sectionへまとめ、Label、補足、Errorを入力と関連付けます。
@@ -52,4 +56,4 @@ Desktopは見出し・説明を左、主要操作を右へ配置します。Mobi
 
 ## Shared API and ownership
 
-共通Headerは`apps/web/app/components/admin-page-header.tsx`の`AdminPageHeader`を使います。一覧、Form、Status、Feedback、Emptyは既存Component / classを優先します。このIssueでは共通デザイン規則とShellの基盤を用意し、各画面への本格適用はCalendar（#602）、Pubs / Tags / Statuses（#603）、Content / Media / Quiz（#604）、Loginと統合確認（#605）が担当します。
+共通Headerは`apps/web/app/components/admin-page-header.tsx`の`AdminPageHeader`を使います。一覧、Form、Status、Feedback、Emptyは既存Component / classを優先します。Calendar（#602）、Pubs / Tags / Statuses（#603）、Content / Media / Quiz（#604）で適用した共通ルールを、Loginと全画面の最終確認（#605）まで一貫して保ちます。
