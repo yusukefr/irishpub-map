@@ -253,6 +253,34 @@ PubNotFound:
               errorCode:
                 const: pub_not_found
 
+ContentNotFound:
+  description: The editorial content does not exist.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: content_not_found
+
+ContentConflict:
+  description: The editorial content slug conflicts with an existing item.
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: "#/ErrorBody"
+          - type: object
+            properties:
+              errorCode:
+                const: content_conflict
+              fieldErrors:
+                type: object
+                additionalProperties:
+                  type: string
+
 DatabaseUnavailable:
   description: The database is not configured or available.
   content:

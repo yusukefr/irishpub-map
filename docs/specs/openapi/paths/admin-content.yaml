@@ -1,0 +1,160 @@
+Collection:
+  get:
+    tags: [Admin Editorial Content]
+    operationId: listAdminContent
+    summary: List editorial content
+    description: Returns drafts and published content in updated-at descending order. When the database is not configured, returns an empty list and databaseConfigured false.
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Editorial content and database configuration state
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-content.yaml#/AdminContentListResponse }
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+  post:
+    tags: [Admin Editorial Content]
+    operationId: createAdminContent
+    summary: Create an editorial content draft
+    description: Creates a draft from the complete editable snapshot, including both locale translations. State-changing requests require an Origin exactly matching the request URL origin and an application/json content type.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: ../schemas/admin-content.yaml#/AdminContentWriteInput }
+    responses:
+      "201":
+        description: Created editorial content draft
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-content.yaml#/AdminContentResponse }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidJson
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "409":
+        $ref: ../schemas/errors.yaml#/ContentConflict
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/ValidationError
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+Item:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: Editorial content UUID.
+      schema: { $ref: ../schemas/automation.yaml#/Uuid }
+  get:
+    tags: [Admin Editorial Content]
+    operationId: getAdminContent
+    summary: Get editorial content
+    security:
+      - AdminSession: []
+    responses:
+      "200":
+        description: Editorial content details with Japanese and English translations
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-content.yaml#/AdminContentResponse }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidRequest
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "404":
+        $ref: ../schemas/errors.yaml#/ContentNotFound
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+  put:
+    tags: [Admin Editorial Content]
+    operationId: updateAdminContent
+    summary: Replace editorial content fields
+    description: Replaces the complete editable snapshot and preserves publication state. An update to published content must still meet publication requirements. Successful updates to published content invalidate its public item and list cache tags. State-changing requests require a matching Origin and application/json content type.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: ../schemas/admin-content.yaml#/AdminContentWriteInput }
+    responses:
+      "200":
+        description: Updated editorial content
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-content.yaml#/AdminContentResponse }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidRequestOrInvalidJson
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: ../schemas/errors.yaml#/ContentNotFound
+      "409":
+        $ref: ../schemas/errors.yaml#/ContentConflict
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/ValidationOrPublicationRequirementsNotMet
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError
+
+Publication:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: Editorial content UUID.
+      schema: { $ref: ../schemas/automation.yaml#/Uuid }
+  patch:
+    tags: [Admin Editorial Content]
+    operationId: changeAdminContentPublication
+    summary: Change editorial content publication state
+    description: Publishing requires a valid kind, slug, category, and complete Japanese and English title, summary, and body. Successful state changes invalidate the public item and list cache tags. State-changing requests require a matching Origin and application/json content type.
+    security:
+      - AdminSession: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: ../schemas/admin-content.yaml#/SetAdminContentPublicationInput }
+    responses:
+      "200":
+        description: Publication state changed or was already current
+        content:
+          application/json:
+            schema: { $ref: ../schemas/admin-content.yaml#/AdminContentPublicationResponse }
+      "400":
+        $ref: ../schemas/errors.yaml#/InvalidRequestOrInvalidJson
+      "401":
+        $ref: ../schemas/errors.yaml#/Unauthorized
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "404":
+        $ref: ../schemas/errors.yaml#/ContentNotFound
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "422":
+        $ref: ../schemas/errors.yaml#/PublicationRequirementsNotMet
+      "503":
+        $ref: ../schemas/errors.yaml#/DatabaseUnavailable
+      "500":
+        $ref: ../schemas/errors.yaml#/InternalError

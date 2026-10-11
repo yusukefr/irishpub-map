@@ -1,0 +1,128 @@
+AdminContentTranslation:
+  type: object
+  additionalProperties: false
+  required: [title, summary, bodyMarkdown, heroImageAlt, heroImageCaption]
+  properties:
+    title: { type: string }
+    summary: { type: string }
+    bodyMarkdown: { type: string }
+    heroImageAlt: { type: string }
+    heroImageCaption: { type: string }
+
+AdminContentTranslationInput:
+  type: object
+  additionalProperties: false
+  required: [title, summary, bodyMarkdown, heroImageAlt, heroImageCaption]
+  properties:
+    title: { type: string, maxLength: 200 }
+    summary: { type: string, maxLength: 500 }
+    bodyMarkdown:
+      type: string
+      maxLength: 100000
+      description: >-
+        Markdown text is preserved verbatim. Link, image, and definition URLs must use HTTP(S), a root-relative path, or a page anchor.
+    heroImageAlt: { type: string, maxLength: 500 }
+    heroImageCaption: { type: string, maxLength: 1000 }
+
+AdminContent:
+  type: object
+  additionalProperties: false
+  required:
+    [id, kind, slug, category, status, publishedAt, heroImageAssetId, heroImage, translations, createdAt, updatedAt]
+  properties:
+    id: { $ref: ./automation.yaml#/Uuid }
+    kind: { type: [string, "null"], enum: [story, guide, null] }
+    slug: { type: [string, "null"], maxLength: 100, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+    category: { type: [string, "null"], enum: [history, culture, pub-culture, food-drink, null] }
+    status: { type: string, enum: [draft, published] }
+    publishedAt: { type: [string, "null"], format: date-time }
+    heroImageAssetId: { type: [string, "null"], format: uuid }
+    heroImage:
+      anyOf:
+        - $ref: ./automation.yaml#/MediaAsset
+        - type: "null"
+    translations:
+      type: object
+      additionalProperties: false
+      required: [ja, en]
+      properties:
+        ja: { $ref: "#/AdminContentTranslation" }
+        en: { $ref: "#/AdminContentTranslation" }
+    createdAt: { type: string, format: date-time }
+    updatedAt: { type: string, format: date-time }
+
+AdminContentListItem:
+  type: object
+  additionalProperties: false
+  required: [id, kind, slug, category, status, publishedAt, titleJa, titleEn, createdAt, updatedAt]
+  properties:
+    id: { $ref: ./automation.yaml#/Uuid }
+    kind: { type: [string, "null"], enum: [story, guide, null] }
+    slug: { type: [string, "null"], maxLength: 100 }
+    category: { type: [string, "null"], enum: [history, culture, pub-culture, food-drink, null] }
+    status: { type: string, enum: [draft, published] }
+    publishedAt: { type: [string, "null"], format: date-time }
+    titleJa: { type: string }
+    titleEn: { type: string }
+    createdAt: { type: string, format: date-time }
+    updatedAt: { type: string, format: date-time }
+
+AdminContentWriteInput:
+  type: object
+  additionalProperties: false
+  required: [kind, slug, category, heroImageAssetId, translations]
+  properties:
+    kind: { type: [string, "null"], enum: [story, guide, null] }
+    slug:
+      type: [string, "null"]
+      maxLength: 100
+      pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      description: Lowercase ASCII letters and digits separated by single hyphens, or null.
+    category: { type: [string, "null"], enum: [history, culture, pub-culture, food-drink, null] }
+    heroImageAssetId: { type: [string, "null"], format: uuid }
+    translations:
+      type: object
+      additionalProperties: false
+      required: [ja, en]
+      properties:
+        ja: { $ref: "#/AdminContentTranslationInput" }
+        en: { $ref: "#/AdminContentTranslationInput" }
+
+SetAdminContentPublicationInput:
+  type: object
+  additionalProperties: false
+  required: [status]
+  properties:
+    status: { type: string, enum: [draft, published] }
+
+AdminContentResponse:
+  type: object
+  additionalProperties: false
+  required: [content]
+  properties:
+    content: { $ref: "#/AdminContent" }
+
+AdminContentListResponse:
+  type: object
+  additionalProperties: false
+  required: [content, databaseConfigured]
+  properties:
+    content:
+      type: array
+      items: { $ref: "#/AdminContentListItem" }
+    databaseConfigured: { type: boolean }
+
+AdminContentPublicationResponse:
+  type: object
+  additionalProperties: false
+  required: [publication]
+  properties:
+    publication:
+      type: object
+      additionalProperties: false
+      required: [id, status, unchanged, publishedAt]
+      properties:
+        id: { $ref: ./automation.yaml#/Uuid }
+        status: { type: string, enum: [draft, published] }
+        unchanged: { type: boolean }
+        publishedAt: { type: [string, "null"], format: date-time }
