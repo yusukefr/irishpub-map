@@ -1,0 +1,89 @@
+Login:
+  post:
+    tags: [Admin Authentication]
+    operationId: loginAdmin
+    summary: Sign in as an administrator
+    description: Requires a same-origin request. Successful authentication issues an eight-hour administrator session cookie. The configured administrator username, password hash, and session secret are required.
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: Additional properties are ignored by the current login route.
+            required: [username, password]
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+                format: password
+    responses:
+      "200":
+        description: Credentials were accepted and the administrator session cookie was issued.
+        headers:
+          Set-Cookie:
+            description: Sets the `irishpub-map-admin-session` cookie with Path=/, HttpOnly, Secure, SameSite=Lax, and an eight-hour Max-Age. The cookie value is generated per session and is never documented.
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ok]
+              properties:
+                ok:
+                  const: true
+      "401":
+        description: The supplied credentials are invalid or missing. The response does not reveal which credential failed.
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: ../schemas/errors.yaml#/ErrorBody
+                - type: object
+                  properties:
+                    errorCode:
+                      const: invalid_credentials
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden
+      "415":
+        $ref: ../schemas/errors.yaml#/InvalidContentType
+      "503":
+        description: Administrator authentication is not configured.
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: ../schemas/errors.yaml#/ErrorBody
+                - type: object
+                  properties:
+                    errorCode:
+                      const: auth_not_configured
+
+Logout:
+  post:
+    tags: [Admin Authentication]
+    operationId: logoutAdmin
+    summary: Sign out the current browser
+    description: Requires a same-origin request. No valid session is required; the response expires the administrator session cookie in the current browser.
+    security: []
+    responses:
+      "200":
+        description: The administrator session cookie was expired.
+        headers:
+          Set-Cookie:
+            description: Clears the `irishpub-map-admin-session` cookie with Path=/, HttpOnly, Secure, SameSite=Lax, and Max-Age=0. No cookie value is set.
+            schema:
+              type: string
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ok]
+              properties:
+                ok:
+                  const: true
+      "403":
+        $ref: ../schemas/errors.yaml#/Forbidden

@@ -5,11 +5,13 @@ info:
   license:
     name: MIT
     identifier: MIT
-  description: Machine-readable contracts for Admin Calendar, Admin Master, Admin Pubs, Admin Editorial Content, Admin Quiz, Admin Media, Admin Tags, Admin Statuses, and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
+  description: Machine-readable contracts for Admin Authentication, Admin Calendar, Admin Master, Admin Pubs, Admin Editorial Content, Admin Quiz, Admin Media, Admin Tags, Admin Statuses, and the bearer-authenticated Automation API. Automation paths use /api/automation/v1 on the current application origin in Production, Preview, and Local environments.
 servers:
   - url: /
     description: Current application origin
 tags:
+  - name: Admin Authentication
+    description: Same-origin administrator login and logout.
   - name: Admin Calendar
     description: Calendar event management for authenticated administrators.
   - name: Admin Master
@@ -37,6 +39,10 @@ tags:
   - name: Automation Pubs
     description: Search duplicates, create unpublished, verify, then publish. No delete endpoint.
 paths:
+  /api/admin/login:
+    $ref: ./paths/admin-auth.yaml#/Login
+  /api/admin/logout:
+    $ref: ./paths/admin-auth.yaml#/Logout
   /api/admin/calendar:
     $ref: ./paths/admin-calendar.yaml#/CalendarCollection
   /api/admin/calendar/{id}:
