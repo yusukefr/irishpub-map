@@ -30,7 +30,7 @@ type AdminPubStatus = {
 - `GET /api/admin/statuses`: 日英表示名を含む管理用一覧
 - `PATCH /api/admin/statuses/:code`: 既存ステータスの日英表示名更新
 
-両方とも管理者セッションを必須とし、PATCHには既存の同一Origin検証とJSON Content-Type検証を適用します。DB未設定時は一覧を空配列として閲覧でき、更新は `503` で拒否します。存在しないcodeは `404`、Validationは `422` です。
+両方とも管理者セッションを必須とし、PATCHには既存の同一Origin検証とJSON Content-Type検証を適用します。DB未設定時は一覧を空配列として閲覧でき、更新は `503` で拒否します。存在しないcodeは `404`、Validationは `422`、未認証は `401`、Origin不一致は `403`、予期しない処理失敗は内部情報を含めない `500` です。
 
 ## 公開画面への反映
 
