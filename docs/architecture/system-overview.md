@@ -82,6 +82,7 @@ Repositoryはnpm workspacesで`apps/*`と`packages/*`を管理します。現在
 
 - `DATABASE_URL` が設定された環境では、`pub-repository` がNeonの店舗・マスタテーブルを読み書きします。未設定時は公開APIと画面が空の店舗一覧を返します。
 - 公開Guide / Storyは`content-repository`がNeonのPublished Contentを唯一のSource of Truthとして取得し、許可要素・安全なURLに限定したMarkdown Rendererへ渡します。Repository内の静的コンテンツへfallbackしません。
+- 公開Editorial Contentの個別取得はkind・slug・locale、一覧取得はkind・localeをCache Keyに含め、locale間の結果を分離します。Next.js Data Cacheの個別・一覧Tagはそれぞれ `content:{kind}:{slug}` と `content:list:{kind}` です。Cacheは時間で失効させず、公開成功、公開済みContentの更新、Draft化が成功した後に更新側が関連Tagを即時失効させます。kindまたはslug変更時は変更前後の個別Tagも失効します。実装は [`content/cache.ts`](../../apps/web/app/lib/content/cache.ts) と管理更新Serviceを参照してください。
 - 公開Calendarは`calendar-repository`がNeonのPublished Eventだけを取得し、`calendar-public-data`が取得結果をCacheします。JSON fallbackは使用しません。
 - `quiz-repository`は公開Quizと管理QuizのNeonアクセス、回答前DTO、採点、日次選択を分離して提供します。静的Quizへのfallbackは行いません。
 - 管理MediaのUploadは `apps/web/app/lib/media/service.ts` が画像検証後にVercel Blobへ保存し、Media AssetをNeonへ登録します。DB登録に失敗した場合は保存済みBlobを削除して補償し、補償削除にも失敗した場合は成功扱いせず、失敗段階を区別した一般化エラーを返します。
