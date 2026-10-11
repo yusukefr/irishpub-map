@@ -5,7 +5,7 @@ Mobile対応Issueへ着手するときの入口です。仕様本文を複製せ
 ## 最初に読む資料
 
 1. 親Issue #521でMVPと対象外を確認します。MVPは日本語/英語、Pub一覧・地図・Marker、検索・都道府県/タグFilter、詳細、Foreground現在地、外部リンクです。Admin、Content/Quiz/Calendar/Media管理、User Account、Cloud同期、お気に入り同期、Push通知、Offline Map、Background Location、Navigationは対象外です。ここに書かれた内容が現行契約と異なる場合は、実装・Current文書を優先し、親Issueの更新を提案します。
-2. [System Overview](../architecture/system-overview.md)、[Sequences](../architecture/sequences.md)、[API仕様](../specs/api.md)、[店舗データ仕様](../specs/data.md)、[OpenAPI](../specs/openapi/openapi.yaml)を読み、既存の責務と契約を確認します。
+2. [Mobile Architecture](../architecture/mobile.md)、[System Overview](../architecture/system-overview.md)、[Sequences](../architecture/sequences.md)、[API仕様](../specs/api.md)、[店舗データ仕様](../specs/data.md)、[OpenAPI](../specs/openapi/openapi.yaml)を読み、既存の責務と契約を確認します。Expo / React NativeのVersion、MapLibre、Development Buildの方針はMobile ArchitectureをSource of Truthとします。
 3. [テスト戦略](testing.md)、[開発規約](conventions.md)、[ローカル開発](../setup/development.md)、[Release and CI Runbook](../runbooks/release-operations.md)で実際の開発・検証方法を確認します。
 4. 位置情報と外部送信は[プライバシー・外部送信](../operations/privacy-and-external-transmission.md)、地図Tileと帰属は[Map Provider](../operations/map-provider.md)、UIの既存方針は[Design System](../design/README.md)を読みます。外部URLの検証規則は[店舗データ仕様](../specs/data.md)を参照し、外部リンクの起動・失敗時処理は #546 で決めます。
 5. 個別実装Issueとその依存を確認します。Issueの説明は作業計画であり、未実装の案を採用済み仕様とみなさないでください。
