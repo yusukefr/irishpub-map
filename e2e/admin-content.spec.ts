@@ -204,6 +204,20 @@ test("Content・Media・Quizの一覧と編集画面は日英と主要Viewport�
       for (const path of routes) {
         await page.goto(path);
         await expect(page.locator("h1")).toBeVisible();
+        if (path === "/admin/quiz") {
+          const publicationLabel = locale === "ja" ? "公開状態" : "Publication status";
+          await expect(page.getByRole("columnheader", { name: publicationLabel })).toHaveText(publicationLabel);
+          const publicationCells = page
+            .locator(".admin-pub-table tbody td")
+            .filter({ has: page.locator(".admin-publication-badge") });
+          await expect(publicationCells).toHaveCount(2);
+          expect(
+            await publicationCells.evaluateAll(
+              (cells, label) => cells.every((cell) => cell.getAttribute("data-label") === label),
+              publicationLabel,
+            ),
+          ).toBe(true);
+        }
         const dimensions = await page.evaluate(() => ({
           documentWidth: document.documentElement.scrollWidth,
           viewportWidth: window.innerWidth,
@@ -226,6 +240,16 @@ test("Content・Media・Quizの一覧と編集画面は日英と主要Viewport�
             continue;
           }
           if (visualName === "quiz-edit") {
+            const monthLabel = locale === "ja" ? "月" : "Month";
+            const dayLabel = locale === "ja" ? "日" : "Day";
+            const month = page.getByRole("combobox", { name: monthLabel });
+            const day = page.getByRole("combobox", { name: dayLabel });
+            await expect(month).toHaveValue("3");
+            await expect(day).toHaveValue("17");
+            await month.selectOption("2");
+            await expect(day.locator("option")).toHaveCount(30);
+            await month.selectOption("3");
+            await expect(day).toHaveValue("17");
             const choiceGroup = page.getByRole("group", { name: locale === "ja" ? "選択肢" : "Choices" });
             const actionButtons = choiceGroup.locator('button[aria-label$="choice-1"]');
             const buttonBounds = await actionButtons.evaluateAll((buttons) =>

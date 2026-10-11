@@ -81,6 +81,20 @@ test("Calendar管理画面は日英とDesktop・Mobileで横overflowせず表示
       for (const route of pages) {
         await page.goto(route.path);
         await expect(page.locator("h1")).toBeVisible();
+        if (route.name === "list") {
+          const publicationLabel = locale === "ja" ? "公開状態" : "Publication status";
+          await expect(page.getByRole("columnheader", { name: publicationLabel })).toHaveText(publicationLabel);
+          const publicationCells = page
+            .locator(".admin-calendar-table tbody td")
+            .filter({ has: page.locator(".admin-publication-badge") });
+          await expect(publicationCells).toHaveCount(2);
+          expect(
+            await publicationCells.evaluateAll(
+              (cells, label) => cells.every((cell) => cell.getAttribute("data-label") === label),
+              publicationLabel,
+            ),
+          ).toBe(true);
+        }
         const dimensions = await page.evaluate(() => ({
           documentWidth: document.documentElement.scrollWidth,
           viewportWidth: window.innerWidth,

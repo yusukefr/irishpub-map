@@ -45,7 +45,7 @@ export default async function AdminQuizPage() {
                 <th>{q.category}</th>
                 <th>{q.specialDate}</th>
                 <th>{q.choices}</th>
-                <th>{t.status}</th>
+                <th>{t.publicationStatus}</th>
                 <th>{t.updatedAt}</th>
                 <th>{t.operations}</th>
               </tr>
@@ -70,7 +70,7 @@ export default async function AdminQuizPage() {
                       : q.noSpecialDate}
                   </td>
                   <td data-label={q.choices}>{question.choiceCount}</td>
-                  <td data-label={t.status}>
+                  <td data-label={t.publicationStatus}>
                     <span
                       className={`admin-publication-badge ${question.isPublished ? "is-published" : "is-unpublished"}`}
                     >

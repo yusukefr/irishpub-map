@@ -81,6 +81,19 @@ test("Quiz新規作成ではQuestion IDを入力せずServer生成UUIDへ遷移�
   await expect(page).toHaveURL(new RegExp(`/admin/quiz/${generatedId}$`));
 });
 
+test("Quiz特別日は月と日を個別に案内し、未設定から月を選べる", async ({ page }) => {
+  await loginAsE2EAdmin(page, "/admin/quiz/new");
+  const monthLabel = "月";
+  const dayLabel = "日";
+  const month = page.getByRole("combobox", { name: monthLabel });
+  const day = page.getByRole("combobox", { name: dayLabel });
+  await expect(month).toHaveValue("");
+  await expect(day).toBeDisabled();
+  await month.selectOption("2");
+  await expect(day).toBeEnabled();
+  await expect(day.locator("option")).toHaveCount(30);
+});
+
 test("Quiz Editorで画像を選択し、日英の説明を保存して解除できる", async ({ page }) => {
   await loginAsE2EAdmin(page, "/admin/quiz/11111111-1111-4111-8111-000000000003");
   await page.getByRole("button", { name: "画像を選択" }).click();
