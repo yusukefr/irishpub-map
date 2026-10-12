@@ -16,7 +16,7 @@
     "@modelcontextprotocol/server": "^2.2.0",
     "@neondatabase/serverless": "^1.0.2",
     "@vercel/analytics": "^2.0.1",
-    "@vercel/blob": "^2.8.0",
+    "@vercel/blob": "^2.8.1",
     "@vercel/speed-insights": "^2.0.0",
     "jose": "^6.2.12",
     "maplibre-gl": "6.11.2",
