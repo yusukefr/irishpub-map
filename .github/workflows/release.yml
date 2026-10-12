@@ -106,7 +106,7 @@ jobs:
 
       - name: Download saved release metadata
         if: steps.artifacts.outputs.metadata == 'true'
-        uses: actions/download-artifact@v7.0.0
+        uses: actions/download-artifact@v8.0.2
         with:
           name: release-metadata
           run-id: ${{ github.run_id }}
@@ -115,7 +115,7 @@ jobs:
 
       - name: Download successful deployment marker
         if: steps.artifacts.outputs.deployed == 'true'
-        uses: actions/download-artifact@v7.0.0
+        uses: actions/download-artifact@v8.0.2
         with:
           name: release-deployed
           run-id: ${{ github.run_id }}
