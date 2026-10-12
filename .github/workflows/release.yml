@@ -50,7 +50,7 @@ jobs:
 
       - name: Setup Node.js
         if: steps.current.outputs.release == 'true'
-        uses: actions/setup-node@v7.0.0
+        uses: actions/setup-node@v7.1.0
         with:
           node-version-file: .nvmrc
 
