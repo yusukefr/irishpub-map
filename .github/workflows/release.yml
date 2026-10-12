@@ -155,7 +155,7 @@ jobs:
 
       - name: Save release metadata for retry
         if: steps.relevance.outputs.release_relevant == 'true' && steps.artifacts.outputs.metadata != 'true'
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: release-metadata
           path: ${{ runner.temp }}/release-candidate/release-metadata.json
@@ -195,7 +195,7 @@ jobs:
 
       - name: Save successful deployment marker
         if: steps.relevance.outputs.release_relevant == 'true' && steps.artifacts.outputs.deployed != 'true'
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: release-deployed
           path: ${{ runner.temp }}/release-deployed/release-deployed.json
