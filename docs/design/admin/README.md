@@ -15,7 +15,7 @@
 - Desktop Sidebarは240px。リンクは44px以上の操作領域を持ち、通常時は透明背景、Active時だけ薄いWhiteの面と左端のGold markerを使います。全リンクを枠付きボタンとして並べません。
 - Active linkには`aria-current="page"`を付け、色に加えて面とmarkerで位置を示します。Navigation landmarkに日英のAccessible Nameを設定します。
 - 760px以下ではSidebarをページ上部へ移し、`aria-expanded`と`aria-controls`を持つ開閉ボタンでNavigationを切り替えます。ボタンは日英ラベルと44px以上の操作領域を持ちます。開いたMenuは2列で配置し、Sign outを末尾に表示します。
-- Release InformationはMobile Menuの外に置き、閉じた状態でも閲覧可能にします。Navigation内リンク、Sign outとRelease InformationはどのViewportでもTab操作で到達できます。
+- Release InformationはMobile Menuの外に置き、MobileではVersionを含む要約と44px以上の開閉Controlを表示します。開くとVersion・リリース日時・コミット識別子を確認できます。Desktopでは現行どおり詳細を常時表示します。Navigation内リンク、Sign outとRelease InformationはどのViewportでもTab操作で到達できます。
 
 ## Page Header
 
