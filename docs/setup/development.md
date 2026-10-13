@@ -31,7 +31,6 @@ cp .env.example .env.local
 
 | 変数                              | 必要な場面                          | 用途                                    |
 | --------------------------------- | ----------------------------------- | --------------------------------------- |
-| `IRISHPUB_MAP_API_KEY`            | 任意                                | `GET /api/pubs`のAPI key                |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Preview Protectionを使う場合        | Previewのサーバー側fetch用bypass secret |
 | `DATABASE_URL`                    | 公開Guideまたは永続化を使う場合     | Neon Postgres接続文字列                 |
 | `BLOB_READ_WRITE_TOKEN`           | ローカルでMedia uploadを使う場合    | Vercel Blob read/write token            |

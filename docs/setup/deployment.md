@@ -24,7 +24,6 @@ Production / Previewの対象を明示して、Vercel ProjectのEnvironment Vari
 
 | 変数                              | Production | Preview          | 用途                             |
 | --------------------------------- | ---------- | ---------------- | -------------------------------- |
-| `IRISHPUB_MAP_API_KEY`            | 必須       | 任意             | `GET /api/pubs`のAPI key         |
 | `DATABASE_URL`                    | 必要時     | 必要時           | Neon Postgres接続文字列          |
 | `ADMIN_USERNAME`                  | 必要時     | 必要時           | 管理者ID                         |
 | `ADMIN_PASSWORD_HASH`             | 必要時     | 必要時           | scrypt password hash             |
@@ -33,7 +32,7 @@ Production / Previewの対象を明示して、Vercel ProjectのEnvironment Vari
 | `AUTOMATION_API_SCOPES`           | 利用時     | 利用時           | Automationに許可するScope一覧    |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | 不要       | Protection使用時 | Previewのserver-side fetch用     |
 
-Productionで`IRISHPUB_MAP_API_KEY`が未設定の場合、buildは失敗します。`DATABASE_URL`未設定時は店舗・公開Guideを0件として扱い、書き込みは行いません。Preview DBは[Neon Preview DB運用](../runbooks/neon-preview-branch.md)に従います。Release WorkflowはProduction build/runtimeへ`APP_RELEASE_VERSION`、`APP_RELEASE_DATE`、`APP_RELEASE_GIT_SHA`を渡します。Production buildはこれらが欠ける場合も失敗します。Projectの固定Environment VariableとしてVersionを登録しません。
+`GET /api/pubs`は全環境で匿名の読み取り専用APIのため、API Key用のEnvironment Variableは不要です。`DATABASE_URL`未設定時は店舗・公開Guideを0件として扱い、書き込みは行いません。Preview DBは[Neon Preview DB運用](../runbooks/neon-preview-branch.md)に従います。Release WorkflowはProduction build/runtimeへ`APP_RELEASE_VERSION`、`APP_RELEASE_DATE`、`APP_RELEASE_GIT_SHA`を渡します。Production buildはこれらが欠ける場合も失敗します。Projectの固定Environment VariableとしてVersionを登録しません。
 
 Automation利用時は `node scripts/generate-automation-token.mjs` を対話端末で実行し、32 byteの乱数から生成されたRaw Tokenを外部Connectorへ、SHA-256だけをServerの `AUTOMATION_API_TOKEN_SHA256` へ設定します。`AUTOMATION_API_SCOPES` は許可するScopeをカンマ区切りで設定します。Local / Preview / ProductionでTokenとScopeを別々に管理し、Raw TokenやhashをRepository、Issue、PR、ログへ記録しません。未設定ならAutomation認証は拒否されます。環境別設定、Scope、Rotation、失効、疎通確認は[Automation API Runbook](../runbooks/automation-api-access.md)、Endpoint契約は[OpenAPI定義](../specs/openapi/openapi.yaml)を参照してください。
 

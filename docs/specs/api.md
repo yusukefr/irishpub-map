@@ -16,7 +16,7 @@ UUIDとして不正なPath IDは各Routeの既存エラー契約に従います�
 
 公開中の店舗一覧を `{ "pubs": Pub[] }` で返します。RepositoryのSQLが `pubs.is_published = TRUE` で絞り込み、公開状態の列 `isPublished` はレスポンスへ含めません。`DATABASE_URL` 未設定時は `200` と空の `pubs` 配列を返します。DB接続やデータ処理に失敗した場合、Route Handlerは例外を変換しないため、Next.jsの通常の `500` 応答になります。DBの個々の行が共有 `Pub` 型に適合しない場合はその行を省略して続行し、全行が不正なら `500` になります。
 
-`locale` Queryは省略可能で、指定できる値は `ja` と `en` です。既定値は `ja` です。不正値は `{ "error": "Unsupported locale." }` と `400` を返します。翻訳テーブルに要求localeの行がなければ日本語へフォールバックします。店舗名・住所、都道府県、市区町村、営業状態、タグ、Pub Typeの表示文言にこの優先順位を適用します。`prefecture`、`query` など `locale` 以外のQueryはRoute Handlerで検証・解釈されず、無視されます。サーバー側の絞り込みは行わず、検索・絞り込みは取得後のクライアント側で行います。
+`locale` Queryは省略可能で、指定できる値は `ja` と `en` です。既定値は `ja` です。Cache keyの増加を防ぐため、Query省略時は `ja` を返しますが `Cache-Control: no-store` を設定します。共有Cacheを使うClientは正規表記 `?locale=ja` または `?locale=en` を指定してください。アプリに元の表記が届く場合、Cache lookup前に実行するProxyとRoute Handlerは、未対応Queryと重複localeを `{ "error": "Unsupported query parameter." }` と `400` で拒否します。不正なlocale値は `{ "error": "Unsupported locale." }` と `400` を返します。Vercel Previewではlocaleのpercent-encodingや末尾`&`が正規localeと同じCache entryへ合流し、空separatorだけのQueryはlocale省略へ正規化されることを確認しました。後者は既定locale応答をCacheしないため、別Cache entryを作りません。翻訳テーブルに要求localeの行がなければ日本語へフォールバックします。店舗名・住所、都道府県、市区町村、営業状態、タグ、Pub Typeの表示文言にこの優先順位を適用します。サーバー側の絞り込みは行わず、検索・絞り込みは取得後のクライアント側で行います。
 
 レスポンスの各店舗は `packages/shared/src/pub.ts` の `Pub` を使い、Repositoryが `asPubs` で検証・正規化します。IDはUUID文字列、`status` は `open` / `temporarily_closed` / `closed` / `unknown`、`pubType` は `irish` / `british` / `other` / `unclassified` です。Gastropub等の特徴はタグで表します。必須項目、optional fieldの省略、URLのnullabilityと各値の詳細は[店舗データ仕様](data.md)を参照してください。
 
@@ -46,17 +46,17 @@ UUIDとして不正なPath IDは各Routeの既存エラー契約に従います�
 }
 ```
 
-Route Handlerは `Cache-Control` や再検証時間を明示していません。クライアントは固定のキャッシュ期間をAPI契約として仮定できません。
+正規表記の `?locale=ja|en` を指定した応答は `Cache-Control: public, max-age=0, s-maxage=60, stale-while-revalidate=60` を返します。ブラウザーでは毎回再検証し、共有CDNでは60秒Cacheします。期限後の再検証中に返す古い応答は最大60秒の期間に制限します。locale省略時は既定値 `ja` で応答し、`Cache-Control: no-store` で共有CDN Cacheを使いません。応答は利用者固有情報を含みません。
 
-## 公開 API の現在の認証
+## 公開 API の認証・濫用対策
 
-現行の `GET /api/pubs` は `IRISHPUB_MAP_API_KEY` を使います。Production (`VERCEL_ENV=production`) では値が未設定または空白のみの場合、`{ "error": "API authentication is not configured." }` と `503` を返し、Vercel Production向けビルド検証でも設定漏れを検出します。キーが設定されている場合は `x-api-key` ヘッダーを照合し、欠落・不一致なら `{ "error": "Unauthorized" }` と `401` を返します。Production以外では未設定ならKey検証を行わず、設定されていれば照合します。認証判定が `locale` 検証より先です。
+`GET /api/pubs` は全環境で匿名の読み取り専用APIです。固定Client Secretを要求せず、書き込みMethodは提供しません。`locale` を検証し、Repositoryが公開済み店舗だけを取得して共有 `Pub` DTOへ変換します。DB Credential、管理情報、Server SecretはResponseへ含めません。
 
 ```bash
-curl -H "x-api-key: $IRISHPUB_MAP_API_KEY" "http://localhost:3000/api/pubs?locale=ja"
+curl "http://localhost:3000/api/pubs?locale=ja"
 ```
 
-API Keyの実値はレスポンスやログへ出力しません。Webトップページからの取得はサーバー側で行い、API Keyをブラウザへ渡しません。Mobileアプリへ固定Secretを埋め込む設計は安全に秘密を保持できないため、この現行方式をMobile用の認証手段として使用しません。#540 は公開APIを固定Client Secret不要のRead-only APIへ変更する別Issueで、完了するまでは将来仕様です。
+APIは公開データのみを返します。短時間の共有CDN Cache、公開Fieldの限定、入力Validationを濫用対策として使います。分散Rate Limit基盤を利用していないため、プロセス内Memoryだけで分散環境のRate Limitを実装したとは扱いません。Native Mobileからの利用に固定Secretは不要です。ブラウザー向けCORS許可は追加していません。
 
 Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL_AUTOMATION_BYPASS_SECRET` に Protection Bypass for Automation secret を設定してください。設定されている場合、サーバー側 fetch は `x-vercel-protection-bypass` ヘッダーを送信します。未設定でSSOへリダイレクトされた場合、トップページは静的データを複製せず店舗0件で表示します。実データを表示するには、SSOを回避できる設定とDATABASE_URLの両方を適切に構成してください。
 

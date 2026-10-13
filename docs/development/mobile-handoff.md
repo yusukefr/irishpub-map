@@ -36,15 +36,14 @@ Mobile対応Issueへ着手するときの入口です。仕様本文を複製せ
 
 ## 現行 Public Pub API とセキュリティ境界
 
-Public APIのSource of Truthは [API仕様](../specs/api.md) と [店舗データ仕様](../specs/data.md)、実際の契約はRoute Handler・Repository・テストです。現在の読取りEndpointは `GET /api/pubs?locale=ja|en`、locale省略時は `ja` です。成功時は `{ "pubs": Pub[] }` を返し、DB未設定時は空配列です。locale不正は認証通過後に `400`、本番のAPI Key未設定は `503`、Key欠落・不一致は `401` です。翻訳は要求localeを優先し、日本語へフォールバックします。公開店舗のみ返し、`isPublished` はDTOに含みません。
+Public APIのSource of Truthは [API仕様](../specs/api.md) と [店舗データ仕様](../specs/data.md)、実際の契約はProxy・Route Handler・Repository・テストです。現在の読取りEndpointは `GET /api/pubs?locale=ja|en`、locale省略時は `ja` です。共有Cacheを使うClientは `?locale=ja` または `?locale=en` を明示します。locale省略時は `ja` を返して `no-store` とします。アプリまで届いた未対応Queryや重複localeはProxy / Route Handlerが `400` で拒否し、不正localeも `400` です。Vercel Previewではlocaleのpercent-encodingや末尾`&`が正規localeと同じCache entryへ合流し、空separatorだけのQueryはlocale省略へ正規化されることを確認しました。後者は`no-store`です。匿名の成功時は `{ "pubs": Pub[] }` を返し、DB未設定時は空配列です。翻訳は要求localeを優先し、日本語へフォールバックします。公開店舗のみ返し、`isPublished` はDTOに含みません。明示localeでは共有CDNの `s-maxage=60` と `stale-while-revalidate=60` を使います。
 
-Production (`VERCEL_ENV=production`) は現在 `IRISHPUB_MAP_API_KEY` と `x-api-key` を要求します。クライアントBundleへ固定Secretを含められないため、Mobileからこの認証方式でProduction APIを呼び出してはいけません。#540 のSecret不要なRead-only APIは未実装で、将来仕様です。#541 の公開API OpenAPI収録と共通Clientも未実装です。ClientからNeonへ直接接続せず、DB Credential、Admin Session / API Credential、Automation Bearer Tokenを含めません。APIの認証・Rate Limit等は完了Issueの契約を確認してください。
+Public Pub APIは全環境で固定Client Secret不要のRead-only APIです。分散Rate Limitは導入しておらず、濫用対策は公開DTOの限定、Query allowlist、短時間の共有Cacheを使います。店舗公開状態の変更が共有Cacheへ反映されるまで最大約120秒の可能性があります。#541 の公開API OpenAPI収録と共通Clientは未実装です。ClientからNeonへ直接接続せず、DB Credential、Admin Session / API Credential、Automation Bearer Tokenを含めません。APIの現行契約は[API仕様](../specs/api.md)を確認してください。
 
 ## 未解決事項とBlocker
 
 | 未解決事項 | 影響Mobile Issue | 対応Issue | 着手阻害 |
 | --- | --- | --- | --- |
-| Production Public APIが固定 `x-api-key` を要求するため、Mobile用の安全な読取り経路がない | #543 | #540 | Yes |
 | SDK指定React Versionと既存WebのReact Versionが異なるため、npm workspace / Metroで重複や解決不整合がないことを実装時に検証する必要がある | #542 | #542 | Yes |
 | 公開APIのOpenAPI収録と共通API Clientが未実装 | #543 | #541 | Yes |
 | Tile ProviderのNative利用条件・Attribution・User-Agentを実装形態に合わせて確認し、iOS Native Buildを含む地図Smoke Testを行う必要がある | #544, #548 | #544 / #548 | Yes |

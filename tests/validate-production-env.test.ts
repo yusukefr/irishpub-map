@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  isProductionApiKeyConfigured,
   isProductionEnvironment,
   isProductionReleaseConfigured,
   validateProductionEnvironment,
@@ -19,14 +18,12 @@ describe("validate-production-env", () => {
     APP_RELEASE_GIT_SHA: "a".repeat(40),
   };
 
-  it("requires the API key and complete release metadata only in Production", () => {
-    expect(isProductionApiKeyConfigured({ VERCEL_ENV: "production", IRISHPUB_MAP_API_KEY: "  " })).toBe(false);
+  it("requires complete release metadata only in Production", () => {
     expect(validateProductionEnvironment({ VERCEL_ENV: "production" })).toBe(false);
     expect(isProductionReleaseConfigured(release)).toBe(true);
     expect(
       validateProductionEnvironment({
         VERCEL_ENV: "production",
-        IRISHPUB_MAP_API_KEY: "test-only-api-key",
         ...release,
       }),
     ).toBe(true);
