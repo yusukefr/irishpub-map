@@ -11,7 +11,7 @@ Repository設定のProject IDを指定してBranch一覧を取得し、各対象
 | Branch | 状態 | Migration履歴とSchema |
 | --- | --- | --- |
 | `main`（Production） | ready / default | 006〜025を連続して記録。 |
-| `preview`（固定Preview） | archived | 006〜016、019〜024を記録。017、018、025が欠落。ProductionとのSchema差分があり、automation tablesがなく、Quiz ID関連列が`text`。 |
+| `preview`（固定Preview） | ready（2026-10-13 23:18 JST確認） | 006〜016、019〜024を記録。017、018、025が欠落。ProductionとのSchema差分があり、automation tablesがなく、Quiz ID関連列が`text`。 |
 | `preview/ai/664-admin-form-consistency` | ready | 006〜025を記録。Productionとの差分Schemaなし。対応PR #687はマージ済み。 |
 | `preview/ai/public-pub-api-client` | ready | 006〜025を記録。Productionとの差分Schemaなし。対応PR #686はOpen。 |
 
@@ -56,7 +56,7 @@ Preflightコマンドは実行を試みましたが、Node subprocessを起動�
 
 **GO:** Production Schemaと一致するContract / Baselineのドラフトを作り、Productionから隔離した検証Branchでの検証計画へ進む。
 
-**NO-GO:** 現時点で旧001〜025の一括削除、Prismaによる`schema_migrations`の管理・削除、Productionへの`db sign` / Migration切替を行う。固定Previewがarchivedかつ017 / 018 / 025とSchema差分を持ち、Baseline検証先にならないためです。空DB再現、既存隔離Branchへのsign / verify、必要Masterの再現、差分Migration、復旧手順を確認し、Production作業は別途明示承認を得てから判断します。
+**NO-GO:** 現時点で旧001〜025の一括削除、Prismaによる`schema_migrations`の管理・削除、Productionへの`db sign` / Migration切替を行う。固定Previewはreadyですが、017 / 018 / 025の履歴欠落とProductionとのSchema差分があるため、現状のままBaseline検証先にはできません。空DB再現、既存隔離Branchへのsign / verify、必要Masterの再現、差分Migration、復旧手順を確認し、Production作業は別途明示承認を得てから判断します。
 
 ## 再確認が必要な項目
 
