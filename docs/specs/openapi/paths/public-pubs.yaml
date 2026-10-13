@@ -1,0 +1,29 @@
+Collection:
+  get:
+    operationId: getPublicPubs
+    tags: [Public Pubs]
+    summary: List published pubs
+    description: Returns only public Pub fields. No API key or other client secret is required. Specify the canonical locale query for shared CDN caching.
+    security: []
+    parameters:
+      - name: locale
+        in: query
+        required: false
+        description: Translation locale. Defaults to Japanese; explicitly specify ja or en to use shared CDN caching.
+        schema:
+          type: string
+          enum: [ja, en]
+          default: ja
+    responses:
+      "200":
+        description: Published pubs in the selected locale.
+        content:
+          application/json:
+            schema: { $ref: "../schemas/public-pubs.yaml#/Collection" }
+      "400":
+        description: The locale is unsupported or the query contains unsupported or duplicate parameters.
+        content:
+          application/json:
+            schema: { $ref: "../schemas/public-pubs.yaml#/QueryError" }
+      "500":
+        description: The server failed while loading published pubs. The framework-generated error body is not part of this contract.
