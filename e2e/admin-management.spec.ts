@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 import { E2E_TEST_DATA } from "../apps/web/app/lib/e2e-test-fixtures";
 import { loginAsE2EAdmin } from "./support/page-helpers";
 
@@ -41,6 +42,12 @@ test("Pubs・Tags・Statuses管理画面は日英とDesktop・Mobileで横overfl
           await expect(page).toHaveScreenshot(`admin-${route.name}-${locale}-${viewport.width}.png`, {
             fullPage: true,
           });
+          if (route.name === "pubs-edit") {
+            const accessibility = await new AxeBuilder({ page }).analyze();
+            expect(
+              accessibility.violations.filter(({ impact }) => impact === "critical" || impact === "serious"),
+            ).toEqual([]);
+          }
         }
       }
     }

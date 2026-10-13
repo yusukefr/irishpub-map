@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AdminPubEditor } from "../../apps/web/app/components/admin-pub-editor";
 
@@ -114,6 +114,17 @@ describe("AdminPubEditor", () => {
         returnTo="/admin/pubs?published=false&page=2"
       />,
     );
+    const saveActions = screen.getByRole("group", { name: "保存操作" });
+    expect(within(saveActions).getByRole("button", { name: "更新" })).toBeInTheDocument();
+    expect(within(saveActions).getByRole("link", { name: "キャンセル" })).toHaveAttribute(
+      "href",
+      "/admin/pubs?published=false&page=2",
+    );
+    const deleteButton = screen.getByRole("button", { name: "削除" });
+    expect(deleteButton.closest("form")).toBeNull();
+    expect(deleteButton.closest("section")).toHaveAccessibleName("取り消せない操作");
+    expect(screen.getByRole("heading", { name: "公開状態" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "公開する" })).toHaveClass("admin-publication-action");
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "The Updated Pub" } });
     fireEvent.change(screen.getByLabelText("営業状況"), { target: { value: "open" } });
     fireEvent.change(screen.getByLabelText("緯度"), { target: { value: "35.2" } });

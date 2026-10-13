@@ -1131,12 +1131,82 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 24px;
-  padding-top: 20px;
+  margin-top: var(--spacing-space-6);
+  padding: var(--spacing-space-4) var(--spacing-space-5);
   border-top: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
 }
 .admin-editor-publication-actions h2 {
   margin: 0;
+}
+.admin-publication-action {
+  min-height: var(--spacing-control);
+  padding-inline: var(--spacing-space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-primary);
+  color: var(--accent-strong);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.admin-publication-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.admin-pub-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--spacing-space-2);
+}
+.admin-pub-editor-save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-space-2);
+}
+.admin-pub-editor-save-actions a {
+  display: inline-flex;
+  min-height: var(--spacing-control);
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--spacing-space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-primary);
+  color: var(--accent-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+.admin-editor-danger-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--spacing-space-3) var(--spacing-space-4);
+  margin-top: var(--spacing-space-4);
+  padding: var(--spacing-space-4) var(--spacing-space-5);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-primary);
+}
+.admin-editor-danger-actions h2 {
+  margin: 0;
+  font-size: var(--text-body-md);
+}
+.admin-editor-danger-actions button {
+  min-height: var(--spacing-control);
+  padding-inline: var(--spacing-space-4);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.admin-editor-danger-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 .admin-form button,
 .admin-heading button,
@@ -1446,6 +1516,9 @@ h1 {
   .admin-editor-publication-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+  .admin-editor-danger-actions {
+    grid-template-columns: 1fr;
   }
   .admin-heading,
   .admin-pub-list li {

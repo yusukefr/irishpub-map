@@ -42,6 +42,20 @@ Desktopは見出し・説明を左、主要操作を右へ配置します。Mobi
 - Save / Publish / Deleteの役割と状態を分け、Danger操作をPrimary Actionに見せません。Loading、未保存、Success、Validation Error、API ErrorをテキストとSemantic表示で伝えます。
 - 既存の値保持、二重送信防止、確認、公開条件判定を維持します。
 
+### Surfaceと操作の配置
+
+- Surfaceは色の統一だけを目的に一律化せず、内容の意味に合わせます。入力はページのWarm Cream上でFieldsetにまとめ、読み取り専用情報は必要な箇所だけMutedまたはWhite surfaceに置きます。
+- 危険操作は通常の入力・保存操作から分け、White surfaceとSemantic Dangerの境界・ラベルを併用します。色だけで危険性を伝えず、削除など元に戻せない操作には既存の確認を維持します。
+- Feedbackは関連操作や入力欄の近くに置きます。Success / Errorは専用の状態表示とテキストを使い、装飾目的のSurfaceを重ねません。
+- SaveとCancelは一つの近接した操作群に置きます。Deleteは独立した危険操作領域に分け、Publish / Unpublishは公開状態を扱う別の領域に置きます。公開前チェックと確認は維持します。
+- Surface、Border、余白、Radiusには既存のSemantic Color / Spacing / Radius Tokenを使います。用途が確認できる既存の`.admin-*` Selectorは、重複が見つかっても利用箇所をなくす前に削除しません。
+
+### 見出しとSection Label
+
+- Page Headerには画面の作業対象と必要な補足だけを短く示します。入力・検索・公開など次の行動が説明不要ならdescriptionを省略し、作業内容や状態遷移に注意が必要なページでは日英のdescriptionを付けます。
+- Section Labelは画面領域やブランド名など短い識別子を使います。共通領域名は表示言語に合わせ、`Master data`は日本語で「マスタデータ」とします。
+- `Content`、`Quiz`、`Irish Calendar`など製品内の固有名称は無条件に翻訳しません。説明的な見出しは日本語として読みやすくしつつ、元の業務上の意味を保ちます。日英で文字列長が変わるため、固定幅で省略せず折り返しを許可します。
+
 ## Status / Feedback / Empty
 
 - Success、Warning、Danger、Draft、Publishedは専用Semantic Tokenを使い、ラベルや説明を併記します。
