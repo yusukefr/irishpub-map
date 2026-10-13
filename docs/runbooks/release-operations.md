@@ -16,11 +16,11 @@ GitHub ActionsのCI、Git Tagを正とするProduction Release、Vercel Analytic
 
 ## GitHub Actions
 
-CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`で実行されます。Feature branchへのpushでは起動しません。変更ファイルは`scripts/classify-ci-changes.mjs`で分類し、比較元を取得できない場合は全検証を実行します。`Lint, Test, Build`というジョブ名は変更内容にかかわらず維持します。
+CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`で実行されます。Feature branchへのpushでは起動しません。変更ファイルは`scripts/classify-ci-changes.mjs`で分類し、比較元を取得できない場合は全検証を実行します。`Lint, Typecheck, Test, Build`というジョブ名は変更内容にかかわらず維持します。
 
-| 変更内容 | `Lint, Test, Build`で実行する処理 | PRのE2E / Storybook browser tests |
+| 変更内容 | `Lint, Typecheck, Test, Build`で実行する処理 | PRのE2E / Storybook browser tests |
 | --- | --- | --- |
-| Code変更（workflowを含む） | Sensitive data check、LLM security check、Markdown / `.mmd` のMermaid構文 check、npm ci、Format、OpenAPI lint、Lint、Unit Test、Next.js Build、Storybook Build | UI / E2E関連変更があれば実行 |
+| Code変更（workflowを含む） | Sensitive data check、LLM security check、Markdown / `.mmd` のMermaid構文 check、npm ci、Format、OpenAPI lint、Lint、Typecheck、Unit Test、Next.js Build、Storybook Build | UI / E2E関連変更があれば実行 |
 | `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Markdown / `.mmd` のPrettier check、Mermaid構文 check、Sensitive data check、LLM security check、OpenAPI lint、代表RouteのOpenAPI runtime contract test | アプリの全Test / Buildを省略 |
 | docs-only | Markdown / `.mmd` のPrettier check、Mermaid構文 check、Sensitive data check、LLM security check | Unit Test、ESLint、Typecheck、Next.js / Storybook Build、E2Eを省略 |
 | `workflow_dispatch` | Code変更と同じFull CI | デフォルトで省略。`run_e2e=true`の場合だけ実行 |
@@ -35,7 +35,7 @@ LLM security checkはGit管理対象のAgent向け文書を動的に列挙し、
 
 同じPRで新しいrunが始まると、進行中の古いrunはキャンセルされます。`main`のrunはProduction Releaseまで続くため、後続pushではキャンセルしません。PR更新後は最新HEADの通常CIを確認し、`main`へのmerge後は通常CIとE2Eの両方を確認します。E2E失敗時のPlaywright artifactは引き続き保存します。
 
-PR作成・更新後は`scripts/verify-pr-ci.sh --pr <番号>`で最新HEADの`Lint, Test, Build`を確認します。checkが未作成なら最大90秒待ち、`queued`や`in_progress`なら既存checkの完了を待ちます。待機中にPRのHEADが変わった場合は中止するため、コマンドを再実行します。成功は正常終了、失敗・キャンセル・待機のタイムアウトはエラーになります。`--dispatch`は変更ファイルをGitHubから再取得して分類し、Full CI対象に限って`workflow_dispatch`を起動します。docs-only / OpenAPI-onlyではFull CI fallbackを起動せず、PR用必須checkは`pull_request` Workflowの最新HEAD実行で確認します。手動`workflow_dispatch`はPR用Required Status Checkを満たす根拠にしません。通常CIの失敗時は原因を確認し、fallbackを自動起動しません。
+PR作成・更新後は`scripts/verify-pr-ci.sh --pr <番号>`で最新HEADの`Lint, Typecheck, Test, Build`を確認します。checkが未作成なら最大90秒待ち、`queued`や`in_progress`なら既存checkの完了を待ちます。待機中にPRのHEADが変わった場合は中止するため、コマンドを再実行します。成功は正常終了、失敗・キャンセル・待機のタイムアウトはエラーになります。`--dispatch`は変更ファイルをGitHubから再取得して分類し、Full CI対象に限って`workflow_dispatch`を起動します。docs-only / OpenAPI-onlyではFull CI fallbackを起動せず、PR用必須checkは`pull_request` Workflowの最新HEAD実行で確認します。手動`workflow_dispatch`はPR用Required Status Checkを満たす根拠にしません。通常CIの失敗時は原因を確認し、fallbackを自動起動しません。
 
 Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secrets and variables → Actionsで次を設定します。
 
@@ -44,7 +44,7 @@ Slack通知を有効にする場合は、GitHub RepositoryのSettings → Secret
 | Variable | `SLACK_CICD_CHANNEL`     | 任意の通知先channel        |
 | Secret   | `SLACK_CICD_WEBHOOK_URL` | Slack Incoming Webhook URL |
 
-`Lint, Test, Build`ジョブは従来どおり成功・失敗時にSlackへ通知します。E2Eジョブは失敗時に限り、同じWebhookと、設定されている場合は同じChannelへ通知します。E2E成功時の追加通知はありません。通知にはRepository名、Branch名、GitHub Actions Run URLを含めます。失敗時はRun URLから実行結果を開き、保存されたPlaywright artifactを確認します。
+`Lint, Typecheck, Test, Build`ジョブは成功・失敗時にSlackへ通知します。E2Eジョブは失敗時に限り、同じWebhookと、設定されている場合は同じChannelへ通知します。E2E成功時の追加通知はありません。通知にはRepository名、Branch名、GitHub Actions Run URLを含めます。失敗時はRun URLから実行結果を開き、保存されたPlaywright artifactを確認します。
 
 ## Production Release
 

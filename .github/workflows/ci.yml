@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   ci:
-    name: Lint, Test, Build
+    name: Lint, Typecheck, Test, Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
@@ -100,6 +100,10 @@ jobs:
       - name: Lint
         if: steps.changes.outputs.full_ci == 'true'
         run: npm run lint
+
+      - name: Typecheck
+        if: steps.changes.outputs.full_ci == 'true'
+        run: npm run typecheck
 
       - name: Test
         if: steps.changes.outputs.full_ci == 'true'

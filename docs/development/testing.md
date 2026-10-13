@@ -9,7 +9,7 @@ Irish Pub Mapのテストを追加・整理するときの判断基準です。�
 - ファイル名や配置だけでレイヤーを決めません。実際に動かす対象、置き換える依存、検証する契約で選びます。1つの機能に複数レイヤーが必要な場合も、それぞれ異なる失敗を検出する理由を明確にします。
 - 仕様変更時は、該当する既存テストと関連文書を先に確認します。新しいテストを足す前に、既存テストの更新で保証できるか検討します。
 
-将来別のクライアントを追加するときも、テスト層はファイル名ではなく検証する契約で選びます。`packages/shared`のプラットフォーム非依存な型・純粋関数はUnit / Domainで検証し、Native UI、OS API、権限、アプリ内Navigationなどの統合は採用するFrameworkに対応したComponent / Integration / E2E層で扱います。現在のVitest、Playwright、Storybookの設定はWeb向けです。NativeのRunner、Simulator、端末マトリクス、権限の実機検証、CI接続方法は未決定であり、Mobile実装Issueで技術選定とともに決めます。Web用MockやE2E FixtureをNative検証へ流用できるとは仮定しません。
+別クライアントでも、テスト層はファイル名ではなく検証する契約で選びます。`packages/shared`のプラットフォーム非依存な型・純粋関数はUnit / Domainで検証し、Native UI、OS API、権限、アプリ内Navigationなどの統合は採用するFrameworkに対応したComponent / Integration / E2E層で扱います。Web用MockやE2E FixtureをNative検証へ流用できるとは仮定しません。Mobileは既存のVitestをUnit Test runnerに使い、共有Package importなどPlatform非依存の契約をrootの`npm test`とCIで実行します。Native UIを実装する段階でComponent Testを追加します。Android Emulator / 実機の起動確認は別のSmoke Testで行い、Store向けNative BuildはCIに含めません。
 
 ## レイヤーごとの責務
 

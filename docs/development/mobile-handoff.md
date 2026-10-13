@@ -53,6 +53,6 @@ Public Pub APIは全環境で固定Client Secret不要のRead-only APIです。�
 
 ## 開発と検証
 
-現在のNodeは `.nvmrc` の24系です。`nvm use` を使える環境ではVersionを合わせ、使えない環境ではNode 24系を選びます。依存はrootで `npm ci`、workspace単位は `npm run <script> -w <workspace>` を使います。現在のroot `package.json` にMobile用scriptはないため、新しいコマンドは該当Issueで実装されてから案内してください。
+現在のNodeは `.nvmrc` の24系です。`nvm use` を使える環境ではVersionを合わせ、使えない環境ではNode 24系を選びます。依存はrootで `npm ci`、workspace単位は `npm run <script> -w <workspace>` を使います。Mobile基盤はExpo SDK 57 / React Native 0.86 / Expo Router 57を採用し、起動はAndroid Development Buildを使います。初回はAndroid SDK / Emulatorを準備して `npm run android -w apps/mobile`、以後Metroを起動するときは `npm run start -w apps/mobile` を使います。Expo GoではなくDevelopment Buildを使用してください。
 
-Web / Sharedの既存検証は [開発規約](conventions.md) と [テスト戦略](testing.md) のコマンド、CI分類と実行条件は [Release and CI Runbook](../runbooks/release-operations.md) を参照します。Mobile導入後のLint / Typecheck / Test / Native Smoke Testは #542等でCI設定と合わせて追加します。Platformの画面部品を共有する前提は置かず、Pure Logicの再利用にはSharedのUnit Test、APIには契約テスト、Native画面にはComponent / Device Smoke Testを対応させます。
+rootの `npm run lint`、`npm run typecheck`、`npm test` はMobileも含み、CIの既存Full CI経路から実行されます。Mobileの単独検証は `npm run lint -w apps/mobile`、`npm run typecheck -w apps/mobile`、`npm run test -w apps/mobile` です。Platformの画面部品を共有する前提は置かず、Pure Logicの再利用にはSharedのUnit Test、APIには契約テスト、Native画面にはComponent / Device Smoke Testを対応させます。Native Store BuildはCIで実行しません。

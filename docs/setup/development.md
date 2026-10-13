@@ -49,6 +49,22 @@ npm run dev
 
 Next.jsアプリは`apps/web`で起動します。
 
+## Mobile Android 開発
+
+`apps/mobile` はExpo SDK 57 / React Native 0.86を使います。Android SDKとEmulator（またはAndroid実機）を用意し、初回はDevelopment Buildを作成・起動します。
+
+```bash
+npm run android -w apps/mobile
+```
+
+Metro bundlerを別途起動する場合は次を使います。Expo Goではなく、このDevelopment Buildへ接続してください。
+
+```bash
+npm run start -w apps/mobile
+```
+
+Mobileのlint・型検査・component testは `npm run lint -w apps/mobile`、`npm run typecheck -w apps/mobile`、`npm run test -w apps/mobile` で実行できます。rootの `npm run lint`、`npm run typecheck`、`npm test` とCIにも含まれます。
+
 ## 基本検証
 
 変更内容に応じて次を実行します。
