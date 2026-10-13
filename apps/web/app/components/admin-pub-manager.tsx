@@ -156,6 +156,7 @@ export function AdminPubManager({
       <AdminPageHeader
         sectionLabel="Irish Pub Map"
         title={t.admin.heading}
+        description={t.admin.pubsDescription}
         actions={
           <a className="admin-primary-link" href="/admin/pubs/new">
             {t.admin.addPub}

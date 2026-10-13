@@ -76,7 +76,7 @@ export function AdminStatusManager({ initialStatuses, databaseConfigured, locale
 
   return (
     <section className="admin-statuses-page">
-      <AdminPageHeader sectionLabel="Master data" title={t.statusesHeading} description={t.statusesDescription} />
+      <AdminPageHeader sectionLabel={t.masterData} title={t.statusesHeading} description={t.statusesDescription} />
       {!databaseConfigured ? <p className="admin-error">{t.databaseUnavailable}</p> : null}
       {message ? (
         <p role="status" aria-live="polite">

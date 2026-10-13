@@ -363,6 +363,7 @@ export function AdminPubEditor({
       <AdminPageHeader
         sectionLabel="Irish Pub Map"
         title={editing ? t.admin.editPub : t.admin.addPub}
+        description={editing ? t.admin.editPubDescription : t.admin.addPubDescription}
         actions={
           editing ? (
             <span className={`admin-publication-badge ${isPublished ? "is-published" : "is-unpublished"}`}>
@@ -666,31 +667,34 @@ export function AdminPubEditor({
           </div>
         </fieldset>
 
-        <div className="admin-actions">
-          <button type="submit" disabled={busy || !databaseConfigured}>
-            {saving ? t.admin.saving : editing ? t.admin.update : t.admin.add}
-          </button>
-          <a className="admin-pub-filter-actions" href={returnTo}>
-            {t.admin.cancel}
-          </a>
-          {editing ? (
-            <button
-              type="button"
-              className="admin-danger-action"
-              onClick={() => void remove()}
-              disabled={busy || !databaseConfigured}
-            >
-              {deleting ? t.admin.deleting : t.admin.delete}
+        <div className="admin-pub-editor-actions">
+          <div className="admin-pub-editor-save-actions" role="group" aria-label={t.admin.saveActions}>
+            <button type="submit" disabled={busy || !databaseConfigured}>
+              {saving ? t.admin.saving : editing ? t.admin.update : t.admin.add}
             </button>
-          ) : null}
+            <a href={returnTo}>{t.admin.cancel}</a>
+          </div>
         </div>
       </form>
+      {editing ? (
+        <section className="admin-editor-danger-actions" aria-labelledby="admin-pub-danger-heading">
+          <h2 id="admin-pub-danger-heading">{t.admin.dangerousActions}</h2>
+          <button
+            type="button"
+            className="admin-danger-action"
+            onClick={() => void remove()}
+            disabled={busy || !databaseConfigured}
+          >
+            {deleting ? t.admin.deleting : t.admin.delete}
+          </button>
+        </section>
+      ) : null}
       {editing ? (
         <div className="admin-editor-publication-actions">
           <h2>{t.admin.publication}</h2>
           <button
             type="button"
-            className={isPublished ? "admin-danger-action" : undefined}
+            className="admin-publication-action"
             onClick={() => void changePublication(!isPublished)}
             disabled={busy || !databaseConfigured}
           >

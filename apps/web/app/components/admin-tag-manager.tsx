@@ -119,7 +119,7 @@ export function AdminTagManager({ initialTags, databaseConfigured, locale }: Pro
   const values = editing ?? { key: "", translations: {} };
   return (
     <section className="admin-tags-page">
-      <AdminPageHeader sectionLabel="Master data" title={t.tagsHeading} />
+      <AdminPageHeader sectionLabel={t.masterData} title={t.tagsHeading} />
       {!databaseConfigured ? <p className="admin-error">{t.databaseUnavailable}</p> : null}
       {message ? (
         <p role="status" aria-live="polite">
