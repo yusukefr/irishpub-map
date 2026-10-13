@@ -62,7 +62,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 ## Automation APIの認証・認可
 
-Automation APIとAdmin APIのPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現行の管理用Routeは、Login / Logoutを含めてすべて収録済みです。公開 `GET /api/pubs` と `GET /media/{uuid}` はこのOpenAPIに未収録です。公開Pub API契約と共通Clientの整備は #541 の対象です。
+Automation API、Admin API、および公開 `GET /api/pubs` のPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現行の管理用Routeは、Login / Logoutを含めてすべて収録済みです。公開 `GET /media/{uuid}` はこのOpenAPIに未収録です。公開Pub APIは `@irishpub-map/api-client` の `getPubs({ baseUrl, locale, signal?, fetch? })` からPlatform非依存で利用でき、標準Fetchを既定として共有 `asPubs` でレスポンスを検証します。
 
 `/api/automation/v1/*` は外部Automation用です。Bearer Tokenを要求し、Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数やRepositoryへ保存しません。設定、発行、Token Rotation、Scope運用とCreate / Publishフローは[Automation API Runbook](../runbooks/automation-api-access.md)を参照してください。
 
@@ -74,7 +74,7 @@ CreateのIdempotency-Keyは成功済みの同一Requestを重複作成から保�
 
 | API | 役割 | 契約の参照先 |
 | --- | --- | --- |
-| Public Pub API | Mobile / Web向けの公開店舗読取り | 本文書の[Public API](#公開-api)と[店舗データ仕様](data.md)。OpenAPI収録は #541 の対象 |
+| Public Pub API | Mobile / Web向けの公開店舗読取り | [OpenAPI定義](openapi/openapi.yaml)、本文書の[Public API](#公開-api)、[店舗データ仕様](data.md)、workspace package `@irishpub-map/api-client` |
 | Admin API | Web管理画面向けの管理操作とLogin / Logout | [OpenAPI定義](openapi/openapi.yaml)。業務ルールは各ドメイン仕様を参照 |
 | Automation API | 外部Connector向けのScope制御された管理操作 | [OpenAPI定義](openapi/openapi.yaml)と[Automation API Runbook](../runbooks/automation-api-access.md) |
 | Admin Calendar API | Web管理画面向けCalendar操作 | [OpenAPI定義](openapi/openapi.yaml)、画面Behaviorは[Product仕様](product.md) |

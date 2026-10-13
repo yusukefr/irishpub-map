@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   listCalendar: vi.fn(),
   databaseConfigured: vi.fn(),
   getPrefectures: vi.fn(),
+  getPublishedPubs: vi.fn(),
 }));
 
 vi.mock("../../apps/web/app/lib/admin-calendar-service", () => ({ readAdminCalendarList: mocks.listCalendar }));
@@ -14,9 +15,11 @@ vi.mock("../../apps/web/app/lib/calendar/repository", () => ({
   isCalendarDatabaseConfigured: mocks.databaseConfigured,
 }));
 vi.mock("../../apps/web/app/lib/master-repository", () => ({ getPrefectures: mocks.getPrefectures }));
+vi.mock("../../apps/web/app/lib/pub-repository", () => ({ getPublishedPubs: mocks.getPublishedPubs }));
 
 import { GET as getAdminCalendar } from "../../apps/web/app/api/admin/calendar/route";
 import { GET as getAutomationPrefectures } from "../../apps/web/app/api/automation/v1/master/prefectures/route";
+import { GET as getPublicPubs } from "../../apps/web/app/api/pubs/route";
 
 const automationToken = "contract-test-token";
 const calendarEvent = {
@@ -34,6 +37,20 @@ const calendarEvent = {
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
 };
+const publicPub = {
+  id: "550e8400-e29b-41d4-a716-446655440001",
+  name: "Example Pub",
+  prefecture: "東京都",
+  address: "東京都新宿区",
+  latitude: 35.681,
+  longitude: 139.767,
+  websiteUrl: null,
+  googleMapsUrl: null,
+  instagramUrl: null,
+  tags: ["guinness"],
+  status: "open",
+  pubType: "irish",
+};
 const originalTokenHash = process.env.AUTOMATION_API_TOKEN_SHA256;
 const originalScopes = process.env.AUTOMATION_API_SCOPES;
 const originalAdminEnv = {
@@ -47,6 +64,7 @@ beforeEach(() => {
   mocks.listCalendar.mockResolvedValue([calendarEvent]);
   mocks.databaseConfigured.mockReturnValue(true);
   mocks.getPrefectures.mockResolvedValue([]);
+  mocks.getPublishedPubs.mockResolvedValue([publicPub]);
   process.env.AUTOMATION_API_TOKEN_SHA256 = createHash("sha256").update(automationToken).digest("hex");
   process.env.AUTOMATION_API_SCOPES = "master:read";
   process.env.ADMIN_USERNAME = "admin";
@@ -68,6 +86,20 @@ afterEach(() => {
 });
 
 describe("OpenAPI runtime contracts", () => {
+  it("checks the anonymous public Pub response and locale validation", async () => {
+    const operation = await getOpenApiOperation("/api/pubs", "get");
+    expect(operation.security).toEqual([]);
+
+    const success = await getPublicPubs(new Request("https://example.test/api/pubs?locale=en"));
+    expect(success.status).toBe(200);
+    expect(success.headers.get("cache-control")).toContain("s-maxage=60");
+    await expect(expectOpenApiResponse(success, operation)).resolves.toEqual({ pubs: [publicPub] });
+
+    const invalidLocale = await getPublicPubs(new Request("https://example.test/api/pubs?locale=fr"));
+    expect(invalidLocale.status).toBe(400);
+    await expect(expectOpenApiResponse(invalidLocale, operation)).resolves.toEqual({ error: "Unsupported locale." });
+  });
+
   it("checks the Admin Calendar success and unauthorized responses from its Route Handler", async () => {
     const operation = await getOpenApiOperation("/api/admin/calendar", "get");
     expect(operation.security).toEqual([{ AdminSession: [] }]);
