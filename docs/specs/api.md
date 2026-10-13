@@ -62,7 +62,7 @@ Vercel Preview Deployment Protection を有効にしている場合は、`VERCEL
 
 ## Automation APIの認証・認可
 
-Automation API、Admin API、および公開 `GET /api/pubs` のPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現行の管理用Routeは、Login / Logoutを含めてすべて収録済みです。公開 `GET /media/{uuid}` はこのOpenAPIに未収録です。公開Pub APIは `@irishpub-map/api-client` の `getPubs({ baseUrl, locale, signal?, fetch? })` からPlatform非依存で利用でき、標準Fetchを既定として共有 `asPubs` でレスポンスを検証します。
+Automation API、Admin API、および公開 `GET /api/pubs` のPath・Method・Request / Response Schema・HTTP Status・Error Code・認証要件は[OpenAPI定義](openapi/openapi.yaml)を契約のSource of Truthとします。現行の管理用Routeは、Login / Logoutを含めてすべて収録済みです。公開 `GET /media/{uuid}` はこのOpenAPIに未収録です。公開Pub APIは `@irishpub-map/api-client` の `getPubs({ baseUrl, locale, signal?, fetch? })` からPlatform非依存で利用でき、標準Fetchを既定として共有 `asPubs` でレスポンスを検証します。OpenAPIで定義されていないResponse Envelope / PubのFieldもClient境界で拒否し、許可済みの `Pub` Fieldだけを返します。
 
 `/api/automation/v1/*` は外部Automation用です。Bearer Tokenを要求し、Serverに設定した `AUTOMATION_API_TOKEN_SHA256` と受信TokenのSHA-256をtiming-safeに照合します。Raw TokenはServer環境変数やRepositoryへ保存しません。設定、発行、Token Rotation、Scope運用とCreate / Publishフローは[Automation API Runbook](../runbooks/automation-api-access.md)を参照してください。
 

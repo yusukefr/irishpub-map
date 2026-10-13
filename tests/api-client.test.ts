@@ -54,17 +54,47 @@ describe("public API client", () => {
   });
 
   it("reports invalid JSON as a payload error", async () => {
-    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response("not-json"));
+    const privateMarker = "SECRET-CUSTOMER-123";
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response(`${privateMarker} not-json`));
 
-    await expect(getPubs({ baseUrl: "https://example.test", locale: "ja", fetch })).rejects.toBeInstanceOf(
-      PubApiPayloadError,
+    const error = await getPubs({ baseUrl: "https://example.test", locale: "ja", fetch }).catch(
+      (caught: unknown) => caught,
     );
+
+    expect(error).toBeInstanceOf(PubApiPayloadError);
+    expect(error).not.toHaveProperty("cause");
+    expect(String(error)).not.toContain(privateMarker);
+    expect(JSON.stringify(error)).not.toContain(privateMarker);
+    if (error instanceof Error) {
+      const ownValues = Object.getOwnPropertyNames(error).map((key) => String(Reflect.get(error, key)));
+      expect(ownValues.join(" ")).not.toContain(privateMarker);
+    }
   });
 
   it("reports an invalid Pub schema as a payload error", async () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
       .mockResolvedValue(new Response(JSON.stringify({ pubs: [{ ...pub, latitude: "35" }] })));
+
+    await expect(getPubs({ baseUrl: "https://example.test", locale: "ja", fetch })).rejects.toBeInstanceOf(
+      PubApiPayloadError,
+    );
+  });
+
+  it("rejects unknown Pub fields instead of returning them from the OpenAPI-constrained DTO", async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(new Response(JSON.stringify({ pubs: [{ ...pub, adminOnly: "unexpected-value" }] })));
+
+    await expect(getPubs({ baseUrl: "https://example.test", locale: "ja", fetch })).rejects.toBeInstanceOf(
+      PubApiPayloadError,
+    );
+  });
+
+  it("rejects unknown fields in the response envelope", async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(new Response(JSON.stringify({ pubs: [], internal: "unexpected-value" })));
 
     await expect(getPubs({ baseUrl: "https://example.test", locale: "ja", fetch })).rejects.toBeInstanceOf(
       PubApiPayloadError,

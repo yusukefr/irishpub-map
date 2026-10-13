@@ -1,5 +1,27 @@
 import { asPubs, type Locale, type Pub } from "@irishpub-map/shared";
 
+const PUBLIC_PUB_FIELDS = new Set([
+  "id",
+  "name",
+  "kana",
+  "prefecture",
+  "city",
+  "municipalityCode",
+  "address",
+  "latitude",
+  "longitude",
+  "websiteUrl",
+  "googleMapsUrl",
+  "instagramUrl",
+  "tags",
+  "tagDisplayNames",
+  "status",
+  "statusDisplayName",
+  "pubType",
+  "pubTypeDisplayName",
+]);
+const PUBLIC_PUB_COLLECTION_FIELDS = new Set(["pubs"]);
+
 /** 公開Pub APIが成功以外のHTTP statusを返したことを示します。 */
 export class PubApiHttpError extends Error {
   readonly status: number;
@@ -20,10 +42,9 @@ export class PubApiPayloadError extends Error {
   /**
    * Response本文を公開せずにPayloadエラーを作成します。
    * @param {string} message - Payload失敗を安全に説明する文言。
-   * @param {unknown} cause - 任意のJSON parseまたはValidationエラー。
    */
-  constructor(message: string, cause?: unknown) {
-    super(message, { cause });
+  constructor(message: string) {
+    super(message);
     this.name = "PubApiPayloadError";
   }
 }
@@ -62,17 +83,31 @@ export async function getPubs({
   let payload: unknown;
   try {
     payload = await response.json();
-  } catch (cause) {
-    throw new PubApiPayloadError("Public Pub API returned invalid JSON.", cause);
+  } catch {
+    throw new PubApiPayloadError("Public Pub API returned invalid JSON.");
   }
 
-  if (!payload || typeof payload !== "object" || !("pubs" in payload)) {
+  if (
+    !isRecord(payload) ||
+    !hasOnlyKeys(payload, PUBLIC_PUB_COLLECTION_FIELDS) ||
+    !("pubs" in payload) ||
+    !Array.isArray(payload.pubs) ||
+    !payload.pubs.every((pub) => isRecord(pub) && hasOnlyKeys(pub, PUBLIC_PUB_FIELDS))
+  ) {
     throw new PubApiPayloadError("Public Pub API returned an invalid payload.");
   }
 
   try {
     return asPubs(payload.pubs);
-  } catch (cause) {
-    throw new PubApiPayloadError("Public Pub API returned invalid Pub data.", cause);
+  } catch {
+    throw new PubApiPayloadError("Public Pub API returned invalid Pub data.");
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasOnlyKeys(value: Record<string, unknown>, allowedKeys: ReadonlySet<string>) {
+  return Object.keys(value).every((key) => allowedKeys.has(key));
 }

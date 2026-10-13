@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ADMIN_SESSION_COOKIE, createAdminSession } from "../../apps/web/app/lib/admin-auth";
+import { getPubs } from "../../packages/api-client/src";
 import { expectOpenApiResponse, getOpenApiOperation } from "../helpers/openapi-contract";
 
 const mocks = vi.hoisted(() => ({
@@ -93,7 +94,15 @@ describe("OpenAPI runtime contracts", () => {
     const success = await getPublicPubs(new Request("https://example.test/api/pubs?locale=en"));
     expect(success.status).toBe(200);
     expect(success.headers.get("cache-control")).toContain("s-maxage=60");
+    const clientResponse = success.clone();
     await expect(expectOpenApiResponse(success, operation)).resolves.toEqual({ pubs: [publicPub] });
+    await expect(
+      getPubs({
+        baseUrl: "https://example.test",
+        locale: "en",
+        fetch: async () => clientResponse,
+      }),
+    ).resolves.toEqual([publicPub]);
 
     const invalidLocale = await getPublicPubs(new Request("https://example.test/api/pubs?locale=fr"));
     expect(invalidLocale.status).toBe(400);
