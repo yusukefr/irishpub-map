@@ -4,8 +4,9 @@
 
 ## 採用基盤
 
-- **Expo / React Native**: 実装開始時点の最新Stable Expo SDKを採用し、Expo SDKが指定するReact Native / React Versionを使います。2026-10-13の実装時点ではnpmの`latest`がExpo SDK 57.0.28で、SDK 58は`next`でした。SDK 57はReact Native 0.86、React 19.2.3を対象とするため、Mobileではその組み合わせを使います。CanaryやBetaは採用せず、SDK更新時はMapLibreを含むNative依存の互換性も確認します。
+- **Expo / React Native**: 実装開始時点の最新Stable Expo SDKを採用し、Expo SDKが指定するReact Native / React Versionを使います。2026-10-13の実装時点ではnpmの`latest`がExpo SDK 57.0.28で、SDK 58は`next`でした。SDK 57はReact Native 0.86、React 19.2.3を対象とするため、Mobileではその組み合わせを使います。Expo installの互換性確認後はExpo 57.0.30 / Expo Router 57.0.28を使います。CanaryやBetaは採用せず、SDK更新時はMapLibreを含むNative依存の互換性も確認します。
 - **Expo Router**: File-based routingを採用します。RouterはExpo SDKと互換性のあるStable版を使い、独立して最新版へ上げません。Routeの初期案はMap `/`、Pub詳細 `/pub/[id]` です。
+- **Router Native依存**: `react-native-safe-area-context`、`react-native-screens`、`expo-linking`、`expo-constants`、`expo-status-bar`をMobile workspaceの直接依存として宣言し、Expo SDKに対応する版を使います。Native autolinkingとPrebuildがworkspaceの依存宣言に基づいて解決できるようにします。
 - **MapLibre React Native**: `@maplibre/maplibre-react-native` と公式Expo config pluginを使います。MapLibreはExpo Goに含まれず利用できないため、Expo GoをMobile開発環境にしません。Pluginを設定し、Nativeコードまたはapp configを変更した後はDevelopment Buildを作り直します。
 - **OS下限**: SDK 57の公式表ではAndroid 7+、iOS 16.4+です。実装開始時のStable SDKとMapLibre Nativeの要件を照合し、より高い下限があればその値を採用します。Expo SDK、Apple、Googleの提出要件は変わるため、各Release前にも確認します。
 

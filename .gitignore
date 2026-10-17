@@ -16,6 +16,8 @@ npm-debug.log*
 api-keys.txt
 docs/repository-settings/*.json
 apps/web/public/maplibre/
+/apps/mobile/android/
+/apps/mobile/ios/
 
 !.github/
 !.github/ISSUE_TEMPLATE/
