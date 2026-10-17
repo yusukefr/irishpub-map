@@ -9,6 +9,7 @@ import type {
   PubStatusOption,
   TagOption,
 } from "@irishpub-map/shared/admin-master";
+import { formatAdminDate } from "../lib/admin-date-format";
 import { getAdminApiErrorMessage } from "../lib/admin-api-client";
 import { formatMessage, getTranslation, type Locale } from "../lib/i18n";
 import { AdminPageHeader } from "./admin-page-header";
@@ -294,7 +295,7 @@ export function AdminPubManager({
                       </td>
                       <td data-label={t.admin.filterTag}>{pub.tagItems.map((tag) => tag.name).join(", ") || "—"}</td>
                       <td data-label={t.admin.updatedAt}>
-                        {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(pub.updatedAt))}
+                        <time dateTime={pub.updatedAt}>{formatAdminDate(pub.updatedAt, locale)}</time>
                       </td>
                       <td data-label={t.admin.operations}>
                         <div className="admin-pub-row-actions">

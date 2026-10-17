@@ -119,6 +119,17 @@ describe("admin UI", () => {
       "/admin/pubs?name=Irish&prefecture=23&municipality=231002&status=open&tag=550e8400-e29b-41d4-a716-446655440010&published=false&page=2",
     );
   });
+
+  it.each([
+    { locale: "ja", date: "2026/08/29", time: "10:00" },
+    { locale: "en", date: "Aug 29, 2026", time: "10:00 AM" },
+  ] as const)("shows the pub update date and time in $locale", ({ locale, date, time }) => {
+    render(<AdminPubManager {...managerProps} locale={locale} />);
+
+    const updatedAt = screen.getByText(new RegExp(`${date}.*${time}`));
+    expect(updatedAt.closest("time")).toHaveAttribute("dateTime", pub.updatedAt);
+  });
+
   it("publishes a pub after confirmation and shows the result immediately", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fetchMock.mockResolvedValueOnce(
