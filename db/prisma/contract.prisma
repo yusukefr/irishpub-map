@@ -1,0 +1,3 @@
+// use prisma-8
+
+// Issue #637 で現行Neon Schemaから推論し、制約を照合する。
