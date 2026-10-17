@@ -33,7 +33,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Pub data contract | [Data specification](specs/data.md) | Current。共有型、Validation、DBを優先 |
 | Database | [Database specification](specs/database.md)、[Generated schema](generated/database-schema.md) | 設計はCurrent、物理SchemaはGenerated。Neonの現行Schemaを優先 |
 | Prisma baseline handoff | [Prisma Baseline migration inventory](development/prisma-baseline-inventory.md) | Issue #635の2026-10-13時点の調査記録。Baseline作成前にNeonを再確認 |
-| Prisma tooling | [Prisma 8 RC tooling](development/prisma-tooling.md) | CLI / Contractの配置、Target接続、RC更新方針 |
+| Prisma tooling | [Prisma 8 RC tooling](development/prisma-tooling.md)、[Contract audit](development/prisma-contract-audit.md) | CLI / Contractの配置、Production Schemaとの照合、既知のPSL表現差分 |
 | Pub draft / publish | [Admin pub lifecycle](specs/admin-pub-lifecycle.md) | Current。管理APIとテストを優先 |
 | Status management | [Status management](specs/status-management.md) | Current。実装・テストを優先 |
 | Tag management / normalization | [Tag specification](specs/tags.md) | Current。共有型、DB、実装を優先 |

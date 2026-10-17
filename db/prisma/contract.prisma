@@ -1,3 +1,421 @@
 // use prisma-8
 
-// Issue #637 で現行Neon Schemaから推論し、制約を照合する。
+// Generated from read-only Production Neon introspection on 2026-10-17.
+// schema_migrations and Neon-managed schemas are deliberately excluded.
+model AutomationAuditLogs {
+  id            Uuid
+  request_id    Uuid
+  scope         String
+  method        String
+  path          String
+  resource_type String
+  resource_id   Uuid?
+  action        String
+  result        String
+  status_code   Int
+  created_at    Timestamptz(6) @default(now())
+
+  @@id([id], map: "automation_audit_logs_pkey")
+  @@check(expression: "(resource_type = ANY (ARRAY['content'::text, 'quiz'::text, 'pub'::text, 'tag'::text]))", map: "automation_audit_logs_resource_type_check")
+  @@check(expression: "(action = ANY (ARRAY['create'::text, 'update'::text, 'publish'::text, 'unpublish'::text]))", map: "automation_audit_logs_action_check")
+  @@check(expression: "(result = ANY (ARRAY['success'::text, 'failure'::text]))", map: "automation_audit_logs_result_check")
+  @@check(expression: "((status_code >= 100) AND (status_code <= 599))", map: "automation_audit_logs_status_code_check")
+  @@index([created_at], map: "automation_audit_logs_created_at_idx")
+  @@index([request_id], map: "automation_audit_logs_request_id_idx")
+  @@index([resource_type, resource_id], map: "automation_audit_logs_resource_idx")
+  @@map("automation_audit_logs")
+}
+
+model AutomationIdempotencyKeys {
+  id            Uuid
+  key_hash      Char(64)
+  request_hash  Char(64)
+  method        String
+  path          String
+  resource_type String
+  resource_id   Uuid
+  status        String         @default("pending")
+  status_code   Int?
+  response_body Json?
+  created_at    Timestamptz(6) @default(now())
+  expires_at    Timestamptz(6) @default(sql`(now() + '24:00:00'::interval)`)
+
+  @@id([id], map: "automation_idempotency_keys_pkey")
+  @@unique([key_hash], map: "automation_idempotency_keys_key_hash_key")
+  @@check(expression: "(resource_type = ANY (ARRAY['content'::text, 'quiz'::text, 'pub'::text, 'tag'::text]))", map: "automation_idempotency_keys_resource_type_check")
+  @@check(expression: "(status = ANY (ARRAY['pending'::text, 'completed'::text]))", map: "automation_idempotency_keys_status_check")
+  @@check(expression: "(((status = 'pending'::text) AND (status_code IS NULL) AND (response_body IS NULL)) OR ((status = 'completed'::text) AND ((status_code >= 200) AND (status_code <= 299)) AND (response_body IS NOT NULL)))", map: "automation_idempotency_response_check")
+  @@index([expires_at], where: "(status = 'completed'::text)", map: "automation_idempotency_keys_expires_at_idx")
+  @@map("automation_idempotency_keys")
+}
+
+model CalendarEventTranslations {
+  locale                               String
+  name                                 String
+  description                          String
+  updated_at                           Timestamptz(6) @default(now())
+  event_id                             Uuid
+  calendar_event_translations_event_id CalendarEvents @relation("calendar_event_translations_event_id_fkey", fields: [event_id], references: [id], onDelete: Cascade, index: false, map: "calendar_event_translations_event_id_fkey")
+
+  @@id([event_id, locale], map: "calendar_event_translations_pkey")
+  @@check(expression: "(locale = ANY (ARRAY['ja'::text, 'en'::text]))", map: "calendar_event_translations_locale_check")
+  @@map("calendar_event_translations")
+}
+
+model CalendarEvents {
+  category                                                    String?
+  date_rule                                                   Json?
+  is_public_holiday                                           Boolean                     @default(false)
+  featured                                                    Boolean                     @default(false)
+  aliases                                                     String[]                    @default([]) @noCheck(elementNotNull)
+  source                                                      String?
+  sort_order                                                  Int
+  is_published                                                Boolean                     @default(false)
+  created_at                                                  Timestamptz(6)              @default(now())
+  updated_at                                                  Timestamptz(6)              @default(now())
+  id                                                          Uuid
+  CalendarEventTranslationsByCalendarEventTranslationsEventId CalendarEventTranslations[] @relation("calendar_event_translations_event_id_fkey")
+
+  @@id([id], map: "calendar_events_pkey")
+  @@check(expression: "((category IS NULL) OR (category = ANY (ARRAY['public_holiday'::text, 'culture'::text, 'tradition'::text, 'language'::text, 'literature'::text, 'history'::text, 'religion'::text])))", map: "calendar_events_category_check")
+  @@check(expression: "((date_rule IS NULL) OR ((jsonb_typeof(date_rule) = 'object'::text) AND (date_rule ? 'type'::text) AND (jsonb_typeof((date_rule -> 'type'::text)) = 'string'::text) AND ((date_rule ->> 'type'::text) = ANY (ARRAY['fixed'::text, 'date_range'::text, 'nth_weekday'::text, 'last_weekday'::text, 'relative_to_easter'::text, 'weekday_on_or_after'::text, 'closest_weekday_to_date'::text, 'rule_set'::text, 'annual_variable'::text]))))", map: "calendar_events_date_rule_check")
+  @@check(expression: "(sort_order >= 0)", map: "calendar_events_sort_order_check")
+  @@index([sort_order, id], where: "is_published", map: "calendar_events_published_idx")
+  @@index([category, sort_order, id], map: "calendar_events_category_idx")
+  @@index([updated_at, id], map: "calendar_events_admin_list_idx")
+  @@index([sort_order, id], map: "calendar_events_sort_order_idx")
+  @@map("calendar_events")
+}
+
+model ContentEntries {
+  id                                                Uuid
+  kind                                              String?
+  slug                                              String?
+  category                                          String?
+  status                                            String
+  published_at                                      Timestamptz(6)?
+  created_at                                        Timestamptz(6)        @default(now())
+  updated_at                                        Timestamptz(6)        @default(now())
+  hero_image_asset_id                               Uuid?
+  content_entries_hero_image_asset_id               MediaAssets?          @relation("content_entries_hero_image_asset_id_fkey", fields: [hero_image_asset_id], references: [id], onDelete: SetNull, index: false, map: "content_entries_hero_image_asset_id_fkey")
+  ContentTranslationsByContentTranslationsContentId ContentTranslations[] @relation("content_translations_content_id_fkey")
+  QuizQuestionsByQuizQuestionsRelatedContentId      QuizQuestions[]       @relation("quiz_questions_related_content_id_fkey")
+
+  @@id([id], map: "content_entries_pkey")
+  @@unique([kind, slug], map: "content_entries_kind_slug_key")
+  @@check(expression: "(btrim(kind) <> ''::text)", map: "content_entries_kind_check")
+  @@check(expression: "(btrim(slug) <> ''::text)", map: "content_entries_slug_check")
+  @@check(expression: "(btrim(category) <> ''::text)", map: "content_entries_category_check")
+  @@check(expression: "(status = ANY (ARRAY['draft'::text, 'published'::text]))", map: "content_entries_status_check")
+  @@check(expression: "(((status = 'draft'::text) AND (published_at IS NULL)) OR ((status = 'published'::text) AND (published_at IS NOT NULL)))", map: "content_entries_publication_state_check")
+  @@index([hero_image_asset_id], where: "(hero_image_asset_id IS NOT NULL)", map: "content_entries_hero_image_asset_id_idx")
+  @@map("content_entries")
+}
+
+model ContentTranslations {
+  content_id                      Uuid
+  locale                          String
+  title                           String
+  summary                         String
+  body_markdown                   String
+  updated_at                      Timestamptz(6) @default(now())
+  hero_image_alt                  String         @default(sql`''::text`)
+  hero_image_caption              String         @default(sql`''::text`)
+  content_translations_content_id ContentEntries @relation("content_translations_content_id_fkey", fields: [content_id], references: [id], onDelete: Cascade, index: false, map: "content_translations_content_id_fkey")
+
+  @@id([content_id, locale], map: "content_translations_pkey")
+  @@check(expression: "(char_length(hero_image_alt) <= 500)", map: "content_translations_hero_image_alt_length_check")
+  @@check(expression: "(locale = ANY (ARRAY['ja'::text, 'en'::text]))", map: "content_translations_locale_check")
+  @@check(expression: "(char_length(hero_image_caption) <= 1000)", map: "content_translations_hero_image_caption_length_check")
+  @@map("content_translations")
+}
+
+model MediaAssets {
+  id                                             Uuid
+  storage_key                                    String
+  url                                            String
+  mime_type                                      String
+  width                                          Int
+  height                                         Int
+  file_size                                      Int
+  created_at                                     Timestamptz(6)   @default(now())
+  ContentEntriesByContentEntriesHeroImageAssetId ContentEntries[] @relation("content_entries_hero_image_asset_id_fkey")
+  QuizQuestionsByQuizQuestionsImageAssetId       QuizQuestions[]  @relation("quiz_questions_image_asset_id_fkey")
+
+  @@id([id], map: "media_assets_pkey")
+  @@unique([storage_key], map: "media_assets_storage_key_key")
+  @@unique([url], map: "media_assets_url_key")
+  @@check(expression: "((btrim(storage_key) <> ''::text) AND (storage_key = btrim(storage_key)))", map: "media_assets_storage_key_check")
+  @@check(expression: "((btrim(url) <> ''::text) AND (url = btrim(url)))", map: "media_assets_url_check")
+  @@check(expression: "(mime_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text, 'image/webp'::text]))", map: "media_assets_mime_type_check")
+  @@check(expression: "((width >= 1) AND (width <= 8192))", map: "media_assets_width_check")
+  @@check(expression: "((height >= 1) AND (height <= 8192))", map: "media_assets_height_check")
+  @@check(expression: "((file_size >= 1) AND (file_size <= 4194304))", map: "media_assets_file_size_check")
+  @@check(expression: "(((width)::bigint * (height)::bigint) <= 40000000)", map: "media_assets_pixel_count_check")
+  @@index([created_at, id], map: "media_assets_admin_list_idx")
+  @@map("media_assets")
+}
+
+model MunicipalityCodes {
+  code                                                               String
+  prefecture_code                                                    SmallInt
+  municipality_codes_prefecture_code                                 Prefectures                @relation("municipality_codes_prefecture_code_fkey", fields: [prefecture_code], references: [code], index: false, map: "municipality_codes_prefecture_code_fkey")
+  MunicipalityTranslationsByMunicipalityTranslationsMunicipalityCode MunicipalityTranslations[] @relation("municipality_translations_municipality_code_fkey")
+  PubsByPubsMunicipalityCode                                         Pubs[]                     @relation("pubs_municipality_code_fkey")
+
+  @@id([code], map: "municipality_codes_pkey")
+  @@check(expression: "(code ~ '^[0-9]{6}$'::text)", map: "municipality_codes_code_check")
+  @@map("municipality_codes")
+}
+
+model MunicipalityTranslations {
+  municipality_code                           String
+  locale                                      String
+  name                                        String
+  name_reading                                String?
+  municipality_translations_municipality_code MunicipalityCodes @relation("municipality_translations_municipality_code_fkey", fields: [municipality_code], references: [code], onDelete: Cascade, index: false, map: "municipality_translations_municipality_code_fkey")
+
+  @@id([municipality_code, locale], map: "municipality_translations_pkey")
+  @@check(expression: "(btrim(name) <> ''::text)", map: "municipality_translations_name_check")
+  @@check(expression: "((name_reading IS NULL) OR (btrim(name_reading) <> ''::text))", map: "municipality_translations_name_reading_check")
+  @@check(expression: "(locale = ANY (ARRAY['ja'::text, 'en'::text]))", map: "municipality_translations_locale_check")
+  @@map("municipality_translations")
+}
+
+model PrefectureTranslations {
+  prefecture_code                         SmallInt
+  locale                                  String
+  name                                    String
+  name_reading                            String?
+  prefecture_translations_prefecture_code Prefectures @relation("prefecture_translations_prefecture_code_fkey", fields: [prefecture_code], references: [code], onDelete: Cascade, index: false, map: "prefecture_translations_prefecture_code_fkey")
+
+  @@id([prefecture_code, locale], map: "prefecture_translations_pkey")
+  @@unique([locale, name], map: "prefecture_translations_locale_name_key")
+  @@check(expression: "(btrim(name) <> ''::text)", map: "prefecture_translations_name_check")
+  @@check(expression: "((name_reading IS NULL) OR (btrim(name_reading) <> ''::text))", map: "prefecture_translations_name_reading_check")
+  @@check(expression: "(locale = ANY (ARRAY['ja'::text, 'en'::text]))", map: "prefecture_translations_locale_check")
+  @@map("prefecture_translations")
+}
+
+model Prefectures {
+  code                                                         SmallInt
+  MunicipalityCodesByMunicipalityCodesPrefectureCode           MunicipalityCodes[]      @relation("municipality_codes_prefecture_code_fkey")
+  PrefectureTranslationsByPrefectureTranslationsPrefectureCode PrefectureTranslations[] @relation("prefecture_translations_prefecture_code_fkey")
+  PubsByPubsPrefectureCode                                     Pubs[]                   @relation("pubs_prefecture_code_fkey")
+
+  @@id([code], map: "prefectures_pkey")
+  @@check(expression: "((code >= 1) AND (code <= 47))", map: "prefectures_code_check")
+  @@map("prefectures")
+}
+
+model PubStatusTranslations {
+  status_code                         SmallInt
+  locale                              String
+  display_name                        String
+  pub_status_translations_status_code PubStatuses @relation("pub_status_translations_status_code_fkey", fields: [status_code], references: [code], onDelete: Cascade, index: false, map: "pub_status_translations_status_code_fkey")
+
+  @@id([status_code, locale], map: "pub_status_translations_pkey")
+  @@check(expression: "(btrim(display_name) <> ''::text)", map: "pub_status_translations_display_name_check")
+  @@check(expression: "(locale = ANY (ARRAY['ja'::text, 'en'::text]))", map: "pub_status_translations_locale_check")
+  @@map("pub_status_translations")
+}
+
+model PubStatuses {
+  code                                                   SmallInt
+  key                                                    String
+  PubStatusTranslationsByPubStatusTranslationsStatusCode PubStatusTranslations[] @relation("pub_status_translations_status_code_fkey")
+  PubsByPubsStatusCode                                   Pubs[]                  @relation("pubs_status_code_fkey")
+
+  @@id([code], map: "pub_statuses_pkey")
+  @@unique([key], map: "pub_statuses_key_unique")
+  @@map("pub_statuses")
+}
+
+model PubTags {
+  pub_id          Uuid
+  tag_id          Uuid
+  pub_tags_pub_id Pubs @relation("pub_tags_pub_id_fkey1", fields: [pub_id], references: [id], onDelete: Cascade, index: false, map: "pub_tags_pub_id_fkey1")
+  pub_tags_tag_id Tags @relation("pub_tags_tag_id_fkey", fields: [tag_id], references: [id], onDelete: Cascade, index: false, map: "pub_tags_tag_id_fkey")
+
+  @@id([pub_id, tag_id], map: "pub_tags_pkey")
+  @@index([tag_id], map: "pub_tags_tag_id_idx")
+  @@map("pub_tags")
+}
+
+model PubTranslations {
+  pub_id                  Uuid
+  locale                  String
+  name                    String
+  name_reading            String?
+  address                 String?
+  updated_at              Timestamptz(6) @default(now())
+  pub_translations_pub_id Pubs           @relation("pub_translations_pub_id_fkey", fields: [pub_id], references: [id], onDelete: Cascade, index: false, map: "pub_translations_pub_id_fkey")
+
+  @@id([pub_id, locale], map: "pub_translations_pkey")
+  @@check(expression: "(btrim(name) <> ''::text)", map: "pub_translations_name_check")
+  @@check(expression: "((name_reading IS NULL) OR (btrim(name_reading) <> ''::text))", map: "pub_translations_name_reading_check")
+  @@check(expression: "((address IS NULL) OR (btrim(address) <> ''::text))", map: "pub_translations_address_check")
+  @@check(expression: "(locale = ANY (ARRAY['ja'::text, 'en'::text]))", map: "pub_translations_locale_check")
+  @@map("pub_translations")
+}
+
+model PubTypeTranslations {
+  pub_type_code                       SmallInt
+  locale                              String
+  display_name                        String
+  pub_type_translations_pub_type_code PubTypes @relation("pub_type_translations_pub_type_code_fkey", fields: [pub_type_code], references: [code], onDelete: Cascade, index: false, map: "pub_type_translations_pub_type_code_fkey")
+
+  @@id([pub_type_code, locale], map: "pub_type_translations_pkey")
+  @@check(expression: "(locale = ANY (ARRAY['ja'::text, 'en'::text]))", map: "pub_type_translations_locale_check")
+  @@check(expression: "(btrim(display_name) <> ''::text)", map: "pub_type_translations_display_name_check")
+  @@map("pub_type_translations")
+}
+
+model PubTypes {
+  code                                                SmallInt
+  key                                                 String
+  PubTypeTranslationsByPubTypeTranslationsPubTypeCode PubTypeTranslations[] @relation("pub_type_translations_pub_type_code_fkey")
+  PubsByPubsPubTypeCode                               Pubs[]                @relation("pubs_pub_type_code_fkey")
+
+  @@id([code], map: "pub_types_pkey")
+  @@unique([key], map: "pub_types_key_key")
+  @@check(expression: "(key = ANY (ARRAY['irish'::text, 'british'::text, 'other'::text, 'unclassified'::text]))", map: "pub_types_key_check")
+  @@map("pub_types")
+}
+
+model Pubs {
+  id                                    Uuid
+  latitude                              Float?
+  longitude                             Float?
+  website_url                           String?
+  google_maps_url                       String?
+  instagram_url                         String?
+  updated_at                            Timestamptz(6)     @default(now())
+  prefecture_code                       SmallInt?
+  status_code                           SmallInt?
+  municipality_code                     String?
+  is_published                          Boolean            @default(false)
+  pub_type_code                         SmallInt?
+  pubs_prefecture_code                  Prefectures?       @relation("pubs_prefecture_code_fkey", fields: [prefecture_code], references: [code], index: false, map: "pubs_prefecture_code_fkey")
+  pubs_status_code                      PubStatuses?       @relation("pubs_status_code_fkey", fields: [status_code], references: [code], index: false, map: "pubs_status_code_fkey")
+  pubs_municipality_code                MunicipalityCodes? @relation("pubs_municipality_code_fkey", fields: [municipality_code], references: [code], index: false, map: "pubs_municipality_code_fkey")
+  pubs_pub_type_code                    PubTypes?          @relation("pubs_pub_type_code_fkey", fields: [pub_type_code], references: [code], index: false, map: "pubs_pub_type_code_fkey")
+  PubTagsByPubTagsPubId                 PubTags[]          @relation("pub_tags_pub_id_fkey1")
+  PubTranslationsByPubTranslationsPubId PubTranslations[]  @relation("pub_translations_pub_id_fkey")
+
+  @@id([id], map: "pubs_columns_new_pkey")
+  @@check(expression: "((latitude >= ('-90'::integer)::double precision) AND (latitude <= (90)::double precision))", map: "pubs_columns_new_latitude_check")
+  @@check(expression: "((longitude >= ('-180'::integer)::double precision) AND (longitude <= (180)::double precision))", map: "pubs_columns_new_longitude_check")
+  @@check(expression: "((website_url IS NULL) OR (website_url ~* '^https?://'::text))", map: "pubs_columns_new_website_url_check")
+  @@check(expression: "((google_maps_url IS NULL) OR (google_maps_url ~* '^https?://'::text))", map: "pubs_columns_new_google_maps_url_check")
+  @@check(expression: "((instagram_url IS NULL) OR (instagram_url ~* '^https?://'::text))", map: "pubs_columns_new_instagram_url_check")
+  @@index([status_code], map: "pubs_status_code_idx")
+  @@index([municipality_code], map: "pubs_municipality_code_idx")
+  @@index([prefecture_code], map: "pubs_prefecture_code_idx")
+  @@index([pub_type_code], map: "pubs_pub_type_code_idx")
+  @@map("pubs")
+}
+
+model QuizChoiceTranslations {
+  choice_id                       String
+  locale                          String
+  label                           String
+  updated_at                      Timestamptz(6) @default(now())
+  question_id                     Uuid
+  quiz_choice_translations_choice QuizChoices    @relation("quiz_choice_translations_choice_fkey", fields: [question_id, choice_id], references: [question_id, id], onDelete: Cascade, index: false, map: "quiz_choice_translations_choice_fkey")
+
+  @@id([question_id, choice_id, locale], map: "quiz_choice_translations_pkey")
+  @@check(expression: "(locale = ANY (ARRAY['ja'::text, 'en'::text]))", map: "quiz_choice_translations_locale_check")
+  @@map("quiz_choice_translations")
+}
+
+model QuizChoices {
+  id                                                   String
+  sort_order                                           Int
+  created_at                                           Timestamptz(6)           @default(now())
+  updated_at                                           Timestamptz(6)           @default(now())
+  question_id                                          Uuid
+  quiz_choices_question_id                             QuizQuestions            @relation("quiz_choices_question_id_fkey", fields: [question_id], references: [id], onDelete: Cascade, index: false, map: "quiz_choices_question_id_fkey")
+  QuizChoiceTranslationsByQuizChoiceTranslationsChoice QuizChoiceTranslations[] @relation("quiz_choice_translations_choice_fkey")
+  QuizQuestionsByQuizQuestionsCorrectChoice            QuizQuestions[]          @relation("quiz_questions_correct_choice_fkey")
+
+  @@id([question_id, id], map: "quiz_choices_pkey")
+  @@unique([question_id, sort_order], map: "quiz_choices_question_sort_order_key")
+  @@check(expression: "(btrim(id) <> ''::text)", map: "quiz_choices_id_check")
+  @@check(expression: "(sort_order >= 0)", map: "quiz_choices_sort_order_check")
+  @@map("quiz_choices")
+}
+
+model QuizQuestionTranslations {
+  locale                                 String
+  question                               String
+  explanation                            String
+  source_label                           String
+  updated_at                             Timestamptz(6) @default(now())
+  image_alt                              String         @default(sql`''::text`)
+  image_caption                          String         @default(sql`''::text`)
+  question_id                            Uuid
+  quiz_question_translations_question_id QuizQuestions  @relation("quiz_question_translations_question_id_fkey", fields: [question_id], references: [id], onDelete: Cascade, index: false, map: "quiz_question_translations_question_id_fkey")
+
+  @@id([question_id, locale], map: "quiz_question_translations_pkey")
+  @@check(expression: "(locale = ANY (ARRAY['ja'::text, 'en'::text]))", map: "quiz_question_translations_locale_check")
+  @@check(expression: "(char_length(image_alt) <= 500)", map: "quiz_question_translations_image_alt_length_check")
+  @@check(expression: "(char_length(image_caption) <= 1000)", map: "quiz_question_translations_image_caption_length_check")
+  @@map("quiz_question_translations")
+}
+
+model QuizQuestions {
+  category                                                     String?
+  special_month                                                SmallInt?
+  special_day                                                  SmallInt?
+  correct_choice_id                                            String?
+  source_url                                                   String?
+  related_content_id                                           Uuid?
+  is_published                                                 Boolean                    @default(false)
+  created_at                                                   Timestamptz(6)             @default(now())
+  updated_at                                                   Timestamptz(6)             @default(now())
+  image_asset_id                                               Uuid?
+  id                                                           Uuid
+  quiz_questions_related_content_id                            ContentEntries?            @relation("quiz_questions_related_content_id_fkey", fields: [related_content_id], references: [id], onDelete: SetNull, index: false, map: "quiz_questions_related_content_id_fkey")
+  quiz_questions_image_asset_id                                MediaAssets?               @relation("quiz_questions_image_asset_id_fkey", fields: [image_asset_id], references: [id], onDelete: SetNull, index: false, map: "quiz_questions_image_asset_id_fkey")
+  quiz_questions_correct_choice                                QuizChoices?               @relation("quiz_questions_correct_choice_fkey", fields: [id, correct_choice_id], references: [question_id, id], index: false, map: "quiz_questions_correct_choice_fkey")
+  QuizChoicesByQuizChoicesQuestionId                           QuizChoices[]              @relation("quiz_choices_question_id_fkey")
+  QuizQuestionTranslationsByQuizQuestionTranslationsQuestionId QuizQuestionTranslations[] @relation("quiz_question_translations_question_id_fkey")
+
+  @@id([id], map: "quiz_questions_pkey")
+  @@check(expression: "((category IS NULL) OR (btrim(category) <> ''::text))", map: "quiz_questions_category_check")
+  @@check(expression: "((correct_choice_id IS NULL) OR (btrim(correct_choice_id) <> ''::text))", map: "quiz_questions_correct_choice_id_check")
+  @@check(expression: "((source_url IS NULL) OR (btrim(source_url) <> ''::text))", map: "quiz_questions_source_url_check")
+  @@check(expression: "(((special_month IS NULL) = (special_day IS NULL)) AND ((special_month IS NULL) OR (((special_month >= 1) AND (special_month <= 12)) AND ((special_day >= 1) AND (special_day <=\nCASE\n    WHEN (special_month = 2) THEN 29\n    WHEN (special_month = ANY (ARRAY[4, 6, 9, 11])) THEN 30\n    ELSE 31\nEND)))))", map: "quiz_questions_special_date_check")
+  @@index([related_content_id], where: "(related_content_id IS NOT NULL)", map: "quiz_questions_related_content_id_idx")
+  @@index([image_asset_id], where: "(image_asset_id IS NOT NULL)", map: "quiz_questions_image_asset_id_idx")
+  @@index([id], where: "is_published", map: "quiz_questions_published_idx")
+  @@index([special_month, special_day, id], where: "(is_published AND (special_month IS NOT NULL))", map: "quiz_questions_special_date_idx")
+  @@index([category, id], map: "quiz_questions_category_idx")
+  @@index([updated_at, id], map: "quiz_questions_admin_list_idx")
+  @@map("quiz_questions")
+}
+
+model TagTranslations {
+  tag_id                  Uuid
+  locale                  String
+  name                    String
+  tag_translations_tag_id Tags   @relation("tag_translations_tag_id_fkey", fields: [tag_id], references: [id], onDelete: Cascade, index: false, map: "tag_translations_tag_id_fkey")
+
+  @@id([tag_id, locale], map: "tag_translations_pkey")
+  @@unique([locale, name], map: "tag_translations_locale_name_key")
+  @@check(expression: "(btrim(name) <> ''::text)", map: "tag_translations_name_check")
+  @@check(expression: "(locale = ANY (ARRAY['ja'::text, 'en'::text]))", map: "tag_translations_locale_check")
+  @@map("tag_translations")
+}
+
+model Tags {
+  id                                    Uuid
+  key                                   String
+  PubTagsByPubTagsTagId                 PubTags[]         @relation("pub_tags_tag_id_fkey")
+  TagTranslationsByTagTranslationsTagId TagTranslations[] @relation("tag_translations_tag_id_fkey")
+
+  @@id([id], map: "tags_pkey")
+  @@unique([key], map: "tags_key_unique")
+  @@map("tags")
+}
