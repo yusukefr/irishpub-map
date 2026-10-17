@@ -8,9 +8,11 @@ Prisma 8 RCは互換性を保証する正式版ではありません。2026-10-1
 
 ## 配置
 
-- `prisma.config.ts`: Prisma 8設定。Contract、出力先、任意の`DATABASE_URL`を定義します。
+- `prisma.config.ts`: Prisma 8設定。Contractと出力先を定義します。意図的に既定DB接続先を設定しません。
 - `db/prisma/contract.prisma`: Prisma 8形式のContract。Productionの現行Schema推論・制約照合は後続Issueで行います。
 - `generated/prisma8/`: `contract emit`が生成するContract artifactと型の出力先。
+
+生成物のGit管理（commitして差分レビューするか、ignoreしてCI生成するか）はIssue #637で決定します。それまではContractをemitすると未追跡の生成物が作られるため、生成物をcommitしません。
 
 ## コマンド
 
@@ -24,4 +26,6 @@ npm run prisma:contract:emit
 
 ## Neon接続
 
-Configは`DATABASE_URL`を任意で読みます。未設定でも設定読込とDB非接続コマンドを実行できます。DBへ接続するPrisma操作を追加する場合は、固定Preview / Production Targetを`config/neon-targets.json`と既存Neon Target Resolverで厳密に解決し、直接接続文字列をプロセス環境へ渡してください。Productionへの書込みは既存のProduction Guardと明示承認を維持します。接続文字列はCLI引数、ログ、Git管理ファイルへ出しません。Prisma 8 RCに対するDB操作を追加する前に、対象バージョンのCLI仕様と操作の副作用を確認してください。
+この設定では`db.connection`を設定しません。`contract emit`はDBへ接続しませんが、DBを使うPrisma CLIコマンドには既定の接続先がありません。Prisma CLIは`--db`で任意の接続先を明示できるため、本Repositoryでは直接CLIへProduction接続情報を与えてDBコマンドを実行しないでください。Production認証情報は開発者の一般シェルや直接起動するCLIへ配布しません。
+
+後続IssueでDB操作を追加する場合は、標準実行経路が`config/neon-targets.json`と既存`resolveNeonTarget()`によりTarget・Branch状態・直接接続を確認し、ProductionにはProduction Guardと明示承認を適用する必要があります。Production認証情報を一般のPrisma CLIから使えないよう権限・credentialの配置範囲も設計します。接続文字列はCLI引数、ログ、Git管理ファイルへ出しません。Prisma 8 RCに対するDB操作を追加する前に、対象バージョンのCLI仕様と操作の副作用を確認してください。詳しくは[Prisma CLI設定](https://www.prisma.io/docs/cli/configuration)を参照してください。
