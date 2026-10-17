@@ -6,7 +6,7 @@
 
 物理テーブル、カラム、NULL許容、制約、外部キー、IndexはProduction Neonから生成した[生成済みスキーマ](../generated/database-schema.md)を正とします。生成文書は手動編集しません。再生成・Migrationの運用手順は[Neon migration Runbook](../runbooks/neon-migrations.md)を参照してください。
 
-Prisma ORM 8 RCはSchema Contract / Migration用の開発ツールです。現時点では既存RepositoryやApplicationのDB接続を置き換えません。Prismaの配置、CLI、Neon Target接続の境界は[Prisma 8 RC tooling](../development/prisma-tooling.md)を参照してください。
+Prisma ORM 8 RCはSchema Contract / Migration用の開発ツールです。現時点では既存RepositoryやApplicationのDB接続を置き換えません。Prismaの配置、CLI、Neon Target接続の境界は[Prisma 8 RC tooling](../development/prisma-tooling.md)を参照してください。現行ContractとProduction Schemaの照合結果・既知のPSL表現差分は[Prisma Contract schema照合記録](../development/prisma-contract-audit.md)を参照してください。
 
 ## IDと生成責務
 
