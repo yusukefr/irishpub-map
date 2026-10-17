@@ -418,12 +418,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "event_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["event_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "CalendarEvents",
@@ -546,12 +542,8 @@
               "CalendarEventTranslationsByCalendarEventTranslationsEventId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "event_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["event_id"]
                 },
                 "to": {
                   "model": "CalendarEventTranslations",
@@ -678,12 +670,8 @@
               "ContentTranslationsByContentTranslationsContentId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "content_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["content_id"]
                 },
                 "to": {
                   "model": "ContentTranslations",
@@ -693,12 +681,8 @@
               "QuizQuestionsByQuizQuestionsRelatedContentId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "related_content_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["related_content_id"]
                 },
                 "to": {
                   "model": "QuizQuestions",
@@ -709,12 +693,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "hero_image_asset_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["hero_image_asset_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "MediaAssets",
@@ -823,12 +803,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "content_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["content_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "ContentEntries",
@@ -933,12 +909,8 @@
               "ContentEntriesByContentEntriesHeroImageAssetId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "hero_image_asset_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["hero_image_asset_id"]
                 },
                 "to": {
                   "model": "ContentEntries",
@@ -948,12 +920,8 @@
               "QuizQuestionsByQuizQuestionsImageAssetId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "image_asset_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["image_asset_id"]
                 },
                 "to": {
                   "model": "QuizQuestions",
@@ -1013,12 +981,8 @@
               "MunicipalityTranslationsByMunicipalityTranslationsMunicipalityCode": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "code"
-                  ],
-                  "targetFields": [
-                    "municipality_code"
-                  ]
+                  "localFields": ["code"],
+                  "targetFields": ["municipality_code"]
                 },
                 "to": {
                   "model": "MunicipalityTranslations",
@@ -1028,12 +992,8 @@
               "PubsByPubsMunicipalityCode": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "code"
-                  ],
-                  "targetFields": [
-                    "municipality_code"
-                  ]
+                  "localFields": ["code"],
+                  "targetFields": ["municipality_code"]
                 },
                 "to": {
                   "model": "Pubs",
@@ -1044,12 +1004,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "prefecture_code"
-                  ],
-                  "targetFields": [
-                    "code"
-                  ]
+                  "localFields": ["prefecture_code"],
+                  "targetFields": ["code"]
                 },
                 "to": {
                   "model": "Prefectures",
@@ -1106,12 +1062,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "municipality_code"
-                  ],
-                  "targetFields": [
-                    "code"
-                  ]
+                  "localFields": ["municipality_code"],
+                  "targetFields": ["code"]
                 },
                 "to": {
                   "model": "MunicipalityCodes",
@@ -1174,12 +1126,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "prefecture_code"
-                  ],
-                  "targetFields": [
-                    "code"
-                  ]
+                  "localFields": ["prefecture_code"],
+                  "targetFields": ["code"]
                 },
                 "to": {
                   "model": "Prefectures",
@@ -1220,12 +1168,8 @@
               "MunicipalityCodesByMunicipalityCodesPrefectureCode": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "code"
-                  ],
-                  "targetFields": [
-                    "prefecture_code"
-                  ]
+                  "localFields": ["code"],
+                  "targetFields": ["prefecture_code"]
                 },
                 "to": {
                   "model": "MunicipalityCodes",
@@ -1235,12 +1179,8 @@
               "PrefectureTranslationsByPrefectureTranslationsPrefectureCode": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "code"
-                  ],
-                  "targetFields": [
-                    "prefecture_code"
-                  ]
+                  "localFields": ["code"],
+                  "targetFields": ["prefecture_code"]
                 },
                 "to": {
                   "model": "PrefectureTranslations",
@@ -1250,12 +1190,8 @@
               "PubsByPubsPrefectureCode": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "code"
-                  ],
-                  "targetFields": [
-                    "prefecture_code"
-                  ]
+                  "localFields": ["code"],
+                  "targetFields": ["prefecture_code"]
                 },
                 "to": {
                   "model": "Pubs",
@@ -1302,12 +1238,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "status_code"
-                  ],
-                  "targetFields": [
-                    "code"
-                  ]
+                  "localFields": ["status_code"],
+                  "targetFields": ["code"]
                 },
                 "to": {
                   "model": "PubStatuses",
@@ -1352,12 +1284,8 @@
               "PubStatusTranslationsByPubStatusTranslationsStatusCode": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "code"
-                  ],
-                  "targetFields": [
-                    "status_code"
-                  ]
+                  "localFields": ["code"],
+                  "targetFields": ["status_code"]
                 },
                 "to": {
                   "model": "PubStatusTranslations",
@@ -1367,12 +1295,8 @@
               "PubsByPubsStatusCode": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "code"
-                  ],
-                  "targetFields": [
-                    "status_code"
-                  ]
+                  "localFields": ["code"],
+                  "targetFields": ["status_code"]
                 },
                 "to": {
                   "model": "Pubs",
@@ -1415,12 +1339,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "pub_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["pub_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Pubs",
@@ -1431,12 +1351,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "tag_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["tag_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Tags",
@@ -1510,12 +1426,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "pub_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["pub_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Pubs",
@@ -1577,12 +1489,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "pub_type_code"
-                  ],
-                  "targetFields": [
-                    "code"
-                  ]
+                  "localFields": ["pub_type_code"],
+                  "targetFields": ["code"]
                 },
                 "to": {
                   "model": "PubTypes",
@@ -1627,12 +1535,8 @@
               "PubTypeTranslationsByPubTypeTranslationsPubTypeCode": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "code"
-                  ],
-                  "targetFields": [
-                    "pub_type_code"
-                  ]
+                  "localFields": ["code"],
+                  "targetFields": ["pub_type_code"]
                 },
                 "to": {
                   "model": "PubTypeTranslations",
@@ -1642,12 +1546,8 @@
               "PubsByPubsPubTypeCode": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "code"
-                  ],
-                  "targetFields": [
-                    "pub_type_code"
-                  ]
+                  "localFields": ["code"],
+                  "targetFields": ["pub_type_code"]
                 },
                 "to": {
                   "model": "Pubs",
@@ -1762,12 +1662,8 @@
               "PubTagsByPubTagsPubId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "pub_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["pub_id"]
                 },
                 "to": {
                   "model": "PubTags",
@@ -1777,12 +1673,8 @@
               "PubTranslationsByPubTranslationsPubId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "pub_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["pub_id"]
                 },
                 "to": {
                   "model": "PubTranslations",
@@ -1793,12 +1685,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "municipality_code"
-                  ],
-                  "targetFields": [
-                    "code"
-                  ]
+                  "localFields": ["municipality_code"],
+                  "targetFields": ["code"]
                 },
                 "to": {
                   "model": "MunicipalityCodes",
@@ -1809,12 +1697,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "prefecture_code"
-                  ],
-                  "targetFields": [
-                    "code"
-                  ]
+                  "localFields": ["prefecture_code"],
+                  "targetFields": ["code"]
                 },
                 "to": {
                   "model": "Prefectures",
@@ -1825,12 +1709,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "pub_type_code"
-                  ],
-                  "targetFields": [
-                    "code"
-                  ]
+                  "localFields": ["pub_type_code"],
+                  "targetFields": ["code"]
                 },
                 "to": {
                   "model": "PubTypes",
@@ -1841,12 +1721,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "status_code"
-                  ],
-                  "targetFields": [
-                    "code"
-                  ]
+                  "localFields": ["status_code"],
+                  "targetFields": ["code"]
                 },
                 "to": {
                   "model": "PubStatuses",
@@ -1943,14 +1819,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "question_id",
-                    "choice_id"
-                  ],
-                  "targetFields": [
-                    "question_id",
-                    "id"
-                  ]
+                  "localFields": ["question_id", "choice_id"],
+                  "targetFields": ["question_id", "id"]
                 },
                 "to": {
                   "model": "QuizChoices",
@@ -2028,14 +1898,8 @@
               "QuizChoiceTranslationsByQuizChoiceTranslationsChoice": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "question_id",
-                    "id"
-                  ],
-                  "targetFields": [
-                    "question_id",
-                    "choice_id"
-                  ]
+                  "localFields": ["question_id", "id"],
+                  "targetFields": ["question_id", "choice_id"]
                 },
                 "to": {
                   "model": "QuizChoiceTranslations",
@@ -2045,14 +1909,8 @@
               "QuizQuestionsByQuizQuestionsCorrectChoice": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "question_id",
-                    "id"
-                  ],
-                  "targetFields": [
-                    "id",
-                    "correct_choice_id"
-                  ]
+                  "localFields": ["question_id", "id"],
+                  "targetFields": ["id", "correct_choice_id"]
                 },
                 "to": {
                   "model": "QuizQuestions",
@@ -2063,12 +1921,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "question_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["question_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "QuizQuestions",
@@ -2165,12 +2019,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "question_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["question_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "QuizQuestions",
@@ -2299,12 +2149,8 @@
               "QuizChoicesByQuizChoicesQuestionId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "question_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["question_id"]
                 },
                 "to": {
                   "model": "QuizChoices",
@@ -2314,12 +2160,8 @@
               "QuizQuestionTranslationsByQuizQuestionTranslationsQuestionId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "question_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["question_id"]
                 },
                 "to": {
                   "model": "QuizQuestionTranslations",
@@ -2330,14 +2172,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "id",
-                    "correct_choice_id"
-                  ],
-                  "targetFields": [
-                    "question_id",
-                    "id"
-                  ]
+                  "localFields": ["id", "correct_choice_id"],
+                  "targetFields": ["question_id", "id"]
                 },
                 "to": {
                   "model": "QuizChoices",
@@ -2348,12 +2184,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "image_asset_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["image_asset_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "MediaAssets",
@@ -2364,12 +2196,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "related_content_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["related_content_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "ContentEntries",
@@ -2446,12 +2274,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "tag_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["tag_id"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Tags",
@@ -2496,12 +2320,8 @@
               "PubTagsByPubTagsTagId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "tag_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["tag_id"]
                 },
                 "to": {
                   "model": "PubTags",
@@ -2511,12 +2331,8 @@
               "TagTranslationsByTagTranslationsTagId": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "tag_id"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["tag_id"]
                 },
                 "to": {
                   "model": "TagTranslations",
@@ -2632,32 +2448,23 @@
               "foreignKeys": [],
               "indexes": [
                 {
-                  "columns": [
-                    "created_at"
-                  ],
+                  "columns": ["created_at"],
                   "name": "automation_audit_logs_created_at_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "request_id"
-                  ],
+                  "columns": ["request_id"],
                   "name": "automation_audit_logs_request_id_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "resource_type",
-                    "resource_id"
-                  ],
+                  "columns": ["resource_type", "resource_id"],
                   "name": "automation_audit_logs_resource_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ],
+                "columns": ["id"],
                 "name": "automation_audit_logs_pkey"
               },
               "uniques": []
@@ -2766,25 +2573,19 @@
               "foreignKeys": [],
               "indexes": [
                 {
-                  "columns": [
-                    "expires_at"
-                  ],
+                  "columns": ["expires_at"],
                   "name": "automation_idempotency_keys_expires_at_idx",
                   "unique": false,
                   "where": "(status = 'completed'::text)"
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ],
+                "columns": ["id"],
                 "name": "automation_idempotency_keys_pkey"
               },
               "uniques": [
                 {
-                  "columns": [
-                    "key_hash"
-                  ],
+                  "columns": ["key_hash"],
                   "name": "automation_idempotency_keys_key_hash_key"
                 }
               ]
@@ -2835,16 +2636,12 @@
                   "name": "calendar_event_translations_event_id_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "event_id"
-                    ],
+                    "columns": ["event_id"],
                     "namespaceId": "public",
                     "tableName": "calendar_event_translations"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "calendar_events"
                   }
@@ -2852,10 +2649,7 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "event_id",
-                  "locale"
-                ],
+                "columns": ["event_id", "locale"],
                 "name": "calendar_event_translations_pkey"
               },
               "uniques": []
@@ -2886,9 +2680,7 @@
                   "many": {
                     "elementNullable": false
                   },
-                  "noCheck": [
-                    "elementNotNull"
-                  ],
+                  "noCheck": ["elementNotNull"],
                   "nullable": false
                 },
                 "category": {
@@ -2971,44 +2763,29 @@
               "foreignKeys": [],
               "indexes": [
                 {
-                  "columns": [
-                    "updated_at",
-                    "id"
-                  ],
+                  "columns": ["updated_at", "id"],
                   "name": "calendar_events_admin_list_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "category",
-                    "sort_order",
-                    "id"
-                  ],
+                  "columns": ["category", "sort_order", "id"],
                   "name": "calendar_events_category_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "sort_order",
-                    "id"
-                  ],
+                  "columns": ["sort_order", "id"],
                   "name": "calendar_events_published_idx",
                   "unique": false,
                   "where": "is_published"
                 },
                 {
-                  "columns": [
-                    "sort_order",
-                    "id"
-                  ],
+                  "columns": ["sort_order", "id"],
                   "name": "calendar_events_sort_order_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ],
+                "columns": ["id"],
                 "name": "calendar_events_pkey"
               },
               "uniques": []
@@ -3105,16 +2882,12 @@
                   "name": "content_entries_hero_image_asset_id_fkey",
                   "onDelete": "setNull",
                   "source": {
-                    "columns": [
-                      "hero_image_asset_id"
-                    ],
+                    "columns": ["hero_image_asset_id"],
                     "namespaceId": "public",
                     "tableName": "content_entries"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "media_assets"
                   }
@@ -3122,26 +2895,19 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "hero_image_asset_id"
-                  ],
+                  "columns": ["hero_image_asset_id"],
                   "name": "content_entries_hero_image_asset_id_idx",
                   "unique": false,
                   "where": "(hero_image_asset_id IS NOT NULL)"
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ],
+                "columns": ["id"],
                 "name": "content_entries_pkey"
               },
               "uniques": [
                 {
-                  "columns": [
-                    "kind",
-                    "slug"
-                  ],
+                  "columns": ["kind", "slug"],
                   "name": "content_entries_kind_slug_key"
                 }
               ]
@@ -3223,16 +2989,12 @@
                   "name": "content_translations_content_id_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "content_id"
-                    ],
+                    "columns": ["content_id"],
                     "namespaceId": "public",
                     "tableName": "content_translations"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "content_entries"
                   }
@@ -3240,10 +3002,7 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "content_id",
-                  "locale"
-                ],
+                "columns": ["content_id", "locale"],
                 "name": "content_translations_pkey"
               },
               "uniques": []
@@ -3331,31 +3090,22 @@
               "foreignKeys": [],
               "indexes": [
                 {
-                  "columns": [
-                    "created_at",
-                    "id"
-                  ],
+                  "columns": ["created_at", "id"],
                   "name": "media_assets_admin_list_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ],
+                "columns": ["id"],
                 "name": "media_assets_pkey"
               },
               "uniques": [
                 {
-                  "columns": [
-                    "storage_key"
-                  ],
+                  "columns": ["storage_key"],
                   "name": "media_assets_storage_key_key"
                 },
                 {
-                  "columns": [
-                    "url"
-                  ],
+                  "columns": ["url"],
                   "name": "media_assets_url_key"
                 }
               ]
@@ -3383,16 +3133,12 @@
                 {
                   "name": "municipality_codes_prefecture_code_fkey",
                   "source": {
-                    "columns": [
-                      "prefecture_code"
-                    ],
+                    "columns": ["prefecture_code"],
                     "namespaceId": "public",
                     "tableName": "municipality_codes"
                   },
                   "target": {
-                    "columns": [
-                      "code"
-                    ],
+                    "columns": ["code"],
                     "namespaceId": "public",
                     "tableName": "prefectures"
                   }
@@ -3400,9 +3146,7 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "code"
-                ],
+                "columns": ["code"],
                 "name": "municipality_codes_pkey"
               },
               "uniques": []
@@ -3449,16 +3193,12 @@
                   "name": "municipality_translations_municipality_code_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "municipality_code"
-                    ],
+                    "columns": ["municipality_code"],
                     "namespaceId": "public",
                     "tableName": "municipality_translations"
                   },
                   "target": {
-                    "columns": [
-                      "code"
-                    ],
+                    "columns": ["code"],
                     "namespaceId": "public",
                     "tableName": "municipality_codes"
                   }
@@ -3466,10 +3206,7 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "municipality_code",
-                  "locale"
-                ],
+                "columns": ["municipality_code", "locale"],
                 "name": "municipality_translations_pkey"
               },
               "uniques": []
@@ -3516,16 +3253,12 @@
                   "name": "prefecture_translations_prefecture_code_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "prefecture_code"
-                    ],
+                    "columns": ["prefecture_code"],
                     "namespaceId": "public",
                     "tableName": "prefecture_translations"
                   },
                   "target": {
-                    "columns": [
-                      "code"
-                    ],
+                    "columns": ["code"],
                     "namespaceId": "public",
                     "tableName": "prefectures"
                   }
@@ -3533,18 +3266,12 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "prefecture_code",
-                  "locale"
-                ],
+                "columns": ["prefecture_code", "locale"],
                 "name": "prefecture_translations_pkey"
               },
               "uniques": [
                 {
-                  "columns": [
-                    "locale",
-                    "name"
-                  ],
+                  "columns": ["locale", "name"],
                   "name": "prefecture_translations_locale_name_key"
                 }
               ]
@@ -3566,9 +3293,7 @@
               "foreignKeys": [],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "code"
-                ],
+                "columns": ["code"],
                 "name": "prefectures_pkey"
               },
               "uniques": []
@@ -3606,16 +3331,12 @@
                   "name": "pub_status_translations_status_code_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "status_code"
-                    ],
+                    "columns": ["status_code"],
                     "namespaceId": "public",
                     "tableName": "pub_status_translations"
                   },
                   "target": {
-                    "columns": [
-                      "code"
-                    ],
+                    "columns": ["code"],
                     "namespaceId": "public",
                     "tableName": "pub_statuses"
                   }
@@ -3623,10 +3344,7 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "status_code",
-                  "locale"
-                ],
+                "columns": ["status_code", "locale"],
                 "name": "pub_status_translations_pkey"
               },
               "uniques": []
@@ -3647,16 +3365,12 @@
               "foreignKeys": [],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "code"
-                ],
+                "columns": ["code"],
                 "name": "pub_statuses_pkey"
               },
               "uniques": [
                 {
-                  "columns": [
-                    "key"
-                  ],
+                  "columns": ["key"],
                   "name": "pub_statuses_key_unique"
                 }
               ]
@@ -3679,16 +3393,12 @@
                   "name": "pub_tags_pub_id_fkey1",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "pub_id"
-                    ],
+                    "columns": ["pub_id"],
                     "namespaceId": "public",
                     "tableName": "pub_tags"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "pubs"
                   }
@@ -3697,16 +3407,12 @@
                   "name": "pub_tags_tag_id_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "tag_id"
-                    ],
+                    "columns": ["tag_id"],
                     "namespaceId": "public",
                     "tableName": "pub_tags"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "tags"
                   }
@@ -3714,18 +3420,13 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "tag_id"
-                  ],
+                  "columns": ["tag_id"],
                   "name": "pub_tags_tag_id_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "pub_id",
-                  "tag_id"
-                ],
+                "columns": ["pub_id", "tag_id"],
                 "name": "pub_tags_pkey"
               },
               "uniques": []
@@ -3793,16 +3494,12 @@
                   "name": "pub_translations_pub_id_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "pub_id"
-                    ],
+                    "columns": ["pub_id"],
                     "namespaceId": "public",
                     "tableName": "pub_translations"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "pubs"
                   }
@@ -3810,10 +3507,7 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "pub_id",
-                  "locale"
-                ],
+                "columns": ["pub_id", "locale"],
                 "name": "pub_translations_pkey"
               },
               "uniques": []
@@ -3851,16 +3545,12 @@
                   "name": "pub_type_translations_pub_type_code_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "pub_type_code"
-                    ],
+                    "columns": ["pub_type_code"],
                     "namespaceId": "public",
                     "tableName": "pub_type_translations"
                   },
                   "target": {
-                    "columns": [
-                      "code"
-                    ],
+                    "columns": ["code"],
                     "namespaceId": "public",
                     "tableName": "pub_types"
                   }
@@ -3868,10 +3558,7 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "pub_type_code",
-                  "locale"
-                ],
+                "columns": ["pub_type_code", "locale"],
                 "name": "pub_type_translations_pkey"
               },
               "uniques": []
@@ -3898,16 +3585,12 @@
               "foreignKeys": [],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "code"
-                ],
+                "columns": ["code"],
                 "name": "pub_types_pkey"
               },
               "uniques": [
                 {
-                  "columns": [
-                    "key"
-                  ],
+                  "columns": ["key"],
                   "name": "pub_types_key_key"
                 }
               ]
@@ -4012,16 +3695,12 @@
                 {
                   "name": "pubs_prefecture_code_fkey",
                   "source": {
-                    "columns": [
-                      "prefecture_code"
-                    ],
+                    "columns": ["prefecture_code"],
                     "namespaceId": "public",
                     "tableName": "pubs"
                   },
                   "target": {
-                    "columns": [
-                      "code"
-                    ],
+                    "columns": ["code"],
                     "namespaceId": "public",
                     "tableName": "prefectures"
                   }
@@ -4029,16 +3708,12 @@
                 {
                   "name": "pubs_status_code_fkey",
                   "source": {
-                    "columns": [
-                      "status_code"
-                    ],
+                    "columns": ["status_code"],
                     "namespaceId": "public",
                     "tableName": "pubs"
                   },
                   "target": {
-                    "columns": [
-                      "code"
-                    ],
+                    "columns": ["code"],
                     "namespaceId": "public",
                     "tableName": "pub_statuses"
                   }
@@ -4046,16 +3721,12 @@
                 {
                   "name": "pubs_municipality_code_fkey",
                   "source": {
-                    "columns": [
-                      "municipality_code"
-                    ],
+                    "columns": ["municipality_code"],
                     "namespaceId": "public",
                     "tableName": "pubs"
                   },
                   "target": {
-                    "columns": [
-                      "code"
-                    ],
+                    "columns": ["code"],
                     "namespaceId": "public",
                     "tableName": "municipality_codes"
                   }
@@ -4063,16 +3734,12 @@
                 {
                   "name": "pubs_pub_type_code_fkey",
                   "source": {
-                    "columns": [
-                      "pub_type_code"
-                    ],
+                    "columns": ["pub_type_code"],
                     "namespaceId": "public",
                     "tableName": "pubs"
                   },
                   "target": {
-                    "columns": [
-                      "code"
-                    ],
+                    "columns": ["code"],
                     "namespaceId": "public",
                     "tableName": "pub_types"
                   }
@@ -4080,38 +3747,28 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "municipality_code"
-                  ],
+                  "columns": ["municipality_code"],
                   "name": "pubs_municipality_code_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "prefecture_code"
-                  ],
+                  "columns": ["prefecture_code"],
                   "name": "pubs_prefecture_code_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "pub_type_code"
-                  ],
+                  "columns": ["pub_type_code"],
                   "name": "pubs_pub_type_code_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "status_code"
-                  ],
+                  "columns": ["status_code"],
                   "name": "pubs_status_code_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ],
+                "columns": ["id"],
                 "name": "pubs_columns_new_pkey"
               },
               "uniques": []
@@ -4162,18 +3819,12 @@
                   "name": "quiz_choice_translations_choice_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "question_id",
-                      "choice_id"
-                    ],
+                    "columns": ["question_id", "choice_id"],
                     "namespaceId": "public",
                     "tableName": "quiz_choice_translations"
                   },
                   "target": {
-                    "columns": [
-                      "question_id",
-                      "id"
-                    ],
+                    "columns": ["question_id", "id"],
                     "namespaceId": "public",
                     "tableName": "quiz_choices"
                   }
@@ -4181,11 +3832,7 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "question_id",
-                  "choice_id",
-                  "locale"
-                ],
+                "columns": ["question_id", "choice_id", "locale"],
                 "name": "quiz_choice_translations_pkey"
               },
               "uniques": []
@@ -4247,16 +3894,12 @@
                   "name": "quiz_choices_question_id_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "question_id"
-                    ],
+                    "columns": ["question_id"],
                     "namespaceId": "public",
                     "tableName": "quiz_choices"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "quiz_questions"
                   }
@@ -4264,18 +3907,12 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "question_id",
-                  "id"
-                ],
+                "columns": ["question_id", "id"],
                 "name": "quiz_choices_pkey"
               },
               "uniques": [
                 {
-                  "columns": [
-                    "question_id",
-                    "sort_order"
-                  ],
+                  "columns": ["question_id", "sort_order"],
                   "name": "quiz_choices_question_sort_order_key"
                 }
               ]
@@ -4357,16 +3994,12 @@
                   "name": "quiz_question_translations_question_id_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "question_id"
-                    ],
+                    "columns": ["question_id"],
                     "namespaceId": "public",
                     "tableName": "quiz_question_translations"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "quiz_questions"
                   }
@@ -4374,10 +4007,7 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "question_id",
-                  "locale"
-                ],
+                "columns": ["question_id", "locale"],
                 "name": "quiz_question_translations_pkey"
               },
               "uniques": []
@@ -4481,16 +4111,12 @@
                   "name": "quiz_questions_related_content_id_fkey",
                   "onDelete": "setNull",
                   "source": {
-                    "columns": [
-                      "related_content_id"
-                    ],
+                    "columns": ["related_content_id"],
                     "namespaceId": "public",
                     "tableName": "quiz_questions"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "content_entries"
                   }
@@ -4499,16 +4125,12 @@
                   "name": "quiz_questions_image_asset_id_fkey",
                   "onDelete": "setNull",
                   "source": {
-                    "columns": [
-                      "image_asset_id"
-                    ],
+                    "columns": ["image_asset_id"],
                     "namespaceId": "public",
                     "tableName": "quiz_questions"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "media_assets"
                   }
@@ -4516,18 +4138,12 @@
                 {
                   "name": "quiz_questions_correct_choice_fkey",
                   "source": {
-                    "columns": [
-                      "id",
-                      "correct_choice_id"
-                    ],
+                    "columns": ["id", "correct_choice_id"],
                     "namespaceId": "public",
                     "tableName": "quiz_questions"
                   },
                   "target": {
-                    "columns": [
-                      "question_id",
-                      "id"
-                    ],
+                    "columns": ["question_id", "id"],
                     "namespaceId": "public",
                     "tableName": "quiz_choices"
                   }
@@ -4535,60 +4151,42 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "updated_at",
-                    "id"
-                  ],
+                  "columns": ["updated_at", "id"],
                   "name": "quiz_questions_admin_list_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "category",
-                    "id"
-                  ],
+                  "columns": ["category", "id"],
                   "name": "quiz_questions_category_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "image_asset_id"
-                  ],
+                  "columns": ["image_asset_id"],
                   "name": "quiz_questions_image_asset_id_idx",
                   "unique": false,
                   "where": "(image_asset_id IS NOT NULL)"
                 },
                 {
-                  "columns": [
-                    "id"
-                  ],
+                  "columns": ["id"],
                   "name": "quiz_questions_published_idx",
                   "unique": false,
                   "where": "is_published"
                 },
                 {
-                  "columns": [
-                    "related_content_id"
-                  ],
+                  "columns": ["related_content_id"],
                   "name": "quiz_questions_related_content_id_idx",
                   "unique": false,
                   "where": "(related_content_id IS NOT NULL)"
                 },
                 {
-                  "columns": [
-                    "special_month",
-                    "special_day",
-                    "id"
-                  ],
+                  "columns": ["special_month", "special_day", "id"],
                   "name": "quiz_questions_special_date_idx",
                   "unique": false,
                   "where": "(is_published AND (special_month IS NOT NULL))"
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ],
+                "columns": ["id"],
                 "name": "quiz_questions_pkey"
               },
               "uniques": []
@@ -4626,16 +4224,12 @@
                   "name": "tag_translations_tag_id_fkey",
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "tag_id"
-                    ],
+                    "columns": ["tag_id"],
                     "namespaceId": "public",
                     "tableName": "tag_translations"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "tags"
                   }
@@ -4643,18 +4237,12 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "tag_id",
-                  "locale"
-                ],
+                "columns": ["tag_id", "locale"],
                 "name": "tag_translations_pkey"
               },
               "uniques": [
                 {
-                  "columns": [
-                    "locale",
-                    "name"
-                  ],
+                  "columns": ["locale", "name"],
                   "name": "tag_translations_locale_name_key"
                 }
               ]
@@ -4675,16 +4263,12 @@
               "foreignKeys": [],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ],
+                "columns": ["id"],
                 "name": "tags_pkey"
               },
               "uniques": [
                 {
-                  "columns": [
-                    "key"
-                  ],
+                  "columns": ["key"],
                   "name": "tags_key_unique"
                 }
               ]

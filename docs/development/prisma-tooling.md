@@ -12,7 +12,7 @@ Prisma 8 RCは互換性を保証する正式版ではありません。2026-10-1
 - `db/prisma/contract.prisma`: Prisma 8形式のContract。Productionの現行Schemaとの照合は[Contract audit](prisma-contract-audit.md)に記録しています。
 - `generated/prisma8/`: `contract emit`が生成するContract artifactと型の出力先。
 
-Contractと `generated/prisma8/contract.json` / `contract.d.ts` はGit管理し、Contract変更と同じPRで再生成・差分レビューします。現行Productionとの照合と表現差分は[Prisma Contract schema照合記録](prisma-contract-audit.md)を参照してください。
+Contractと `generated/prisma8/contract.json` / `contract.d.ts` はGit管理し、`npm run prisma:contract:emit`で再生成・整形してContract変更と同じPRで差分レビューします。現行Productionとの照合と表現差分は[Prisma Contract schema照合記録](prisma-contract-audit.md)を参照してください。
 
 ## コマンド
 
