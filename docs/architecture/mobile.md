@@ -4,16 +4,17 @@
 
 ## 採用基盤
 
-- **Expo / React Native**: 実装開始時点の最新Stable Expo SDKを採用し、Expo SDKが指定するReact Native / React Versionを使います。2026-10-11に確認したExpo SDK 57はReact Native 0.86、React 19.2.3を対象としています。CanaryやBetaは採用せず、SDK更新時はMapLibreを含むNative依存の互換性も確認します。
+- **Expo / React Native**: 実装開始時点の最新Stable Expo SDKを採用し、Expo SDKが指定するReact Native / React Versionを使います。2026-10-13の実装時点ではnpmの`latest`がExpo SDK 57.0.28で、SDK 58は`next`でした。SDK 57はReact Native 0.86、React 19.2.3を対象とするため、Mobileではその組み合わせを使います。Expo installの互換性確認後はExpo 57.0.30 / Expo Router 57.0.28を使います。CanaryやBetaは採用せず、SDK更新時はMapLibreを含むNative依存の互換性も確認します。
 - **Expo Router**: File-based routingを採用します。RouterはExpo SDKと互換性のあるStable版を使い、独立して最新版へ上げません。Routeの初期案はMap `/`、Pub詳細 `/pub/[id]` です。
+- **Router Native依存**: `react-native-safe-area-context`、`react-native-screens`、`expo-linking`、`expo-constants`、`expo-status-bar`をMobile workspaceの直接依存として宣言し、Expo SDKに対応する版を使います。Native autolinkingとPrebuildがworkspaceの依存宣言に基づいて解決できるようにします。
 - **MapLibre React Native**: `@maplibre/maplibre-react-native` と公式Expo config pluginを使います。MapLibreはExpo Goに含まれず利用できないため、Expo GoをMobile開発環境にしません。Pluginを設定し、Nativeコードまたはapp configを変更した後はDevelopment Buildを作り直します。
 - **OS下限**: SDK 57の公式表ではAndroid 7+、iOS 16.4+です。実装開始時のStable SDKとMapLibre Nativeの要件を照合し、より高い下限があればその値を採用します。Expo SDK、Apple、Googleの提出要件は変わるため、各Release前にも確認します。
 
 ## npm WorkspaceのVersion解決
 
-現在のrootおよび`apps/web`はReact 19.3.0を使っています。`apps/mobile`は採用SDKが指定するReact Version（SDK 57を使う場合は19.2.3）とReact Native Versionを明示し、WebのReact VersionをMobileに合わせる目的で一括変更しません。npmのhoist配置とMetroの解決は別に確認し、Mobile Bundleに異なるReactが混在しないようにします。SDK 52以降ではExpoがMetroのworkspace設定を自動構成するため、独自の重複解決設定を足す前に標準設定で検証します。
+現在のrootおよび`apps/web`はReact 19.3.0を使っています。`apps/mobile`は採用SDKが指定するReact Version（SDK 57では19.2.3）とReact Native Version（0.86.3）を明示し、WebのReact VersionをMobileに合わせる目的で一括変更しません。Expo SDKが依存するReact Nativeはroot overrideで0.86.3に統一します。Reactはworkspace間で異なる版が物理配置されるため、`apps/mobile/metro.config.js`でMobile側のReactへ解決を固定し、Android source mapでbundle内にReactが1版だけ含まれることを確認します。Expo Doctorはweb/mobile間の物理配置を重複として報告しますが、Mobile bundleの解決先はこの確認を優先します。SDK 52以降ではExpoがMetroのworkspace設定を自動構成するため、独自設定はこのReact version境界に限定します。
 
-#542ではSDK 57をそのまま採用する前に、実装時点でSDK 58がStableになっているか、MapLibreなどのNative依存がそのSDKと互換かを公式Docsで確認して再選定します。依存を加えた後はrootで`npm ls react react-native`と`npx expo-doctor`を実行し、Expo Development BuildでAndroid Emulatorまたは実機を起動して依存の重複・不整合を検証します。問題が見つかった場合はworkspace依存宣言、lockfile、Metroの解決結果を確認し、Web側Versionの変更は影響を評価してから決めます。
+Expo SDK / RouterとNative依存を加えた後はrootで`npm ls react react-native`と`npx expo install --check`を実行し、Expo Development BuildでAndroid Emulatorまたは実機を起動して依存の重複・不整合を検証します。Reactのworkspace間重複はMetroのAndroid source mapでアプリbundleへの混入がないことも確認します。問題が見つかった場合はworkspace依存宣言、lockfile、Metroの解決結果を確認し、Web側Versionの変更は影響を評価してから決めます。
 
 ## 開発・Buildフロー
 

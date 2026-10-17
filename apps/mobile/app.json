@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Irish Pub Map",
+    "slug": "irishpub-map",
+    "scheme": "irishpubmap",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router", "expo-status-bar"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "android": {
+      "package": "jp.irishpubmap.app"
+    }
+  }
+}

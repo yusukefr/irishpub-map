@@ -7,7 +7,7 @@ Usage:
   scripts/verify-pr-ci.sh [--pr NUMBER|URL] [--dispatch]
 
 Waits for the latest commit of a pull request to receive a completed
-"Lint, Test, Build" check. With --dispatch, runs ci.yml via workflow_dispatch
+"Lint, Typecheck, Test, Build" check. With --dispatch, runs ci.yml via workflow_dispatch
 only for changes that require Full CI if the check has not appeared after 90 seconds.
 
 Options:
@@ -71,7 +71,7 @@ ensure_latest_head() {
 while true; do
   ensure_latest_head
   # 同じ HEAD の再実行がある場合は、古い成功ではなく最新の check を判定する。
-  check_run="$(gh api "repos/$repo/commits/$head_sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == "Lint, Test, Build")] | max_by(.id) | if . == null then empty else [.status, (.conclusion // "-"), .html_url] | @tsv end')"
+  check_run="$(gh api "repos/$repo/commits/$head_sha/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == "Lint, Typecheck, Test, Build")] | max_by(.id) | if . == null then empty else [.status, (.conclusion // "-"), .html_url] | @tsv end')"
 
   if [[ -z "$check_run" ]]; then
     if (( missing_polls >= 18 )); then
@@ -104,7 +104,7 @@ while true; do
   sleep 5
 done
 
-echo "No Lint, Test, Build check appeared for PR #$pr_number at $head_sha after 90 seconds." >&2
+echo "No Lint, Typecheck, Test, Build check appeared for PR #$pr_number at $head_sha after 90 seconds." >&2
 echo "$pr_url" >&2
 
 if [[ "$dispatch" != true ]]; then

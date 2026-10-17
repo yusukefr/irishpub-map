@@ -62,6 +62,18 @@ export default defineConfig([
     },
   },
   {
+    files: ["apps/mobile/**/*.{ts,tsx}", "apps/mobile/metro.config.js"],
+    rules: {
+      "@next/next/no-html-link-for-pages": "off",
+    },
+  },
+  {
+    files: ["apps/mobile/metro.config.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  {
     ignores: [".next/**", "next-env.d.ts", "node_modules/**"],
   },
 ]);
