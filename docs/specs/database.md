@@ -6,6 +6,8 @@
 
 物理テーブル、カラム、NULL許容、制約、外部キー、IndexはProduction Neonから生成した[生成済みスキーマ](../generated/database-schema.md)を正とします。生成文書は手動編集しません。再生成・Migrationの運用手順は[Neon migration Runbook](../runbooks/neon-migrations.md)を参照してください。
 
+Prisma ORM 8 RCはSchema Contract / Migration用の開発ツールです。現時点では既存RepositoryやApplicationのDB接続を置き換えません。Prismaの配置、CLI、Neon Target接続の境界は[Prisma 8 RC tooling](../development/prisma-tooling.md)を参照してください。
+
 ## IDと生成責務
 
 Resource IDはPostgreSQL `uuid` 型とし、Application Serviceが `crypto.randomUUID()` でUUID v4を生成してRepositoryへ渡します。Application生成IDのDB列にDEFAULTは設定しません。API、MCP、TypeScriptではRFC 9562 variantのUUID version 1〜8を受け入れ、16進数の大文字小文字を区別しません。UUID以外のdomain codeはその型を維持します。Import処理は入力に含まれる店舗UUIDを使います。
