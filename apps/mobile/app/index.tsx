@@ -1,7 +1,7 @@
 import { getPubs } from "@irishpub-map/api-client";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale, type Pub } from "@irishpub-map/shared";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "https://irishpub-map-web.vercel.app";
 
@@ -69,7 +69,9 @@ export default function HomeScreen() {
     const controller = new AbortController();
 
     getPubs({ baseUrl: API_BASE_URL, locale, signal: controller.signal })
-      .then((pubs) => setLoadState({ status: "success", pubs }))
+      .then((pubs) => {
+        if (!controller.signal.aborted) setLoadState({ status: "success", pubs });
+      })
       .catch(() => {
         if (!controller.signal.aborted) setLoadState({ status: "error" });
       });
@@ -78,63 +80,68 @@ export default function HomeScreen() {
   }, [locale, retryCount]);
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 20 }}>
-      <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: "700" }}>
-        {copy.title}
-      </Text>
-      <View accessibilityLabel={copy.selectLanguage} style={{ flexDirection: "row", gap: 12 }}>
-        {SUPPORTED_LOCALES.map((option) => (
-          <Pressable
-            key={option}
-            accessibilityRole="button"
-            accessibilityState={{ selected: locale === option }}
-            onPress={() => {
-              if (locale === option) return;
-              setLoadState({ status: "loading" });
-              setLocale(option);
-            }}
-            style={{ padding: 12, borderWidth: 1, borderRadius: 8 }}
-          >
-            <Text>{option === "ja" ? "日本語" : "English"}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {loadState.status === "loading" ? (
-        <View accessibilityRole="progressbar" style={{ gap: 12 }}>
-          <ActivityIndicator />
-          <Text>{copy.loading}</Text>
+    <FlatList
+      data={loadState.status === "success" ? loadState.pubs : []}
+      keyExtractor={(pub) => pub.id}
+      contentContainerStyle={{ flexGrow: 1, padding: 24, gap: 20 }}
+      ListHeaderComponent={
+        <View style={{ gap: 20 }}>
+          <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: "700" }}>
+            {copy.title}
+          </Text>
+          <View accessibilityLabel={copy.selectLanguage} style={{ flexDirection: "row", gap: 12 }}>
+            {SUPPORTED_LOCALES.map((option) => (
+              <Pressable
+                key={option}
+                accessibilityRole="button"
+                accessibilityState={{ selected: locale === option }}
+                onPress={() => {
+                  if (locale === option) return;
+                  setLoadState({ status: "loading" });
+                  setLocale(option);
+                }}
+                style={{ padding: 12, borderWidth: 1, borderRadius: 8 }}
+              >
+                <Text>{option === "ja" ? "日本語" : "English"}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {loadState.status === "success" ? <Text>{copy.count(loadState.pubs.length)}</Text> : null}
         </View>
-      ) : loadState.status === "error" ? (
-        <View style={{ gap: 12 }}>
-          <Text accessibilityRole="alert">{copy.loadError}</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              setLoadState({ status: "loading" });
-              setRetryCount((count) => count + 1);
-            }}
-            style={{ padding: 12, borderWidth: 1, borderRadius: 8, alignSelf: "flex-start" }}
-          >
-            <Text>{copy.retry}</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <View style={{ gap: 16 }}>
-          <Text>{copy.count(loadState.pubs.length)}</Text>
-          {loadState.pubs.map((pub) => (
-            <View key={pub.id} style={{ gap: 4, paddingBottom: 12, borderBottomWidth: 1 }}>
-              <Text accessibilityRole="header" style={{ fontSize: 18, fontWeight: "600" }}>
-                {pub.name}
-              </Text>
-              <Text>{copy.prefecture(pub.prefecture)}</Text>
-              <Text>
-                {copy.status}: {getStatusLabel(pub, locale, copy.unknownStatus)}
-              </Text>
-            </View>
-          ))}
+      }
+      ListEmptyComponent={
+        loadState.status === "loading" ? (
+          <View accessibilityRole="progressbar" style={{ gap: 12 }}>
+            <ActivityIndicator />
+            <Text>{copy.loading}</Text>
+          </View>
+        ) : loadState.status === "error" ? (
+          <View style={{ gap: 12 }}>
+            <Text accessibilityRole="alert">{copy.loadError}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setLoadState({ status: "loading" });
+                setRetryCount((count) => count + 1);
+              }}
+              style={{ padding: 12, borderWidth: 1, borderRadius: 8, alignSelf: "flex-start" }}
+            >
+              <Text>{copy.retry}</Text>
+            </Pressable>
+          </View>
+        ) : null
+      }
+      renderItem={({ item: pub }) => (
+        <View style={{ gap: 4, paddingBottom: 12, borderBottomWidth: 1 }}>
+          <Text accessibilityRole="header" style={{ fontSize: 18, fontWeight: "600" }}>
+            {pub.name}
+          </Text>
+          <Text>{copy.prefecture(pub.prefecture)}</Text>
+          <Text>
+            {copy.status}: {getStatusLabel(pub, locale, copy.unknownStatus)}
+          </Text>
         </View>
       )}
-    </ScrollView>
+    />
   );
 }

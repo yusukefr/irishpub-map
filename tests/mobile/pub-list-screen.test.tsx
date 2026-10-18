@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Pub } from "@irishpub-map/shared";
 import HomeScreen, { resolveInitialLocale } from "../../apps/mobile/app/index";
@@ -10,6 +10,25 @@ vi.mock("react-native", async () => {
   const React = await import("react");
   return {
     ActivityIndicator: () => React.createElement("span", { role: "progressbar" }),
+    FlatList: ({
+      data,
+      renderItem,
+      ListHeaderComponent,
+      ListEmptyComponent,
+    }: {
+      data: Pub[];
+      renderItem: (info: { item: Pub }) => React.ReactNode;
+      ListHeaderComponent: React.ReactNode;
+      ListEmptyComponent: React.ReactNode;
+    }) =>
+      React.createElement(
+        "main",
+        null,
+        ListHeaderComponent,
+        data.length > 0
+          ? data.map((item) => React.createElement(React.Fragment, { key: item.id }, renderItem({ item })))
+          : ListEmptyComponent,
+      ),
     Pressable: ({
       children,
       onPress,
@@ -21,7 +40,6 @@ vi.mock("react-native", async () => {
       accessibilityRole?: string;
       accessibilityState?: { selected?: boolean };
     }) => React.createElement("button", { ...props, type: "button", onClick: onPress }, children),
-    ScrollView: ({ children }: React.PropsWithChildren) => React.createElement("main", null, children),
     Text: ({
       children,
       accessibilityRole,
@@ -91,6 +109,35 @@ describe("Mobile Pub list screen", () => {
     );
     expect(await screen.findByText("1 pubs")).toBeTruthy();
     expect(screen.getByText("Status: Open")).toBeTruthy();
+  });
+
+  it("does not let an aborted locale request overwrite the latest results", async () => {
+    let resolveJapanese: ((pubs: Pub[]) => void) | undefined;
+    let resolveEnglish: ((pubs: Pub[]) => void) | undefined;
+    getPubs.mockImplementation(
+      ({ locale }: { locale: string }) =>
+        new Promise((resolve) => {
+          if (locale === "ja") resolveJapanese = resolve;
+          else resolveEnglish = resolve;
+        }),
+    );
+    render(<HomeScreen />);
+
+    await waitFor(() => expect(getPubs).toHaveBeenCalledTimes(1));
+    const japaneseSignal = getPubs.mock.calls[0]?.[0].signal as AbortSignal;
+    fireEvent.click(screen.getByRole("button", { name: "English" }));
+    await waitFor(() => expect(getPubs).toHaveBeenCalledTimes(2));
+    expect(japaneseSignal.aborted).toBe(true);
+
+    resolveEnglish?.([{ ...pub, name: "The English Harp" }]);
+    expect(await screen.findByText("The English Harp")).toBeTruthy();
+    await act(async () => {
+      resolveJapanese?.([{ ...pub, name: "古い日本語の結果" }]);
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByText("古い日本語の結果")).toBeNull();
+    expect(screen.getByText("The English Harp")).toBeTruthy();
   });
 
   it("cancels an outstanding request when the screen unmounts", () => {
