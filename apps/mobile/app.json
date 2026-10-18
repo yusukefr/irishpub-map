@@ -12,6 +12,13 @@
     },
     "android": {
       "package": "jp.irishpubmap.app"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d3529d20-f828-4916-b5df-ef11a32e5184"
+      }
+    },
+    "owner": "yf-techs"
   }
 }

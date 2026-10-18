@@ -18,9 +18,15 @@ Expo SDK / RouterとNative依存を加えた後はrootで`npm ls react react-nat
 
 ## 開発・Buildフロー
 
-Development Buildを標準にし、Androidを主な実装・ローカル検証Platformとします。UbuntuではAndroid Emulatorを使い、TypeScript、Lint、Typecheck、Unit / Component Testも実行します。Expo GoではMapLibreを検証できません。
+Development Buildを標準にし、Androidを主な実装・ローカル検証Platformとします。UbuntuではTypeScript・Lint・Typecheck・Unit / Component Testをローカルで実行し、**AndroidのNative BuildはEAS Build（クラウド）を標準**とします。USB接続したAndroid実機にAPKをインストールし、Metro / Fast Refreshで開発します。Android Emulator / ローカルGradle Buildは代替手段ですが、必須としません。Expo GoではMapLibreを検証できません。
 
-MapLibreなどNative依存を追加・更新した節目でiOS EAS Buildを行い、TestFlightまたは利用可能なiOS実機でSmoke Testします。Android MVP後にiOSをまとめて初めて確認する運用にはしません。iOS Native BuildはEASのmacOS環境を利用できるため、日常開発にMacを必須としません。JavaScript / TypeScriptだけの変更は既存Development Buildを使い、Native依存またはapp configの変更時に再Buildします。
+`apps/mobile/app.json` の `owner` / `extra.eas.projectId` で `@yf-techs/irishpub-map` を識別し、`apps/mobile/eas.json` でBuild Profileを定義します。EAS CLIはMobileアプリのディレクトリから実行します。EAS BuildのNode.jsは24.21.0、`appVersionSource`は`remote`です。`development` はDevelopment Clientと内部配布APK、`preview` はMetro不要の内部検証、`production` はストア配布向けです。Native Build、APKインストール、Metro起動は独立した操作です。具体的な手順は[ローカル開発](../setup/development.md#mobile-android-開発)を参照してください。
+
+2026-10-18時点で、EAS Android Development Build成功、Android実機へのAPKインストール、Expo Development Launcherの起動まで確認済みです。ただしIrish Pub Map本体の初期画面表示はMetro接続後に別途検証します。Expo DoctorではWeb（React 19.3.0）とMobile（React 19.2.3）の重複が報告されます。MobileのMetro resolverでReactを固定していますが、警告だけで安全と断定せず、実機でReact / Native Moduleエラーがないことを確認します。
+
+JavaScript / TypeScriptのみの修正はMetroで反映でき、通常はAPKの再作成不要です。Native依存・Expo config plugin・Permission等のNative設定を変更したらEAS Development Buildを作り直します。EASアップロードへDB CredentialやServer Secretを含めず、Signing CredentialやExpo認証トークンをGitへコミットしません。
+
+MapLibreなどNative依存を追加・更新した節目でiOS EAS Buildを行い、TestFlightまたは利用可能なiOS実機でSmoke Testします。Android MVP後にiOSをまとめて初めて確認する運用にはしません。iOS Native BuildはEASのmacOS環境を利用できるため、日常開発にMacを必須としません。
 
 ## 責務とデータ境界
 
