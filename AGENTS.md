@@ -40,7 +40,17 @@ Framework、Library、Vercelの仕様は、使用中のVersionに対応する公
 - コミット前に `npm run check:sensitive-data` を実行し、検出回避のためにhookを無効化したり値を難読化したりしません。
 - Agent向け文書の変更時は `npm run check:llm-security` を実行します。検出箇所は自動削除せず、内容と配置をレビューします。
 - PRは `main` をbaseとし、Templateを基にした日本語の本文ファイルを `scripts/create-pr.sh` へ渡して作成します。関連Issue、検証結果、省略理由、コードと文書の同期確認を記載します。
-- PR作成後または修正push後は `scripts/verify-pr-ci.sh --pr <number>` を実行します。Full CI対象の最新HEADにCIがなく、手動実行が必要な場合だけ `--dispatch` を指定します。docs-only / OpenAPI-onlyではfallbackがFull CIを起動しないため、PR用必須checkの通常Workflow実行を確認します。
+- PR作成後または修正push後は `scripts/verify-pr-ci.sh --pr <number>` を実行します。Full CI対象の最新HEADにCIがなく、手動実行が必要な場合だけ `--dispatch` を指定します。docs-only / OpenAPI-onlyではfallbackがFull CIを起動しないため、PR用必須checkは`pull_request` Workflowの最新HEAD実行で確認します。
+- Expo EASのクラウドBuild / Submitは、次の「EAS Build・Submitの実行制限」に従います。一般的なBuild・CI検証の指示は、EASのリモート実行許可を意味しません。
+
+## EAS Build・Submitの実行制限
+
+EASのクラウドBuildは無料プランの利用枠を消費します。AI Agentは**ユーザーが今回の実行を明示承認するまで、EASのリモートBuild・Submitを開始しません**。
+
+- `eas build`、`eas build:run`、`eas submit`、`eas workflow:run`など、EAS上のBuild / Submitを開始し得るコマンド・API・Script・GitHub Actionsの起動を、CLIの呼び出し方（`npx eas-cli`など）によらず禁止します。PR作成、実装、テスト、Native依存の更新、Release準備などの一般的な依頼は実行承認とみなしません。
+- 実行が必要なら理由、対象Platform（Android / iOS）、Build Profile、利用枠を消費する可能性を説明して承認を求めます。承認はその**1回の実行のみ**に有効です。失敗時の再試行、Platform / Profileの変更、別のBuildには改めて承認が必要です。
+- `eas project:info`、`eas build:list`、設定ファイルの確認などの読み取り専用操作、ローカルのLint・Typecheck・Test・Web / JavaScript Bundleの検証は、この承認を必要としません。
+- 手動実行の手順は[Mobile Android開発](docs/setup/development.md#mobile-android-開発)を参照します。ビルド自動化を新設・変更する場合も、別途ユーザー承認を得てください。
 
 ## Documentation Router
 
