@@ -52,7 +52,7 @@
 - `/admin/login` で管理者がログインする
 - `/admin` から `/admin/pubs` へ移動し、共通ナビゲーションで Pubs・Content・Media・Quiz・Calendar・Tags・Statuses を切り替える。メニュー名は日本語localeでも英語表記とする
 - 現在の管理機能をナビゲーション上のアクティブ表示で確認する
-- `/admin/pubs` で公開・非公開を含む店舗一覧を確認し、店舗名、都道府県、市区町村、営業ステータス、タグ、公開状態を組み合わせて絞り込む。条件はURLに保持し、一覧は50件ずつ表示する
+- `/admin/pubs` で公開・非公開を含む店舗一覧を確認し、店舗名、都道府県、市区町村、営業ステータス、タグ、公開状態を組み合わせて絞り込む。条件はURLに保持し、一覧は50件ずつ表示する。更新日時は日付と時刻を表示し、`Asia/Tokyo`に統一する
 - 一覧で公開状態を確認・変更する。非公開化前は一般サイトから見えなくなることを確認し、公開時はサーバー側の公開条件を満たさない項目を一覧表示する
 - Neon が設定されている場合は一覧の「新規登録」または各店舗の「編集」から `/admin/pubs/new`・`/admin/pubs/:id/edit` を開き、基本情報・所在地・日英翻訳・外部リンク・登録済みタグをセクションごとに追加・編集・下書き保存・削除する
 - `/admin/content` でEditorial ContentのDraft / Published一覧を確認し、`/admin/content/new` と `/admin/content/:id` でkind、slug、category、任意の代表画像、日英のtitle・summary・Markdown本文・画像alt/captionを編集する。代表画像は共通Media Pickerから選び、変更・解除時に日英alt/captionを消去する。本文では言語ごとのカーソル位置へMedia Pickerで選んだ画像をalt付きMarkdown記法で挿入する
