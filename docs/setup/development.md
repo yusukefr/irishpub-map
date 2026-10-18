@@ -51,19 +51,51 @@ Next.jsアプリは`apps/web`で起動します。
 
 ## Mobile Android 開発
 
-`apps/mobile` はExpo SDK 57 / React Native 0.86を使います。Android SDKとEmulator（またはAndroid実機）を用意し、初回はDevelopment Buildを作成・起動します。
+`apps/mobile` はExpo SDK 57 / React Native 0.86 / Expo Router 57を使います。AndroidのNative BuildはEAS Build（クラウド）、動作確認はUSB接続したAndroid実機、JavaScript開発はローカルMetroを標準とします。Android Emulator / ローカルGradle Buildは代替手段です。MapLibreなどのNative Moduleを使用するためExpo GoではなくDevelopment Buildを使用します。
+
+### EAS Development Build（Android APK）
+
+EASの設定はGit管理する `apps/mobile/app.json` と `apps/mobile/eas.json` にあり、Expoプロジェクト `@yf-techs/irishpub-map` に紐付いています。RepositoryのrootでNode.js 24系と依存を準備し、**EAS CLIは `apps/mobile` ディレクトリから実行**します。EAS Build側のNode.jsは`eas.json`で24.21.0に指定しています。
 
 ```bash
-npm run android -w apps/mobile
+# Repository root
+nvm use
+npm ci
+cd apps/mobile
+
+npx eas-cli@latest login        # 未ログイン時のみ
+npx eas-cli@latest project:info
+npx eas-cli@latest build --platform android --profile development
 ```
 
-Metro bundlerを別途起動する場合は次を使います。Expo Goではなく、このDevelopment Buildへ接続してください。
+`development`プロファイルは`developmentClient: true`、`distribution: internal`のため、実機にインストール可能なAPKを生成します。初回ビルドでAndroid署名鍵について確認された場合はEASで管理できます。ビルド完了後、EASのBuild詳細ページからAPKをダウンロードし、インストールはビルドとは別に行ってください。
 
 ```bash
-npm run start -w apps/mobile
+adb devices
+adb install -r /path/to/irishpub-map-development.apk
 ```
+
+2026-10-18に、EASでのAndroid Development Build成功、実機へのAPKインストール、Expo Development Launcherの起動まで確認済みです。**アプリ本体の初期画面表示は、Metro接続後のSmoke Testが未完了**です。
+
+### USB接続した実機からMetroに接続
+
+USBデバッグを許可したAndroid実機を接続し、Repository rootから実行します。次のコマンドはMetroの標準ポート8081を想定しています。
+
+```bash
+# Repository root
+adb reverse tcp:8081 tcp:8081
+npm run start -w apps/mobile -- --localhost
+```
+
+スマートフォンでIrish Pub MapのDevelopment Buildを開き、表示された開発サーバーに接続します。必要ならMetro側の `a` キーで端末のアプリを開きます。初期画面で `Irish Pub Map` と `Supported locales: ja, en` が表示されること、React / Native Module関連の実行時エラーがないことを確認してください。
+
+JavaScript / TypeScriptだけの変更は基本的にMetro / Fast Refreshで反映できます。Native依存・Expo config plugin・PermissionなどNative設定の変更時はEAS Development Buildを作り直します。`preview`はMetro不要の内部動作確認用、`production`はストア公開向けの別プロファイルです。
+
+EAS BuildへアップロードするファイルにDB接続文字列、API秘密鍵などを含めないでください。Expo認証トークンやAndroid署名鍵もGit管理しません。EAS上のProject IDは公開識別子でありSecretではありません。
 
 Mobileのlint・型検査・component testは `npm run lint -w apps/mobile`、`npm run typecheck -w apps/mobile`、`npm run test -w apps/mobile` で実行できます。rootの `npm run lint`、`npm run typecheck`、`npm test` とCIにも含まれます。
+
+関連: [Expo monorepoとEAS Build](https://docs.expo.dev/build-reference/build-with-monorepos/)、[Android Development Build](https://docs.expo.dev/tutorial/eas/android-development-build/)、[内部配布](https://docs.expo.dev/build/internal-distribution/)。
 
 ## 基本検証
 
