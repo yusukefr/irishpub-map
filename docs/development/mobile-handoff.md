@@ -32,20 +32,19 @@ Mobile対応Issueへ着手するときの入口です。仕様本文を複製せ
 - `apps/web` はNext.jsのWeb UI、Route Handler、Web認証、Repositoryを担当します。React DOM、MapLibre GL JS、ブラウザAPIに依存する処理はMobileから直接再利用しません。
 - `apps/mobile` はExpo / React NativeのUI、Native地図・権限・外部アプリ連携を担当します。採用VersionやNative Buildの判断は[Mobile Architecture](../architecture/mobile.md)を参照します。
 - `packages/shared` はPlatform非依存の型・純粋ロジックを置く場所です。現在の [src/index.ts](../../packages/shared/src/index.ts) は `Pub` / `PubStatus` / `PubType`、`asPubs`、Locale定義・判定、都道府県名/コード、状態定義・変換、UUID検証などを公開しています。Pub型と `asPubs` は [pub.ts](../../packages/shared/src/pub.ts)、Localeは [locale.ts](../../packages/shared/src/locale.ts) を参照してください。
-- Sharedに公開されるAdmin用型・Validationもありますが、Public Mobile MVPで管理操作を実装する根拠にはなりません。API取得、共通API Client、UI翻訳リソース、検索/Filterの共通化が未実装なら、必要性と置き場所を各Issueで判断します。Web専用処理を共有Packageへ移す前にPlatform依存を確認してください。
+- Sharedに公開されるAdmin用型・Validationもありますが、Public Mobile MVPで管理操作を実装する根拠にはなりません。公開Pubの取得には既存の `packages/api-client` を使い、UI翻訳辞書や検索/Filterの共通化は必要性を各Issueで判断します。Web専用処理を共有Packageへ移す前にPlatform依存を確認してください。
 
 ## 現行 Public Pub API とセキュリティ境界
 
 Public APIのSource of Truthは [API仕様](../specs/api.md) と [店舗データ仕様](../specs/data.md)、実際の契約はProxy・Route Handler・Repository・テストです。現在の読取りEndpointは `GET /api/pubs?locale=ja|en`、locale省略時は `ja` です。共有Cacheを使うClientは `?locale=ja` または `?locale=en` を明示します。locale省略時は `ja` を返して `no-store` とします。アプリまで届いた未対応Queryや重複localeはProxy / Route Handlerが `400` で拒否し、不正localeも `400` です。Vercel Previewではlocaleのpercent-encodingや末尾`&`が正規localeと同じCache entryへ合流し、空separatorだけのQueryはlocale省略へ正規化されることを確認しました。後者は`no-store`です。匿名の成功時は `{ "pubs": Pub[] }` を返し、DB未設定時は空配列です。翻訳は要求localeを優先し、日本語へフォールバックします。公開店舗のみ返し、`isPublished` はDTOに含みません。明示localeでは共有CDNの `s-maxage=60` と `stale-while-revalidate=60` を使います。
 
-Public Pub APIは全環境で固定Client Secret不要のRead-only APIです。分散Rate Limitは導入しておらず、濫用対策は公開DTOの限定、Query allowlist、短時間の共有Cacheを使います。店舗公開状態の変更が共有Cacheへ反映されるまで最大約120秒の可能性があります。#541 の公開API OpenAPI収録と共通Clientは未実装です。ClientからNeonへ直接接続せず、DB Credential、Admin Session / API Credential、Automation Bearer Tokenを含めません。APIの現行契約は[API仕様](../specs/api.md)を確認してください。
+Public Pub APIは全環境で固定Client Secret不要のRead-only APIです。分散Rate Limitは導入しておらず、濫用対策は公開DTOの限定、Query allowlist、短時間の共有Cacheを使います。店舗公開状態の変更が共有Cacheへ反映されるまで最大約120秒の可能性があります。OpenAPIと共通Client (`packages/api-client`) は実装済みで、Mobileは `getPubs` に `ja` / `en` を渡します。ClientからNeonへ直接接続せず、DB Credential、Admin Session / API Credential、Automation Bearer Tokenを含めません。APIの現行契約は[API仕様](../specs/api.md)を確認してください。
 
 ## 未解決事項とBlocker
 
 | 未解決事項 | 影響Mobile Issue | 対応Issue | 着手阻害 |
 | --- | --- | --- | --- |
 | Web / MobileのReact版が異なりExpo Doctorが重複を報告する。Mobile向けMetro resolverは設定済みだが、Android実機でアプリ本体の初期画面・実行時エラーを追加検証する | #542 | #542 | いいえ（Smoke Test継続） |
-| 公開APIのOpenAPI収録と共通API Clientが未実装 | #543 | #541 | Yes |
 | Tile ProviderのNative利用条件・Attribution・User-Agentを実装形態に合わせて確認し、iOS Native Buildを含む地図Smoke Testを行う必要がある | #544, #548 | #544 / #548 | Yes |
 | Mobileの位置情報Permission文言・Platform別挙動、外部リンク起動失敗時のUIが未実装 | #546, #547 | #546 / #547 | No |
 

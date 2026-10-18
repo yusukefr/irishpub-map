@@ -11,6 +11,7 @@
     "test": "cd ../.. && vitest run tests/mobile"
   },
   "dependencies": {
+    "@irishpub-map/api-client": "*",
     "@irishpub-map/shared": "*",
     "expo": "~57.0.30",
     "expo-constants": "~57.0.22",

@@ -4,6 +4,11 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: [
+      // Mobile's SDK React differs from React DOM's root React; tests render it through the root renderer.
+      {
+        find: /^react$/,
+        replacement: fileURLToPath(new URL("./node_modules/react/index.js", import.meta.url)),
+      },
       {
         find: /^maplibre-gl$/,
         replacement: fileURLToPath(new URL("./tests/mocks/maplibre-gl.ts", import.meta.url)),
