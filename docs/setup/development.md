@@ -53,6 +53,14 @@ Next.jsアプリは`apps/web`で起動します。
 
 `apps/mobile` はExpo SDK 57 / React Native 0.86 / Expo Router 57を使います。AndroidのNative BuildはEAS Build（クラウド）、動作確認はUSB接続したAndroid実機、JavaScript開発はローカルMetroを標準とします。Android Emulator / ローカルGradle Buildは代替手段です。MapLibreなどのNative Moduleを使用するためExpo GoではなくDevelopment Buildを使用します。
 
+### EAS Buildの手動実行ポリシー
+
+**EAS Buildは必要なタイミングでのみ手動実行します。** PR作成・更新、GitHub Actionsの通常CI、JavaScript / TypeScriptの修正を理由に、EASクラウドビルドを自動実行しません。現在のRepositoryにはEASを起動するGitHub Actions Workflowを設けていません。以下の`eas build`コマンドは手動実行の参考手順であり、Agentへの自動実行指示ではありません。
+
+AI AgentがEAS Build / Submitを開始する場合は、**その都度、ユーザーから明示承認を得る必要があります**。提案時には実行理由、Android / iOSの別、Build Profile、無料枠を消費する可能性を説明してください。失敗時の再試行や別Profileでの実行も再承認が必要です。実装・PR作成・通常のCI検証依頼だけでは承認されたことになりません。詳しくはRepository rootの[AGENTS.md](../../AGENTS.md#eas-buildsubmitの実行制限)を参照してください。
+
+通常の検証はLint、Typecheck、Unit Test、ローカルMetro / JavaScript Bundleで実施します。Native依存・Expo config plugin・Permissionなどの変更で新しいAPKが必要な場合も、Agentは理由を報告してユーザーの判断を待ちます。予期しないBuild実行を防ぐため、CIやAgentの実行環境へ不要なEAS認証情報を渡さない運用も推奨します。
+
 ### EAS Development Build（Android APK）
 
 EASの設定はGit管理する `apps/mobile/app.json` と `apps/mobile/eas.json` にあり、Expoプロジェクト `@yf-techs/irishpub-map` に紐付いています。RepositoryのrootでNode.js 24系と依存を準備し、**EAS CLIは `apps/mobile` ディレクトリから実行**します。EAS Build側のNode.jsは`eas.json`で24.21.0に指定しています。
