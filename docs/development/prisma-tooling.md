@@ -9,10 +9,10 @@ Prisma 8 RCは互換性を保証する正式版ではありません。2026-10-1
 ## 配置
 
 - `prisma.config.ts`: Prisma 8設定。Contractと出力先を定義します。意図的に既定DB接続先を設定しません。
-- `db/prisma/contract.prisma`: Prisma 8形式のContract。Productionの現行Schema推論・制約照合は後続Issueで行います。
+- `db/prisma/contract.prisma`: Prisma 8形式のContract。Productionの現行Schemaとの照合は[Contract audit](prisma-contract-audit.md)に記録しています。
 - `generated/prisma8/`: `contract emit`が生成するContract artifactと型の出力先。
 
-生成物のGit管理（commitして差分レビューするか、ignoreしてCI生成するか）はIssue #637で決定します。それまではContractをemitすると未追跡の生成物が作られるため、生成物をcommitしません。
+Contractと `generated/prisma8/contract.json` / `contract.d.ts` はGit管理し、`npm run prisma:contract:emit`で再生成・整形してContract変更と同じPRで差分レビューします。現行Productionとの照合と表現差分は[Prisma Contract schema照合記録](prisma-contract-audit.md)を参照してください。
 
 ## コマンド
 

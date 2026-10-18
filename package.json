@@ -18,7 +18,7 @@
     "check:database-schema": "node scripts/generate-database-schema.mjs --target production --check",
     "prisma:version": "prisma --version",
     "prisma:help": "prisma --help",
-    "prisma:contract:emit": "prisma contract emit",
+    "prisma:contract:emit": "prisma contract emit && prettier --write generated/prisma8/contract.json generated/prisma8/contract.d.ts",
     "validate:production-env": "node scripts/validate-production-env.mjs",
     "lint": "eslint --config eslint.config.mjs apps/web/app apps/mobile packages/shared/src packages/api-client/src e2e playwright.config.ts playwright.storybook.config.ts --max-warnings=0",
     "lint:openapi": "redocly lint docs/specs/openapi/openapi.yaml",
