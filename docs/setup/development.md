@@ -53,6 +53,8 @@ Next.jsアプリは`apps/web`で起動します。
 
 `apps/mobile` はExpo SDK 57 / React Native 0.86 / Expo Router 57を使います。AndroidのNative BuildはEAS Build（クラウド）、動作確認はUSB接続したAndroid実機、JavaScript開発はローカルMetroを標準とします。Android Emulator / ローカルGradle Buildは代替手段です。MapLibreなどのNative Moduleを使用するためExpo GoではなくDevelopment Buildを使用します。
 
+Mobileは `EXPO_PUBLIC_API_BASE_URL` でPublic Pub APIのOriginを環境別に設定できます。未設定または空の場合はProduction Origin `https://irishpub-map-web.vercel.app` を使います。`EXPO_PUBLIC_*` の値はアプリBundleから利用者に見えるため、API Originなど公開値だけを設定し、Secretは入れないでください。
+
 ### EAS Buildの手動実行ポリシー
 
 **EAS Buildは必要なタイミングでのみ手動実行します。** PR作成・更新、GitHub Actionsの通常CI、JavaScript / TypeScriptの修正を理由に、EASクラウドビルドを自動実行しません。現在のRepositoryにはEASを起動するGitHub Actions Workflowを設けていません。以下の`eas build`コマンドは手動実行の参考手順であり、Agentへの自動実行指示ではありません。
