@@ -30,7 +30,7 @@ Mobile対応Issueへ着手するときの入口です。仕様本文を複製せ
 ## Platform と共有コードの境界
 
 - `apps/web` はNext.jsのWeb UI、Route Handler、Web認証、Repositoryを担当します。React DOM、MapLibre GL JS、ブラウザAPIに依存する処理はMobileから直接再利用しません。
-- 将来の `apps/mobile` はExpo / React NativeのUI、Native地図・権限・外部アプリ連携を担当します。採用VersionやNative Buildの判断は[Mobile Architecture](../architecture/mobile.md)を参照します。
+- `apps/mobile` はExpo / React NativeのUI、Native地図・権限・外部アプリ連携を担当します。採用VersionやNative Buildの判断は[Mobile Architecture](../architecture/mobile.md)を参照します。
 - `packages/shared` はPlatform非依存の型・純粋ロジックを置く場所です。現在の [src/index.ts](../../packages/shared/src/index.ts) は `Pub` / `PubStatus` / `PubType`、`asPubs`、Locale定義・判定、都道府県名/コード、状態定義・変換、UUID検証などを公開しています。Pub型と `asPubs` は [pub.ts](../../packages/shared/src/pub.ts)、Localeは [locale.ts](../../packages/shared/src/locale.ts) を参照してください。
 - Sharedに公開されるAdmin用型・Validationもありますが、Public Mobile MVPで管理操作を実装する根拠にはなりません。API取得、共通API Client、UI翻訳リソース、検索/Filterの共通化が未実装なら、必要性と置き場所を各Issueで判断します。Web専用処理を共有Packageへ移す前にPlatform依存を確認してください。
 
@@ -44,7 +44,7 @@ Public Pub APIは全環境で固定Client Secret不要のRead-only APIです。�
 
 | 未解決事項 | 影響Mobile Issue | 対応Issue | 着手阻害 |
 | --- | --- | --- | --- |
-| SDK指定React Versionと既存WebのReact Versionが異なるため、npm workspace / Metroで重複や解決不整合がないことを実装時に検証する必要がある | #542 | #542 | Yes |
+| Web / MobileのReact版が異なりExpo Doctorが重複を報告する。Mobile向けMetro resolverは設定済みだが、Android実機でアプリ本体の初期画面・実行時エラーを追加検証する | #542 | #542 | いいえ（Smoke Test継続） |
 | 公開APIのOpenAPI収録と共通API Clientが未実装 | #543 | #541 | Yes |
 | Tile ProviderのNative利用条件・Attribution・User-Agentを実装形態に合わせて確認し、iOS Native Buildを含む地図Smoke Testを行う必要がある | #544, #548 | #544 / #548 | Yes |
 | Mobileの位置情報Permission文言・Platform別挙動、外部リンク起動失敗時のUIが未実装 | #546, #547 | #546 / #547 | No |
@@ -53,6 +53,10 @@ Public Pub APIは全環境で固定Client Secret不要のRead-only APIです。�
 
 ## 開発と検証
 
-現在のNodeは `.nvmrc` の24系です。`nvm use` を使える環境ではVersionを合わせ、使えない環境ではNode 24系を選びます。依存はrootで `npm ci`、workspace単位は `npm run <script> -w <workspace>` を使います。Mobile基盤はExpo SDK 57 / React Native 0.86 / Expo Router 57を採用し、起動はAndroid Development Buildを使います。初回はAndroid SDK / Emulatorを準備して `npm run android -w apps/mobile`、以後Metroを起動するときは `npm run start -w apps/mobile` を使います。Expo GoではなくDevelopment Buildを使用してください。
+現在のNodeは`.nvmrc`の24系です。依存はRepository rootで`nvm use` / `npm ci`、workspace単位は`npm run <script> -w <workspace>`を使います。Mobile基盤はExpo SDK 57 / React Native 0.86 / Expo Router 57を採用しています。
 
-rootの `npm run lint`、`npm run typecheck`、`npm test` はMobileも含み、CIの既存Full CI経路から実行されます。Mobileの単独検証は `npm run lint -w apps/mobile`、`npm run typecheck -w apps/mobile`、`npm run test -w apps/mobile` です。Platformの画面部品を共有する前提は置かず、Pure Logicの再利用にはSharedのUnit Test、APIには契約テスト、Native画面にはComponent / Device Smoke Testを対応させます。Native Store BuildはCIで実行しません。
+**Androidの標準開発フローはEAS Build + Android実機 + ローカルMetro**です。`apps/mobile/eas.json`の`development`プロファイルでEASクラウドNative Buildを実行し、生成されたAPKを別操作でADBインストールします。USB接続した実機から`adb reverse tcp:8081 tcp:8081`を設定し、Repository rootから`npm run start -w apps/mobile -- --localhost`を実行します。Native依存やapp configの変更時にはDevelopment Buildを作り直し、JavaScript / TypeScriptの修正はMetroで検証します。Expo Goは使用しません。Android Emulator / ローカルGradle Buildは代替手段です。
+
+2026-10-18時点で、EASによるAndroid Development Build成功、APK実機インストール、Expo Development Launcher起動まで確認済みです。**Irish Pub Map本体の初期画面、shared Locale、React / Native Moduleの実行時動作はまだ未検証**です。Expo DoctorのReact重複警告は構成上の既知事項ですが、Smoke Testを省略する根拠にはなりません。具体的な操作と端末接続コマンドは[ローカル開発](../setup/development.md#mobile-android-開発)を参照してください。
+
+rootの`npm run lint`、`npm run typecheck`、`npm test`はMobileも含み、CIの既存Full CI経路から実行されます。Mobileの単独検証は`npm run lint -w apps/mobile`、`npm run typecheck -w apps/mobile`、`npm run test -w apps/mobile`です。Platformの画面部品を共有する前提は置かず、Pure Logicの再利用にはSharedのUnit Test、APIには契約テスト、Native画面にはComponent / Device Smoke Testを対応させます。Native Store BuildはCIで実行しません。
