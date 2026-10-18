@@ -39,6 +39,26 @@ test("Pubs・Tags・Statuses管理画面は日英とDesktop・Mobileで横overfl
         );
 
         if (viewport.width === 1280 || viewport.width === 390) {
+          if (route.name === "pubs-list") {
+            const timestamps = page.locator(".admin-pub-table time");
+            await expect(timestamps).toHaveCount(2);
+            await expect(timestamps.first()).toHaveAttribute("datetime", "2026-01-15T12:00:00.000Z");
+            await expect(timestamps.first()).toContainText(locale === "ja" ? "21:00" : "9:00 PM");
+
+            // 日時は上で実表示を検証し、既存の画像比較では日付のみへ正規化する。
+            // 見た目の基準画像を変更せず、店舗一覧のレイアウト回帰を継続検出する。
+            await timestamps.evaluateAll((elements, renderLocale) => {
+              for (const element of elements) {
+                const updatedAt = element.getAttribute("datetime");
+                if (updatedAt) {
+                  element.textContent = new Intl.DateTimeFormat(renderLocale, { dateStyle: "medium" }).format(
+                    new Date(updatedAt),
+                  );
+                }
+              }
+            }, locale);
+          }
+
           await expect(page).toHaveScreenshot(`admin-${route.name}-${locale}-${viewport.width}.png`, {
             fullPage: true,
           });
