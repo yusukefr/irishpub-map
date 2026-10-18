@@ -36,7 +36,7 @@ model AutomationIdempotencyKeys {
   resource_id   Uuid
   status        String         @default("pending")
   status_code   Int?
-  response_body Json?
+  response_body Jsonb?
   created_at    Timestamptz(6) @default(now())
   expires_at    Timestamptz(6) @default(sql`(now() + '24:00:00'::interval)`)
 
@@ -64,7 +64,7 @@ model CalendarEventTranslations {
 
 model CalendarEvents {
   category                                                    String?
-  date_rule                                                   Json?
+  date_rule                                                   Jsonb?
   is_public_holiday                                           Boolean                     @default(false)
   featured                                                    Boolean                     @default(false)
   aliases                                                     String[]                    @default([]) @noCheck(elementNotNull)

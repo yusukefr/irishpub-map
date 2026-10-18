@@ -309,7 +309,7 @@
               "response_body": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/json@1",
+                  "codecId": "pg/jsonb@1",
                   "kind": "scalar"
                 }
               },
@@ -481,7 +481,7 @@
               "date_rule": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/json@1",
+                  "codecId": "pg/jsonb@1",
                   "kind": "scalar"
                 }
               },
@@ -2551,8 +2551,8 @@
                   "nullable": false
                 },
                 "response_body": {
-                  "codecId": "pg/json@1",
-                  "dataType": "pg/json",
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
                   "nullable": true
                 },
                 "status": {
@@ -2701,8 +2701,8 @@
                   }
                 },
                 "date_rule": {
-                  "codecId": "pg/json@1",
-                  "dataType": "pg/json",
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
                   "nullable": true
                 },
                 "featured": {
@@ -4279,7 +4279,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "86a64c5f2e0243c84477d02fc9f2c4fa3ddcae75f66df4e64bd6d61c60a1dbd3"
+    "storageHash": "f8338fe226645fd857a00cc72e1618763f115b19e4dfc6e70714acbbde9d9926"
   },
   "capabilities": {
     "postgres": {

@@ -17,7 +17,7 @@ import type {
   StorageHashBase,
 } from "@prisma/orm-postgres/contract/types";
 
-export type StorageHash = StorageHashBase<"86a64c5f2e0243c84477d02fc9f2c4fa3ddcae75f66df4e64bd6d61c60a1dbd3">;
+export type StorageHash = StorageHashBase<"f8338fe226645fd857a00cc72e1618763f115b19e4dfc6e70714acbbde9d9926">;
 export type ExecutionHash = ExecutionHashBase<string>;
 export type ProfileHash = ProfileHashBase<"3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2">;
 
@@ -254,7 +254,7 @@ export type FieldOutputTypes = {
       readonly request_hash: Char<64>;
       readonly resource_id: CodecTypes["pg/uuid@1"]["output"];
       readonly resource_type: CodecTypes["pg/text@1"]["output"];
-      readonly response_body: CodecTypes["pg/json@1"]["output"] | null;
+      readonly response_body: CodecTypes["pg/jsonb@1"]["output"] | null;
       readonly status: CodecTypes["pg/text@1"]["output"];
       readonly status_code: CodecTypes["pg/int4@1"]["output"] | null;
     };
@@ -262,7 +262,7 @@ export type FieldOutputTypes = {
       readonly aliases: ReadonlyArray<CodecTypes["pg/text@1"]["output"]>;
       readonly category: CodecTypes["pg/text@1"]["output"] | null;
       readonly created_at: CodecTypes["pg/timestamptz-temporal@1"]["output"];
-      readonly date_rule: CodecTypes["pg/json@1"]["output"] | null;
+      readonly date_rule: CodecTypes["pg/jsonb@1"]["output"] | null;
       readonly featured: CodecTypes["pg/bool@1"]["output"];
       readonly id: CodecTypes["pg/uuid@1"]["output"];
       readonly is_public_holiday: CodecTypes["pg/bool@1"]["output"];
@@ -443,7 +443,7 @@ export type FieldInputTypes = {
       readonly request_hash: CodecTypes["sql/char@1"]["input"];
       readonly resource_id: CodecTypes["pg/uuid@1"]["input"];
       readonly resource_type: CodecTypes["pg/text@1"]["input"];
-      readonly response_body: CodecTypes["pg/json@1"]["input"] | null;
+      readonly response_body: CodecTypes["pg/jsonb@1"]["input"] | null;
       readonly status: CodecTypes["pg/text@1"]["input"];
       readonly status_code: CodecTypes["pg/int4@1"]["input"] | null;
     };
@@ -451,7 +451,7 @@ export type FieldInputTypes = {
       readonly aliases: ReadonlyArray<CodecTypes["pg/text@1"]["input"]>;
       readonly category: CodecTypes["pg/text@1"]["input"] | null;
       readonly created_at: CodecTypes["pg/timestamptz-temporal@1"]["input"];
-      readonly date_rule: CodecTypes["pg/json@1"]["input"] | null;
+      readonly date_rule: CodecTypes["pg/jsonb@1"]["input"] | null;
       readonly featured: CodecTypes["pg/bool@1"]["input"];
       readonly id: CodecTypes["pg/uuid@1"]["input"];
       readonly is_public_holiday: CodecTypes["pg/bool@1"]["input"];
@@ -632,7 +632,7 @@ export type StorageColumnTypes = {
       readonly request_hash: Char<64>;
       readonly resource_id: CodecTypes["pg/uuid@1"]["output"];
       readonly resource_type: CodecTypes["pg/text@1"]["output"];
-      readonly response_body: CodecTypes["pg/json@1"]["output"] | null;
+      readonly response_body: CodecTypes["pg/jsonb@1"]["output"] | null;
       readonly status: CodecTypes["pg/text@1"]["output"];
       readonly status_code: CodecTypes["pg/int4@1"]["output"] | null;
     };
@@ -647,7 +647,7 @@ export type StorageColumnTypes = {
       readonly aliases: ReadonlyArray<CodecTypes["pg/text@1"]["output"]>;
       readonly category: CodecTypes["pg/text@1"]["output"] | null;
       readonly created_at: CodecTypes["pg/timestamptz-temporal@1"]["output"];
-      readonly date_rule: CodecTypes["pg/json@1"]["output"] | null;
+      readonly date_rule: CodecTypes["pg/jsonb@1"]["output"] | null;
       readonly featured: CodecTypes["pg/bool@1"]["output"];
       readonly id: CodecTypes["pg/uuid@1"]["output"];
       readonly is_public_holiday: CodecTypes["pg/bool@1"]["output"];
@@ -821,7 +821,7 @@ export type StorageColumnInputTypes = {
       readonly request_hash: CodecTypes["sql/char@1"]["input"];
       readonly resource_id: CodecTypes["pg/uuid@1"]["input"];
       readonly resource_type: CodecTypes["pg/text@1"]["input"];
-      readonly response_body: CodecTypes["pg/json@1"]["input"] | null;
+      readonly response_body: CodecTypes["pg/jsonb@1"]["input"] | null;
       readonly status: CodecTypes["pg/text@1"]["input"];
       readonly status_code: CodecTypes["pg/int4@1"]["input"] | null;
     };
@@ -836,7 +836,7 @@ export type StorageColumnInputTypes = {
       readonly aliases: ReadonlyArray<CodecTypes["pg/text@1"]["input"]>;
       readonly category: CodecTypes["pg/text@1"]["input"] | null;
       readonly created_at: CodecTypes["pg/timestamptz-temporal@1"]["input"];
-      readonly date_rule: CodecTypes["pg/json@1"]["input"] | null;
+      readonly date_rule: CodecTypes["pg/jsonb@1"]["input"] | null;
       readonly featured: CodecTypes["pg/bool@1"]["input"];
       readonly id: CodecTypes["pg/uuid@1"]["input"];
       readonly is_public_holiday: CodecTypes["pg/bool@1"]["input"];
@@ -1011,7 +1011,7 @@ export namespace Models {
     request_hash: Char<64>;
     resource_id: CodecTypes["pg/uuid@1"]["output"];
     resource_type: CodecTypes["pg/text@1"]["output"];
-    response_body: CodecTypes["pg/json@1"]["output"] | null;
+    response_body: CodecTypes["pg/jsonb@1"]["output"] | null;
     status: CodecTypes["pg/text@1"]["output"];
     status_code: CodecTypes["pg/int4@1"]["output"] | null;
     readonly [RelationKeys]?: never;
@@ -1029,7 +1029,7 @@ export namespace Models {
     aliases: ReadonlyArray<CodecTypes["pg/text@1"]["output"]>;
     category: CodecTypes["pg/text@1"]["output"] | null;
     created_at: CodecTypes["pg/timestamptz-temporal@1"]["output"];
-    date_rule: CodecTypes["pg/json@1"]["output"] | null;
+    date_rule: CodecTypes["pg/jsonb@1"]["output"] | null;
     featured: CodecTypes["pg/bool@1"]["output"];
     id: CodecTypes["pg/uuid@1"]["output"];
     is_public_holiday: CodecTypes["pg/bool@1"]["output"];
@@ -1476,8 +1476,8 @@ type ContractBase = Omit<
                   readonly many: false;
                 };
                 readonly response_body: {
-                  readonly dataType: "pg/json";
-                  readonly codecId: "pg/json@1";
+                  readonly dataType: "pg/jsonb";
+                  readonly codecId: "pg/jsonb@1";
                   readonly nullable: true;
                   readonly many: false;
                 };
@@ -1602,8 +1602,8 @@ type ContractBase = Omit<
                   readonly many: false;
                 };
                 readonly date_rule: {
-                  readonly dataType: "pg/json";
-                  readonly codecId: "pg/json@1";
+                  readonly dataType: "pg/jsonb";
+                  readonly codecId: "pg/jsonb@1";
                   readonly nullable: true;
                   readonly many: false;
                 };
@@ -3157,7 +3157,7 @@ type ContractBase = Omit<
               };
               readonly response_body: {
                 readonly nullable: true;
-                readonly type: { readonly kind: "scalar"; readonly codecId: "pg/json@1" };
+                readonly type: { readonly kind: "scalar"; readonly codecId: "pg/jsonb@1" };
               };
               readonly status: {
                 readonly nullable: false;
@@ -3209,7 +3209,7 @@ type ContractBase = Omit<
               };
               readonly date_rule: {
                 readonly nullable: true;
-                readonly type: { readonly kind: "scalar"; readonly codecId: "pg/json@1" };
+                readonly type: { readonly kind: "scalar"; readonly codecId: "pg/jsonb@1" };
               };
               readonly featured: {
                 readonly nullable: false;
