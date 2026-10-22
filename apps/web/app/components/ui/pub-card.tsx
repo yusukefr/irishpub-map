@@ -2,7 +2,7 @@ import type { ComponentPropsWithRef, ReactNode } from "react";
 import type { Pub } from "@irishpub-map/shared/pub";
 import { DEFAULT_LOCALE, formatMessage, getTagLabel, getTranslation, type Locale } from "../../lib/i18n";
 import { Button } from "./button";
-import { StatusBadge, isPublicStatusVisible } from "./status-badge";
+import { StatusBadge } from "./status-badge";
 import styles from "./ui.module.css";
 
 /** 一覧と地図で共有する店舗表示。写真・距離は表示専用でDB形式を変更しません。 */
@@ -42,15 +42,6 @@ export function PubCard({
   const locationLabel = [pub.prefecture, pub.city].filter(Boolean).join(" / ");
   const statusLabel = pub.statusDisplayName ?? t.statuses[pub.status];
   const pubTypeLabel = pub.pubTypeDisplayName ?? pub.pubType;
-  // 視覚的なラベルを同じ順序で含め、音声操作とスクリーンリーダーの呼称を一致させます。
-  const accessibleName = [
-    formatMessage(t.selectPub, { name: pub.name }),
-    locationLabel,
-    ...(isPublicStatusVisible(pub.status) ? [statusLabel] : []),
-    pubTypeLabel,
-  ]
-    .filter(Boolean)
-    .join(" ");
   return (
     <article
       ref={ref}
@@ -64,9 +55,10 @@ export function PubCard({
         type="button"
         className={styles.pubSelect}
         aria-pressed={selected}
-        aria-label={accessibleName}
         onClick={() => onSelect(pub.id)}
       >
+        {/* 可視テキストからネイティブなアクセシブルネームを生成し、選択操作だけを補足します。 */}
+        <span className="sr-only">{formatMessage(t.selectPub, { name: "" })}</span>
         <span className={styles.pubName} role="heading" aria-level={3}>
           {pub.name}
         </span>
