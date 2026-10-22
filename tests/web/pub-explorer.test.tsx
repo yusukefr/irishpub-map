@@ -482,10 +482,7 @@ describe("PubExplorer", () => {
     expect(handle).toHaveAttribute("aria-expanded", "false");
     expect(marker).toHaveAttribute("aria-pressed", "true");
     fireEvent.keyDown(handle, { key: "ArrowUp" });
-    expect(screen.getByRole("button", { name: TOKYO_PUB_BUTTON_NAME })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: TOKYO_PUB_BUTTON_NAME })).toHaveAttribute("aria-pressed", "true");
     expect(maplibreMock.mapConstructor).toHaveBeenCalledTimes(1);
   });
 
