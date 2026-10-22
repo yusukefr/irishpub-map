@@ -259,7 +259,7 @@ describe("PubExplorer", () => {
     );
     expect(sheet).toHaveAttribute("data-state", "collapsed");
 
-    fireEvent.click(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }));
+    fireEvent.click(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ }));
     expect(sheet).toHaveAttribute("data-state", "medium");
     expect(carousel).not.toBeVisible();
     expect(screen.getByRole("complementary", { name: "掲載店舗" })).toBeInTheDocument();
@@ -478,7 +478,7 @@ describe("PubExplorer", () => {
     expect(handle).toHaveAttribute("aria-expanded", "false");
     expect(marker).toHaveAttribute("aria-pressed", "true");
     fireEvent.keyDown(handle, { key: "ArrowUp" });
-    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -694,7 +694,7 @@ describe("PubExplorer", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "閉業した店舗を含める" }));
     openResults();
 
-    const kyotoSelect = screen.getByRole("button", { name: "店舗を選択: Kyoto Sample Pub" });
+    const kyotoSelect = screen.getByRole("button", { name: /^店舗を選択: Kyoto Sample Pub\b/ });
     const kyotoCard = kyotoSelect.closest("article");
     const tokyoMarker = (maplibreMock.markerConstructor.mock.calls[1][0] as { element: HTMLButtonElement }).element;
 
@@ -708,7 +708,7 @@ describe("PubExplorer", () => {
 
     fireEvent.click(tokyoMarker);
 
-    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article")).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ }).closest("article")).toHaveAttribute(
       "data-selected",
       "true",
     );
@@ -721,11 +721,11 @@ describe("PubExplorer", () => {
     const availablePubs = [pubs[0], { ...pubs[1], status: "open" as const }];
     render(<PubExplorer pubs={availablePubs} />);
     openResults();
-    fireEvent.click(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }));
+    fireEvent.click(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ }));
 
     fireEvent.change(screen.getByLabelText("店舗を検索"), { target: { value: "Tokyo" } });
 
-    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article")).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ }).closest("article")).toHaveAttribute(
       "data-selected",
       "true",
     );
@@ -736,14 +736,14 @@ describe("PubExplorer", () => {
     const availablePubs = [pubs[0], { ...pubs[1], status: "open" as const }];
     render(<PubExplorer pubs={availablePubs} />);
     openResults();
-    fireEvent.click(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }));
+    fireEvent.click(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ }));
 
     openDetailedFilters();
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "東京都" } });
     fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
     openResults();
 
-    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article")).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ }).closest("article")).toHaveAttribute(
       "data-selected",
       "true",
     );
@@ -753,7 +753,7 @@ describe("PubExplorer", () => {
   it("clears the selected pub when filters hide it", async () => {
     render(<PubExplorer pubs={[pubs[0], { ...pubs[1], status: "open" }]} />);
     openResults();
-    fireEvent.click(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }));
+    fireEvent.click(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ }));
     openDetailedFilters();
     fireEvent.change(screen.getByLabelText("都道府県"), { target: { value: "大阪府" } });
 
@@ -763,7 +763,7 @@ describe("PubExplorer", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
     openResults();
-    expect(screen.getByRole("button", { name: "店舗を選択: Osaka Sample Pub" }).closest("article")).not.toHaveAttribute(
+    expect(screen.getByRole("button", { name: /^店舗を選択: Osaka Sample Pub\b/ }).closest("article")).not.toHaveAttribute(
       "data-selected",
     );
 
@@ -772,7 +772,7 @@ describe("PubExplorer", () => {
     fireEvent.click(screen.getByRole("button", { name: "条件パネルを閉じる" }));
     openResults();
 
-    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" }).closest("article")).not.toHaveAttribute(
+    expect(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ }).closest("article")).not.toHaveAttribute(
       "data-selected",
     );
   });
