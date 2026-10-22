@@ -2,7 +2,7 @@ import type { ComponentPropsWithRef, ReactNode } from "react";
 import type { Pub } from "@irishpub-map/shared/pub";
 import { DEFAULT_LOCALE, formatMessage, getTagLabel, getTranslation, type Locale } from "../../lib/i18n";
 import { Button } from "./button";
-import { StatusBadge } from "./status-badge";
+import { StatusBadge, isPublicStatusVisible } from "./status-badge";
 import styles from "./ui.module.css";
 
 /** 一覧と地図で共有する店舗表示。写真・距離は表示専用でDB形式を変更しません。 */
@@ -39,6 +39,18 @@ export function PubCard({
   const t = getTranslation(locale).list;
   const tags = pub.tags.slice(0, 2);
   const additionalCount = pub.tags.length - tags.length;
+  const locationLabel = [pub.prefecture, pub.city].filter(Boolean).join(" / ");
+  const statusLabel = pub.statusDisplayName ?? t.statuses[pub.status];
+  const pubTypeLabel = pub.pubTypeDisplayName ?? pub.pubType;
+  // 視覚的なラベルを同じ順序で含め、音声操作とスクリーンリーダーの呼称を一致させます。
+  const accessibleName = [
+    formatMessage(t.selectPub, { name: pub.name }),
+    locationLabel,
+    ...(isPublicStatusVisible(pub.status) ? [statusLabel] : []),
+    pubTypeLabel,
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <article
       ref={ref}
@@ -52,15 +64,15 @@ export function PubCard({
         type="button"
         className={styles.pubSelect}
         aria-pressed={selected}
-        aria-label={formatMessage(t.selectPub, { name: pub.name })}
+        aria-label={accessibleName}
         onClick={() => onSelect(pub.id)}
       >
         <span className={styles.pubName} role="heading" aria-level={3}>
           {pub.name}
         </span>
-        <span className={styles.metadata}>{[pub.prefecture, pub.city].filter(Boolean).join(" / ")}</span>
-        <StatusBadge status={pub.status} label={pub.statusDisplayName ?? t.statuses[pub.status]} />
-        <span className="pub-type-label">{pub.pubTypeDisplayName ?? pub.pubType}</span>
+        <span className={styles.metadata}>{locationLabel}</span>
+        <StatusBadge status={pub.status} label={statusLabel} />
+        <span className="pub-type-label">{pubTypeLabel}</span>
       </button>
       {metadata ? <div className={styles.metadata}>{metadata}</div> : null}
       {distance ? <p className={styles.metadata}>{distance}</p> : null}
