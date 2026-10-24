@@ -5,11 +5,11 @@ test("英語選択をcookieへ保存し、同じURLの再読み込み後も維�
   await mockExternalMapStyle(page);
   await page.goto("/");
 
-  await page.getByRole("button", { name: "表示言語: 日本語" }).click();
+  await page.getByRole("button", { name: "LANGUAGE — 表示言語: 日本語", exact: true }).click();
   await page.getByRole("menuitemradio", { name: "English" }).click();
   await expect(page).toHaveURL("/");
   await expect(page.getByRole("searchbox", { name: "Search pubs" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Language: English" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "LANGUAGE — Language: English", exact: true })).toBeVisible();
   await expect
     .poll(async () => (await context.cookies()).find((cookie) => cookie.name === "irishpub-map-locale")?.value)
     .toBe("en");
@@ -17,7 +17,7 @@ test("英語選択をcookieへ保存し、同じURLの再読み込み後も維�
   await page.reload();
   await expect(page).toHaveURL("/");
   await expect(page.getByRole("searchbox", { name: "Search pubs" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Language: English" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "LANGUAGE — Language: English", exact: true })).toBeVisible();
 });
 
 test("Split the Gの公開Editorial Markdownを日英表示し、Mapへの導線を維持する", async ({ page }) => {
@@ -31,7 +31,7 @@ test("Split the Gの公開Editorial Markdownを日英表示し、Mapへの導線
   await expect(page.getByRole("link", { name: "Irish Pubを探す →" })).toHaveAttribute("href", "/");
   await expect(page.locator('a[href^="https://www.guinness.com/"]')).toHaveCount(0);
 
-  await page.getByRole("button", { name: "表示言語: 日本語" }).click();
+  await page.getByRole("button", { name: "LANGUAGE — 表示言語: 日本語", exact: true }).click();
   await page.getByRole("menuitemradio", { name: "English" }).click();
 
   await expect(page.getByRole("heading", { level: 1, name: "How to Enjoy Split the G" })).toBeVisible();

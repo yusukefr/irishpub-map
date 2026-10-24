@@ -73,8 +73,8 @@ describe("PubResultsPanel", () => {
     renderPanel();
 
     expect(screen.getByRole("complementary", { name: "掲載店舗" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "店舗を選択: Osaka Sample Pub" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^店舗を選択: Osaka Sample Pub\b/ })).toBeInTheDocument();
 
     renderPanel({ pubs: [] });
     expect(screen.getByRole("status")).toHaveTextContent("該当するPubがありません");

@@ -306,7 +306,7 @@ function MobileCarouselPubs({ locale, width }: { locale: Locale; width: 360 | 39
     { ...samplePub, id: "closed", name: locale === "ja" ? "閉店したパブ" : "Closed pub", status: "closed", tags: [] },
   ];
   return (
-    <section className={styles.section} aria-label="Mobile pub carousel">
+    <section className={`${styles.section} ${styles.carouselSection}`} aria-label="Mobile pub carousel">
       <h2>Mobile pub carousel / {width}px</h2>
       <div
         className={styles.carousel}

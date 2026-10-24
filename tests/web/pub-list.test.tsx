@@ -70,7 +70,7 @@ describe("PubList", () => {
 
     const cards = screen.getAllByRole("article");
     expect(within(cards[0]).queryByText("Open")).not.toBeInTheDocument();
-    expect(within(cards[0]).getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" })).toBeInTheDocument();
+    expect(within(cards[0]).getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ })).toBeInTheDocument();
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("Guinness");
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("Live music");
     expect(within(cards[0]).getByRole("list", { name: "Tokyo Sample Pub のタグ" })).toHaveTextContent("+1");
@@ -85,13 +85,13 @@ describe("PubList", () => {
     const onSelectPub = vi.fn();
     const { rerender } = render(<PubList pubs={pubs} onSelectPub={onSelectPub} />);
 
-    const selectButton = screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" });
+    const selectButton = screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ });
     expect(selectButton).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(selectButton);
     expect(onSelectPub).toHaveBeenCalledWith("tokyo-sample");
 
     rerender(<PubList pubs={pubs} selectedPubId="tokyo-sample" onSelectPub={onSelectPub} />);
-    expect(screen.getByRole("button", { name: "店舗を選択: Tokyo Sample Pub" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /^店舗を選択: Tokyo Sample Pub\b/ })).toHaveAttribute(
       "aria-pressed",
       "true",
     );

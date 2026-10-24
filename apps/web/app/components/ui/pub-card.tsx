@@ -39,6 +39,9 @@ export function PubCard({
   const t = getTranslation(locale).list;
   const tags = pub.tags.slice(0, 2);
   const additionalCount = pub.tags.length - tags.length;
+  const locationLabel = [pub.prefecture, pub.city].filter(Boolean).join(" / ");
+  const statusLabel = pub.statusDisplayName ?? t.statuses[pub.status];
+  const pubTypeLabel = pub.pubTypeDisplayName ?? pub.pubType;
   return (
     <article
       ref={ref}
@@ -48,19 +51,15 @@ export function PubCard({
       data-density={density}
     >
       {media ? <div className={styles.cardMedia}>{media}</div> : null}
-      <button
-        type="button"
-        className={styles.pubSelect}
-        aria-pressed={selected}
-        aria-label={formatMessage(t.selectPub, { name: pub.name })}
-        onClick={() => onSelect(pub.id)}
-      >
+      <button type="button" className={styles.pubSelect} aria-pressed={selected} onClick={() => onSelect(pub.id)}>
+        {/* 可視テキストからネイティブなアクセシブルネームを生成し、選択操作だけを補足します。 */}
+        <span className="sr-only">{formatMessage(t.selectPub, { name: "" })}</span>{" "}
         <span className={styles.pubName} role="heading" aria-level={3}>
           {pub.name}
         </span>
-        <span className={styles.metadata}>{[pub.prefecture, pub.city].filter(Boolean).join(" / ")}</span>
-        <StatusBadge status={pub.status} label={pub.statusDisplayName ?? t.statuses[pub.status]} />
-        <span className="pub-type-label">{pub.pubTypeDisplayName ?? pub.pubType}</span>
+        <span className={styles.metadata}>{locationLabel}</span>
+        <StatusBadge status={pub.status} label={statusLabel} />
+        <span className="pub-type-label">{pubTypeLabel}</span>
       </button>
       {metadata ? <div className={styles.metadata}>{metadata}</div> : null}
       {distance ? <p className={styles.metadata}>{distance}</p> : null}
