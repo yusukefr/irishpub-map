@@ -53,7 +53,7 @@ export function PubCard({
       {media ? <div className={styles.cardMedia}>{media}</div> : null}
       <button type="button" className={styles.pubSelect} aria-pressed={selected} onClick={() => onSelect(pub.id)}>
         {/* 可視テキストからネイティブなアクセシブルネームを生成し、選択操作だけを補足します。 */}
-        <span className="sr-only">{formatMessage(t.selectPub, { name: "" })}</span>
+        <span className="sr-only">{formatMessage(t.selectPub, { name: "" })}</span>{" "}
         <span className={styles.pubName} role="heading" aria-level={3}>
           {pub.name}
         </span>
