@@ -99,6 +99,24 @@ for (const locale of ["japanese", "english"] as const) {
       const overflow = await page.evaluate(() => ({
         viewport: innerWidth,
         document: document.documentElement.scrollWidth,
+        containers: ["html", "body", "#storybook-root", "main", "main section", "main [role='region']"].map(
+          (selector) => {
+            const element = document.querySelector<HTMLElement>(selector);
+            const style = element ? getComputedStyle(element) : null;
+            const rect = element?.getBoundingClientRect();
+            return {
+              selector,
+              className: element?.className,
+              clientWidth: element?.clientWidth,
+              scrollWidth: element?.scrollWidth,
+              left: rect?.left,
+              right: rect?.right,
+              overflowX: style?.overflowX,
+              overflowY: style?.overflowY,
+              display: style?.display,
+            };
+          },
+        ),
         nodes: Array.from(document.querySelectorAll<HTMLElement>("body *"))
           .filter((node) => node.getBoundingClientRect().right > innerWidth + 1)
           .slice(0, 10)
