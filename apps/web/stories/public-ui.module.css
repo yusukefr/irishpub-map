@@ -53,6 +53,10 @@
   gap: var(--spacing-space-3);
   width: min(100%, 360px);
 }
+.carouselSection {
+  overflow-x: clip;
+}
+
 .carousel {
   display: flex;
   box-sizing: border-box;
