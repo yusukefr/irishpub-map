@@ -96,7 +96,20 @@ for (const locale of ["japanese", "english"] as const) {
         locale === "japanese" ? "駅から徒歩5分" : "5 minutes from the station",
       );
       expect(await carousel.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      const overflow = await page.evaluate(() => ({
+        viewport: innerWidth,
+        document: document.documentElement.scrollWidth,
+        nodes: Array.from(document.querySelectorAll<HTMLElement>("body *"))
+          .filter((node) => node.getBoundingClientRect().right > innerWidth + 1)
+          .slice(0, 10)
+          .map((node) => ({
+            tag: node.tagName,
+            className: String(node.className),
+            width: node.getBoundingClientRect().width,
+            right: node.getBoundingClientRect().right,
+          })),
+      }));
+      expect(overflow.document, JSON.stringify(overflow)).toBeLessThanOrEqual(overflow.viewport);
       const longName = await cards.nth(1).getByRole("heading").textContent();
       expect(longName!.length).toBeGreaterThan(locale === "japanese" ? 25 : 50);
       const select = cards.nth(1).locator("button[aria-pressed]");
