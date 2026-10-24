@@ -1,5 +1,6 @@
 .gallery {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--spacing-space-6);
   padding: var(--spacing-space-4);
   color: var(--color-text-primary);
