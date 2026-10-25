@@ -41,6 +41,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Editorial Content Cache | [System overview](architecture/system-overview.md) | Current。Cacheの責務と実装参照を記載 |
 | Public UI | [Irish Pub Map Design System](design/README.md) | Current。Token、Component、Pattern、Reference Screenの入口 |
 | Development rules / GitHub / JSDoc | [Development conventions](development/conventions.md) | Current。root `AGENTS.md` のMandatory Rulesを優先 |
+| npm dependency security review | [npm audit investigation (2026-10)](development/npm-audit-investigation-2026-10.md) | Historical。Issue #693時点の監査条件・依存経路・残余リスク |
 | Mobile implementation handoff | [Mobile Handoff Guide](development/mobile-handoff.md) | Current。Mobile対応Issueへ着手する際の読む順番・Source of Truth・未決事項 |
 | Testing strategy / Test Layer | [テスト戦略](development/testing.md) | Current。テストの責務、追加・削除、Mock・Fixture、Coverageの判断基準 |
 | Codexの並列開発 | [Git worktreeによる並列開発](development/codex-parallel-workflow.md) | Current。root `AGENTS.md` のMandatory Rulesを優先 |
