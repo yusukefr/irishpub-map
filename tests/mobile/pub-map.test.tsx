@@ -4,12 +4,25 @@ import type { Pub } from "@irishpub-map/shared";
 import { PubMap } from "../../apps/mobile/app/pub-map";
 import { toPubFeatureCollection } from "../../apps/mobile/app/pub-map-data";
 
+const maplibreProps = vi.hoisted(() => ({
+  cameraInitialViewState: undefined as unknown,
+  geoJsonData: undefined as unknown,
+}));
+
 vi.mock("@maplibre/maplibre-react-native", async () => {
   const React = await import("react");
   return {
-    Camera: () => null,
-    GeoJSONSource: ({ children, onPress }: React.PropsWithChildren<{ onPress: (event: unknown) => void }>) =>
-      React.createElement(
+    Camera: ({ initialViewState }: { initialViewState: unknown }) => {
+      maplibreProps.cameraInitialViewState = initialViewState;
+      return null;
+    },
+    GeoJSONSource: ({
+      children,
+      onPress,
+      data,
+    }: React.PropsWithChildren<{ onPress: (event: unknown) => void; data: unknown }>) => {
+      maplibreProps.geoJsonData = data;
+      return React.createElement(
         "div",
         null,
         React.createElement("button", {
@@ -17,7 +30,8 @@ vi.mock("@maplibre/maplibre-react-native", async () => {
           onClick: () => onPress({ nativeEvent: { features: [{ properties: { pubId: "pub-1" } }] } }),
         }),
         children,
-      ),
+      );
+    },
     Layer: () => null,
     Map: ({ children, onDidFailLoadingMap, attribution }: React.PropsWithChildren<Record<string, unknown>>) =>
       React.createElement(
@@ -80,14 +94,24 @@ describe("Mobile pub map", () => {
 
   it("shows an empty state, selects a Pub, and offers a retry after map failure", () => {
     const onSelectPub = vi.fn();
+    const pubs = [pub];
     const { rerender } = render(
       <PubMap pubs={[]} dataReady onSelectPub={onSelectPub} locale="ja" selectedPubId={null} />,
     );
     expect(screen.getByText("地図に表示できるパブはありません。")).toBeTruthy();
 
-    rerender(<PubMap pubs={[pub]} dataReady onSelectPub={onSelectPub} locale="ja" selectedPubId={null} />);
+    rerender(<PubMap pubs={pubs} dataReady onSelectPub={onSelectPub} locale="ja" selectedPubId={null} />);
     expect(screen.getByText("1 件のパブ")).toBeTruthy();
     expect(screen.getByText("simulate map failure").parentElement?.getAttribute("data-attribution")).toBe("true");
+    const firstFeatureCollection = maplibreProps.geoJsonData;
+    expect(maplibreProps.cameraInitialViewState).toEqual({
+      bounds: [122, 24, 147, 46],
+      padding: { top: 16, right: 16, bottom: 16, left: 16 },
+    });
+
+    rerender(<PubMap pubs={pubs} dataReady onSelectPub={onSelectPub} locale="ja" selectedPubId={pub.id} />);
+    expect(maplibreProps.geoJsonData).toBe(firstFeatureCollection);
+
     fireEvent.click(screen.getByRole("button", { name: "" }));
     expect(onSelectPub).toHaveBeenCalledWith(pub.id);
 

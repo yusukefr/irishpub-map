@@ -1,6 +1,6 @@
 import { Camera, GeoJSONSource, Layer, Map, TransformRequestManager } from "@maplibre/maplibre-react-native";
 import type { Locale, Pub } from "@irishpub-map/shared";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import mobileAppConfig from "../app.json";
 import { toPubFeatureCollection } from "./pub-map-data";
@@ -43,6 +43,7 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub }: 
   const [mapFailed, setMapFailed] = useState(false);
   const [mapAttempt, setMapAttempt] = useState(0);
   const selectedPub = pubs.find((pub) => pub.id === selectedPubId);
+  const features = useMemo(() => toPubFeatureCollection(pubs), [pubs]);
   const labels = copy[locale];
 
   return (
@@ -74,10 +75,12 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub }: 
           onDidFailLoadingMap={() => setMapFailed(true)}
           style={{ flex: 1 }}
         >
-          <Camera initialViewState={{ center: [138, 37], zoom: 4.5 }} />
+          <Camera
+            initialViewState={{ bounds: [122, 24, 147, 46], padding: { top: 16, right: 16, bottom: 16, left: 16 } }}
+          />
           <GeoJSONSource
             id="pubs"
-            data={toPubFeatureCollection(pubs)}
+            data={features}
             onPress={(event) => {
               const pubId = event.nativeEvent.features[0]?.properties?.pubId;
               if (typeof pubId === "string") onSelectPub(pubId);
