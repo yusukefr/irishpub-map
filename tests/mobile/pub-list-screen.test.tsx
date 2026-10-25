@@ -6,6 +6,31 @@ import HomeScreen, { resolveInitialLocale } from "../../apps/mobile/app/index";
 const { getPubs } = vi.hoisted(() => ({ getPubs: vi.fn() }));
 
 vi.mock("@irishpub-map/api-client", () => ({ getPubs }));
+vi.mock("../../apps/mobile/app/pub-map", async () => {
+  const React = await import("react");
+  return {
+    PubMap: ({
+      pubs,
+      locale,
+      selectedPubId,
+      onSelectPub,
+    }: {
+      pubs: Pub[];
+      locale: string;
+      selectedPubId: string | null;
+      onSelectPub: (pubId: string) => void;
+    }) =>
+      React.createElement(
+        "section",
+        { "aria-label": "Pub map" },
+        React.createElement("span", null, locale === "ja" ? `${pubs.length} 件のパブ` : `${pubs.length} pubs`),
+        pubs.map((item) =>
+          React.createElement("button", { key: item.id, onClick: () => onSelectPub(item.id) }, item.name),
+        ),
+        selectedPubId ? React.createElement("output", null, selectedPubId) : null,
+      ),
+  };
+});
 vi.mock("react-native", async () => {
   const React = await import("react");
   return {
@@ -78,7 +103,7 @@ describe("Mobile Pub list screen", () => {
     expect(resolveInitialLocale("en-US")).toBe("en");
   });
 
-  it("shows loading and renders the fetched Pub summary", async () => {
+  it("shows loading and renders the fetched Pub map data", async () => {
     let resolvePubs: ((pubs: Pub[]) => void) | undefined;
     getPubs.mockImplementation(() => new Promise((resolve) => (resolvePubs = resolve)));
 
@@ -88,8 +113,8 @@ describe("Mobile Pub list screen", () => {
 
     expect(await screen.findByText("1 件のパブ")).toBeTruthy();
     expect(screen.getByText("The Green Harp")).toBeTruthy();
-    expect(screen.getByText("都道府県: 東京都")).toBeTruthy();
-    expect(screen.getByText("営業状況: 営業中")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "The Green Harp" }));
+    expect(screen.getByText(pub.id)).toBeTruthy();
     expect(getPubs).toHaveBeenCalledWith(
       expect.objectContaining({ locale: "ja", baseUrl: expect.any(String), signal: expect.any(AbortSignal) }),
     );
@@ -108,7 +133,7 @@ describe("Mobile Pub list screen", () => {
       ),
     );
     expect(await screen.findByText("1 pubs")).toBeTruthy();
-    expect(screen.getByText("Status: Open")).toBeTruthy();
+    expect(screen.getByText("The Green Harp")).toBeTruthy();
   });
 
   it("does not let an aborted locale request overwrite the latest results", async () => {

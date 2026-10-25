@@ -45,14 +45,14 @@ Public Pub APIは全環境で固定Client Secret不要のRead-only APIです。�
 | 未解決事項 | 影響Mobile Issue | 対応Issue | 着手阻害 |
 | --- | --- | --- | --- |
 | SDK 58のReact 19.3.0統一後、Expo DoctorのReact重複警告は解消。SDK 58対応Development Buildでアプリ初期画面・実行時エラーを確認する | #542 | #542 | いいえ（Smoke Test継続） |
-| Tile ProviderのNative利用条件・Attribution・User-Agentを実装形態に合わせて確認し、iOS Native Buildを含む地図Smoke Testを行う必要がある | #544, #548 | #544 / #548 | Yes |
+| Native MapLibreのAndroid Development BuildとiOS Native Buildで地図表示・Attribution・通信をSmoke Testする | #544, #548 | #548 | No（EAS Buildにはユーザーの都度承認が必要） |
 | Mobileの位置情報Permission文言・Platform別挙動、外部リンク起動失敗時のUIが未実装 | #546, #547 | #546 / #547 | No |
 
 採用Version、Native Build、初期Route、OS下限は[Mobile Architecture](../architecture/mobile.md)を参照してください。SDK 58のReact / React Native依存整合は確認済みですが、SDK指定Native Buildでの実行時確認は#542に残っています。Native MapのTile Policy / User-Agent / Attributionは現在の[Map Provider方針](../operations/map-provider.md)を読み、MapLibre Native利用時に#544 / #548で再確認します。位置情報は利用者の明示操作後にForegroundで取得し、アプリサーバーやDBへ座標を保存しません。地図をその位置へ移動すると周辺Tile識別子がProviderへ送られ得ます。詳細は[Privacy文書](../operations/privacy-and-external-transmission.md)を参照してください。
 
 ## 開発と検証
 
-現在のNodeは`.nvmrc`の24系です。依存はRepository rootで`nvm use` / `npm ci`、workspace単位は`npm run <script> -w <workspace>`を使います。Mobile基盤はExpo SDK 58 / React Native 0.88 / React 19.3 / Expo Router 58を採用しています。
+現在のNodeは`.nvmrc`の24系です。依存はRepository rootで`nvm use` / `npm ci`、workspace単位は`npm run <script> -w <workspace>`を使います。Mobile基盤はExpo SDK 58 / React Native 0.88 / React 19.3 / Expo Router 58とMapLibre React Native 11.5.0を採用しています。
 
 **Androidの標準開発フローはEAS Build + Android実機 + ローカルMetro**です。`apps/mobile/eas.json`の`development`プロファイルでEASクラウドNative Buildを実行し、生成されたAPKを別操作でADBインストールします。USB接続した実機から`adb reverse tcp:8081 tcp:8081`を設定し、Repository rootから`npm run start -w apps/mobile -- --localhost`を実行します。Native依存やapp configの変更時にはDevelopment Buildを作り直し、JavaScript / TypeScriptの修正はMetroで検証します。Expo Goは使用しません。Android Emulator / ローカルGradle Buildは代替手段です。
 

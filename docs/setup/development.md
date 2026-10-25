@@ -97,7 +97,7 @@ adb reverse tcp:8081 tcp:8081
 npm run start -w apps/mobile -- --localhost
 ```
 
-スマートフォンでIrish Pub MapのDevelopment Buildを開き、表示された開発サーバーに接続します。必要ならMetro側の `a` キーで端末のアプリを開きます。初期画面で `Irish Pub Map` と `Supported locales: ja, en` が表示されること、React / Native Module関連の実行時エラーがないことを確認してください。
+スマートフォンでIrish Pub MapのDevelopment Buildを開き、表示された開発サーバーに接続します。必要ならMetro側の `a` キーで端末のアプリを開きます。Public Pub APIのデータが地図上にMarker表示されること、Markerを選択するとPub名と住所が表示されること、Attributionが操作可能な状態で見えることを確認してください。Pubが0件の場合は地図と空状態が表示され、Map styleの読込が失敗した場合は再試行できることも確認してください。
 
 JavaScript / TypeScriptだけの変更は基本的にMetro / Fast Refreshで反映できます。Native依存・Expo config plugin・PermissionなどNative設定の変更時はEAS Development Buildを作り直します。`preview`はMetro不要の内部動作確認用、`production`はストア公開向けの別プロファイルです。
 

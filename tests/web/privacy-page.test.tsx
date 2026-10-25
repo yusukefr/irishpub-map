@@ -37,7 +37,7 @@ describe("PrivacyPage", () => {
     );
     expect(screen.getByText(/irishpub-map-locale/)).toBeInTheDocument();
     expect(screen.getByText(/Vercel Web Analyticsを利用してページビュー/)).toBeInTheDocument();
-    expect(screen.getByText("最終更新日: 2026年8月21日")).toBeInTheDocument();
+    expect(screen.getByText("最終更新日: 2026年10月25日")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "プライバシーポリシー" })).toHaveAttribute("href", "/privacy");
     expect(screen.getByRole("article", { name: "プライバシーポリシー" })).toHaveAttribute("lang", "ja");
   });
