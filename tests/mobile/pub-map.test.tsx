@@ -54,8 +54,20 @@ vi.mock("react-native", async () => {
       React.createElement("button", { ...props, type: "button", onClick: onPress }, children),
     Text: ({ children, accessibilityRole, ...props }: React.ComponentProps<"span"> & { accessibilityRole?: string }) =>
       React.createElement("span", { ...props, role: accessibilityRole === "alert" ? "alert" : undefined }, children),
+    TextInput: ({
+      onChangeText,
+      accessibilityLabel,
+      ...props
+    }: React.ComponentProps<"input"> & { onChangeText?: (value: string) => void; accessibilityLabel?: string }) =>
+      React.createElement("input", {
+        ...props,
+        "aria-label": accessibilityLabel,
+        onChange: (event: React.ChangeEvent<HTMLInputElement>) => onChangeText?.(event.target.value),
+      }),
     View: ({ children, accessibilityRole, ...props }: React.ComponentProps<"div"> & { accessibilityRole?: string }) =>
       React.createElement("div", { ...props, role: accessibilityRole }, children),
+    ScrollView: ({ children, ...props }: React.PropsWithChildren<React.ComponentProps<"div">>) =>
+      React.createElement("div", props, children),
   };
 });
 
@@ -69,6 +81,21 @@ const pub: Pub = {
   tags: [],
   status: "open",
   pubType: "irish",
+};
+
+const osakaPub: Pub = {
+  ...pub,
+  id: "pub-2",
+  name: "大阪エール",
+  kana: "おおさかえーる",
+  prefecture: "大阪府",
+  city: "大阪市",
+  municipalityCode: "271004",
+  address: "Osaka",
+  latitude: 34.69,
+  longitude: 135.5,
+  tags: ["food", "live-music"],
+  tagDisplayNames: { food: "料理", "live-music": "生演奏" },
 };
 
 describe("Mobile pub map", () => {
@@ -119,5 +146,32 @@ describe("Mobile pub map", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("地図を読み込めませんでした。");
     fireEvent.click(screen.getByRole("button", { name: "地図を再読み込み" }));
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("filters markers by search, prefecture, and every selected tag without losing reset", () => {
+    render(<PubMap pubs={[pub, osakaPub]} dataReady onSelectPub={vi.fn()} locale="ja" selectedPubId={null} />);
+    const input = screen.getByRole("textbox", { name: "パブ名・読み方・地域を検索" });
+
+    fireEvent.change(input, { target: { value: "  ｵｵｻｶ  " } });
+    expect(maplibreProps.geoJsonData).toMatchObject({ features: [{ properties: { pubId: "pub-2" } }] });
+    expect(screen.getByText("1 件のパブ")).toBeTruthy();
+
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: /東京都/ }));
+    expect(maplibreProps.geoJsonData).toMatchObject({ features: [{ properties: { pubId: "pub-1" } }] });
+
+    fireEvent.click(screen.getByRole("button", { name: /東京都/ }));
+    fireEvent.click(screen.getByRole("button", { name: "料理" }));
+    fireEvent.click(screen.getByRole("button", { name: "生演奏" }));
+    expect(maplibreProps.geoJsonData).toMatchObject({ features: [{ properties: { pubId: "pub-2" } }] });
+
+    fireEvent.click(screen.getByRole("button", { name: /東京都/ }));
+    expect(maplibreProps.geoJsonData).toEqual({ type: "FeatureCollection", features: [] });
+    expect(screen.getByText("条件に一致するパブはありません。")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "検索条件をすべて解除" }));
+    expect(maplibreProps.geoJsonData).toMatchObject({
+      features: [{ properties: { pubId: "pub-2" } }, { properties: { pubId: "pub-1" } }],
+    });
   });
 });
