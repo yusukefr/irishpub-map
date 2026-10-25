@@ -7,6 +7,7 @@ const migrationDir = `migrations/app/${baselineName}`;
 const operations = JSON.parse(readFileSync(`${migrationDir}/ops.json`, "utf8")) as Array<{
   id: string;
   execute: Array<{ sql: string }>;
+  postcheck: Array<{ sql: string }>;
 }>;
 const migration = readFileSync(`${migrationDir}/migration.ts`, "utf8");
 const referenceSeed = readFileSync("db/prisma/seed-reference-data.sql", "utf8");
@@ -34,6 +35,27 @@ describe("Prisma 8 baseline", () => {
 
     expect(manifest.from).toBeNull();
     expect(manifest.to).toBe(contract.storage.storageHash);
+  });
+
+  it("retains DESC index columns and the deferred quiz answer foreign key", () => {
+    const operationById = new Map(operations.map((operation) => [operation.id, operation]));
+    const expectedIndexes = [
+      ["index.automation_audit_logs.automation_audit_logs_created_at_idx", '"created_at" DESC'],
+      ["index.calendar_events.calendar_events_admin_list_idx", '"updated_at" DESC, "id" ASC'],
+      ["index.media_assets.media_assets_admin_list_idx", '"created_at" DESC, "id" DESC'],
+      ["index.quiz_questions.quiz_questions_admin_list_idx", '"updated_at" DESC, "id" ASC'],
+    ] as const;
+
+    for (const [id, columns] of expectedIndexes) {
+      const operation = operationById.get(id);
+      expect(operation?.execute[0]?.sql).toContain(columns);
+      expect(operation?.postcheck[0]?.sql).toContain("pg_get_indexdef");
+    }
+
+    const foreignKey = operationById.get("foreignKey.quiz_questions.quiz_questions_correct_choice_fkey");
+    expect(foreignKey?.execute[0]?.sql).toContain("DEFERRABLE INITIALLY DEFERRED");
+    expect(foreignKey?.postcheck[0]?.sql).toContain("condeferrable");
+    expect(foreignKey?.postcheck[0]?.sql).toContain("condeferred");
   });
 
   it("seeds only reproducible reference rows and requires municipality source data", () => {

@@ -1,6 +1,6 @@
 # Prisma Contract schema照合記録
 
-この文書はIssue #637のContract確認記録です。Neon Productionの`main` Branchに対する読み取り専用Schema introspection結果を、2026-10-17時点の[生成済みSchema](../generated/database-schema.md)および固定版Prisma 8 RCのContract artifactと照合しました。Neon MCPの`describe_table_schema`を全Application tableに実行し、`preview/ai/issue-636`との差分Schemaも確認しました（差分なし）。Production DBへの書込みはありません。
+この文書はIssue #637のContract確認記録です。Neon Productionの`main` Branchに対する読み取り専用Schema introspection結果を、2026-10-17時点の[生成済みSchema](../generated/database-schema.md)および固定版Prisma 8 RCのContract artifactと照合しました。Neon MCPの`describe_table_schema`を全Application tableに実行し、`preview/ai/issue-636`との差分Schemaも確認しました（差分なし）。2026-10-25にはProductionを変更せず、期限付きschema-only Branchで`db sign`、`db verify`、`migration status`を確認し、別の空DBへBaselineを適用して再度`db verify`しました。
 
 ## 対象範囲と再現方針
 
@@ -47,11 +47,11 @@ Contract artifactは24 table / 139 columns / 24 PK / 10 UNIQUE / 22 FK / 60 CHEC
 
 | Neon物理Schema | Contractでの扱い | 次の対応 |
 | --- | --- | --- |
-| `automation_audit_logs_created_at_idx`, `calendar_events_admin_list_idx`, `media_assets_admin_list_idx`, `quiz_questions_admin_list_idx`のDESC列順 | 各Indexと列は保持。Prisma 8 RC.17の`@@index` PSL parserでDESC sort記法が拒否されるため順序方向はContract artifactに保持されていない。 | Baseline SQLでDESC定義を保持し、RC更新時にContractで再表現できるか確認する。 |
-| `quiz_questions_correct_choice_fkey`の`DEFERRABLE INITIALLY DEFERRED` | FKと列・参照先・名前は保持。遅延可能属性はPSL Relationで宣言できない。 | Baseline SQLにDEFERRABLE属性を残し、後続baseline検証でカタログ定義まで照合する。 |
+| `automation_audit_logs_created_at_idx`, `calendar_events_admin_list_idx`, `media_assets_admin_list_idx`, `quiz_questions_admin_list_idx`のDESC列順 | 各Indexと列は保持。Prisma 8 RC.17の`@@index` PSL parserでDESC sort記法が拒否されるため順序方向はContract artifactに保持されていない。 | Baselineの`rawSql` operationでProductionと同じDESC定義を作成し、`pg_get_indexdef` postcheckと空DBのCatalog照合で確認済み。Contractで表現可能になるまでは、これらのIndexを含むMigrationでは属性を手動維持する。 |
+| `quiz_questions_correct_choice_fkey`の`DEFERRABLE INITIALLY DEFERRED` | FKと列・参照先・名前は保持。遅延可能属性はPSL Relationで宣言できない。 | Baselineの`rawSql` operationで遅延属性を作成し、`pg_constraint` postcheckとQuestion→Choiceのtransaction試験で確認済み。Contractで表現可能になるまでは、当該FKを含むMigrationで属性を手動維持する。 |
 | 7つの部分Index | 全て`where` predicateをContractへ保持。 | Baseline emit / migration planningで定義差分がないことを別Issueで検証する。 |
 | CHECK 60件 | 60件全て名前・式をContractへ保持。 | Baseline SQL比較でPostgresが再表示する式と照合する。 |
 | `schema_migrations`旧Ledger | 意図的にContract対象外。現在のテーブル・行は変更しない。 | 維持する。Baselineから再作成しない。 |
 | `public.show_db_tree()` | Neon作成のSchema閲覧補助関数でApplication Contract対象外。 | 既存環境に保持し、空DB Baselineでは再現対象にしない。 |
 
-Expression Indexはありません。Productionの現在Schema・履歴・データは変更していません。Baseline用Contractは上記二つの表現差分を既知のSQL補完事項として引き継ぎます。Productionへの`db sign`・migration・Contract marker書込みは行いません。
+Expression Indexはありません。Productionの現在Schema・履歴・データは変更していません。隔離Sign DBとBaseline適用後の空DBはContractに一致し、特殊な4 Indexと遅延FKの定義もProductionと一致しました。Productionへの`db sign`・migration・Contract marker書込みは行いません。

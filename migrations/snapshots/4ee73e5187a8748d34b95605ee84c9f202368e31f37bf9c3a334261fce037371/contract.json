@@ -38,10 +38,7 @@
           "AutomationAuditLogs": {
             "fields": {
               "action": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
-              "created_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              },
+              "created_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } },
               "id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
               "method": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "path": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
@@ -73,14 +70,8 @@
           },
           "AutomationIdempotencyKeys": {
             "fields": {
-              "created_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              },
-              "expires_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              },
+              "created_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } },
+              "expires_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } },
               "id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
               "key_hash": {
                 "nullable": false,
@@ -124,10 +115,7 @@
               "event_id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
               "locale": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "name": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
-              "updated_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              }
+              "updated_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } }
             },
             "relations": {
               "calendar_event_translations_event_id": {
@@ -157,10 +145,7 @@
                 "type": { "codecId": "pg/text@1", "kind": "scalar" }
               },
               "category": { "nullable": true, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
-              "created_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              },
+              "created_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } },
               "date_rule": { "nullable": true, "type": { "codecId": "pg/jsonb@1", "kind": "scalar" } },
               "featured": { "nullable": false, "type": { "codecId": "pg/bool@1", "kind": "scalar" } },
               "id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
@@ -168,10 +153,7 @@
               "is_published": { "nullable": false, "type": { "codecId": "pg/bool@1", "kind": "scalar" } },
               "sort_order": { "nullable": false, "type": { "codecId": "pg/int4@1", "kind": "scalar" } },
               "source": { "nullable": true, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
-              "updated_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              }
+              "updated_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } }
             },
             "relations": {
               "CalendarEventTranslationsByCalendarEventTranslationsEventId": {
@@ -201,23 +183,17 @@
           "ContentEntries": {
             "fields": {
               "category": { "nullable": true, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
-              "created_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              },
+              "created_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } },
               "hero_image_asset_id": { "nullable": true, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
               "id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
               "kind": { "nullable": true, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "published_at": {
                 "nullable": true,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
+                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" }
               },
               "slug": { "nullable": true, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "status": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
-              "updated_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              }
+              "updated_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } }
             },
             "relations": {
               "ContentTranslationsByContentTranslationsContentId": {
@@ -262,10 +238,7 @@
               "locale": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "summary": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "title": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
-              "updated_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              }
+              "updated_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } }
             },
             "relations": {
               "content_translations_content_id": {
@@ -292,10 +265,7 @@
           },
           "MediaAssets": {
             "fields": {
-              "created_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              },
+              "created_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } },
               "file_size": { "nullable": false, "type": { "codecId": "pg/int4@1", "kind": "scalar" } },
               "height": { "nullable": false, "type": { "codecId": "pg/int4@1", "kind": "scalar" } },
               "id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
@@ -512,10 +482,7 @@
               "name": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "name_reading": { "nullable": true, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "pub_id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
-              "updated_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              }
+              "updated_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } }
             },
             "relations": {
               "pub_translations_pub_id": {
@@ -597,10 +564,7 @@
               "prefecture_code": { "nullable": true, "type": { "codecId": "pg/int2@1", "kind": "scalar" } },
               "pub_type_code": { "nullable": true, "type": { "codecId": "pg/int2@1", "kind": "scalar" } },
               "status_code": { "nullable": true, "type": { "codecId": "pg/int2@1", "kind": "scalar" } },
-              "updated_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              },
+              "updated_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } },
               "website_url": { "nullable": true, "type": { "codecId": "pg/text@1", "kind": "scalar" } }
             },
             "relations": {
@@ -664,10 +628,7 @@
               "label": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "locale": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "question_id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
-              "updated_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              }
+              "updated_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } }
             },
             "relations": {
               "quiz_choice_translations_choice": {
@@ -691,17 +652,11 @@
           },
           "QuizChoices": {
             "fields": {
-              "created_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              },
+              "created_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } },
               "id": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "question_id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
               "sort_order": { "nullable": false, "type": { "codecId": "pg/int4@1", "kind": "scalar" } },
-              "updated_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              }
+              "updated_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } }
             },
             "relations": {
               "QuizChoiceTranslationsByQuizChoiceTranslationsChoice": {
@@ -742,10 +697,7 @@
               "question": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "question_id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
               "source_label": { "nullable": false, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
-              "updated_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              }
+              "updated_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } }
             },
             "relations": {
               "quiz_question_translations_question_id": {
@@ -774,10 +726,7 @@
             "fields": {
               "category": { "nullable": true, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "correct_choice_id": { "nullable": true, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
-              "created_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              },
+              "created_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } },
               "id": { "nullable": false, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
               "image_asset_id": { "nullable": true, "type": { "codecId": "pg/uuid@1", "kind": "scalar" } },
               "is_published": { "nullable": false, "type": { "codecId": "pg/bool@1", "kind": "scalar" } },
@@ -785,10 +734,7 @@
               "source_url": { "nullable": true, "type": { "codecId": "pg/text@1", "kind": "scalar" } },
               "special_day": { "nullable": true, "type": { "codecId": "pg/int2@1", "kind": "scalar" } },
               "special_month": { "nullable": true, "type": { "codecId": "pg/int2@1", "kind": "scalar" } },
-              "updated_at": {
-                "nullable": false,
-                "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar", "typeParams": { "precision": 6 } }
-              }
+              "updated_at": { "nullable": false, "type": { "codecId": "pg/timestamptz-temporal@1", "kind": "scalar" } }
             },
             "relations": {
               "QuizChoicesByQuizChoicesQuestionId": {
@@ -949,8 +895,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 },
                 "id": { "codecId": "pg/uuid@1", "dataType": "pg/uuid", "nullable": false },
                 "method": { "codecId": "pg/text@1", "dataType": "pg/text", "nullable": false },
@@ -995,15 +940,13 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 },
                 "expires_at": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "(now() + '24:00:00'::interval)", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 },
                 "id": { "codecId": "pg/uuid@1", "dataType": "pg/uuid", "nullable": false },
                 "key_hash": {
@@ -1059,8 +1002,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -1105,8 +1047,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 },
                 "date_rule": { "codecId": "pg/jsonb@1", "dataType": "pg/jsonb", "nullable": true },
                 "featured": {
@@ -1134,8 +1075,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 }
               },
               "foreignKeys": [],
@@ -1177,8 +1117,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 },
                 "hero_image_asset_id": { "codecId": "pg/uuid@1", "dataType": "pg/uuid", "nullable": true },
                 "id": { "codecId": "pg/uuid@1", "dataType": "pg/uuid", "nullable": false },
@@ -1186,8 +1125,7 @@
                 "published_at": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
-                  "nullable": true,
-                  "typeParams": { "precision": 6 }
+                  "nullable": true
                 },
                 "slug": { "codecId": "pg/text@1", "dataType": "pg/text", "nullable": true },
                 "status": { "codecId": "pg/text@1", "dataType": "pg/text", "nullable": false },
@@ -1195,8 +1133,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -1259,8 +1196,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -1302,8 +1238,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 },
                 "file_size": { "codecId": "pg/int4@1", "dataType": "pg/int4", "nullable": false },
                 "height": { "codecId": "pg/int4@1", "dataType": "pg/int4", "nullable": false },
@@ -1509,8 +1444,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -1616,8 +1550,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 },
                 "website_url": { "codecId": "pg/text@1", "dataType": "pg/text", "nullable": true }
               },
@@ -1668,8 +1601,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -1701,8 +1633,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 },
                 "id": { "codecId": "pg/text@1", "dataType": "pg/text", "nullable": false },
                 "question_id": { "codecId": "pg/uuid@1", "dataType": "pg/uuid", "nullable": false },
@@ -1711,8 +1642,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -1764,8 +1694,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -1799,7 +1728,7 @@
                   "name": "quiz_questions_source_url_check"
                 },
                 {
-                  "expression": "(((special_month IS NULL) = (special_day IS NULL)) AND ((special_month IS NULL) OR (((special_month >= 1) AND (special_month <= 12)) AND ((special_day >= 1) AND (special_day <=\nCASE\n    WHEN (special_month = 2) THEN 29\n    WHEN (special_month = ANY (ARRAY[4, 6, 9, 11])) THEN 30\n    ELSE 31\nEND)))))",
+                  "expression": "(((special_month IS NULL) = (special_day IS NULL)) AND ((special_month IS NULL) OR ((special_month >= 1) AND (special_month <= 12) AND ((special_day >= 1) AND (special_day <=\nCASE\n    WHEN (special_month = 2) THEN 29\n    WHEN (special_month = ANY (ARRAY[4, 6, 9, 11])) THEN 30\n    ELSE 31\nEND)))))",
                   "name": "quiz_questions_special_date_check"
                 }
               ],
@@ -1810,8 +1739,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 },
                 "id": { "codecId": "pg/uuid@1", "dataType": "pg/uuid", "nullable": false },
                 "image_asset_id": { "codecId": "pg/uuid@1", "dataType": "pg/uuid", "nullable": true },
@@ -1829,8 +1757,7 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
                   "default": { "expression": "now()", "kind": "function" },
-                  "nullable": false,
-                  "typeParams": { "precision": 6 }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -1927,7 +1854,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "f8338fe226645fd857a00cc72e1618763f115b19e4dfc6e70714acbbde9d9926"
+    "storageHash": "4ee73e5187a8748d34b95605ee84c9f202368e31f37bf9c3a334261fce037371"
   },
   "target": "postgres",
   "targetFamily": "sql"

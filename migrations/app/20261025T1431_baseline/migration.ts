@@ -1,7 +1,94 @@
 #!/usr/bin/env -S node
-import type { Contract as End } from "../../snapshots/f8338fe226645fd857a00cc72e1618763f115b19e4dfc6e70714acbbde9d9926/contract";
-import endContract from "../../snapshots/f8338fe226645fd857a00cc72e1618763f115b19e4dfc6e70714acbbde9d9926/contract.json" with { type: "json" };
-import { Migration, MigrationCLI, checkExpression, col, fn, lit, primaryKey } from "@prisma/orm-postgres/migration";
+import type { Contract as End } from "../../snapshots/4ee73e5187a8748d34b95605ee84c9f202368e31f37bf9c3a334261fce037371/contract";
+import endContract from "../../snapshots/4ee73e5187a8748d34b95605ee84c9f202368e31f37bf9c3a334261fce037371/contract.json" with { type: "json" };
+import {
+  Migration,
+  MigrationCLI,
+  checkExpression,
+  col,
+  fn,
+  lit,
+  primaryKey,
+  rawSql,
+} from "@prisma/orm-postgres/migration";
+
+const createDescendingIndex = ({
+  table,
+  name,
+  columns,
+  expectedDefinition,
+}: {
+  table: string;
+  name: string;
+  columns: string;
+  expectedDefinition: string;
+}) =>
+  rawSql({
+    id: `index.${table}.${name}`,
+    label: `Create index \"${name}\" on \"${table}\"`,
+    operationClass: "additive",
+    target: {
+      id: "postgres",
+      details: { schema: "public", objectType: "index", name, table },
+    },
+    precheck: [
+      {
+        description: `ensure index \"${name}\" does not exist`,
+        sql: 'SELECT (to_regclass($1)) IS NULL AS \"result\"',
+        params: [`\"public\".\"${name}\"`],
+      },
+    ],
+    execute: [
+      {
+        description: `create index \"${name}\"`,
+        sql: `CREATE INDEX \"${name}\" ON \"public\".\"${table}\" (${columns})`,
+        params: [],
+      },
+    ],
+    postcheck: [
+      {
+        description: `verify index \"${name}\" has its expected definition`,
+        sql: 'SELECT COALESCE((SELECT pg_get_indexdef(to_regclass($1)::oid) = $2), FALSE) AS \"result\"',
+        params: [`\"public\".\"${name}\"`, expectedDefinition],
+      },
+    ],
+  });
+
+const createDeferredCorrectChoiceForeignKey = () =>
+  rawSql({
+    id: "foreignKey.quiz_questions.quiz_questions_correct_choice_fkey",
+    label: 'Add deferred foreign key \"quiz_questions_correct_choice_fkey\" on \"quiz_questions\"',
+    operationClass: "additive",
+    target: {
+      id: "postgres",
+      details: {
+        schema: "public",
+        objectType: "foreignKey",
+        name: "quiz_questions_correct_choice_fkey",
+        table: "quiz_questions",
+      },
+    },
+    precheck: [
+      {
+        description: 'ensure FK \"quiz_questions_correct_choice_fkey\" does not exist',
+        sql: 'SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"',
+        params: ["quiz_questions_correct_choice_fkey", "public", '\"public\".\"quiz_questions\"'],
+      },
+    ],
+    execute: [
+      {
+        description: 'add deferred FK \"quiz_questions_correct_choice_fkey\"',
+        sql: 'ALTER TABLE \"public\".\"quiz_questions\"\nADD CONSTRAINT \"quiz_questions_correct_choice_fkey\"\nFOREIGN KEY (\"id\", \"correct_choice_id\")\nREFERENCES \"public\".\"quiz_choices\" (\"question_id\", \"id\")\nDEFERRABLE INITIALLY DEFERRED',
+      },
+    ],
+    postcheck: [
+      {
+        description: 'verify FK \"quiz_questions_correct_choice_fkey\" is initially deferred',
+        sql: 'SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"condeferrable\" AND \"c\".\"condeferred\")) AS \"result\"',
+        params: ["quiz_questions_correct_choice_fkey", "public", '\"public\".\"quiz_questions\"'],
+      },
+    ],
+  });
 
 export default class M extends Migration<never, End> {
   override readonly endContractJson = endContract;
@@ -14,10 +101,10 @@ export default class M extends Migration<never, End> {
         table: "automation_audit_logs",
         columns: [
           col("action", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
-          col("created_at", "timestamptz(6)", {
+          col("created_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
           col("id", "uuid", { notNull: true, codecRef: { codecId: "pg/uuid@1" } }),
           col("method", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
@@ -50,15 +137,15 @@ export default class M extends Migration<never, End> {
         schema: "public",
         table: "automation_idempotency_keys",
         columns: [
-          col("created_at", "timestamptz(6)", {
+          col("created_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
-          col("expires_at", "timestamptz(6)", {
+          col("expires_at", "timestamptz", {
             notNull: true,
             default: fn("(now() + '24:00:00'::interval)"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
           col("id", "uuid", { notNull: true, codecRef: { codecId: "pg/uuid@1" } }),
           col("key_hash", "character(64)", {
@@ -105,10 +192,10 @@ export default class M extends Migration<never, End> {
           col("event_id", "uuid", { notNull: true, codecRef: { codecId: "pg/uuid@1" } }),
           col("locale", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
           col("name", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
-          col("updated_at", "timestamptz(6)", {
+          col("updated_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
         ],
         constraints: [
@@ -126,10 +213,10 @@ export default class M extends Migration<never, End> {
             codecRef: { codecId: "pg/text@1", many: true },
           }),
           col("category", "text", { codecRef: { codecId: "pg/text@1" } }),
-          col("created_at", "timestamptz(6)", {
+          col("created_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
           col("date_rule", "jsonb", { codecRef: { codecId: "pg/jsonb@1" } }),
           col("featured", "bool", {
@@ -150,10 +237,10 @@ export default class M extends Migration<never, End> {
           }),
           col("sort_order", "int4", { notNull: true, codecRef: { codecId: "pg/int4@1" } }),
           col("source", "text", { codecRef: { codecId: "pg/text@1" } }),
-          col("updated_at", "timestamptz(6)", {
+          col("updated_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
         ],
         constraints: [
@@ -174,23 +261,23 @@ export default class M extends Migration<never, End> {
         table: "content_entries",
         columns: [
           col("category", "text", { codecRef: { codecId: "pg/text@1" } }),
-          col("created_at", "timestamptz(6)", {
+          col("created_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
           col("hero_image_asset_id", "uuid", { codecRef: { codecId: "pg/uuid@1" } }),
           col("id", "uuid", { notNull: true, codecRef: { codecId: "pg/uuid@1" } }),
           col("kind", "text", { codecRef: { codecId: "pg/text@1" } }),
-          col("published_at", "timestamptz(6)", {
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+          col("published_at", "timestamptz", {
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
           col("slug", "text", { codecRef: { codecId: "pg/text@1" } }),
           col("status", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
-          col("updated_at", "timestamptz(6)", {
+          col("updated_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
         ],
         constraints: [
@@ -224,10 +311,10 @@ export default class M extends Migration<never, End> {
           col("locale", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
           col("summary", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
           col("title", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
-          col("updated_at", "timestamptz(6)", {
+          col("updated_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
         ],
         constraints: [
@@ -244,10 +331,10 @@ export default class M extends Migration<never, End> {
         schema: "public",
         table: "media_assets",
         columns: [
-          col("created_at", "timestamptz(6)", {
+          col("created_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
           col("file_size", "int4", { notNull: true, codecRef: { codecId: "pg/int4@1" } }),
           col("height", "int4", { notNull: true, codecRef: { codecId: "pg/int4@1" } }),
@@ -374,10 +461,10 @@ export default class M extends Migration<never, End> {
           col("name", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
           col("name_reading", "text", { codecRef: { codecId: "pg/text@1" } }),
           col("pub_id", "uuid", { notNull: true, codecRef: { codecId: "pg/uuid@1" } }),
-          col("updated_at", "timestamptz(6)", {
+          col("updated_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
         ],
         constraints: [
@@ -438,10 +525,10 @@ export default class M extends Migration<never, End> {
           col("prefecture_code", "int2", { codecRef: { codecId: "pg/int2@1" } }),
           col("pub_type_code", "int2", { codecRef: { codecId: "pg/int2@1" } }),
           col("status_code", "int2", { codecRef: { codecId: "pg/int2@1" } }),
-          col("updated_at", "timestamptz(6)", {
+          col("updated_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
           col("website_url", "text", { codecRef: { codecId: "pg/text@1" } }),
         ],
@@ -477,10 +564,10 @@ export default class M extends Migration<never, End> {
           col("label", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
           col("locale", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
           col("question_id", "uuid", { notNull: true, codecRef: { codecId: "pg/uuid@1" } }),
-          col("updated_at", "timestamptz(6)", {
+          col("updated_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
         ],
         constraints: [
@@ -494,18 +581,18 @@ export default class M extends Migration<never, End> {
         schema: "public",
         table: "quiz_choices",
         columns: [
-          col("created_at", "timestamptz(6)", {
+          col("created_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
           col("id", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
           col("question_id", "uuid", { notNull: true, codecRef: { codecId: "pg/uuid@1" } }),
           col("sort_order", "int4", { notNull: true, codecRef: { codecId: "pg/int4@1" } }),
-          col("updated_at", "timestamptz(6)", {
+          col("updated_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
         ],
         constraints: [
@@ -533,10 +620,10 @@ export default class M extends Migration<never, End> {
           col("question", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
           col("question_id", "uuid", { notNull: true, codecRef: { codecId: "pg/uuid@1" } }),
           col("source_label", "text", { notNull: true, codecRef: { codecId: "pg/text@1" } }),
-          col("updated_at", "timestamptz(6)", {
+          col("updated_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
         ],
         constraints: [
@@ -555,10 +642,10 @@ export default class M extends Migration<never, End> {
         columns: [
           col("category", "text", { codecRef: { codecId: "pg/text@1" } }),
           col("correct_choice_id", "text", { codecRef: { codecId: "pg/text@1" } }),
-          col("created_at", "timestamptz(6)", {
+          col("created_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
           col("id", "uuid", { notNull: true, codecRef: { codecId: "pg/uuid@1" } }),
           col("image_asset_id", "uuid", { codecRef: { codecId: "pg/uuid@1" } }),
@@ -571,10 +658,10 @@ export default class M extends Migration<never, End> {
           col("source_url", "text", { codecRef: { codecId: "pg/text@1" } }),
           col("special_day", "int2", { codecRef: { codecId: "pg/int2@1" } }),
           col("special_month", "int2", { codecRef: { codecId: "pg/int2@1" } }),
-          col("updated_at", "timestamptz(6)", {
+          col("updated_at", "timestamptz", {
             notNull: true,
             default: fn("now()"),
-            codecRef: { codecId: "pg/timestamptz-temporal@1", typeParams: { precision: 6 } },
+            codecRef: { codecId: "pg/timestamptz-temporal@1" },
           }),
         ],
         constraints: [
@@ -590,7 +677,7 @@ export default class M extends Migration<never, End> {
           ),
           checkExpression(
             "quiz_questions_special_date_check",
-            "(((special_month IS NULL) = (special_day IS NULL)) AND ((special_month IS NULL) OR (((special_month >= 1) AND (special_month <= 12)) AND ((special_day >= 1) AND (special_day <=\nCASE\n    WHEN (special_month = 2) THEN 29\n    WHEN (special_month = ANY (ARRAY[4, 6, 9, 11])) THEN 30\n    ELSE 31\nEND)))))",
+            "(((special_month IS NULL) = (special_day IS NULL)) AND ((special_month IS NULL) OR ((special_month >= 1) AND (special_month <= 12) AND ((special_day >= 1) AND (special_day <=\nCASE\n    WHEN (special_month = 2) THEN 29\n    WHEN (special_month = ANY (ARRAY[4, 6, 9, 11])) THEN 30\n    ELSE 31\nEND)))))",
           ),
         ],
       }),
@@ -677,11 +764,12 @@ export default class M extends Migration<never, End> {
         constraint: "tags_key_unique",
         columns: ["key"],
       }),
-      this.createIndex({
-        schema: "public",
+      createDescendingIndex({
         table: "automation_audit_logs",
-        index: "automation_audit_logs_created_at_idx",
-        columns: ["created_at"],
+        name: "automation_audit_logs_created_at_idx",
+        columns: '\"created_at\" DESC',
+        expectedDefinition:
+          "CREATE INDEX automation_audit_logs_created_at_idx ON public.automation_audit_logs USING btree (created_at DESC)",
       }),
       this.createIndex({
         schema: "public",
@@ -702,11 +790,12 @@ export default class M extends Migration<never, End> {
         columns: ["expires_at"],
         extras: { where: "(status = 'completed'::text)" },
       }),
-      this.createIndex({
-        schema: "public",
+      createDescendingIndex({
         table: "calendar_events",
-        index: "calendar_events_admin_list_idx",
-        columns: ["updated_at", "id"],
+        name: "calendar_events_admin_list_idx",
+        columns: '\"updated_at\" DESC, \"id\" ASC',
+        expectedDefinition:
+          "CREATE INDEX calendar_events_admin_list_idx ON public.calendar_events USING btree (updated_at DESC, id)",
       }),
       this.createIndex({
         schema: "public",
@@ -734,11 +823,12 @@ export default class M extends Migration<never, End> {
         columns: ["hero_image_asset_id"],
         extras: { where: "(hero_image_asset_id IS NOT NULL)" },
       }),
-      this.createIndex({
-        schema: "public",
+      createDescendingIndex({
         table: "media_assets",
-        index: "media_assets_admin_list_idx",
-        columns: ["created_at", "id"],
+        name: "media_assets_admin_list_idx",
+        columns: '\"created_at\" DESC, \"id\" DESC',
+        expectedDefinition:
+          "CREATE INDEX media_assets_admin_list_idx ON public.media_assets USING btree (created_at DESC, id DESC)",
       }),
       this.createIndex({
         schema: "public",
@@ -770,11 +860,12 @@ export default class M extends Migration<never, End> {
         index: "pubs_status_code_idx",
         columns: ["status_code"],
       }),
-      this.createIndex({
-        schema: "public",
+      createDescendingIndex({
         table: "quiz_questions",
-        index: "quiz_questions_admin_list_idx",
-        columns: ["updated_at", "id"],
+        name: "quiz_questions_admin_list_idx",
+        columns: '\"updated_at\" DESC, \"id\" ASC',
+        expectedDefinition:
+          "CREATE INDEX quiz_questions_admin_list_idx ON public.quiz_questions USING btree (updated_at DESC, id)",
       }),
       this.createIndex({
         schema: "public",
@@ -1005,15 +1096,7 @@ export default class M extends Migration<never, End> {
           onDelete: "setNull",
         },
       }),
-      this.addForeignKey({
-        schema: "public",
-        table: "quiz_questions",
-        foreignKey: {
-          name: "quiz_questions_correct_choice_fkey",
-          columns: ["id", "correct_choice_id"],
-          references: { schema: "public", table: "quiz_choices", columns: ["question_id", "id"] },
-        },
-      }),
+      createDeferredCorrectChoiceForeignKey(),
       this.addForeignKey({
         schema: "public",
         table: "tag_translations",

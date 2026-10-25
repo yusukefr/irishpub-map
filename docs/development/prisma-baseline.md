@@ -18,7 +18,9 @@ npx prisma migration check
 
 `migration plan`はdatabaseへ接続せず、既存Migrationが空のときに現在のContractから初回Baselineを自動生成します。`migrations/app/<timestamp>_baseline/`と`migrations/snapshots/<contract-hash>/`をContractと同じ変更でcommitします。生成先が既にある場合は、同じBaselineを重複生成せず既存Migration graphを確認します。Contract変更後の再生成は新しい差分migrationを作る手順に従います。
 
-生成結果をレビューし、全24 Application table、139 columns、DEFAULT、CHECK、UNIQUE、22 foreign keys、Indexが含まれることを確認します。`schema_migrations`、店舗などの行データ、credentialが含まれていないことも確認します。Prisma 8 RCでPSLに表現できないDESC Indexのsort direction 4件と`quiz_questions_correct_choice_fkey`の`DEFERRABLE INITIALLY DEFERRED`属性は、Contract auditに記録した既知差分です。Migration適用後にPostgreSQL catalogを照合し、足りない物理属性があればBaseline SQL側へ保持します。
+生成結果をレビューし、全24 Application table、139 columns、DEFAULT、CHECK、UNIQUE、22 foreign keys、Indexが含まれることを確認します。`schema_migrations`、店舗などの行データ、credentialが含まれていないことも確認します。Prisma 8 RCのContractは4つのIndexのDESC順と`quiz_questions_correct_choice_fkey`の`DEFERRABLE INITIALLY DEFERRED`属性を表現できません。このBaselineはPrisma `rawSql` operationでそれらを作成し、Indexは`pg_get_indexdef`、外部キーは`pg_constraint.condeferrable` / `condeferred`をpostcheckで検証します。作者ファイルを編集したら、必ず`node migrations/app/<baseline-directory>/migration.ts`で再コンパイルします。`ops.json`を直接編集しません。
+
+Contractを変えて将来これらのIndex / FKへ触れるMigrationを生成するときも、現在の物理属性を維持してください。Contractの自動planだけではDESCや遅延属性を再現できないため、作者ファイルに必要なraw SQLを追加・再コンパイルし、変更後の対象Catalogを確認します。
 
 ## 既存Schemaを持つ隔離検証DB
 
@@ -61,7 +63,7 @@ code,prefecture_name,municipality_name,prefecture_kana,municipality_kana,unused_
 - CHECK constraintの名前と式
 - Indexの名前、列、並び方向、部分predicate
 
-空DBは`schema_migrations`がなくても正常です。既存DBの旧Ledger行数や値を空DBへ移植せず、運用データも移しません。Catalog差分をすべて解決してからBaselineの再現検証を完了とし、結果はIssue/PRへ件数と差分の有無だけ記録します。
+空DBは`schema_migrations`がなくても正常です。既存DBの旧Ledger行数や値を空DBへ移植せず、運用データも移しません。Quiz統合確認ではtransaction内で先に正解Choice IDを持つQuestionをINSERTし、その後ChoiceをINSERTしてtransactionをcommitできることを確認します。Catalog差分をすべて解決してからBaselineの再現検証を完了とし、結果はIssue/PRへ件数と差分の有無だけ記録します。
 
 ## 関連文書
 
