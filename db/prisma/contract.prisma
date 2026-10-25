@@ -13,7 +13,7 @@ model AutomationAuditLogs {
   action        String
   result        String
   status_code   Int
-  created_at    Timestamptz(6) @default(now())
+  created_at    Timestamptz @default(now())
 
   @@id([id], map: "automation_audit_logs_pkey")
   @@check(expression: "(resource_type = ANY (ARRAY['content'::text, 'quiz'::text, 'pub'::text, 'tag'::text]))", map: "automation_audit_logs_resource_type_check")
@@ -37,8 +37,8 @@ model AutomationIdempotencyKeys {
   status        String         @default("pending")
   status_code   Int?
   response_body Jsonb?
-  created_at    Timestamptz(6) @default(now())
-  expires_at    Timestamptz(6) @default(sql`(now() + '24:00:00'::interval)`)
+  created_at    Timestamptz @default(now())
+  expires_at    Timestamptz @default(sql`(now() + '24:00:00'::interval)`)
 
   @@id([id], map: "automation_idempotency_keys_pkey")
   @@unique([key_hash], map: "automation_idempotency_keys_key_hash_key")
@@ -53,7 +53,7 @@ model CalendarEventTranslations {
   locale                               String
   name                                 String
   description                          String
-  updated_at                           Timestamptz(6) @default(now())
+  updated_at                           Timestamptz @default(now())
   event_id                             Uuid
   calendar_event_translations_event_id CalendarEvents @relation("calendar_event_translations_event_id_fkey", fields: [event_id], references: [id], onDelete: Cascade, index: false, map: "calendar_event_translations_event_id_fkey")
 
@@ -71,8 +71,8 @@ model CalendarEvents {
   source                                                      String?
   sort_order                                                  Int
   is_published                                                Boolean                     @default(false)
-  created_at                                                  Timestamptz(6)              @default(now())
-  updated_at                                                  Timestamptz(6)              @default(now())
+  created_at                                                  Timestamptz              @default(now())
+  updated_at                                                  Timestamptz              @default(now())
   id                                                          Uuid
   CalendarEventTranslationsByCalendarEventTranslationsEventId CalendarEventTranslations[] @relation("calendar_event_translations_event_id_fkey")
 
@@ -93,9 +93,9 @@ model ContentEntries {
   slug                                              String?
   category                                          String?
   status                                            String
-  published_at                                      Timestamptz(6)?
-  created_at                                        Timestamptz(6)        @default(now())
-  updated_at                                        Timestamptz(6)        @default(now())
+  published_at                                      Timestamptz?
+  created_at                                        Timestamptz        @default(now())
+  updated_at                                        Timestamptz        @default(now())
   hero_image_asset_id                               Uuid?
   content_entries_hero_image_asset_id               MediaAssets?          @relation("content_entries_hero_image_asset_id_fkey", fields: [hero_image_asset_id], references: [id], onDelete: SetNull, index: false, map: "content_entries_hero_image_asset_id_fkey")
   ContentTranslationsByContentTranslationsContentId ContentTranslations[] @relation("content_translations_content_id_fkey")
@@ -118,7 +118,7 @@ model ContentTranslations {
   title                           String
   summary                         String
   body_markdown                   String
-  updated_at                      Timestamptz(6) @default(now())
+  updated_at                      Timestamptz @default(now())
   hero_image_alt                  String         @default(sql`''::text`)
   hero_image_caption              String         @default(sql`''::text`)
   content_translations_content_id ContentEntries @relation("content_translations_content_id_fkey", fields: [content_id], references: [id], onDelete: Cascade, index: false, map: "content_translations_content_id_fkey")
@@ -138,7 +138,7 @@ model MediaAssets {
   width                                          Int
   height                                         Int
   file_size                                      Int
-  created_at                                     Timestamptz(6)   @default(now())
+  created_at                                     Timestamptz   @default(now())
   ContentEntriesByContentEntriesHeroImageAssetId ContentEntries[] @relation("content_entries_hero_image_asset_id_fkey")
   QuizQuestionsByQuizQuestionsImageAssetId       QuizQuestions[]  @relation("quiz_questions_image_asset_id_fkey")
 
@@ -248,7 +248,7 @@ model PubTranslations {
   name                    String
   name_reading            String?
   address                 String?
-  updated_at              Timestamptz(6) @default(now())
+  updated_at              Timestamptz @default(now())
   pub_translations_pub_id Pubs           @relation("pub_translations_pub_id_fkey", fields: [pub_id], references: [id], onDelete: Cascade, index: false, map: "pub_translations_pub_id_fkey")
 
   @@id([pub_id, locale], map: "pub_translations_pkey")
@@ -290,7 +290,7 @@ model Pubs {
   website_url                           String?
   google_maps_url                       String?
   instagram_url                         String?
-  updated_at                            Timestamptz(6)     @default(now())
+  updated_at                            Timestamptz     @default(now())
   prefecture_code                       SmallInt?
   status_code                           SmallInt?
   municipality_code                     String?
@@ -320,7 +320,7 @@ model QuizChoiceTranslations {
   choice_id                       String
   locale                          String
   label                           String
-  updated_at                      Timestamptz(6) @default(now())
+  updated_at                      Timestamptz @default(now())
   question_id                     Uuid
   quiz_choice_translations_choice QuizChoices    @relation("quiz_choice_translations_choice_fkey", fields: [question_id, choice_id], references: [question_id, id], onDelete: Cascade, index: false, map: "quiz_choice_translations_choice_fkey")
 
@@ -332,8 +332,8 @@ model QuizChoiceTranslations {
 model QuizChoices {
   id                                                   String
   sort_order                                           Int
-  created_at                                           Timestamptz(6)           @default(now())
-  updated_at                                           Timestamptz(6)           @default(now())
+  created_at                                           Timestamptz           @default(now())
+  updated_at                                           Timestamptz           @default(now())
   question_id                                          Uuid
   quiz_choices_question_id                             QuizQuestions            @relation("quiz_choices_question_id_fkey", fields: [question_id], references: [id], onDelete: Cascade, index: false, map: "quiz_choices_question_id_fkey")
   QuizChoiceTranslationsByQuizChoiceTranslationsChoice QuizChoiceTranslations[] @relation("quiz_choice_translations_choice_fkey")
@@ -351,7 +351,7 @@ model QuizQuestionTranslations {
   question                               String
   explanation                            String
   source_label                           String
-  updated_at                             Timestamptz(6) @default(now())
+  updated_at                             Timestamptz @default(now())
   image_alt                              String         @default(sql`''::text`)
   image_caption                          String         @default(sql`''::text`)
   question_id                            Uuid
@@ -372,8 +372,8 @@ model QuizQuestions {
   source_url                                                   String?
   related_content_id                                           Uuid?
   is_published                                                 Boolean                    @default(false)
-  created_at                                                   Timestamptz(6)             @default(now())
-  updated_at                                                   Timestamptz(6)             @default(now())
+  created_at                                                   Timestamptz             @default(now())
+  updated_at                                                   Timestamptz             @default(now())
   image_asset_id                                               Uuid?
   id                                                           Uuid
   quiz_questions_related_content_id                            ContentEntries?            @relation("quiz_questions_related_content_id_fkey", fields: [related_content_id], references: [id], onDelete: SetNull, index: false, map: "quiz_questions_related_content_id_fkey")
@@ -386,7 +386,7 @@ model QuizQuestions {
   @@check(expression: "((category IS NULL) OR (btrim(category) <> ''::text))", map: "quiz_questions_category_check")
   @@check(expression: "((correct_choice_id IS NULL) OR (btrim(correct_choice_id) <> ''::text))", map: "quiz_questions_correct_choice_id_check")
   @@check(expression: "((source_url IS NULL) OR (btrim(source_url) <> ''::text))", map: "quiz_questions_source_url_check")
-  @@check(expression: "(((special_month IS NULL) = (special_day IS NULL)) AND ((special_month IS NULL) OR (((special_month >= 1) AND (special_month <= 12)) AND ((special_day >= 1) AND (special_day <=\nCASE\n    WHEN (special_month = 2) THEN 29\n    WHEN (special_month = ANY (ARRAY[4, 6, 9, 11])) THEN 30\n    ELSE 31\nEND)))))", map: "quiz_questions_special_date_check")
+  @@check(expression: "(((special_month IS NULL) = (special_day IS NULL)) AND ((special_month IS NULL) OR ((special_month >= 1) AND (special_month <= 12) AND ((special_day >= 1) AND (special_day <=\nCASE\n    WHEN (special_month = 2) THEN 29\n    WHEN (special_month = ANY (ARRAY[4, 6, 9, 11])) THEN 30\n    ELSE 31\nEND)))))", map: "quiz_questions_special_date_check")
   @@index([related_content_id], where: "(related_content_id IS NOT NULL)", map: "quiz_questions_related_content_id_idx")
   @@index([image_asset_id], where: "(image_asset_id IS NOT NULL)", map: "quiz_questions_image_asset_id_idx")
   @@index([id], where: "is_published", map: "quiz_questions_published_idx")
