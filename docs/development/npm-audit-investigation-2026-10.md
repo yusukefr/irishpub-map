@@ -2,6 +2,8 @@
 
 この記録はIssue #693の調査結果です。npm advisoryは更新されるため、件数と判定は記録時点のものです。Releaseや依存更新の判断では、現在のlockfileとadvisoryを再確認してください。
 
+未解消のHigh / Moderate advisoriesは、影響範囲と再評価条件を含めて後続Issue #720で継続追跡します。Issue #693はこの基準日時点の調査結果を確定するIssueです。
+
 ## 調査条件
 
 - 調査日: 2026-10-25
@@ -36,20 +38,26 @@ Moderateの推移依存package entryは、`@chevrotain/cst-dts-gen@10.0.0–10.5
 
 ## install scripts
 
-現行lockfileの `hasInstallScript` は次の6エントリーです。
+現行lockfileの `hasInstallScript` は次の6エントリーです。これはlifecycle hookの存在を示す情報で、hookの承認や実行を示すものではありません。npm 11は `allowScripts` で承認されていないdependencyのinstall scriptsを既定でskipし、対象packageを表示します（[npm install-scripts](https://docs.npmjs.com/cli/v11/commands/npm-install-scripts/)）。
 
-| Package | lockfileの役割 | 判断 |
+| Package | lockfile上のhook / 用途 | Linux CI `npm ci` で確認した状態 |
 | --- | --- | --- |
-| `agent-browser@0.36.0` | Browser automation CLI。postinstall hookあり | 開発・browser automation専用。hookがGitHub Releaseからplatform binaryを取得するため、npm registryのtarball integrityだけでは取得binaryの出所を検証しません。CIで不要な場合は許可しません。 |
-| `esbuild@0.28.2` | Build用bundler。postinstall hookあり | 対応platform用native binaryを選択するhookです。 |
-| `neon/node_modules/esbuild@0.28.1` | Neon CLI配下のBuild用bundler | 上と同種のnative binary選択hookです。 |
-| `unrs-resolver@1.12.2` | ESLint resolver。postinstall hookあり | N-API native bindingを選択するhookです。 |
-| `workerd@1.20260901.1` | Cloudflare Workers runtime tooling | platform runtime binaryを用意するhookです。 |
-| `fsevents@2.3.3` | macOS向けoptional dependency | macOSのみ対象のoptional hookです。現在のUbuntu環境では実行対象外です。 |
+| `agent-browser@0.36.0` | Browser automation CLI。postinstall hookはGitHub Releaseからplatform binaryを取得 | `npm ci` ログで未承認と表示。npm 11の既定動作によりhookはskipされ、実行されません。 |
+| `esbuild@0.28.2` | Build用bundler。postinstall hookあり | `npm ci` ログで未承認と表示。hookはskipされ、実行されません。 |
+| `neon/node_modules/esbuild@0.28.1` | Neon CLI配下のBuild用bundler | `npm ci` ログで未承認と表示。hookはskipされ、実行されません。 |
+| `unrs-resolver@1.12.2` | ESLint resolver。postinstall hookあり | `npm ci` ログで未承認と表示。hookはskipされ、実行されません。 |
+| `workerd@1.20260901.1` | Cloudflare Workers runtime tooling。postinstall hookあり | `npm ci` ログで未承認と表示。hookはskipされ、実行されません。 |
+| `fsevents@2.3.3` | macOS向けoptional dependency | optionalなmacOS対象です。Linux CIの未承認警告には含まれず、macOS環境のallowlist状態は未確認です。 |
 
-`package-lock.json` と各packageの `scripts` metadataでinstall hookの存在を確認しました。`npm install-scripts ls` は実行を試みましたが、このmanaged環境ではsandboxのcache用Git directory初期化時に権限エラーとなり、allowlistの実状態を取得できませんでした。npmの警告を抑えるためにscript許可を一括変更していません。CIで install script を許可する場合は、platformごとの必要性を確認した上で対象を限定してください。
+CIログの警告には、Linuxで未承認の5項目と各hook名が列挙されています。`npm install-scripts ls` はローカルで実行を試みましたが、このmanaged環境ではsandbox初期化の権限エラーとなりました。CIログから確認できた未承認状態とnpm既定のskip動作を記録し、script許可設定は変更していません。`fsevents` のmacOSでの承認状態はこのLinuxログからは判断できません。
 
 script metadataはlockfileの各package versionに対応するupstream package manifestと照合しました。`agent-browser@0.36.0`のhookはGitHub Releaseから実行binaryを別途取得し、`esbuild`と`unrs-resolver`のhookはplatform用native bindingを選択します。
+
+## 検証記録
+
+- PR #718のFull CIでは `npm run format:check` とMermaid syntax check（5図）が成功しました。
+- `format:docs:check` 専用Markdown format stepはPR #718のCIでskipされました。ローカル実行もsandbox初期化時の権限エラーで確認できていません。
+- 残存High / Moderate advisoriesと再評価条件は後続Issue #720で追跡します。
 
 ## 残余リスクと再評価
 
