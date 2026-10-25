@@ -4,8 +4,8 @@
       "title": "1. Information handled by this service",
       "paragraphs": [
         "This service has no user registration feature and does not ask you to enter personal information such as your name, address, telephone number, or email address.",
-        "To search for and display Irish pubs near your current location, this service obtains location information from your device only when you permit its use. The information is used only in your browser to display pubs and the map; latitude and longitude are not sent to this service's servers or stored in its database.",
-        "When displaying the map, your browser communicates directly with OpenFreeMap's servers and the CDN used for delivery. Information such as your IP address, browser and device information, access time, referrer, and request information needed to display the map may be sent to OpenFreeMap.",
+        "In the web version, this service obtains location information from your device only when you permit its use, to search for and display Irish pubs near your current location. The information is used only in your browser to display pubs and the map; latitude and longitude are not sent to this service's servers or stored in its database. The mobile app does not obtain your current location.",
+        "When displaying the map, your browser or the mobile app communicates directly with OpenFreeMap's servers and the CDN used for delivery. Information such as your IP address, browser, device and OS information, access time, and requests for the style, fonts, sprites, and tiles needed to display the map may be sent to OpenFreeMap. The mobile app sends a User-Agent that includes its name and version. Tile request URLs may reveal the approximate area and zoom level being viewed.",
         "Map data provided by OpenFreeMap uses data from OpenMapTiles and OpenStreetMap."
       ],
       "links": [
@@ -44,7 +44,7 @@
     {
       "title": "4. Information sent to external services",
       "paragraphs": [
-        "This service uses OpenFreeMap and Vercel to the extent necessary to provide and improve the service. OpenFreeMap is used to display maps, and your browser communicates with it directly when a map is displayed. Map data provided by OpenFreeMap uses data from OpenMapTiles and OpenStreetMap. Vercel is used for hosting, content delivery, security, incident investigation, and understanding usage and performance.",
+        "This service uses OpenFreeMap and Vercel to the extent necessary to provide and improve the service. OpenFreeMap is used to display maps, and your browser or the mobile app communicates with it directly when a map is displayed. Map data provided by OpenFreeMap uses data from OpenMapTiles and OpenStreetMap. Vercel is used for hosting, content delivery, security, incident investigation, and understanding usage and performance.",
         "The operator of this service does not independently obtain or store information collected by OpenFreeMap or Vercel."
       ],
       "links": [

@@ -1,12 +1,13 @@
 # 地図タイル提供元の利用方針
 
-最終確認日: 2026-08-22
+最終確認日: 2026-10-25
 
-この文書は、公開Web画面で利用する OpenFreeMap Bright ベクタースタイルについて、利用条件、帰属、外部送信の確認結果と将来の切替判断を記録します。OpenFreeMap が配信する OpenMapTiles スキーマの地図データを対象とし、OpenStreetMapデータ全般や他社サービスの利用条件を置き換えるものではありません。
+この文書は、公開Web画面とMobileアプリで利用する OpenFreeMap Bright ベクタースタイルについて、利用条件、帰属、外部送信の確認結果と将来の切替判断を記録します。OpenFreeMap が配信する OpenMapTiles スキーマの地図データを対象とし、OpenStreetMapデータ全般や他社サービスの利用条件を置き換えるものではありません。
 
 ## 現在の構成
 
 - ブラウザ上の MapLibre GL JS が、利用者の操作で可視範囲に必要なベクタータイル、フォント、スプライトを HTTPS で直接取得します。
+- Android / iOSのMapLibre Nativeも同じBright styleを使い、アプリからOpenFreeMapへHTTPSで直接要求します。要求には `IrishPubMap/<app version>` のUser-Agentを付けます。
 - スタイルURLは `https://tiles.openfreemap.org/styles/bright` です。
 - アプリサーバー、プロキシ、CDNによるタイル中継・独自キャッシュ・プリフェッチ・オフラインダウンロードは実装していません。
 - MapLibreの標準帰属コントロールに OpenFreeMap、OpenMapTiles、OpenStreetMap の必要な帰属を表示します。帰属は地図の外へ隠したり、別のUIで覆ったりしません。
@@ -16,12 +17,12 @@
 | ポリシー項目 | 実装・運用の確認結果 | 判断 |
 | --- | --- | --- |
 | 公開スタイルURL | OpenFreeMap Bright の HTTPS URL をそのまま指定している | 適合 |
-| 可視の帰属表示 | MapLibreの標準コントロールを使い、著作権・ライセンスページへ遷移できる | 適合 |
+| 可視の帰属表示 | WebとMobileのMapLibre標準コントロールを有効にし、styleが提供する帰属を表示する | 適合 |
 | Referer（Web） | Next.jsの `Referrer-Policy` を上書きしていない。ブラウザ既定のクロスオリジンReferer送信に委ねる | 適合。ただしヘッダー設定変更時に再確認 |
-| User-Agent相当の識別 | ブラウザが通常のUser-Agentを送る。サーバー・プロキシ経由のタイル要求はない | Web利用として適合。ネイティブ化やプロキシ追加時は固有UAを設定 |
+| User-Agent | Webはブラウザ標準のUser-Agent、Mobileはアプリ名とversionを含むUser-Agentを送る。OpenFreeMapの現行Termsは固有User-Agentをオフラインダウンロードの条件として明記する。アプリはオンライン表示のみでオフライン取得を行わない | 利用形態を識別でき、オフライン取得の条件にも適合 |
 | キャッシュ | ブラウザとOpenFreeMap/CDNのHTTPキャッシュを通常どおり利用する。`no-cache`系ヘッダーを付与しない | 適合 |
 | プリフェッチ・一括取得 | 可視範囲外を取得する機能、オフライン地図、タイル収集ジョブはない | 適合 |
-| 接続方式 | 利用者のブラウザがHTTP/2またはHTTP/3を選択可能なHTTPS接続を使う | ブラウザ・配信基盤に委ねる |
+| 接続方式 | WebブラウザまたはNative SDKからHTTPSで直接接続する | 適合 |
 
 OpenFreeMapの公開ベクタースタイルはベストエフォートでありSLAはありません。公開画面の通常の人間による閲覧に限る現在の小規模な利用では継続利用しますが、OpenFreeMapがアクセスを予告なく制限できることを前提にします。
 
@@ -32,9 +33,9 @@ OpenFreeMapの公開ベクタースタイルはベストエフォートであり
 - スタイルURL、MapLibreのソース設定、帰属表示、地図を覆うUIを変更する場合
 - `Referrer-Policy`、リバースプロキシ、CDN、Service Worker、HTTPヘッダーを追加・変更する場合
 - 地図の自動移動、事前読み込み、複数地点の一括表示、オフライン利用を追加する場合
-- Web以外のクライアント、サーバーサイド取得、タイル中継を追加する場合
+- Web以外のクライアント、サーバーサイド取得、タイル中継を追加する場合。NativeクライアントではUser-Agent、帰属、Privacyの記載を確認する
 
-確認では、ブラウザの開発者ツールまたは配信ログで、HTTPS URL、Refererの有無、`Cache-Control: no-cache` / `Pragma: no-cache` を既定で送っていないこと、可視範囲外の連続要求が発生しないことを確認します。
+確認では、ブラウザの開発者ツールまたはNative Network Inspectorで、HTTPS URL、WebのReferer、MobileのUser-Agent、`Cache-Control: no-cache` / `Pragma: no-cache` を既定で送っていないこと、可視範囲外の連続要求が発生しないことを確認します。DeviceでのNetwork Inspector確認はNative Buildを用意できる節目に行います。
 
 ## 切替判断と対応手順
 
@@ -43,7 +44,7 @@ OpenFreeMapの公開ベクタースタイルはベストエフォートであり
 - アクセス増加により、OpenFreeMapの容量制約・ブロック・可用性低下が事業継続リスクになる場合
 - 有償サービス、広告、寄付の導線など、OpenFreeMapが特に注意を求める提供形態へ変更する場合
 - オフライン地図、広域プリフェッチ、バックグラウンド一括取得など、OpenFreeMapの公開ベクタースタイルで許可されない要件が必要な場合
-- サーバー・CDN・ネイティブアプリ経由で、固有User-Agent、Referer、キャッシュを制御する必要がある場合
+- サーバー・CDN・ネイティブアプリ経由で、User-Agent、Referer、キャッシュを追加制御する必要がある場合
 - SLA、利用量上限、サポート、地域別配信、独自スタイルなどを契約で担保する必要がある場合
 
 切替時は以下の順に進めます。

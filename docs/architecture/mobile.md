@@ -7,7 +7,7 @@
 - **Expo / React Native**: 実装開始時点の最新Stable Expo SDKを採用し、Expo SDKが指定するReact Native / React Versionを使います。2026-10-25にExpo SDK 58 stableへ移行し、SDK 58.0.0、React Native 0.88.0、React 19.3.0、Expo Router 58.0.26を使用します。CanaryやBetaは採用せず、SDK更新時はMapLibreを含むNative依存の互換性も確認します。
 - **Expo Router**: File-based routingを採用します。RouterはExpo SDKと互換性のあるStable版を使い、独立して最新版へ上げません。Routeの初期案はMap `/`、Pub詳細 `/pub/[id]` です。
 - **Router Native依存**: `react-native-safe-area-context`、`react-native-screens`、`expo-linking`、`expo-constants`、`expo-status-bar`をMobile workspaceの直接依存として宣言し、Expo SDKに対応する版を使います。Native autolinkingとPrebuildがworkspaceの依存宣言に基づいて解決できるようにします。
-- **MapLibre React Native**: `@maplibre/maplibre-react-native` と公式Expo config pluginを使います。MapLibreはExpo Goに含まれず利用できないため、Expo GoをMobile開発環境にしません。Pluginを設定し、Nativeコードまたはapp configを変更した後はDevelopment Buildを作り直します。
+- **MapLibre React Native**: `@maplibre/maplibre-react-native` 11.5.0 と公式Expo config pluginを使います。MapLibreはExpo Goに含まれず利用できないため、Expo GoをMobile開発環境にしません。Pluginを設定し、Nativeコードまたはapp configを変更した後はDevelopment Buildを作り直します。Android / iOSはOpenFreeMap Bright styleを読み込み、GeoJSONSourceと単一Circle layerでPub Markerを描画します。初期Cameraは沖縄・小笠原から北海道までのPub分布を想定した地理範囲を、端末の地図Viewに合わせてfitします。MapLibre標準のAttributionを有効にし、OpenFreeMapへの要求にはアプリ名・versionを含むUser-Agentを付けます。
 - **OS下限**: SDK 58の公式表ではAndroid 7+、iOS 16.4+です。実装開始時のStable SDKとMapLibre Nativeの要件を照合し、より高い下限があればその値を採用します。Expo SDK、Apple、Googleの提出要件は変わるため、各Release前にも確認します。
 
 ## npm WorkspaceのVersion解決
@@ -22,7 +22,7 @@ Development Buildを標準にし、Androidを主な実装・ローカル検証Pl
 
 `apps/mobile/app.json` の `owner` / `extra.eas.projectId` で `@yf-techs/irishpub-map` を識別し、`apps/mobile/eas.json` でBuild Profileを定義します。EAS CLIはMobileアプリのディレクトリから実行します。EAS BuildのNode.jsは24.21.0、`appVersionSource`は`remote`です。`development` はDevelopment Clientと内部配布APK、`preview` はMetro不要の内部検証、`production` はストア配布向けです。Native Build、APKインストール、Metro起動は独立した操作です。具体的な手順は[ローカル開発](../setup/development.md#mobile-android-開発)を参照してください。
 
-SDK 58移行ではReact Native Strict TypeScript API、削除API、Routerの独自Navigator APIを利用していないことを確認しました。React Native 0.88の型に合わせ、空一覧Componentの値を`null`から`undefined`に変更しています。Expo Doctorの20項目中19項目が成功し、残る項目はroot `package.json` の`storybook` scriptと同名の`node_modules/.bin`項目が競合する既存警告です。RouterのWeb出力変更は本workspaceがAndroid / iOS専用でWebをBuild対象にしていないため適用範囲外です。SDK 58のAndroid Prebuildは成功しましたが、ローカルGradle `assembleDebug` はcompile途中でdaemonが消失して失敗し、Android端末も未接続のため実機確認はできていません。SDK 58のiOS Buildも未実施です。
+SDK 58移行ではReact Native Strict TypeScript API、削除API、Routerの独自Navigator APIを利用していないことを確認しました。React Native 0.88の型に合わせ、空一覧Componentの値を`null`から`undefined`に変更しています。Expo Doctorの20項目中19項目が成功し、残る項目はroot `package.json` の`storybook` scriptと同名の`node_modules/.bin`項目が競合する既存警告です。RouterのWeb出力変更は本workspaceがAndroid / iOS専用でWebをBuild対象にしていないため適用範囲外です。2026-10-25、MapLibre React Native追加後のAndroid PrebuildとローカルGradle `assembleDebug` は成功し、Debug APKを生成しました。Android端末は未接続のため実機での地図描画・通信確認は未完了です。SDK 58のiOS Buildも未実施です。
 
 JavaScript / TypeScriptのみの修正はMetroで反映でき、通常はAPKの再作成不要です。Native依存・Expo config plugin・Permission等のNative設定を変更したらEAS Development Buildを作り直します。EASアップロードへDB CredentialやServer Secretを含めず、Signing CredentialやExpo認証トークンをGitへコミットしません。
 
@@ -44,7 +44,7 @@ UI ComponentはWebとMobileで共有せず、共有するのは型や純粋ロ�
 
 ## Map Provider
 
-現行WebはMapLibre GL JSからOpenFreeMapのBright styleを利用し、地図上に帰属を表示します。MobileのTile Provider、Native利用条件、User-Agent、帰属UIはこのWeb設定だけから確定しません。MapLibre Nativeでの利用を実装するIssue #544でOpenFreeMapの現行Terms / Privacyを再確認し、必要なProvider変更とプライバシー文書の更新を行います。オフライン取得や可視範囲外の一括取得は導入しません。
+WebとMobileはMapLibreからOpenFreeMap Bright styleを利用し、MapLibre標準の帰属表示を有効にします。Mobileはアプリ名とversionを含むUser-Agentを送ります。OpenFreeMapの現行Termsで固有User-Agentの条件が明記されているのはオフラインダウンロードですが、Mobile実装もクライアントを識別できるUser-Agentを設定します。可視範囲外の一括取得やオフラインダウンロードは行いません。Native Mapの外部送信と保持情報は[プライバシー・外部送信](../operations/privacy-and-external-transmission.md)と[地図プロバイダー方針](../operations/map-provider.md)に記載します。
 
 ## 参照
 
