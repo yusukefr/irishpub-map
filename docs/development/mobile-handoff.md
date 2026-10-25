@@ -31,8 +31,8 @@ Mobile対応Issueへ着手するときの入口です。仕様本文を複製せ
 
 - `apps/web` はNext.jsのWeb UI、Route Handler、Web認証、Repositoryを担当します。React DOM、MapLibre GL JS、ブラウザAPIに依存する処理はMobileから直接再利用しません。
 - `apps/mobile` はExpo / React NativeのUI、Native地図・権限・外部アプリ連携を担当します。採用VersionやNative Buildの判断は[Mobile Architecture](../architecture/mobile.md)を参照します。
-- `packages/shared` はPlatform非依存の型・純粋ロジックを置く場所です。現在の [src/index.ts](../../packages/shared/src/index.ts) は `Pub` / `PubStatus` / `PubType`、`asPubs`、Locale定義・判定、都道府県名/コード、状態定義・変換、UUID検証などを公開しています。Pub型と `asPubs` は [pub.ts](../../packages/shared/src/pub.ts)、Localeは [locale.ts](../../packages/shared/src/locale.ts) を参照してください。
-- Sharedに公開されるAdmin用型・Validationもありますが、Public Mobile MVPで管理操作を実装する根拠にはなりません。公開Pubの取得には既存の `packages/api-client` を使い、UI翻訳辞書や検索/Filterの共通化は必要性を各Issueで判断します。Web専用処理を共有Packageへ移す前にPlatform依存を確認してください。
+- `packages/shared` はPlatform非依存の型・純粋ロジックを置く場所です。現在の [src/index.ts](../../packages/shared/src/index.ts) は `Pub` / `PubStatus` / `PubType`、`asPubs`、Locale定義・判定、都道府県名/コード、Pub検索・Filter、状態定義・変換、UUID検証などを公開しています。Pub型と `asPubs` は [pub.ts](../../packages/shared/src/pub.ts)、Localeは [locale.ts](../../packages/shared/src/locale.ts)、検索と絞り込みは [pub-search.ts](../../packages/shared/src/pub-search.ts) を参照してください。
+- Sharedに公開されるAdmin用型・Validationもありますが、Public Mobile MVPで管理操作を実装する根拠にはなりません。公開Pubの取得には既存の `packages/api-client` を使います。Web / Mobileの検索とFilterは共有Pure Functionを使い、UI翻訳辞書やComponentは共有しません。Web専用処理を共有Packageへ移す前にPlatform依存を確認してください。
 
 ## 現行 Public Pub API とセキュリティ境界
 

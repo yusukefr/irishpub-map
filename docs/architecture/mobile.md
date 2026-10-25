@@ -34,13 +34,15 @@ MapLibreなどNative依存を追加・更新した節目でiOS EAS Buildを行�
 | --- | --- |
 | `apps/web` | Next.jsのWeb UI、Route Handler、認証、Server / Repository処理。React DOMやブラウザAPIに依存する画面処理をMobileから共有しない |
 | `apps/mobile` | Expo / React Nativeの画面とNavigation、MapLibre Native、OS Permission、外部アプリ連携 |
-| `packages/shared` | Pub / Locale等のPlatform非依存型、Validation、純粋ロジック。React Native、DOM、Node専用API、DB接続を持ち込まない |
+| `packages/shared` | Pub / Locale等のPlatform非依存型、Validation、純粋ロジック（Pub検索・Filterを含む）。React Native、DOM、Node専用API、DB接続を持ち込まない |
 | Public API | WebとMobileに公開データを提供するServer側境界。Mobileは合意済みのPublic APIを呼び出す |
 | Neon | Server側の永続化先。Mobileから直接接続しない |
 
 MobileからNeonへ直接接続せず、Database URL、DB credential、Server secretをアプリへ含めません。Client bundleに固定API KeyなどのSecretを含めません。Public Pub APIは全環境で固定Client Secret不要のRead-only APIとして公開し、公開Fieldの限定、locale Validation、Query allowlistを適用します。共有Cacheは明示locale `ja` / `en` の正規Queryだけに使い、locale省略時は既定の `ja` を返してCacheしません。分散Rate Limitは導入していません。
 
 UI ComponentはWebとMobileで共有せず、共有するのは型や純粋ロジックを中心とします。Public API Clientの共有・配置はAPI Contract整理Issue #541で既存コード量とPlatform依存を見て決定します。
+
+WebとMobileのPub検索・Filterは `packages/shared/pub-search` のPure Functionを共有し、locale別に取得したPub表示名・kana・タグkeyへ同じ正規化とAND条件を適用します。Mobileの検索条件は取得済みPubに対して処理し、Filter操作でAPIを再取得しません。
 
 ## Map Provider
 

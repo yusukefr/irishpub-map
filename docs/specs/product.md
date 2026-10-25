@@ -39,6 +39,12 @@
 - トップページはHeader / Map / compact Footerで構成するMap専用のViewport Shellとし、`100dvh`を基準に地図領域を確保します。Search / Filter / 現在地操作 / 結果件数はMap上のオーバーレイ、店舗一覧はDesktopではMap横のPanel、狭いViewportではMap内のBottom Sheetで表示します。
 - `/privacy` と管理画面は通常のDocument Flowを維持し、Map専用のViewport制約を適用しません。
 
+### Android Mobile MVP
+
+- 取得済みPubを地図Markerへ表示し、店舗名・kana・都道府県・市区町村の検索、都道府県Filter、複数タグのAND Filterで表示対象を絞り込む。条件はすべてANDで組み合わせ、検索テキストは前後空白、Unicode幅、大文字小文字、ひらがな / カタカナの差を正規化する。
+- 検索・Filterは取得済みデータに対して適用し、条件変更ではAPIを再取得しない。Marker、件数、0件表示には同じ絞り込み結果を使う。
+- 条件を個別に解除でき、検索とFilterをまとめて解除する操作を提供する。データが0件の場合と条件に一致しない場合は別の空状態を表示する。
+
 ### Release情報
 
 - ProductionのVersionは成功済みProduction Deploymentに対応するGit Tag（`vX.Y.Z`）、Release日時はDeployment前にRelease Workflowが確定したJSTの分単位、Git SHAはTag対象commitを正とします。TagはProduction成功後に作成します。PR、Preview、最新Production Tagからの累積差分がdocs-onlyなどRelease対象外のみの場合は新しいRelease Versionを採番しません。
