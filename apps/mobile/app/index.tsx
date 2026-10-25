@@ -129,7 +129,7 @@ export default function HomeScreen() {
               <Text>{copy.retry}</Text>
             </Pressable>
           </View>
-        ) : null
+        ) : undefined
       }
       renderItem={({ item: pub }) => (
         <View style={{ gap: 4, paddingBottom: 12, borderBottomWidth: 1 }}>

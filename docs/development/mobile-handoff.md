@@ -44,18 +44,18 @@ Public Pub APIは全環境で固定Client Secret不要のRead-only APIです。�
 
 | 未解決事項 | 影響Mobile Issue | 対応Issue | 着手阻害 |
 | --- | --- | --- | --- |
-| Web / MobileのReact版が異なりExpo Doctorが重複を報告する。Mobile向けMetro resolverは設定済みだが、Android実機でアプリ本体の初期画面・実行時エラーを追加検証する | #542 | #542 | いいえ（Smoke Test継続） |
+| SDK 58のReact 19.3.0統一後、Expo DoctorのReact重複警告は解消。SDK 58対応Development Buildでアプリ初期画面・実行時エラーを確認する | #542 | #542 | いいえ（Smoke Test継続） |
 | Tile ProviderのNative利用条件・Attribution・User-Agentを実装形態に合わせて確認し、iOS Native Buildを含む地図Smoke Testを行う必要がある | #544, #548 | #544 / #548 | Yes |
 | Mobileの位置情報Permission文言・Platform別挙動、外部リンク起動失敗時のUIが未実装 | #546, #547 | #546 / #547 | No |
 
-採用Version、Native Build、初期Route、OS下限は[Mobile Architecture](../architecture/mobile.md)を参照してください。SDK指定Reactと既存WebのReactの解決確認は#542、Native MapのTile Policy / User-Agent / Attributionは現在の[Map Provider方針](../operations/map-provider.md)を読み、MapLibre Native利用時に#544 / #548で再確認します。位置情報は利用者の明示操作後にForegroundで取得し、アプリサーバーやDBへ座標を保存しません。地図をその位置へ移動すると周辺Tile識別子がProviderへ送られ得ます。詳細は[Privacy文書](../operations/privacy-and-external-transmission.md)を参照してください。
+採用Version、Native Build、初期Route、OS下限は[Mobile Architecture](../architecture/mobile.md)を参照してください。SDK 58のReact / React Native依存整合は確認済みですが、SDK指定Native Buildでの実行時確認は#542に残っています。Native MapのTile Policy / User-Agent / Attributionは現在の[Map Provider方針](../operations/map-provider.md)を読み、MapLibre Native利用時に#544 / #548で再確認します。位置情報は利用者の明示操作後にForegroundで取得し、アプリサーバーやDBへ座標を保存しません。地図をその位置へ移動すると周辺Tile識別子がProviderへ送られ得ます。詳細は[Privacy文書](../operations/privacy-and-external-transmission.md)を参照してください。
 
 ## 開発と検証
 
-現在のNodeは`.nvmrc`の24系です。依存はRepository rootで`nvm use` / `npm ci`、workspace単位は`npm run <script> -w <workspace>`を使います。Mobile基盤はExpo SDK 57 / React Native 0.86 / Expo Router 57を採用しています。
+現在のNodeは`.nvmrc`の24系です。依存はRepository rootで`nvm use` / `npm ci`、workspace単位は`npm run <script> -w <workspace>`を使います。Mobile基盤はExpo SDK 58 / React Native 0.88 / React 19.3 / Expo Router 58を採用しています。
 
 **Androidの標準開発フローはEAS Build + Android実機 + ローカルMetro**です。`apps/mobile/eas.json`の`development`プロファイルでEASクラウドNative Buildを実行し、生成されたAPKを別操作でADBインストールします。USB接続した実機から`adb reverse tcp:8081 tcp:8081`を設定し、Repository rootから`npm run start -w apps/mobile -- --localhost`を実行します。Native依存やapp configの変更時にはDevelopment Buildを作り直し、JavaScript / TypeScriptの修正はMetroで検証します。Expo Goは使用しません。Android Emulator / ローカルGradle Buildは代替手段です。
 
-2026-10-18時点で、EASによるAndroid Development Build成功、APK実機インストール、Expo Development Launcher起動まで確認済みです。**Irish Pub Map本体の初期画面、shared Locale、React / Native Moduleの実行時動作はまだ未検証**です。Expo DoctorのReact重複警告は構成上の既知事項ですが、Smoke Testを省略する根拠にはなりません。具体的な操作と端末接続コマンドは[ローカル開発](../setup/development.md#mobile-android-開発)を参照してください。
+2026-10-18時点ではSDK 57のEAS Android Development Build成功、APK実機インストール、Expo Development Launcher起動まで確認済みです。SDK 58移行後のAndroid Prebuildは成功しましたが、ローカルGradle `assembleDebug` はcompile途中でdaemonが消失してAPKを作れず、接続端末もありません。**SDK 58でのIrish Pub Map本体の初期画面、shared Locale、React / Native Moduleの実行時動作は未検証**です。Expo DoctorではReactの重複依存が報告されませんが、これは実機Smoke Testの代替になりません。具体的な操作と端末接続コマンドは[ローカル開発](../setup/development.md#mobile-android-開発)を参照してください。
 
 rootの`npm run lint`、`npm run typecheck`、`npm test`はMobileも含み、CIの既存Full CI経路から実行されます。Mobileの単独検証は`npm run lint -w apps/mobile`、`npm run typecheck -w apps/mobile`、`npm run test -w apps/mobile`です。Platformの画面部品を共有する前提は置かず、Pure Logicの再利用にはSharedのUnit Test、APIには契約テスト、Native画面にはComponent / Device Smoke Testを対応させます。Native Store BuildはCIで実行しません。

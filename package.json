@@ -45,7 +45,7 @@
     "@hono/node-server": "2.1.4",
     "diff": "5.2.2",
     "postcss": "8.5.29",
-    "react-native": "0.86.3",
+    "react-native": "0.88.0",
     "source-map-js": "1.2.2"
   },
   "devDependencies": {

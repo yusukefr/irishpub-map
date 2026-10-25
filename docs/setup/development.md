@@ -51,7 +51,7 @@ Next.jsアプリは`apps/web`で起動します。
 
 ## Mobile Android 開発
 
-`apps/mobile` はExpo SDK 57 / React Native 0.86 / Expo Router 57を使います。AndroidのNative BuildはEAS Build（クラウド）、動作確認はUSB接続したAndroid実機、JavaScript開発はローカルMetroを標準とします。Android Emulator / ローカルGradle Buildは代替手段です。MapLibreなどのNative Moduleを使用するためExpo GoではなくDevelopment Buildを使用します。
+`apps/mobile` はExpo SDK 58 / React Native 0.88 / Expo Router 58を使います。AndroidのNative BuildはEAS Build（クラウド）、動作確認はUSB接続したAndroid実機、JavaScript開発はローカルMetroを標準とします。Android Emulator / ローカルGradle Buildは代替手段です。MapLibreなどのNative Moduleを使用するためExpo GoではなくDevelopment Buildを使用します。
 
 Mobileは `EXPO_PUBLIC_API_BASE_URL` でPublic Pub APIのOriginを環境別に設定できます。未設定または空の場合はProduction Origin `https://irishpub-map-web.vercel.app` を使います。`EXPO_PUBLIC_*` の値はアプリBundleから利用者に見えるため、API Originなど公開値だけを設定し、Secretは入れないでください。
 

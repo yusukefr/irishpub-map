@@ -4,15 +4,15 @@
 
 ## 採用基盤
 
-- **Expo / React Native**: 実装開始時点の最新Stable Expo SDKを採用し、Expo SDKが指定するReact Native / React Versionを使います。2026-10-13の実装時点ではnpmの`latest`がExpo SDK 57.0.28で、SDK 58は`next`でした。SDK 57はReact Native 0.86、React 19.2.3を対象とするため、Mobileではその組み合わせを使います。Expo installの互換性確認後はExpo 57.0.30 / Expo Router 57.0.28を使います。CanaryやBetaは採用せず、SDK更新時はMapLibreを含むNative依存の互換性も確認します。
+- **Expo / React Native**: 実装開始時点の最新Stable Expo SDKを採用し、Expo SDKが指定するReact Native / React Versionを使います。2026-10-25にExpo SDK 58 stableへ移行し、SDK 58.0.0、React Native 0.88.0、React 19.3.0、Expo Router 58.0.26を使用します。CanaryやBetaは採用せず、SDK更新時はMapLibreを含むNative依存の互換性も確認します。
 - **Expo Router**: File-based routingを採用します。RouterはExpo SDKと互換性のあるStable版を使い、独立して最新版へ上げません。Routeの初期案はMap `/`、Pub詳細 `/pub/[id]` です。
 - **Router Native依存**: `react-native-safe-area-context`、`react-native-screens`、`expo-linking`、`expo-constants`、`expo-status-bar`をMobile workspaceの直接依存として宣言し、Expo SDKに対応する版を使います。Native autolinkingとPrebuildがworkspaceの依存宣言に基づいて解決できるようにします。
 - **MapLibre React Native**: `@maplibre/maplibre-react-native` と公式Expo config pluginを使います。MapLibreはExpo Goに含まれず利用できないため、Expo GoをMobile開発環境にしません。Pluginを設定し、Nativeコードまたはapp configを変更した後はDevelopment Buildを作り直します。
-- **OS下限**: SDK 57の公式表ではAndroid 7+、iOS 16.4+です。実装開始時のStable SDKとMapLibre Nativeの要件を照合し、より高い下限があればその値を採用します。Expo SDK、Apple、Googleの提出要件は変わるため、各Release前にも確認します。
+- **OS下限**: SDK 58の公式表ではAndroid 7+、iOS 16.4+です。実装開始時のStable SDKとMapLibre Nativeの要件を照合し、より高い下限があればその値を採用します。Expo SDK、Apple、Googleの提出要件は変わるため、各Release前にも確認します。
 
 ## npm WorkspaceのVersion解決
 
-現在のrootおよび`apps/web`はReact 19.3.0を使っています。`apps/mobile`は採用SDKが指定するReact Version（SDK 57では19.2.3）とReact Native Version（0.86.3）を明示し、WebのReact VersionをMobileに合わせる目的で一括変更しません。Expo SDKが依存するReact Nativeはroot overrideで0.86.3に統一します。Reactはworkspace間で異なる版が物理配置されるため、`apps/mobile/metro.config.js`でMobile側のReactへ解決を固定し、Android source mapでbundle内にReactが1版だけ含まれることを確認します。Expo Doctorはweb/mobile間の物理配置を重複として報告しますが、Mobile bundleの解決先はこの確認を優先します。SDK 52以降ではExpoがMetroのworkspace設定を自動構成するため、独自設定はこのReact version境界に限定します。
+現在のroot、`apps/web`、`apps/mobile`はいずれもReact 19.3.0を使います。`apps/mobile`は採用SDKが指定するReact Native Version（0.88.0）を明示し、Web側のReactを変更しません。Expo SDKが依存するReact Nativeはroot overrideで0.88.0に統一します。`apps/mobile/metro.config.js`はMobile workspaceから解決されるReactをbundleでも使うよう固定します。SDK 58へ更新後、Expo DoctorはReactの重複依存を報告しません。SDK 52以降ではExpoがMetroのworkspace設定を自動構成するため、独自設定はこのReact解決に限定します。
 
 Expo SDK / RouterとNative依存を加えた後はrootで`npm ls react react-native`と`npx expo install --check`を実行し、Expo Development BuildでAndroid Emulatorまたは実機を起動して依存の重複・不整合を検証します。Reactのworkspace間重複はMetroのAndroid source mapでアプリbundleへの混入がないことも確認します。問題が見つかった場合はworkspace依存宣言、lockfile、Metroの解決結果を確認し、Web側Versionの変更は影響を評価してから決めます。
 
@@ -22,7 +22,7 @@ Development Buildを標準にし、Androidを主な実装・ローカル検証Pl
 
 `apps/mobile/app.json` の `owner` / `extra.eas.projectId` で `@yf-techs/irishpub-map` を識別し、`apps/mobile/eas.json` でBuild Profileを定義します。EAS CLIはMobileアプリのディレクトリから実行します。EAS BuildのNode.jsは24.21.0、`appVersionSource`は`remote`です。`development` はDevelopment Clientと内部配布APK、`preview` はMetro不要の内部検証、`production` はストア配布向けです。Native Build、APKインストール、Metro起動は独立した操作です。具体的な手順は[ローカル開発](../setup/development.md#mobile-android-開発)を参照してください。
 
-2026-10-18時点で、EAS Android Development Build成功、Android実機へのAPKインストール、Expo Development Launcherの起動まで確認済みです。ただしIrish Pub Map本体の初期画面表示はMetro接続後に別途検証します。Expo DoctorではWeb（React 19.3.0）とMobile（React 19.2.3）の重複が報告されます。MobileのMetro resolverでReactを固定していますが、警告だけで安全と断定せず、実機でReact / Native Moduleエラーがないことを確認します。
+SDK 58移行ではReact Native Strict TypeScript API、削除API、Routerの独自Navigator APIを利用していないことを確認しました。React Native 0.88の型に合わせ、空一覧Componentの値を`null`から`undefined`に変更しています。Expo Doctorの20項目中19項目が成功し、残る項目はroot `package.json` の`storybook` scriptと同名の`node_modules/.bin`項目が競合する既存警告です。RouterのWeb出力変更は本workspaceがAndroid / iOS専用でWebをBuild対象にしていないため適用範囲外です。SDK 58のAndroid Prebuildは成功しましたが、ローカルGradle `assembleDebug` はcompile途中でdaemonが消失して失敗し、Android端末も未接続のため実機確認はできていません。SDK 58のiOS Buildも未実施です。
 
 JavaScript / TypeScriptのみの修正はMetroで反映でき、通常はAPKの再作成不要です。Native依存・Expo config plugin・Permission等のNative設定を変更したらEAS Development Buildを作り直します。EASアップロードへDB CredentialやServer Secretを含めず、Signing CredentialやExpo認証トークンをGitへコミットしません。
 
@@ -56,4 +56,4 @@ UI ComponentはWebとMobileで共有せず、共有するのは型や純粋ロ�
 - [MapLibre React Native requirements](https://maplibre.org/maplibre-react-native/docs/setup/getting-started/)
 - Repository内の実装・手順: [Mobile handoff](../development/mobile-handoff.md)、[System overview](system-overview.md)、[Map Provider policy](../operations/map-provider.md)
 
-公式Documentationの確認日: 2026-10-11。
+公式Documentationの確認日: 2026-10-25。
