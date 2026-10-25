@@ -122,7 +122,7 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
       <HeaderAction
         ref={triggerRef}
         type="button"
-        aria-label={`${t.label}: ${currentLanguage.label}`}
+        aria-label={`LANGUAGE — ${t.label}: ${currentLanguage.label}`}
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-controls={menuId}

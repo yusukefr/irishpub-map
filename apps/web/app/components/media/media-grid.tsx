@@ -73,7 +73,7 @@ export function MediaGrid({
                 variant="secondary"
                 className={styles.selectButton}
                 aria-pressed={selected}
-                aria-label={`${t.selectMediaAccessible}, ${asset.width} × ${asset.height}, ${formatMediaType(asset.mimeType)}, ${asset.id}`}
+                aria-label={`${selected ? t.selected : t.selectMedia}, ${t.selectMediaAccessible}, ${asset.width} × ${asset.height}, ${formatMediaType(asset.mimeType)}, ${asset.id}`}
                 onClick={() => onSelect?.(asset)}
               >
                 {selected ? t.selected : t.selectMedia}

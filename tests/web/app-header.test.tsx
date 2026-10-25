@@ -8,7 +8,7 @@ describe("AppHeader", () => {
 
     expect(screen.queryByRole("heading", { level: 1, name: "Irish Pub Map" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Irish Pub Map" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("button", { name: "Language: English" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "LANGUAGE — Language: English" })).toBeInTheDocument();
   });
 
   it("accepts optional internal navigation items without client pathname state", () => {

@@ -12,7 +12,7 @@ describe("LanguageSwitcher", () => {
   it("shows the current language and available languages", async () => {
     render(<LanguageSwitcher locale="en" />);
 
-    const trigger = screen.getByRole("button", { name: "Language: English" });
+    const trigger = screen.getByRole("button", { name: "LANGUAGE — Language: English" });
     expect(trigger).toHaveTextContent("🇬🇧LANGUAGE");
     expect(trigger).toHaveAttribute("aria-expanded", "false");
 
@@ -31,7 +31,7 @@ describe("LanguageSwitcher", () => {
     Object.defineProperty(window, "location", { configurable: true, value: { ...window.location, reload } });
     render(<LanguageSwitcher locale="ja" />);
 
-    fireEvent.click(screen.getByRole("button", { name: "表示言語: 日本語" }));
+    fireEvent.click(screen.getByRole("button", { name: "LANGUAGE — 表示言語: 日本語" }));
     fireEvent.click(screen.getByRole("menuitemradio", { name: "English" }));
 
     expect(document.cookie).toContain("irishpub-map-locale=en");
@@ -44,7 +44,7 @@ describe("LanguageSwitcher", () => {
     Object.defineProperty(window, "location", { configurable: true, value: { ...window.location, reload } });
     render(<LanguageSwitcher locale="ja" />);
 
-    const trigger = screen.getByRole("button", { name: "表示言語: 日本語" });
+    const trigger = screen.getByRole("button", { name: "LANGUAGE — 表示言語: 日本語" });
     fireEvent.click(trigger);
     fireEvent.click(screen.getByRole("menuitemradio", { name: "日本語" }));
 
@@ -55,7 +55,7 @@ describe("LanguageSwitcher", () => {
 
   it("closes the menu on Escape and restores focus", () => {
     render(<LanguageSwitcher locale="ja" />);
-    const trigger = screen.getByRole("button", { name: "表示言語: 日本語" });
+    const trigger = screen.getByRole("button", { name: "LANGUAGE — 表示言語: 日本語" });
     fireEvent.click(trigger);
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -66,7 +66,7 @@ describe("LanguageSwitcher", () => {
 
   it("closes the menu when the user clicks outside", () => {
     render(<LanguageSwitcher locale="ja" />);
-    fireEvent.click(screen.getByRole("button", { name: "表示言語: 日本語" }));
+    fireEvent.click(screen.getByRole("button", { name: "LANGUAGE — 表示言語: 日本語" }));
 
     fireEvent.mouseDown(document.body);
 
@@ -80,7 +80,7 @@ describe("LanguageSwitcher", () => {
         <button type="button">Outside</button>
       </div>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "表示言語: 日本語" }));
+    fireEvent.click(screen.getByRole("button", { name: "LANGUAGE — 表示言語: 日本語" }));
 
     fireEvent.focusIn(screen.getByRole("button", { name: "Outside" }));
 
@@ -89,7 +89,7 @@ describe("LanguageSwitcher", () => {
 
   it("moves through language options with arrow keys", async () => {
     render(<LanguageSwitcher locale="ja" />);
-    fireEvent.click(screen.getByRole("button", { name: "表示言語: 日本語" }));
+    fireEvent.click(screen.getByRole("button", { name: "LANGUAGE — 表示言語: 日本語" }));
     const japaneseOption = screen.getByRole("menuitemradio", { name: "日本語" });
     const englishOption = screen.getByRole("menuitemradio", { name: "English" });
     await waitFor(() => expect(japaneseOption).toHaveFocus());
@@ -112,7 +112,7 @@ describe("LanguageSwitcher", () => {
 
   it("opens from the trigger with ArrowUp and focuses the last language", () => {
     render(<LanguageSwitcher locale="ja" />);
-    const trigger = screen.getByRole("button", { name: "表示言語: 日本語" });
+    const trigger = screen.getByRole("button", { name: "LANGUAGE — 表示言語: 日本語" });
 
     fireEvent.keyDown(trigger, { key: "ArrowUp" });
 
@@ -121,7 +121,7 @@ describe("LanguageSwitcher", () => {
 
   it("opens from the trigger with ArrowDown and focuses the first language", () => {
     render(<LanguageSwitcher locale="en" />);
-    const trigger = screen.getByRole("button", { name: "Language: English" });
+    const trigger = screen.getByRole("button", { name: "LANGUAGE — Language: English" });
 
     fireEvent.keyDown(trigger, { key: "ArrowDown" });
 
@@ -135,7 +135,7 @@ describe("LanguageSwitcher", () => {
         <button type="button">Outside</button>
       </div>,
     );
-    const trigger = screen.getByRole("button", { name: "Language: English" });
+    const trigger = screen.getByRole("button", { name: "LANGUAGE — Language: English" });
     const outside = screen.getByRole("button", { name: "Outside" });
 
     fireEvent.keyDown(trigger, { key: "ArrowDown" });
@@ -155,7 +155,7 @@ describe("LanguageSwitcher", () => {
 
   it("toggles the menu from the trigger", () => {
     render(<LanguageSwitcher locale="ja" />);
-    const trigger = screen.getByRole("button", { name: "表示言語: 日本語" });
+    const trigger = screen.getByRole("button", { name: "LANGUAGE — 表示言語: 日本語" });
 
     fireEvent.click(trigger);
     expect(screen.getByRole("menu")).toBeInTheDocument();
