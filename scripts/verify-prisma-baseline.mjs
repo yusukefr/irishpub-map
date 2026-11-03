@@ -56,9 +56,7 @@ export function verifyPrismaBaseline({
     const databaseUrl = env[target.variable];
     for (const command of ["verify", "status"]) {
       const args =
-        command === "verify"
-          ? ["db", "verify", "--db", databaseUrl]
-          : ["migration", "status", "--db", databaseUrl];
+        command === "verify" ? ["db", "verify", "--db", databaseUrl] : ["migration", "status", "--db", databaseUrl];
       const result = run(args);
       if (result.error || result.status !== 0) {
         const exitCode = result.status ?? 1;
