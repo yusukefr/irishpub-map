@@ -42,7 +42,7 @@ MobileからNeonへ直接接続せず、Database URL、DB credential、Server se
 
 UI ComponentはWebとMobileで共有せず、共有するのは型や純粋ロジックを中心とします。Public API Clientの共有・配置はAPI Contract整理Issue #541で既存コード量とPlatform依存を見て決定します。
 
-WebとMobileのPub検索・Filterは `packages/shared/pub-search` のPure Functionを共有し、locale別に取得したPub表示名・kana・タグkeyへ同じ正規化とAND条件を適用します。Mobileの検索条件は取得済みPubに対して処理し、Filter操作でAPIを再取得しません。
+WebとMobileのPub検索・Filterは `packages/shared/pub-search` のPure Functionを共有し、locale別に取得したPub表示名・kana・タグkeyへ同じ正規化とAND条件を適用します。Mobileは都道府県選択をJISコードで保持して、Localeを切り替えても同じ都道府県Filterを維持します。検索条件は取得済みPubに対して処理し、Filter操作でAPIを再取得しません。
 
 ## Map Provider
 

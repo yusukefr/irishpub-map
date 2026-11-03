@@ -1,11 +1,12 @@
 import type { Pub, PubStatus } from "./pub";
-import { PREFECTURES } from "./prefecture";
+import { getPrefectureCode, PREFECTURES } from "./prefecture";
 import { normalizeTags } from "./tag";
 
 /** Search conditions supported by the public pub explorer. */
 export type PubFilters = {
   query?: string;
   prefecture?: string;
+  prefectureCode?: number;
   tags?: string[];
   status?: PubStatus | "";
   includeClosed?: boolean;
@@ -32,7 +33,10 @@ export function filterPubs(pubs: Pub[], filters: PubFilters) {
       [pub.name, pub.kana, pub.prefecture, pub.city].some((field) =>
         normalizeSearchText(field).includes(normalizedQuery),
       );
-    const matchesPrefecture = !filters.prefecture || pub.prefecture === filters.prefecture;
+    const matchesPrefecture =
+      filters.prefectureCode !== undefined
+        ? getPubPrefectureCode(pub) === filters.prefectureCode
+        : !filters.prefecture || pub.prefecture === filters.prefecture;
     const matchesTags = !normalizedTags.length || normalizedTags.every((tag) => pub.tags.includes(tag));
     const matchesStatus = matchesPubStatus(pub, filters);
 
@@ -40,6 +44,12 @@ export function filterPubs(pubs: Pub[], filters: PubFilters) {
   });
 
   return sortPubsByMunicipalityCode(filteredPubs);
+}
+
+function getPubPrefectureCode(pub: Pub) {
+  const municipalityPrefectureCode = Number(pub.municipalityCode?.slice(0, 2));
+  if (municipalityPrefectureCode >= 1 && municipalityPrefectureCode <= 47) return municipalityPrefectureCode;
+  return getPrefectureCode(pub.prefecture);
 }
 
 function matchesPubStatus(pub: Pub, filters: PubFilters) {

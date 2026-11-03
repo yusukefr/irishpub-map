@@ -1,5 +1,12 @@
 import { Camera, GeoJSONSource, Layer, Map, TransformRequestManager } from "@maplibre/maplibre-react-native";
-import { filterPubs, getAvailablePrefectures, getAvailableTags, type Locale, type Pub } from "@irishpub-map/shared";
+import {
+  filterPubs,
+  getAvailablePrefectures,
+  getAvailableTags,
+  getPrefectureCode,
+  type Locale,
+  type Pub,
+} from "@irishpub-map/shared";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import mobileAppConfig from "../app.json";
@@ -64,23 +71,56 @@ type PubMapProps = {
   onSelectPub: (pubId: string) => void;
 };
 
+type PrefectureFilterOption = {
+  id: string;
+  name: string;
+  code: number | null;
+};
+
 /** OpenFreeMap上にPubをまとめて描画し、選択中の店舗情報と読み込み失敗を表示します。 */
 export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub }: PubMapProps) {
   const [mapFailed, setMapFailed] = useState(false);
   const [mapAttempt, setMapAttempt] = useState(0);
   const [query, setQuery] = useState("");
-  const [selectedPrefecture, setSelectedPrefecture] = useState("");
+  const [selectedPrefectureId, setSelectedPrefectureId] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const availablePrefectures = useMemo<PrefectureFilterOption[]>(
+    () =>
+      getAvailablePrefectures(pubs).map((name) => {
+        const prefecturePub = pubs.find((pub) => pub.prefecture === name);
+        const codeFromMunicipality = Number(prefecturePub?.municipalityCode?.slice(0, 2));
+        const code =
+          codeFromMunicipality >= 1 && codeFromMunicipality <= 47
+            ? codeFromMunicipality
+            : (getPrefectureCode(name) ?? null);
+
+        return { id: code === null ? `name:${name}` : `code:${code}`, name, code };
+      }),
+    [pubs],
+  );
+  const activePrefectureId = availablePrefectures.some(({ id }) => id === selectedPrefectureId)
+    ? selectedPrefectureId
+    : null;
+  const selectedPrefecture = availablePrefectures.find(({ id }) => id === activePrefectureId);
+
   const filteredPubs = useMemo(
-    () => filterPubs(pubs, { query, prefecture: selectedPrefecture, tags: selectedTags }),
+    () =>
+      filterPubs(pubs, {
+        query,
+        ...(selectedPrefecture?.code === null
+          ? { prefecture: selectedPrefecture.name }
+          : selectedPrefecture?.code !== undefined
+            ? { prefectureCode: selectedPrefecture.code }
+            : {}),
+        tags: selectedTags,
+      }),
     [pubs, query, selectedPrefecture, selectedTags],
   );
-  const availablePrefectures = useMemo(() => getAvailablePrefectures(pubs), [pubs]);
   const availableTags = useMemo(() => getAvailableTags(pubs), [pubs]);
   const selectedPub = filteredPubs.find((pub) => pub.id === selectedPubId);
   const features = useMemo(() => toPubFeatureCollection(filteredPubs), [filteredPubs]);
   const labels = copy[locale];
-  const hasFilters = Boolean(query.trim() || selectedPrefecture || selectedTags.length);
+  const hasFilters = Boolean(query.trim() || activePrefectureId || selectedTags.length);
 
   function toggleTag(tag: string) {
     setSelectedTags((current) =>
@@ -90,7 +130,7 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub }: 
 
   function clearFilters() {
     setQuery("");
-    setSelectedPrefecture("");
+    setSelectedPrefectureId(null);
     setSelectedTags([]);
   }
 
@@ -122,13 +162,13 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub }: 
             <Text>{labels.prefecture}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
               {availablePrefectures.map((prefecture) => {
-                const selected = selectedPrefecture === prefecture;
+                const selected = activePrefectureId === prefecture.id;
                 return (
                   <Pressable
-                    key={prefecture}
+                    key={prefecture.id}
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
-                    onPress={() => setSelectedPrefecture(selected ? "" : prefecture)}
+                    onPress={() => setSelectedPrefectureId(selected ? null : prefecture.id)}
                     style={{
                       minHeight: 44,
                       justifyContent: "center",
@@ -140,7 +180,7 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub }: 
                   >
                     <Text>
                       {selected ? "✓ " : ""}
-                      {prefecture}
+                      {prefecture.name}
                     </Text>
                   </Pressable>
                 );
