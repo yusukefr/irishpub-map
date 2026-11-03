@@ -3,6 +3,16 @@ export { asPubs } from "./pub";
 export { DEFAULT_LOCALE, REQUIRED_TRANSLATION_LOCALE, SUPPORTED_LOCALES, isSupportedLocale } from "./locale";
 export type { Locale } from "./locale";
 export { PREFECTURES, getPrefectureCode, getPrefectureName } from "./prefecture";
+export {
+  filterPubs,
+  filterPubsByQuery,
+  getAvailablePrefectures,
+  getAvailableStatuses,
+  getAvailableTags,
+  getNearestAvailablePrefecture,
+  sortPubsByMunicipalityCode,
+} from "./pub-search";
+export type { Coordinates, PubFilters } from "./pub-search";
 export { PUB_STATUS_DEFINITIONS, getPubStatusCode, getPubStatusValue } from "./status";
 export { isUuid, UUID_PATTERN } from "./uuid";
 export type { MunicipalityOption, PrefectureOption, PubStatusOption, PubTypeOption, TagOption } from "./admin-master";

@@ -114,6 +114,14 @@ describe("filterPubsByQuery", () => {
     expect(filterPubs(pubs, { prefecture: "京都府" }).map((pub) => pub.id)).toEqual(["kyoto-sample"]);
   });
 
+  it("filters by JIS prefecture code across translated names and legacy Japanese names", () => {
+    const translatedTokyo = { ...pubs[0], prefecture: "Tokyo" };
+    const legacyTokyo = { ...pubs[0], id: "legacy-tokyo", municipalityCode: undefined };
+
+    expect(filterPubs([translatedTokyo], { prefectureCode: 13 }).map((pub) => pub.id)).toEqual(["tokyo-sample"]);
+    expect(filterPubs([legacyTokyo], { prefectureCode: 13 }).map((pub) => pub.id)).toEqual(["legacy-tokyo"]);
+  });
+
   it("filters pubs by tag", () => {
     expect(filterPubs(pubs, { tags: ["food"] }).map((pub) => pub.id)).toEqual(["tokyo-sample", "kyoto-sample"]);
   });

@@ -9,6 +9,7 @@
     "./locale": "./src/locale.ts",
     "./tag": "./src/tag.ts",
     "./prefecture": "./src/prefecture.ts",
+    "./pub-search": "./src/pub-search.ts",
     "./status": "./src/status.ts",
     "./admin-master": "./src/admin-master.ts",
     "./admin-api-error": "./src/admin-api-error.ts",

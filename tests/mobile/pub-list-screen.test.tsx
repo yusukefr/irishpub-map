@@ -84,6 +84,7 @@ const pub: Pub = {
   address: "Tokyo",
   latitude: 35.68,
   longitude: 139.76,
+  municipalityCode: "131016",
   tags: [],
   status: "open",
   pubType: "irish",
