@@ -3,14 +3,8 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const databaseTargets = [
-  {
-    name: "signed verification database",
-    variable: "PRISMA_SIGNED_DATABASE_URL",
-  },
-  {
-    name: "empty baseline database",
-    variable: "PRISMA_EMPTY_DATABASE_URL",
-  },
+  { name: "signed verification database", variable: "PRISMA_SIGNED_DATABASE_URL" },
+  { name: "empty baseline database", variable: "PRISMA_EMPTY_DATABASE_URL" },
 ];
 
 function databaseIdentity(value, variable) {
