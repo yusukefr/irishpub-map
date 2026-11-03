@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { verifyPrismaBaseline } from "../scripts/verify-prisma-baseline.mjs";
 
 const baselineName = readdirSync("migrations/app").find((name) => name.endsWith("_baseline"));
 if (!baselineName) throw new Error("Prisma baseline migration directory is missing");
@@ -66,5 +67,93 @@ describe("Prisma 8 baseline", () => {
     expect(referenceSeed).toContain("INSERT INTO pub_status_translations");
     expect(referenceSeed).toContain("INSERT INTO pub_type_translations");
     expect(referenceSeed).not.toMatch(/INSERT INTO (pubs|pub_tags|pub_translations|quiz_questions|content_entries)/i);
+  });
+});
+
+describe("Prisma baseline verification command", () => {
+  const env = {
+    PRISMA_SIGNED_DATABASE_URL: "postgresql://verify.example/db",
+    PRISMA_EMPTY_DATABASE_URL: "postgresql://empty.example/db",
+  };
+
+  it("verifies both distinct databases against the emitted contract and migration graph", () => {
+    const calls: string[][] = [];
+    let output = "";
+    let errorOutput = "";
+
+    const exitCode = verifyPrismaBaseline({
+      env,
+      run: (args) => {
+        calls.push(args);
+        return { status: 0 };
+      },
+      stdout: {
+        write: (chunk: string) => {
+          output += chunk;
+          return true;
+        },
+      } as NodeJS.WriteStream,
+      stderr: {
+        write: (chunk: string) => {
+          errorOutput += chunk;
+          return true;
+        },
+      } as NodeJS.WriteStream,
+    });
+
+    expect(exitCode).toBe(0);
+    expect(calls).toEqual([
+      ["db", "verify", "--db", env.PRISMA_SIGNED_DATABASE_URL],
+      ["migration", "status", "--db", env.PRISMA_SIGNED_DATABASE_URL],
+      ["db", "verify", "--db", env.PRISMA_EMPTY_DATABASE_URL],
+      ["migration", "status", "--db", env.PRISMA_EMPTY_DATABASE_URL],
+    ]);
+    expect(output).toContain("signed verification database: schema and migration status verified.");
+    expect(errorOutput).toBe("");
+  });
+
+  it("rejects an identical database without invoking Prisma", () => {
+    let called = false;
+    let errorOutput = "";
+
+    const exitCode = verifyPrismaBaseline({
+      env: {
+        ...env,
+        PRISMA_EMPTY_DATABASE_URL: "postgresql://verify.example/db?sslmode=require",
+      },
+      run: () => {
+        called = true;
+        return { status: 0 };
+      },
+      stderr: {
+        write: (chunk: string) => {
+          errorOutput += chunk;
+          return true;
+        },
+      } as NodeJS.WriteStream,
+    });
+
+    expect(exitCode).toBe(2);
+    expect(called).toBe(false);
+    expect(errorOutput).toContain("must be different databases");
+    expect(errorOutput).not.toContain("secret");
+  });
+
+  it("stops on Prisma failure without printing its potentially sensitive output", () => {
+    let errorOutput = "";
+    const exitCode = verifyPrismaBaseline({
+      env,
+      run: () => ({ status: 4, stdout: "hidden-output", stderr: "hidden-connection-string" }),
+      stderr: {
+        write: (chunk: string) => {
+          errorOutput += chunk;
+          return true;
+        },
+      } as NodeJS.WriteStream,
+    });
+
+    expect(exitCode).toBe(1);
+    expect(errorOutput).toContain("signed verification database: Prisma verify failed (exit 4).");
+    expect(errorOutput).not.toContain("hidden");
   });
 });
