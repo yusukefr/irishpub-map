@@ -8,6 +8,8 @@
 
 Prisma ORM 8 RCはSchema Contract / Migration用の開発ツールです。現時点では既存RepositoryやApplicationのDB接続を置き換えません。Prismaの配置、CLI、Neon Target接続の境界は[Prisma 8 RC tooling](../development/prisma-tooling.md)を参照してください。現行ContractとProduction Schemaの照合結果・既知のPSL表現差分は[Prisma Contract schema照合記録](../development/prisma-contract-audit.md)を参照してください。
 
+新しい隔離DBは、Git管理されたPrisma Baselineを適用してから必須の都道府県・市区町村・Status・Pub Type参照データを投入します。Baselineは24のApplication tableを作成しますが、旧`schema_migrations` Ledger、店舗・Quiz・Content等の運用データは作成・投入しません。Baseline生成、既存Schemaの署名、空DB再構築と照合の手順は[Prisma Baseline再構築ガイド](../development/prisma-baseline.md)を参照してください。
+
 ## IDと生成責務
 
 Resource IDはPostgreSQL `uuid` 型とし、Application Serviceが `crypto.randomUUID()` でUUID v4を生成してRepositoryへ渡します。Application生成IDのDB列にDEFAULTは設定しません。API、MCP、TypeScriptではRFC 9562 variantのUUID version 1〜8を受け入れ、16進数の大文字小文字を区別しません。UUID以外のdomain codeはその型を維持します。Import処理は入力に含まれる店舗UUIDを使います。

@@ -118,10 +118,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               },
               "id": {
@@ -235,20 +232,14 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               },
               "expires_at": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               },
               "id": {
@@ -406,10 +397,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               }
             },
@@ -472,10 +460,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               },
               "date_rule": {
@@ -531,10 +516,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               }
             },
@@ -604,10 +586,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               },
               "hero_image_asset_id": {
@@ -635,10 +614,7 @@
                 "nullable": true,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               },
               "slug": {
@@ -659,10 +635,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               }
             },
@@ -791,10 +764,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               }
             },
@@ -849,10 +819,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               },
               "file_size": {
@@ -1414,10 +1381,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               }
             },
@@ -1644,10 +1608,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               },
               "website_url": {
@@ -1807,10 +1768,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               }
             },
@@ -1856,10 +1814,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               },
               "id": {
@@ -1887,10 +1842,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               }
             },
@@ -2007,10 +1959,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               }
             },
@@ -2079,10 +2028,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               },
               "id": {
@@ -2138,10 +2084,7 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "kind": "scalar"
                 }
               }
             },
@@ -2394,10 +2337,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 },
                 "id": {
                   "codecId": "pg/uuid@1",
@@ -2492,10 +2432,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 },
                 "expires_at": {
                   "codecId": "pg/timestamptz-temporal@1",
@@ -2504,10 +2441,7 @@
                     "expression": "(now() + '24:00:00'::interval)",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 },
                 "id": {
                   "codecId": "pg/uuid@1",
@@ -2625,10 +2559,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -2695,10 +2626,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 },
                 "date_rule": {
                   "codecId": "pg/jsonb@1",
@@ -2754,10 +2682,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 }
               },
               "foreignKeys": [],
@@ -2826,10 +2751,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 },
                 "hero_image_asset_id": {
                   "codecId": "pg/uuid@1",
@@ -2849,10 +2771,7 @@
                 "published_at": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "dataType": "pg/timestamptz",
-                  "nullable": true,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": true
                 },
                 "slug": {
                   "codecId": "pg/text@1",
@@ -2871,10 +2790,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -2978,10 +2894,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -3046,10 +2959,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 },
                 "file_size": {
                   "codecId": "pg/int4@1",
@@ -3483,10 +3393,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -3680,10 +3587,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 },
                 "website_url": {
                   "codecId": "pg/text@1",
@@ -3808,10 +3712,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -3856,10 +3757,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 },
                 "id": {
                   "codecId": "pg/text@1",
@@ -3883,10 +3781,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -3983,10 +3878,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -4027,7 +3919,7 @@
                   "name": "quiz_questions_source_url_check"
                 },
                 {
-                  "expression": "(((special_month IS NULL) = (special_day IS NULL)) AND ((special_month IS NULL) OR (((special_month >= 1) AND (special_month <= 12)) AND ((special_day >= 1) AND (special_day <=\nCASE\n    WHEN (special_month = 2) THEN 29\n    WHEN (special_month = ANY (ARRAY[4, 6, 9, 11])) THEN 30\n    ELSE 31\nEND)))))",
+                  "expression": "(((special_month IS NULL) = (special_day IS NULL)) AND ((special_month IS NULL) OR ((special_month >= 1) AND (special_month <= 12) AND ((special_day >= 1) AND (special_day <=\nCASE\n    WHEN (special_month = 2) THEN 29\n    WHEN (special_month = ANY (ARRAY[4, 6, 9, 11])) THEN 30\n    ELSE 31\nEND)))))",
                   "name": "quiz_questions_special_date_check"
                 }
               ],
@@ -4049,10 +3941,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 },
                 "id": {
                   "codecId": "pg/uuid@1",
@@ -4100,10 +3989,7 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 6
-                  }
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -4279,7 +4165,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "f8338fe226645fd857a00cc72e1618763f115b19e4dfc6e70714acbbde9d9926"
+    "storageHash": "4ee73e5187a8748d34b95605ee84c9f202368e31f37bf9c3a334261fce037371"
   },
   "capabilities": {
     "postgres": {

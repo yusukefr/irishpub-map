@@ -1,0 +1,2702 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.automation_audit_logs",
+    "label": "Create table \"automation_audit_logs\"",
+    "summary": "Creates table \"automation_audit_logs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "automation_audit_logs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"automation_audit_logs\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"automation_audit_logs\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"automation_audit_logs\"",
+        "sql": "CREATE TABLE \"public\".\"automation_audit_logs\" (\n  \"action\" text NOT NULL,\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"method\" text NOT NULL,\n  \"path\" text NOT NULL,\n  \"request_id\" uuid NOT NULL,\n  \"resource_id\" uuid,\n  \"resource_type\" text NOT NULL,\n  \"result\" text NOT NULL,\n  \"scope\" text NOT NULL,\n  \"status_code\" int4 NOT NULL,\n  CONSTRAINT \"automation_audit_logs_pkey\" PRIMARY KEY (\"id\"),\n  CONSTRAINT \"automation_audit_logs_action_check\" CHECK ((action = ANY (ARRAY['create'::text, 'update'::text, 'publish'::text, 'unpublish'::text]))),\n  CONSTRAINT \"automation_audit_logs_resource_type_check\" CHECK ((resource_type = ANY (ARRAY['content'::text, 'quiz'::text, 'pub'::text, 'tag'::text]))),\n  CONSTRAINT \"automation_audit_logs_result_check\" CHECK ((result = ANY (ARRAY['success'::text, 'failure'::text]))),\n  CONSTRAINT \"automation_audit_logs_status_code_check\" CHECK (((status_code >= 100) AND (status_code <= 599)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"automation_audit_logs\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"automation_audit_logs\""]
+      }
+    ]
+  },
+  {
+    "id": "table.automation_idempotency_keys",
+    "label": "Create table \"automation_idempotency_keys\"",
+    "summary": "Creates table \"automation_idempotency_keys\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "automation_idempotency_keys"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"automation_idempotency_keys\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"automation_idempotency_keys\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"automation_idempotency_keys\"",
+        "sql": "CREATE TABLE \"public\".\"automation_idempotency_keys\" (\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"expires_at\" timestamptz DEFAULT ((now() + '24:00:00'::interval)) NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"key_hash\" character(64) NOT NULL,\n  \"method\" text NOT NULL,\n  \"path\" text NOT NULL,\n  \"request_hash\" character(64) NOT NULL,\n  \"resource_id\" uuid NOT NULL,\n  \"resource_type\" text NOT NULL,\n  \"response_body\" jsonb,\n  \"status\" text DEFAULT 'pending' NOT NULL,\n  \"status_code\" int4,\n  CONSTRAINT \"automation_idempotency_keys_pkey\" PRIMARY KEY (\"id\"),\n  CONSTRAINT \"automation_idempotency_keys_resource_type_check\" CHECK ((resource_type = ANY (ARRAY['content'::text, 'quiz'::text, 'pub'::text, 'tag'::text]))),\n  CONSTRAINT \"automation_idempotency_keys_status_check\" CHECK ((status = ANY (ARRAY['pending'::text, 'completed'::text]))),\n  CONSTRAINT \"automation_idempotency_response_check\" CHECK ((((status = 'pending'::text) AND (status_code IS NULL) AND (response_body IS NULL)) OR ((status = 'completed'::text) AND ((status_code >= 200) AND (status_code <= 299)) AND (response_body IS NOT NULL))))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"automation_idempotency_keys\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"automation_idempotency_keys\""]
+      }
+    ]
+  },
+  {
+    "id": "table.calendar_event_translations",
+    "label": "Create table \"calendar_event_translations\"",
+    "summary": "Creates table \"calendar_event_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "calendar_event_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"calendar_event_translations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_event_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"calendar_event_translations\"",
+        "sql": "CREATE TABLE \"public\".\"calendar_event_translations\" (\n  \"description\" text NOT NULL,\n  \"event_id\" uuid NOT NULL,\n  \"locale\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"updated_at\" timestamptz DEFAULT (now()) NOT NULL,\n  CONSTRAINT \"calendar_event_translations_pkey\" PRIMARY KEY (\"event_id\", \"locale\"),\n  CONSTRAINT \"calendar_event_translations_locale_check\" CHECK ((locale = ANY (ARRAY['ja'::text, 'en'::text])))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"calendar_event_translations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_event_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "table.calendar_events",
+    "label": "Create table \"calendar_events\"",
+    "summary": "Creates table \"calendar_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "calendar_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"calendar_events\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_events\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"calendar_events\"",
+        "sql": "CREATE TABLE \"public\".\"calendar_events\" (\n  \"aliases\" text[] DEFAULT '{}' NOT NULL,\n  \"category\" text,\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"date_rule\" jsonb,\n  \"featured\" bool DEFAULT false NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"is_public_holiday\" bool DEFAULT false NOT NULL,\n  \"is_published\" bool DEFAULT false NOT NULL,\n  \"sort_order\" int4 NOT NULL,\n  \"source\" text,\n  \"updated_at\" timestamptz DEFAULT (now()) NOT NULL,\n  CONSTRAINT \"calendar_events_pkey\" PRIMARY KEY (\"id\"),\n  CONSTRAINT \"calendar_events_category_check\" CHECK (((category IS NULL) OR (category = ANY (ARRAY['public_holiday'::text, 'culture'::text, 'tradition'::text, 'language'::text, 'literature'::text, 'history'::text, 'religion'::text])))),\n  CONSTRAINT \"calendar_events_date_rule_check\" CHECK (((date_rule IS NULL) OR ((jsonb_typeof(date_rule) = 'object'::text) AND (date_rule ? 'type'::text) AND (jsonb_typeof((date_rule -> 'type'::text)) = 'string'::text) AND ((date_rule ->> 'type'::text) = ANY (ARRAY['fixed'::text, 'date_range'::text, 'nth_weekday'::text, 'last_weekday'::text, 'relative_to_easter'::text, 'weekday_on_or_after'::text, 'closest_weekday_to_date'::text, 'rule_set'::text, 'annual_variable'::text]))))),\n  CONSTRAINT \"calendar_events_sort_order_check\" CHECK ((sort_order >= 0))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"calendar_events\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_events\""]
+      }
+    ]
+  },
+  {
+    "id": "table.content_entries",
+    "label": "Create table \"content_entries\"",
+    "summary": "Creates table \"content_entries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "content_entries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"content_entries\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"content_entries\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"content_entries\"",
+        "sql": "CREATE TABLE \"public\".\"content_entries\" (\n  \"category\" text,\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"hero_image_asset_id\" uuid,\n  \"id\" uuid NOT NULL,\n  \"kind\" text,\n  \"published_at\" timestamptz,\n  \"slug\" text,\n  \"status\" text NOT NULL,\n  \"updated_at\" timestamptz DEFAULT (now()) NOT NULL,\n  CONSTRAINT \"content_entries_pkey\" PRIMARY KEY (\"id\"),\n  CONSTRAINT \"content_entries_category_check\" CHECK ((btrim(category) <> ''::text)),\n  CONSTRAINT \"content_entries_kind_check\" CHECK ((btrim(kind) <> ''::text)),\n  CONSTRAINT \"content_entries_publication_state_check\" CHECK ((((status = 'draft'::text) AND (published_at IS NULL)) OR ((status = 'published'::text) AND (published_at IS NOT NULL)))),\n  CONSTRAINT \"content_entries_slug_check\" CHECK ((btrim(slug) <> ''::text)),\n  CONSTRAINT \"content_entries_status_check\" CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text])))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"content_entries\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"content_entries\""]
+      }
+    ]
+  },
+  {
+    "id": "table.content_translations",
+    "label": "Create table \"content_translations\"",
+    "summary": "Creates table \"content_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "content_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"content_translations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"content_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"content_translations\"",
+        "sql": "CREATE TABLE \"public\".\"content_translations\" (\n  \"body_markdown\" text NOT NULL,\n  \"content_id\" uuid NOT NULL,\n  \"hero_image_alt\" text DEFAULT (''::text) NOT NULL,\n  \"hero_image_caption\" text DEFAULT (''::text) NOT NULL,\n  \"locale\" text NOT NULL,\n  \"summary\" text NOT NULL,\n  \"title\" text NOT NULL,\n  \"updated_at\" timestamptz DEFAULT (now()) NOT NULL,\n  CONSTRAINT \"content_translations_pkey\" PRIMARY KEY (\"content_id\", \"locale\"),\n  CONSTRAINT \"content_translations_hero_image_alt_length_check\" CHECK ((char_length(hero_image_alt) <= 500)),\n  CONSTRAINT \"content_translations_hero_image_caption_length_check\" CHECK ((char_length(hero_image_caption) <= 1000)),\n  CONSTRAINT \"content_translations_locale_check\" CHECK ((locale = ANY (ARRAY['ja'::text, 'en'::text])))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"content_translations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"content_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "table.media_assets",
+    "label": "Create table \"media_assets\"",
+    "summary": "Creates table \"media_assets\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "media_assets"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"media_assets\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"media_assets\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"media_assets\"",
+        "sql": "CREATE TABLE \"public\".\"media_assets\" (\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"file_size\" int4 NOT NULL,\n  \"height\" int4 NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"mime_type\" text NOT NULL,\n  \"storage_key\" text NOT NULL,\n  \"url\" text NOT NULL,\n  \"width\" int4 NOT NULL,\n  CONSTRAINT \"media_assets_pkey\" PRIMARY KEY (\"id\"),\n  CONSTRAINT \"media_assets_file_size_check\" CHECK (((file_size >= 1) AND (file_size <= 4194304))),\n  CONSTRAINT \"media_assets_height_check\" CHECK (((height >= 1) AND (height <= 8192))),\n  CONSTRAINT \"media_assets_mime_type_check\" CHECK ((mime_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text, 'image/webp'::text]))),\n  CONSTRAINT \"media_assets_pixel_count_check\" CHECK ((((width)::bigint * (height)::bigint) <= 40000000)),\n  CONSTRAINT \"media_assets_storage_key_check\" CHECK (((btrim(storage_key) <> ''::text) AND (storage_key = btrim(storage_key)))),\n  CONSTRAINT \"media_assets_url_check\" CHECK (((btrim(url) <> ''::text) AND (url = btrim(url)))),\n  CONSTRAINT \"media_assets_width_check\" CHECK (((width >= 1) AND (width <= 8192)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"media_assets\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"media_assets\""]
+      }
+    ]
+  },
+  {
+    "id": "table.municipality_codes",
+    "label": "Create table \"municipality_codes\"",
+    "summary": "Creates table \"municipality_codes\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "municipality_codes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"municipality_codes\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"municipality_codes\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"municipality_codes\"",
+        "sql": "CREATE TABLE \"public\".\"municipality_codes\" (\n  \"code\" text NOT NULL,\n  \"prefecture_code\" int2 NOT NULL,\n  CONSTRAINT \"municipality_codes_pkey\" PRIMARY KEY (\"code\"),\n  CONSTRAINT \"municipality_codes_code_check\" CHECK ((code ~ '^[0-9]{6}$'::text))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"municipality_codes\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"municipality_codes\""]
+      }
+    ]
+  },
+  {
+    "id": "table.municipality_translations",
+    "label": "Create table \"municipality_translations\"",
+    "summary": "Creates table \"municipality_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "municipality_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"municipality_translations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"municipality_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"municipality_translations\"",
+        "sql": "CREATE TABLE \"public\".\"municipality_translations\" (\n  \"locale\" text NOT NULL,\n  \"municipality_code\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"name_reading\" text,\n  CONSTRAINT \"municipality_translations_pkey\" PRIMARY KEY (\"municipality_code\", \"locale\"),\n  CONSTRAINT \"municipality_translations_locale_check\" CHECK ((locale = ANY (ARRAY['ja'::text, 'en'::text]))),\n  CONSTRAINT \"municipality_translations_name_check\" CHECK ((btrim(name) <> ''::text)),\n  CONSTRAINT \"municipality_translations_name_reading_check\" CHECK (((name_reading IS NULL) OR (btrim(name_reading) <> ''::text)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"municipality_translations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"municipality_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "table.prefecture_translations",
+    "label": "Create table \"prefecture_translations\"",
+    "summary": "Creates table \"prefecture_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "prefecture_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"prefecture_translations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"prefecture_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"prefecture_translations\"",
+        "sql": "CREATE TABLE \"public\".\"prefecture_translations\" (\n  \"locale\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"name_reading\" text,\n  \"prefecture_code\" int2 NOT NULL,\n  CONSTRAINT \"prefecture_translations_pkey\" PRIMARY KEY (\"prefecture_code\", \"locale\"),\n  CONSTRAINT \"prefecture_translations_locale_check\" CHECK ((locale = ANY (ARRAY['ja'::text, 'en'::text]))),\n  CONSTRAINT \"prefecture_translations_name_check\" CHECK ((btrim(name) <> ''::text)),\n  CONSTRAINT \"prefecture_translations_name_reading_check\" CHECK (((name_reading IS NULL) OR (btrim(name_reading) <> ''::text)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"prefecture_translations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"prefecture_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "table.prefectures",
+    "label": "Create table \"prefectures\"",
+    "summary": "Creates table \"prefectures\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "prefectures"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"prefectures\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"prefectures\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"prefectures\"",
+        "sql": "CREATE TABLE \"public\".\"prefectures\" (\n  \"code\" int2 NOT NULL,\n  CONSTRAINT \"prefectures_pkey\" PRIMARY KEY (\"code\"),\n  CONSTRAINT \"prefectures_code_check\" CHECK (((code >= 1) AND (code <= 47)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"prefectures\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"prefectures\""]
+      }
+    ]
+  },
+  {
+    "id": "table.pub_status_translations",
+    "label": "Create table \"pub_status_translations\"",
+    "summary": "Creates table \"pub_status_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pub_status_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pub_status_translations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pub_status_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pub_status_translations\"",
+        "sql": "CREATE TABLE \"public\".\"pub_status_translations\" (\n  \"display_name\" text NOT NULL,\n  \"locale\" text NOT NULL,\n  \"status_code\" int2 NOT NULL,\n  CONSTRAINT \"pub_status_translations_pkey\" PRIMARY KEY (\"status_code\", \"locale\"),\n  CONSTRAINT \"pub_status_translations_display_name_check\" CHECK ((btrim(display_name) <> ''::text)),\n  CONSTRAINT \"pub_status_translations_locale_check\" CHECK ((locale = ANY (ARRAY['ja'::text, 'en'::text])))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pub_status_translations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pub_status_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "table.pub_statuses",
+    "label": "Create table \"pub_statuses\"",
+    "summary": "Creates table \"pub_statuses\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pub_statuses"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pub_statuses\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pub_statuses\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pub_statuses\"",
+        "sql": "CREATE TABLE \"public\".\"pub_statuses\" (\n  \"code\" int2 NOT NULL,\n  \"key\" text NOT NULL,\n  CONSTRAINT \"pub_statuses_pkey\" PRIMARY KEY (\"code\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pub_statuses\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pub_statuses\""]
+      }
+    ]
+  },
+  {
+    "id": "table.pub_tags",
+    "label": "Create table \"pub_tags\"",
+    "summary": "Creates table \"pub_tags\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pub_tags"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pub_tags\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pub_tags\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pub_tags\"",
+        "sql": "CREATE TABLE \"public\".\"pub_tags\" (\n  \"pub_id\" uuid NOT NULL,\n  \"tag_id\" uuid NOT NULL,\n  CONSTRAINT \"pub_tags_pkey\" PRIMARY KEY (\"pub_id\", \"tag_id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pub_tags\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pub_tags\""]
+      }
+    ]
+  },
+  {
+    "id": "table.pub_translations",
+    "label": "Create table \"pub_translations\"",
+    "summary": "Creates table \"pub_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pub_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pub_translations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pub_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pub_translations\"",
+        "sql": "CREATE TABLE \"public\".\"pub_translations\" (\n  \"address\" text,\n  \"locale\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"name_reading\" text,\n  \"pub_id\" uuid NOT NULL,\n  \"updated_at\" timestamptz DEFAULT (now()) NOT NULL,\n  CONSTRAINT \"pub_translations_pkey\" PRIMARY KEY (\"pub_id\", \"locale\"),\n  CONSTRAINT \"pub_translations_address_check\" CHECK (((address IS NULL) OR (btrim(address) <> ''::text))),\n  CONSTRAINT \"pub_translations_locale_check\" CHECK ((locale = ANY (ARRAY['ja'::text, 'en'::text]))),\n  CONSTRAINT \"pub_translations_name_check\" CHECK ((btrim(name) <> ''::text)),\n  CONSTRAINT \"pub_translations_name_reading_check\" CHECK (((name_reading IS NULL) OR (btrim(name_reading) <> ''::text)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pub_translations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pub_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "table.pub_type_translations",
+    "label": "Create table \"pub_type_translations\"",
+    "summary": "Creates table \"pub_type_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pub_type_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pub_type_translations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pub_type_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pub_type_translations\"",
+        "sql": "CREATE TABLE \"public\".\"pub_type_translations\" (\n  \"display_name\" text NOT NULL,\n  \"locale\" text NOT NULL,\n  \"pub_type_code\" int2 NOT NULL,\n  CONSTRAINT \"pub_type_translations_pkey\" PRIMARY KEY (\"pub_type_code\", \"locale\"),\n  CONSTRAINT \"pub_type_translations_display_name_check\" CHECK ((btrim(display_name) <> ''::text)),\n  CONSTRAINT \"pub_type_translations_locale_check\" CHECK ((locale = ANY (ARRAY['ja'::text, 'en'::text])))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pub_type_translations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pub_type_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "table.pub_types",
+    "label": "Create table \"pub_types\"",
+    "summary": "Creates table \"pub_types\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pub_types"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pub_types\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pub_types\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pub_types\"",
+        "sql": "CREATE TABLE \"public\".\"pub_types\" (\n  \"code\" int2 NOT NULL,\n  \"key\" text NOT NULL,\n  CONSTRAINT \"pub_types_pkey\" PRIMARY KEY (\"code\"),\n  CONSTRAINT \"pub_types_key_check\" CHECK ((key = ANY (ARRAY['irish'::text, 'british'::text, 'other'::text, 'unclassified'::text])))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pub_types\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pub_types\""]
+      }
+    ]
+  },
+  {
+    "id": "table.pubs",
+    "label": "Create table \"pubs\"",
+    "summary": "Creates table \"pubs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pubs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pubs\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pubs\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pubs\"",
+        "sql": "CREATE TABLE \"public\".\"pubs\" (\n  \"google_maps_url\" text,\n  \"id\" uuid NOT NULL,\n  \"instagram_url\" text,\n  \"is_published\" bool DEFAULT false NOT NULL,\n  \"latitude\" float8,\n  \"longitude\" float8,\n  \"municipality_code\" text,\n  \"prefecture_code\" int2,\n  \"pub_type_code\" int2,\n  \"status_code\" int2,\n  \"updated_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"website_url\" text,\n  CONSTRAINT \"pubs_columns_new_pkey\" PRIMARY KEY (\"id\"),\n  CONSTRAINT \"pubs_columns_new_google_maps_url_check\" CHECK (((google_maps_url IS NULL) OR (google_maps_url ~* '^https?://'::text))),\n  CONSTRAINT \"pubs_columns_new_instagram_url_check\" CHECK (((instagram_url IS NULL) OR (instagram_url ~* '^https?://'::text))),\n  CONSTRAINT \"pubs_columns_new_latitude_check\" CHECK (((latitude >= ('-90'::integer)::double precision) AND (latitude <= (90)::double precision))),\n  CONSTRAINT \"pubs_columns_new_longitude_check\" CHECK (((longitude >= ('-180'::integer)::double precision) AND (longitude <= (180)::double precision))),\n  CONSTRAINT \"pubs_columns_new_website_url_check\" CHECK (((website_url IS NULL) OR (website_url ~* '^https?://'::text)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pubs\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pubs\""]
+      }
+    ]
+  },
+  {
+    "id": "table.quiz_choice_translations",
+    "label": "Create table \"quiz_choice_translations\"",
+    "summary": "Creates table \"quiz_choice_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "quiz_choice_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"quiz_choice_translations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_choice_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"quiz_choice_translations\"",
+        "sql": "CREATE TABLE \"public\".\"quiz_choice_translations\" (\n  \"choice_id\" text NOT NULL,\n  \"label\" text NOT NULL,\n  \"locale\" text NOT NULL,\n  \"question_id\" uuid NOT NULL,\n  \"updated_at\" timestamptz DEFAULT (now()) NOT NULL,\n  CONSTRAINT \"quiz_choice_translations_pkey\" PRIMARY KEY (\"question_id\", \"choice_id\", \"locale\"),\n  CONSTRAINT \"quiz_choice_translations_locale_check\" CHECK ((locale = ANY (ARRAY['ja'::text, 'en'::text])))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"quiz_choice_translations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_choice_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "table.quiz_choices",
+    "label": "Create table \"quiz_choices\"",
+    "summary": "Creates table \"quiz_choices\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "quiz_choices"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"quiz_choices\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_choices\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"quiz_choices\"",
+        "sql": "CREATE TABLE \"public\".\"quiz_choices\" (\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"question_id\" uuid NOT NULL,\n  \"sort_order\" int4 NOT NULL,\n  \"updated_at\" timestamptz DEFAULT (now()) NOT NULL,\n  CONSTRAINT \"quiz_choices_pkey\" PRIMARY KEY (\"question_id\", \"id\"),\n  CONSTRAINT \"quiz_choices_id_check\" CHECK ((btrim(id) <> ''::text)),\n  CONSTRAINT \"quiz_choices_sort_order_check\" CHECK ((sort_order >= 0))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"quiz_choices\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_choices\""]
+      }
+    ]
+  },
+  {
+    "id": "table.quiz_question_translations",
+    "label": "Create table \"quiz_question_translations\"",
+    "summary": "Creates table \"quiz_question_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "quiz_question_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"quiz_question_translations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_question_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"quiz_question_translations\"",
+        "sql": "CREATE TABLE \"public\".\"quiz_question_translations\" (\n  \"explanation\" text NOT NULL,\n  \"image_alt\" text DEFAULT (''::text) NOT NULL,\n  \"image_caption\" text DEFAULT (''::text) NOT NULL,\n  \"locale\" text NOT NULL,\n  \"question\" text NOT NULL,\n  \"question_id\" uuid NOT NULL,\n  \"source_label\" text NOT NULL,\n  \"updated_at\" timestamptz DEFAULT (now()) NOT NULL,\n  CONSTRAINT \"quiz_question_translations_pkey\" PRIMARY KEY (\"question_id\", \"locale\"),\n  CONSTRAINT \"quiz_question_translations_image_alt_length_check\" CHECK ((char_length(image_alt) <= 500)),\n  CONSTRAINT \"quiz_question_translations_image_caption_length_check\" CHECK ((char_length(image_caption) <= 1000)),\n  CONSTRAINT \"quiz_question_translations_locale_check\" CHECK ((locale = ANY (ARRAY['ja'::text, 'en'::text])))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"quiz_question_translations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_question_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "table.quiz_questions",
+    "label": "Create table \"quiz_questions\"",
+    "summary": "Creates table \"quiz_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "quiz_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"quiz_questions\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"quiz_questions\"",
+        "sql": "CREATE TABLE \"public\".\"quiz_questions\" (\n  \"category\" text,\n  \"correct_choice_id\" text,\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"image_asset_id\" uuid,\n  \"is_published\" bool DEFAULT false NOT NULL,\n  \"related_content_id\" uuid,\n  \"source_url\" text,\n  \"special_day\" int2,\n  \"special_month\" int2,\n  \"updated_at\" timestamptz DEFAULT (now()) NOT NULL,\n  CONSTRAINT \"quiz_questions_pkey\" PRIMARY KEY (\"id\"),\n  CONSTRAINT \"quiz_questions_category_check\" CHECK (((category IS NULL) OR (btrim(category) <> ''::text))),\n  CONSTRAINT \"quiz_questions_correct_choice_id_check\" CHECK (((correct_choice_id IS NULL) OR (btrim(correct_choice_id) <> ''::text))),\n  CONSTRAINT \"quiz_questions_source_url_check\" CHECK (((source_url IS NULL) OR (btrim(source_url) <> ''::text))),\n  CONSTRAINT \"quiz_questions_special_date_check\" CHECK ((((special_month IS NULL) = (special_day IS NULL)) AND ((special_month IS NULL) OR ((special_month >= 1) AND (special_month <= 12) AND ((special_day >= 1) AND (special_day <=\nCASE\n    WHEN (special_month = 2) THEN 29\n    WHEN (special_month = ANY (ARRAY[4, 6, 9, 11])) THEN 30\n    ELSE 31\nEND))))))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"quiz_questions\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions\""]
+      }
+    ]
+  },
+  {
+    "id": "table.tag_translations",
+    "label": "Create table \"tag_translations\"",
+    "summary": "Creates table \"tag_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "tag_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"tag_translations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"tag_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"tag_translations\"",
+        "sql": "CREATE TABLE \"public\".\"tag_translations\" (\n  \"locale\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"tag_id\" uuid NOT NULL,\n  CONSTRAINT \"tag_translations_pkey\" PRIMARY KEY (\"tag_id\", \"locale\"),\n  CONSTRAINT \"tag_translations_locale_check\" CHECK ((locale = ANY (ARRAY['ja'::text, 'en'::text]))),\n  CONSTRAINT \"tag_translations_name_check\" CHECK ((btrim(name) <> ''::text))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"tag_translations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"tag_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "table.tags",
+    "label": "Create table \"tags\"",
+    "summary": "Creates table \"tags\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "tags"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"tags\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"tags\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"tags\"",
+        "sql": "CREATE TABLE \"public\".\"tags\" (\n  \"id\" uuid NOT NULL,\n  \"key\" text NOT NULL,\n  CONSTRAINT \"tags_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"tags\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"tags\""]
+      }
+    ]
+  },
+  {
+    "id": "unique.automation_idempotency_keys.automation_idempotency_keys_key_hash_key",
+    "label": "Add unique constraint on \"automation_idempotency_keys\" (key_hash)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "automation_idempotency_keys_key_hash_key",
+        "table": "automation_idempotency_keys"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"automation_idempotency_keys_key_hash_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["automation_idempotency_keys_key_hash_key", "public", "\"public\".\"automation_idempotency_keys\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"automation_idempotency_keys_key_hash_key\"",
+        "sql": "ALTER TABLE \"public\".\"automation_idempotency_keys\" ADD CONSTRAINT \"automation_idempotency_keys_key_hash_key\" UNIQUE (\"key_hash\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"automation_idempotency_keys_key_hash_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["automation_idempotency_keys_key_hash_key", "public", "\"public\".\"automation_idempotency_keys\""]
+      }
+    ]
+  },
+  {
+    "id": "unique.content_entries.content_entries_kind_slug_key",
+    "label": "Add unique constraint on \"content_entries\" (kind, slug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "content_entries_kind_slug_key",
+        "table": "content_entries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"content_entries_kind_slug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["content_entries_kind_slug_key", "public", "\"public\".\"content_entries\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"content_entries_kind_slug_key\"",
+        "sql": "ALTER TABLE \"public\".\"content_entries\" ADD CONSTRAINT \"content_entries_kind_slug_key\" UNIQUE (\"kind\", \"slug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"content_entries_kind_slug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["content_entries_kind_slug_key", "public", "\"public\".\"content_entries\""]
+      }
+    ]
+  },
+  {
+    "id": "unique.media_assets.media_assets_storage_key_key",
+    "label": "Add unique constraint on \"media_assets\" (storage_key)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "media_assets_storage_key_key",
+        "table": "media_assets"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"media_assets_storage_key_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["media_assets_storage_key_key", "public", "\"public\".\"media_assets\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"media_assets_storage_key_key\"",
+        "sql": "ALTER TABLE \"public\".\"media_assets\" ADD CONSTRAINT \"media_assets_storage_key_key\" UNIQUE (\"storage_key\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"media_assets_storage_key_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["media_assets_storage_key_key", "public", "\"public\".\"media_assets\""]
+      }
+    ]
+  },
+  {
+    "id": "unique.media_assets.media_assets_url_key",
+    "label": "Add unique constraint on \"media_assets\" (url)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "media_assets_url_key",
+        "table": "media_assets"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"media_assets_url_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["media_assets_url_key", "public", "\"public\".\"media_assets\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"media_assets_url_key\"",
+        "sql": "ALTER TABLE \"public\".\"media_assets\" ADD CONSTRAINT \"media_assets_url_key\" UNIQUE (\"url\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"media_assets_url_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["media_assets_url_key", "public", "\"public\".\"media_assets\""]
+      }
+    ]
+  },
+  {
+    "id": "unique.prefecture_translations.prefecture_translations_locale_name_key",
+    "label": "Add unique constraint on \"prefecture_translations\" (locale, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "prefecture_translations_locale_name_key",
+        "table": "prefecture_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"prefecture_translations_locale_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["prefecture_translations_locale_name_key", "public", "\"public\".\"prefecture_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"prefecture_translations_locale_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"prefecture_translations\" ADD CONSTRAINT \"prefecture_translations_locale_name_key\" UNIQUE (\"locale\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"prefecture_translations_locale_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["prefecture_translations_locale_name_key", "public", "\"public\".\"prefecture_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "unique.pub_statuses.pub_statuses_key_unique",
+    "label": "Add unique constraint on \"pub_statuses\" (key)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "pub_statuses_key_unique",
+        "table": "pub_statuses"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"pub_statuses_key_unique\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_statuses_key_unique", "public", "\"public\".\"pub_statuses\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"pub_statuses_key_unique\"",
+        "sql": "ALTER TABLE \"public\".\"pub_statuses\" ADD CONSTRAINT \"pub_statuses_key_unique\" UNIQUE (\"key\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"pub_statuses_key_unique\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_statuses_key_unique", "public", "\"public\".\"pub_statuses\""]
+      }
+    ]
+  },
+  {
+    "id": "unique.pub_types.pub_types_key_key",
+    "label": "Add unique constraint on \"pub_types\" (key)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "pub_types_key_key",
+        "table": "pub_types"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"pub_types_key_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_types_key_key", "public", "\"public\".\"pub_types\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"pub_types_key_key\"",
+        "sql": "ALTER TABLE \"public\".\"pub_types\" ADD CONSTRAINT \"pub_types_key_key\" UNIQUE (\"key\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"pub_types_key_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_types_key_key", "public", "\"public\".\"pub_types\""]
+      }
+    ]
+  },
+  {
+    "id": "unique.quiz_choices.quiz_choices_question_sort_order_key",
+    "label": "Add unique constraint on \"quiz_choices\" (question_id, sort_order)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "quiz_choices_question_sort_order_key",
+        "table": "quiz_choices"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"quiz_choices_question_sort_order_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_choices_question_sort_order_key", "public", "\"public\".\"quiz_choices\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"quiz_choices_question_sort_order_key\"",
+        "sql": "ALTER TABLE \"public\".\"quiz_choices\" ADD CONSTRAINT \"quiz_choices_question_sort_order_key\" UNIQUE (\"question_id\", \"sort_order\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"quiz_choices_question_sort_order_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_choices_question_sort_order_key", "public", "\"public\".\"quiz_choices\""]
+      }
+    ]
+  },
+  {
+    "id": "unique.tag_translations.tag_translations_locale_name_key",
+    "label": "Add unique constraint on \"tag_translations\" (locale, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "tag_translations_locale_name_key",
+        "table": "tag_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"tag_translations_locale_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["tag_translations_locale_name_key", "public", "\"public\".\"tag_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"tag_translations_locale_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"tag_translations\" ADD CONSTRAINT \"tag_translations_locale_name_key\" UNIQUE (\"locale\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"tag_translations_locale_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["tag_translations_locale_name_key", "public", "\"public\".\"tag_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "unique.tags.tags_key_unique",
+    "label": "Add unique constraint on \"tags\" (key)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "tags_key_unique",
+        "table": "tags"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"tags_key_unique\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["tags_key_unique", "public", "\"public\".\"tags\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"tags_key_unique\"",
+        "sql": "ALTER TABLE \"public\".\"tags\" ADD CONSTRAINT \"tags_key_unique\" UNIQUE (\"key\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"tags_key_unique\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["tags_key_unique", "public", "\"public\".\"tags\""]
+      }
+    ]
+  },
+  {
+    "id": "index.automation_audit_logs.automation_audit_logs_created_at_idx",
+    "label": "Create index \"automation_audit_logs_created_at_idx\" on \"automation_audit_logs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "automation_audit_logs_created_at_idx",
+        "table": "automation_audit_logs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"automation_audit_logs_created_at_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"automation_audit_logs_created_at_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"automation_audit_logs_created_at_idx\"",
+        "sql": "CREATE INDEX \"automation_audit_logs_created_at_idx\" ON \"public\".\"automation_audit_logs\" (\"created_at\" DESC)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"automation_audit_logs_created_at_idx\" has its expected definition",
+        "sql": "SELECT COALESCE((SELECT pg_get_indexdef(to_regclass($1)::oid) = $2), FALSE) AS \"result\"",
+        "params": [
+          "\"public\".\"automation_audit_logs_created_at_idx\"",
+          "CREATE INDEX automation_audit_logs_created_at_idx ON public.automation_audit_logs USING btree (created_at DESC)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.automation_audit_logs.automation_audit_logs_request_id_idx",
+    "label": "Create index \"automation_audit_logs_request_id_idx\" on \"automation_audit_logs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "automation_audit_logs_request_id_idx",
+        "table": "automation_audit_logs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"automation_audit_logs_request_id_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"automation_audit_logs_request_id_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"automation_audit_logs_request_id_idx\"",
+        "sql": "CREATE INDEX \"automation_audit_logs_request_id_idx\" ON \"public\".\"automation_audit_logs\" (\"request_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"automation_audit_logs_request_id_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"automation_audit_logs_request_id_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.automation_audit_logs.automation_audit_logs_resource_idx",
+    "label": "Create index \"automation_audit_logs_resource_idx\" on \"automation_audit_logs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "automation_audit_logs_resource_idx",
+        "table": "automation_audit_logs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"automation_audit_logs_resource_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"automation_audit_logs_resource_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"automation_audit_logs_resource_idx\"",
+        "sql": "CREATE INDEX \"automation_audit_logs_resource_idx\" ON \"public\".\"automation_audit_logs\" (\"resource_type\", \"resource_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"automation_audit_logs_resource_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"automation_audit_logs_resource_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.automation_idempotency_keys.automation_idempotency_keys_expires_at_idx",
+    "label": "Create index \"automation_idempotency_keys_expires_at_idx\" on \"automation_idempotency_keys\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "automation_idempotency_keys_expires_at_idx",
+        "table": "automation_idempotency_keys"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"automation_idempotency_keys_expires_at_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"automation_idempotency_keys_expires_at_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"automation_idempotency_keys_expires_at_idx\"",
+        "sql": "CREATE INDEX \"automation_idempotency_keys_expires_at_idx\" ON \"public\".\"automation_idempotency_keys\" (\"expires_at\") WHERE ((status = 'completed'::text))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"automation_idempotency_keys_expires_at_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"automation_idempotency_keys_expires_at_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.calendar_events.calendar_events_admin_list_idx",
+    "label": "Create index \"calendar_events_admin_list_idx\" on \"calendar_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "calendar_events_admin_list_idx",
+        "table": "calendar_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"calendar_events_admin_list_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_events_admin_list_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"calendar_events_admin_list_idx\"",
+        "sql": "CREATE INDEX \"calendar_events_admin_list_idx\" ON \"public\".\"calendar_events\" (\"updated_at\" DESC, \"id\" ASC)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"calendar_events_admin_list_idx\" has its expected definition",
+        "sql": "SELECT COALESCE((SELECT pg_get_indexdef(to_regclass($1)::oid) = $2), FALSE) AS \"result\"",
+        "params": [
+          "\"public\".\"calendar_events_admin_list_idx\"",
+          "CREATE INDEX calendar_events_admin_list_idx ON public.calendar_events USING btree (updated_at DESC, id)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.calendar_events.calendar_events_category_idx",
+    "label": "Create index \"calendar_events_category_idx\" on \"calendar_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "calendar_events_category_idx",
+        "table": "calendar_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"calendar_events_category_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_events_category_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"calendar_events_category_idx\"",
+        "sql": "CREATE INDEX \"calendar_events_category_idx\" ON \"public\".\"calendar_events\" (\"category\", \"sort_order\", \"id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"calendar_events_category_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_events_category_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.calendar_events.calendar_events_published_idx",
+    "label": "Create index \"calendar_events_published_idx\" on \"calendar_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "calendar_events_published_idx",
+        "table": "calendar_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"calendar_events_published_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_events_published_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"calendar_events_published_idx\"",
+        "sql": "CREATE INDEX \"calendar_events_published_idx\" ON \"public\".\"calendar_events\" (\"sort_order\", \"id\") WHERE (is_published)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"calendar_events_published_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_events_published_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.calendar_events.calendar_events_sort_order_idx",
+    "label": "Create index \"calendar_events_sort_order_idx\" on \"calendar_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "calendar_events_sort_order_idx",
+        "table": "calendar_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"calendar_events_sort_order_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_events_sort_order_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"calendar_events_sort_order_idx\"",
+        "sql": "CREATE INDEX \"calendar_events_sort_order_idx\" ON \"public\".\"calendar_events\" (\"sort_order\", \"id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"calendar_events_sort_order_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"calendar_events_sort_order_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.content_entries.content_entries_hero_image_asset_id_idx",
+    "label": "Create index \"content_entries_hero_image_asset_id_idx\" on \"content_entries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "content_entries_hero_image_asset_id_idx",
+        "table": "content_entries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"content_entries_hero_image_asset_id_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"content_entries_hero_image_asset_id_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"content_entries_hero_image_asset_id_idx\"",
+        "sql": "CREATE INDEX \"content_entries_hero_image_asset_id_idx\" ON \"public\".\"content_entries\" (\"hero_image_asset_id\") WHERE ((hero_image_asset_id IS NOT NULL))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"content_entries_hero_image_asset_id_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"content_entries_hero_image_asset_id_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.media_assets.media_assets_admin_list_idx",
+    "label": "Create index \"media_assets_admin_list_idx\" on \"media_assets\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "media_assets_admin_list_idx",
+        "table": "media_assets"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"media_assets_admin_list_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"media_assets_admin_list_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"media_assets_admin_list_idx\"",
+        "sql": "CREATE INDEX \"media_assets_admin_list_idx\" ON \"public\".\"media_assets\" (\"created_at\" DESC, \"id\" DESC)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"media_assets_admin_list_idx\" has its expected definition",
+        "sql": "SELECT COALESCE((SELECT pg_get_indexdef(to_regclass($1)::oid) = $2), FALSE) AS \"result\"",
+        "params": [
+          "\"public\".\"media_assets_admin_list_idx\"",
+          "CREATE INDEX media_assets_admin_list_idx ON public.media_assets USING btree (created_at DESC, id DESC)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.pub_tags.pub_tags_tag_id_idx",
+    "label": "Create index \"pub_tags_tag_id_idx\" on \"pub_tags\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pub_tags_tag_id_idx",
+        "table": "pub_tags"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pub_tags_tag_id_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pub_tags_tag_id_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pub_tags_tag_id_idx\"",
+        "sql": "CREATE INDEX \"pub_tags_tag_id_idx\" ON \"public\".\"pub_tags\" (\"tag_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pub_tags_tag_id_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pub_tags_tag_id_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.pubs.pubs_municipality_code_idx",
+    "label": "Create index \"pubs_municipality_code_idx\" on \"pubs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pubs_municipality_code_idx",
+        "table": "pubs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pubs_municipality_code_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pubs_municipality_code_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pubs_municipality_code_idx\"",
+        "sql": "CREATE INDEX \"pubs_municipality_code_idx\" ON \"public\".\"pubs\" (\"municipality_code\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pubs_municipality_code_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pubs_municipality_code_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.pubs.pubs_prefecture_code_idx",
+    "label": "Create index \"pubs_prefecture_code_idx\" on \"pubs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pubs_prefecture_code_idx",
+        "table": "pubs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pubs_prefecture_code_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pubs_prefecture_code_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pubs_prefecture_code_idx\"",
+        "sql": "CREATE INDEX \"pubs_prefecture_code_idx\" ON \"public\".\"pubs\" (\"prefecture_code\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pubs_prefecture_code_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pubs_prefecture_code_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.pubs.pubs_pub_type_code_idx",
+    "label": "Create index \"pubs_pub_type_code_idx\" on \"pubs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pubs_pub_type_code_idx",
+        "table": "pubs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pubs_pub_type_code_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pubs_pub_type_code_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pubs_pub_type_code_idx\"",
+        "sql": "CREATE INDEX \"pubs_pub_type_code_idx\" ON \"public\".\"pubs\" (\"pub_type_code\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pubs_pub_type_code_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pubs_pub_type_code_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.pubs.pubs_status_code_idx",
+    "label": "Create index \"pubs_status_code_idx\" on \"pubs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pubs_status_code_idx",
+        "table": "pubs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pubs_status_code_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"pubs_status_code_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pubs_status_code_idx\"",
+        "sql": "CREATE INDEX \"pubs_status_code_idx\" ON \"public\".\"pubs\" (\"status_code\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pubs_status_code_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"pubs_status_code_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.quiz_questions.quiz_questions_admin_list_idx",
+    "label": "Create index \"quiz_questions_admin_list_idx\" on \"quiz_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "quiz_questions_admin_list_idx",
+        "table": "quiz_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"quiz_questions_admin_list_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_admin_list_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"quiz_questions_admin_list_idx\"",
+        "sql": "CREATE INDEX \"quiz_questions_admin_list_idx\" ON \"public\".\"quiz_questions\" (\"updated_at\" DESC, \"id\" ASC)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"quiz_questions_admin_list_idx\" has its expected definition",
+        "sql": "SELECT COALESCE((SELECT pg_get_indexdef(to_regclass($1)::oid) = $2), FALSE) AS \"result\"",
+        "params": [
+          "\"public\".\"quiz_questions_admin_list_idx\"",
+          "CREATE INDEX quiz_questions_admin_list_idx ON public.quiz_questions USING btree (updated_at DESC, id)"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.quiz_questions.quiz_questions_category_idx",
+    "label": "Create index \"quiz_questions_category_idx\" on \"quiz_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "quiz_questions_category_idx",
+        "table": "quiz_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"quiz_questions_category_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_category_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"quiz_questions_category_idx\"",
+        "sql": "CREATE INDEX \"quiz_questions_category_idx\" ON \"public\".\"quiz_questions\" (\"category\", \"id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"quiz_questions_category_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_category_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.quiz_questions.quiz_questions_image_asset_id_idx",
+    "label": "Create index \"quiz_questions_image_asset_id_idx\" on \"quiz_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "quiz_questions_image_asset_id_idx",
+        "table": "quiz_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"quiz_questions_image_asset_id_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_image_asset_id_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"quiz_questions_image_asset_id_idx\"",
+        "sql": "CREATE INDEX \"quiz_questions_image_asset_id_idx\" ON \"public\".\"quiz_questions\" (\"image_asset_id\") WHERE ((image_asset_id IS NOT NULL))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"quiz_questions_image_asset_id_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_image_asset_id_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.quiz_questions.quiz_questions_published_idx",
+    "label": "Create index \"quiz_questions_published_idx\" on \"quiz_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "quiz_questions_published_idx",
+        "table": "quiz_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"quiz_questions_published_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_published_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"quiz_questions_published_idx\"",
+        "sql": "CREATE INDEX \"quiz_questions_published_idx\" ON \"public\".\"quiz_questions\" (\"id\") WHERE (is_published)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"quiz_questions_published_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_published_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.quiz_questions.quiz_questions_related_content_id_idx",
+    "label": "Create index \"quiz_questions_related_content_id_idx\" on \"quiz_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "quiz_questions_related_content_id_idx",
+        "table": "quiz_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"quiz_questions_related_content_id_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_related_content_id_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"quiz_questions_related_content_id_idx\"",
+        "sql": "CREATE INDEX \"quiz_questions_related_content_id_idx\" ON \"public\".\"quiz_questions\" (\"related_content_id\") WHERE ((related_content_id IS NOT NULL))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"quiz_questions_related_content_id_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_related_content_id_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "index.quiz_questions.quiz_questions_special_date_idx",
+    "label": "Create index \"quiz_questions_special_date_idx\" on \"quiz_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "quiz_questions_special_date_idx",
+        "table": "quiz_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"quiz_questions_special_date_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_special_date_idx\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"quiz_questions_special_date_idx\"",
+        "sql": "CREATE INDEX \"quiz_questions_special_date_idx\" ON \"public\".\"quiz_questions\" (\"special_month\", \"special_day\", \"id\") WHERE ((is_published AND (special_month IS NOT NULL)))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"quiz_questions_special_date_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"quiz_questions_special_date_idx\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.calendar_event_translations.calendar_event_translations_event_id_fkey",
+    "label": "Add foreign key \"calendar_event_translations_event_id_fkey\" on \"calendar_event_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "calendar_event_translations_event_id_fkey",
+        "table": "calendar_event_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"calendar_event_translations_event_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["calendar_event_translations_event_id_fkey", "public", "\"public\".\"calendar_event_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"calendar_event_translations_event_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"calendar_event_translations\"\nADD CONSTRAINT \"calendar_event_translations_event_id_fkey\"\nFOREIGN KEY (\"event_id\")\nREFERENCES \"public\".\"calendar_events\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"calendar_event_translations_event_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["calendar_event_translations_event_id_fkey", "public", "\"public\".\"calendar_event_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.content_entries.content_entries_hero_image_asset_id_fkey",
+    "label": "Add foreign key \"content_entries_hero_image_asset_id_fkey\" on \"content_entries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "content_entries_hero_image_asset_id_fkey",
+        "table": "content_entries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"content_entries_hero_image_asset_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["content_entries_hero_image_asset_id_fkey", "public", "\"public\".\"content_entries\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"content_entries_hero_image_asset_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"content_entries\"\nADD CONSTRAINT \"content_entries_hero_image_asset_id_fkey\"\nFOREIGN KEY (\"hero_image_asset_id\")\nREFERENCES \"public\".\"media_assets\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"content_entries_hero_image_asset_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["content_entries_hero_image_asset_id_fkey", "public", "\"public\".\"content_entries\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.content_translations.content_translations_content_id_fkey",
+    "label": "Add foreign key \"content_translations_content_id_fkey\" on \"content_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "content_translations_content_id_fkey",
+        "table": "content_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"content_translations_content_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["content_translations_content_id_fkey", "public", "\"public\".\"content_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"content_translations_content_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"content_translations\"\nADD CONSTRAINT \"content_translations_content_id_fkey\"\nFOREIGN KEY (\"content_id\")\nREFERENCES \"public\".\"content_entries\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"content_translations_content_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["content_translations_content_id_fkey", "public", "\"public\".\"content_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.municipality_codes.municipality_codes_prefecture_code_fkey",
+    "label": "Add foreign key \"municipality_codes_prefecture_code_fkey\" on \"municipality_codes\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "municipality_codes_prefecture_code_fkey",
+        "table": "municipality_codes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"municipality_codes_prefecture_code_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["municipality_codes_prefecture_code_fkey", "public", "\"public\".\"municipality_codes\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"municipality_codes_prefecture_code_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"municipality_codes\"\nADD CONSTRAINT \"municipality_codes_prefecture_code_fkey\"\nFOREIGN KEY (\"prefecture_code\")\nREFERENCES \"public\".\"prefectures\" (\"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"municipality_codes_prefecture_code_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["municipality_codes_prefecture_code_fkey", "public", "\"public\".\"municipality_codes\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.municipality_translations.municipality_translations_municipality_code_fkey",
+    "label": "Add foreign key \"municipality_translations_municipality_code_fkey\" on \"municipality_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "municipality_translations_municipality_code_fkey",
+        "table": "municipality_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"municipality_translations_municipality_code_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "municipality_translations_municipality_code_fkey",
+          "public",
+          "\"public\".\"municipality_translations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"municipality_translations_municipality_code_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"municipality_translations\"\nADD CONSTRAINT \"municipality_translations_municipality_code_fkey\"\nFOREIGN KEY (\"municipality_code\")\nREFERENCES \"public\".\"municipality_codes\" (\"code\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"municipality_translations_municipality_code_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "municipality_translations_municipality_code_fkey",
+          "public",
+          "\"public\".\"municipality_translations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.prefecture_translations.prefecture_translations_prefecture_code_fkey",
+    "label": "Add foreign key \"prefecture_translations_prefecture_code_fkey\" on \"prefecture_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "prefecture_translations_prefecture_code_fkey",
+        "table": "prefecture_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"prefecture_translations_prefecture_code_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["prefecture_translations_prefecture_code_fkey", "public", "\"public\".\"prefecture_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"prefecture_translations_prefecture_code_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"prefecture_translations\"\nADD CONSTRAINT \"prefecture_translations_prefecture_code_fkey\"\nFOREIGN KEY (\"prefecture_code\")\nREFERENCES \"public\".\"prefectures\" (\"code\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"prefecture_translations_prefecture_code_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["prefecture_translations_prefecture_code_fkey", "public", "\"public\".\"prefecture_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pub_status_translations.pub_status_translations_status_code_fkey",
+    "label": "Add foreign key \"pub_status_translations_status_code_fkey\" on \"pub_status_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pub_status_translations_status_code_fkey",
+        "table": "pub_status_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pub_status_translations_status_code_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_status_translations_status_code_fkey", "public", "\"public\".\"pub_status_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pub_status_translations_status_code_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pub_status_translations\"\nADD CONSTRAINT \"pub_status_translations_status_code_fkey\"\nFOREIGN KEY (\"status_code\")\nREFERENCES \"public\".\"pub_statuses\" (\"code\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pub_status_translations_status_code_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_status_translations_status_code_fkey", "public", "\"public\".\"pub_status_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pub_tags.pub_tags_pub_id_fkey1",
+    "label": "Add foreign key \"pub_tags_pub_id_fkey1\" on \"pub_tags\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pub_tags_pub_id_fkey1",
+        "table": "pub_tags"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pub_tags_pub_id_fkey1\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_tags_pub_id_fkey1", "public", "\"public\".\"pub_tags\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pub_tags_pub_id_fkey1\"",
+        "sql": "ALTER TABLE \"public\".\"pub_tags\"\nADD CONSTRAINT \"pub_tags_pub_id_fkey1\"\nFOREIGN KEY (\"pub_id\")\nREFERENCES \"public\".\"pubs\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pub_tags_pub_id_fkey1\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_tags_pub_id_fkey1", "public", "\"public\".\"pub_tags\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pub_tags.pub_tags_tag_id_fkey",
+    "label": "Add foreign key \"pub_tags_tag_id_fkey\" on \"pub_tags\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pub_tags_tag_id_fkey",
+        "table": "pub_tags"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pub_tags_tag_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_tags_tag_id_fkey", "public", "\"public\".\"pub_tags\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pub_tags_tag_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pub_tags\"\nADD CONSTRAINT \"pub_tags_tag_id_fkey\"\nFOREIGN KEY (\"tag_id\")\nREFERENCES \"public\".\"tags\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pub_tags_tag_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_tags_tag_id_fkey", "public", "\"public\".\"pub_tags\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pub_translations.pub_translations_pub_id_fkey",
+    "label": "Add foreign key \"pub_translations_pub_id_fkey\" on \"pub_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pub_translations_pub_id_fkey",
+        "table": "pub_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pub_translations_pub_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_translations_pub_id_fkey", "public", "\"public\".\"pub_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pub_translations_pub_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pub_translations\"\nADD CONSTRAINT \"pub_translations_pub_id_fkey\"\nFOREIGN KEY (\"pub_id\")\nREFERENCES \"public\".\"pubs\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pub_translations_pub_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_translations_pub_id_fkey", "public", "\"public\".\"pub_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pub_type_translations.pub_type_translations_pub_type_code_fkey",
+    "label": "Add foreign key \"pub_type_translations_pub_type_code_fkey\" on \"pub_type_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pub_type_translations_pub_type_code_fkey",
+        "table": "pub_type_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pub_type_translations_pub_type_code_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_type_translations_pub_type_code_fkey", "public", "\"public\".\"pub_type_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pub_type_translations_pub_type_code_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pub_type_translations\"\nADD CONSTRAINT \"pub_type_translations_pub_type_code_fkey\"\nFOREIGN KEY (\"pub_type_code\")\nREFERENCES \"public\".\"pub_types\" (\"code\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pub_type_translations_pub_type_code_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pub_type_translations_pub_type_code_fkey", "public", "\"public\".\"pub_type_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pubs.pubs_prefecture_code_fkey",
+    "label": "Add foreign key \"pubs_prefecture_code_fkey\" on \"pubs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pubs_prefecture_code_fkey",
+        "table": "pubs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pubs_prefecture_code_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pubs_prefecture_code_fkey", "public", "\"public\".\"pubs\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pubs_prefecture_code_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pubs\"\nADD CONSTRAINT \"pubs_prefecture_code_fkey\"\nFOREIGN KEY (\"prefecture_code\")\nREFERENCES \"public\".\"prefectures\" (\"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pubs_prefecture_code_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pubs_prefecture_code_fkey", "public", "\"public\".\"pubs\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pubs.pubs_status_code_fkey",
+    "label": "Add foreign key \"pubs_status_code_fkey\" on \"pubs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pubs_status_code_fkey",
+        "table": "pubs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pubs_status_code_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pubs_status_code_fkey", "public", "\"public\".\"pubs\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pubs_status_code_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pubs\"\nADD CONSTRAINT \"pubs_status_code_fkey\"\nFOREIGN KEY (\"status_code\")\nREFERENCES \"public\".\"pub_statuses\" (\"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pubs_status_code_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pubs_status_code_fkey", "public", "\"public\".\"pubs\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pubs.pubs_municipality_code_fkey",
+    "label": "Add foreign key \"pubs_municipality_code_fkey\" on \"pubs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pubs_municipality_code_fkey",
+        "table": "pubs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pubs_municipality_code_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pubs_municipality_code_fkey", "public", "\"public\".\"pubs\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pubs_municipality_code_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pubs\"\nADD CONSTRAINT \"pubs_municipality_code_fkey\"\nFOREIGN KEY (\"municipality_code\")\nREFERENCES \"public\".\"municipality_codes\" (\"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pubs_municipality_code_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pubs_municipality_code_fkey", "public", "\"public\".\"pubs\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pubs.pubs_pub_type_code_fkey",
+    "label": "Add foreign key \"pubs_pub_type_code_fkey\" on \"pubs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pubs_pub_type_code_fkey",
+        "table": "pubs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pubs_pub_type_code_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pubs_pub_type_code_fkey", "public", "\"public\".\"pubs\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pubs_pub_type_code_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pubs\"\nADD CONSTRAINT \"pubs_pub_type_code_fkey\"\nFOREIGN KEY (\"pub_type_code\")\nREFERENCES \"public\".\"pub_types\" (\"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pubs_pub_type_code_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["pubs_pub_type_code_fkey", "public", "\"public\".\"pubs\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.quiz_choice_translations.quiz_choice_translations_choice_fkey",
+    "label": "Add foreign key \"quiz_choice_translations_choice_fkey\" on \"quiz_choice_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "quiz_choice_translations_choice_fkey",
+        "table": "quiz_choice_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"quiz_choice_translations_choice_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_choice_translations_choice_fkey", "public", "\"public\".\"quiz_choice_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"quiz_choice_translations_choice_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"quiz_choice_translations\"\nADD CONSTRAINT \"quiz_choice_translations_choice_fkey\"\nFOREIGN KEY (\"question_id\", \"choice_id\")\nREFERENCES \"public\".\"quiz_choices\" (\"question_id\", \"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"quiz_choice_translations_choice_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_choice_translations_choice_fkey", "public", "\"public\".\"quiz_choice_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.quiz_choices.quiz_choices_question_id_fkey",
+    "label": "Add foreign key \"quiz_choices_question_id_fkey\" on \"quiz_choices\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "quiz_choices_question_id_fkey",
+        "table": "quiz_choices"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"quiz_choices_question_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_choices_question_id_fkey", "public", "\"public\".\"quiz_choices\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"quiz_choices_question_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"quiz_choices\"\nADD CONSTRAINT \"quiz_choices_question_id_fkey\"\nFOREIGN KEY (\"question_id\")\nREFERENCES \"public\".\"quiz_questions\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"quiz_choices_question_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_choices_question_id_fkey", "public", "\"public\".\"quiz_choices\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.quiz_question_translations.quiz_question_translations_question_id_fkey",
+    "label": "Add foreign key \"quiz_question_translations_question_id_fkey\" on \"quiz_question_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "quiz_question_translations_question_id_fkey",
+        "table": "quiz_question_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"quiz_question_translations_question_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_question_translations_question_id_fkey", "public", "\"public\".\"quiz_question_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"quiz_question_translations_question_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"quiz_question_translations\"\nADD CONSTRAINT \"quiz_question_translations_question_id_fkey\"\nFOREIGN KEY (\"question_id\")\nREFERENCES \"public\".\"quiz_questions\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"quiz_question_translations_question_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_question_translations_question_id_fkey", "public", "\"public\".\"quiz_question_translations\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.quiz_questions.quiz_questions_related_content_id_fkey",
+    "label": "Add foreign key \"quiz_questions_related_content_id_fkey\" on \"quiz_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "quiz_questions_related_content_id_fkey",
+        "table": "quiz_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"quiz_questions_related_content_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_questions_related_content_id_fkey", "public", "\"public\".\"quiz_questions\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"quiz_questions_related_content_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"quiz_questions\"\nADD CONSTRAINT \"quiz_questions_related_content_id_fkey\"\nFOREIGN KEY (\"related_content_id\")\nREFERENCES \"public\".\"content_entries\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"quiz_questions_related_content_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_questions_related_content_id_fkey", "public", "\"public\".\"quiz_questions\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.quiz_questions.quiz_questions_image_asset_id_fkey",
+    "label": "Add foreign key \"quiz_questions_image_asset_id_fkey\" on \"quiz_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "quiz_questions_image_asset_id_fkey",
+        "table": "quiz_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"quiz_questions_image_asset_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_questions_image_asset_id_fkey", "public", "\"public\".\"quiz_questions\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"quiz_questions_image_asset_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"quiz_questions\"\nADD CONSTRAINT \"quiz_questions_image_asset_id_fkey\"\nFOREIGN KEY (\"image_asset_id\")\nREFERENCES \"public\".\"media_assets\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"quiz_questions_image_asset_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_questions_image_asset_id_fkey", "public", "\"public\".\"quiz_questions\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.quiz_questions.quiz_questions_correct_choice_fkey",
+    "label": "Add deferred foreign key \"quiz_questions_correct_choice_fkey\" on \"quiz_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "quiz_questions_correct_choice_fkey",
+        "table": "quiz_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"quiz_questions_correct_choice_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["quiz_questions_correct_choice_fkey", "public", "\"public\".\"quiz_questions\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add deferred FK \"quiz_questions_correct_choice_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"quiz_questions\"\nADD CONSTRAINT \"quiz_questions_correct_choice_fkey\"\nFOREIGN KEY (\"id\", \"correct_choice_id\")\nREFERENCES \"public\".\"quiz_choices\" (\"question_id\", \"id\")\nDEFERRABLE INITIALLY DEFERRED"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"quiz_questions_correct_choice_fkey\" is initially deferred",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"condeferrable\" AND \"c\".\"condeferred\")) AS \"result\"",
+        "params": ["quiz_questions_correct_choice_fkey", "public", "\"public\".\"quiz_questions\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.tag_translations.tag_translations_tag_id_fkey",
+    "label": "Add foreign key \"tag_translations_tag_id_fkey\" on \"tag_translations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "tag_translations_tag_id_fkey",
+        "table": "tag_translations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"tag_translations_tag_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["tag_translations_tag_id_fkey", "public", "\"public\".\"tag_translations\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"tag_translations_tag_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"tag_translations\"\nADD CONSTRAINT \"tag_translations_tag_id_fkey\"\nFOREIGN KEY (\"tag_id\")\nREFERENCES \"public\".\"tags\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"tag_translations_tag_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["tag_translations_tag_id_fkey", "public", "\"public\".\"tag_translations\""]
+      }
+    ]
+  }
+]

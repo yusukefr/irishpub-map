@@ -17,7 +17,7 @@ import type {
   StorageHashBase,
 } from "@prisma/orm-postgres/contract/types";
 
-export type StorageHash = StorageHashBase<"f8338fe226645fd857a00cc72e1618763f115b19e4dfc6e70714acbbde9d9926">;
+export type StorageHash = StorageHashBase<"4ee73e5187a8748d34b95605ee84c9f202368e31f37bf9c3a334261fce037371">;
 export type ExecutionHash = ExecutionHashBase<string>;
 export type ProfileHash = ProfileHashBase<"3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2">;
 
@@ -1328,7 +1328,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
                 readonly id: {
@@ -1417,7 +1416,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
                 readonly expires_at: {
@@ -1428,7 +1426,6 @@ type ContractBase = Omit<
                     readonly kind: "function";
                     readonly expression: "(now() + '24:00:00'::interval)";
                   };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
                 readonly id: {
@@ -1549,7 +1546,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
               };
@@ -1598,7 +1594,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
                 readonly date_rule: {
@@ -1660,7 +1655,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
               };
@@ -1707,7 +1701,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
                 readonly hero_image_asset_id: {
@@ -1732,7 +1725,6 @@ type ContractBase = Omit<
                   readonly dataType: "pg/timestamptz";
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: true;
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
                 readonly slug: {
@@ -1752,7 +1744,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
               };
@@ -1841,7 +1832,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
               };
@@ -1874,7 +1864,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
                 readonly file_size: {
@@ -2253,7 +2242,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
               };
@@ -2413,7 +2401,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
                 readonly website_url: {
@@ -2536,7 +2523,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
               };
@@ -2569,7 +2555,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
                 readonly id: {
@@ -2595,7 +2580,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
               };
@@ -2677,7 +2661,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
               };
@@ -2722,7 +2705,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
                 readonly id: {
@@ -2776,7 +2758,6 @@ type ContractBase = Omit<
                   readonly codecId: "pg/timestamptz-temporal@1";
                   readonly nullable: false;
                   readonly default: { readonly kind: "function"; readonly expression: "now()" };
-                  readonly typeParams: { readonly precision: 6 };
                   readonly many: false;
                 };
               };
@@ -3042,7 +3023,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
               readonly id: {
@@ -3108,7 +3088,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
               readonly expires_at: {
@@ -3116,7 +3095,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
               readonly id: {
@@ -3204,7 +3182,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
               readonly date_rule: {
@@ -3240,7 +3217,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
             };
@@ -3298,7 +3274,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
             };
@@ -3339,7 +3314,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
               readonly hero_image_asset_id: {
@@ -3359,7 +3333,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
               readonly slug: {
@@ -3375,7 +3348,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
             };
@@ -3466,7 +3438,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
             };
@@ -3506,7 +3477,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
               readonly file_size: {
@@ -3810,7 +3780,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
               readonly website_url: {
@@ -4056,7 +4025,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
             };
@@ -4171,7 +4139,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
               readonly id: {
@@ -4191,7 +4158,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
             };
@@ -4266,7 +4232,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
             };
@@ -4311,7 +4276,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
               readonly id: {
@@ -4347,7 +4311,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
             };
@@ -4464,7 +4427,6 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/timestamptz-temporal@1";
-                  readonly typeParams: { readonly precision: 6 };
                 };
               };
             };
