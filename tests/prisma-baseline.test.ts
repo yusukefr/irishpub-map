@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { verifyPrismaBaseline } from "../scripts/verify-prisma-baseline.mjs";
+import { runPrisma, verifyPrismaBaseline } from "../scripts/verify-prisma-baseline.mjs";
 
 const baselineName = readdirSync("migrations/app").find((name) => name.endsWith("_baseline"));
 if (!baselineName) throw new Error("Prisma baseline migration directory is missing");
@@ -12,6 +12,7 @@ const operations = JSON.parse(readFileSync(`${migrationDir}/ops.json`, "utf8")) 
 }>;
 const migration = readFileSync(`${migrationDir}/migration.ts`, "utf8");
 const referenceSeed = readFileSync("db/prisma/seed-reference-data.sql", "utf8");
+const verifyConfig = readFileSync("config/prisma-baseline-verify.config.ts", "utf8");
 const allSql = operations.flatMap((operation) => operation.execute.map((step) => step.sql)).join("\n");
 
 describe("Prisma 8 baseline", () => {
@@ -72,20 +73,44 @@ describe("Prisma 8 baseline", () => {
 
 describe("Prisma baseline verification command", () => {
   const env = {
-    PRISMA_SIGNED_DATABASE_URL: "postgresql://verify.example/db",
-    PRISMA_EMPTY_DATABASE_URL: "postgresql://empty.example/db",
+    PRISMA_SIGNED_DATABASE_BRANCH_ID: "br-signed-check",
+    PRISMA_EMPTY_DATABASE_BRANCH_ID: "br-empty-check",
   };
+  const branchResponse = JSON.stringify({
+    branches: [
+      { id: env.PRISMA_SIGNED_DATABASE_BRANCH_ID, name: "verify-signed", current_state: "ready" },
+      { id: env.PRISMA_EMPTY_DATABASE_BRANCH_ID, name: "verify-empty", current_state: "ready" },
+    ],
+  });
+  const connections = {
+    [env.PRISMA_SIGNED_DATABASE_BRANCH_ID]: "postgresql://ep-signed-check.us-east-1.aws.neon.tech/neondb",
+    [env.PRISMA_EMPTY_DATABASE_BRANCH_ID]: "postgresql://ep-empty-check.us-east-1.aws.neon.tech/neondb",
+  };
+  const appliedStatus = JSON.stringify({
+    kind: "result",
+    envelope: {
+      ok: true,
+      diagnostics: [],
+      result: { ok: true, diagnostics: [], spaces: [{ migrations: [{ status: "applied" }] }] },
+    },
+  });
 
-  it("verifies both distinct databases against the emitted contract and migration graph", () => {
-    const calls: string[][] = [];
+  function runWithStatus(statusOutput: string) {
+    const neonCalls: string[][] = [];
+    const prismaCalls: Array<{ args: string[]; connection: string }> = [];
     let output = "";
     let errorOutput = "";
 
     const exitCode = verifyPrismaBaseline({
       env,
-      run: (args) => {
-        calls.push(args);
-        return { status: 0 };
+      runNeonCommand: (args) => {
+        neonCalls.push(args);
+        if (args[0] === "branches") return { status: 0, stdout: branchResponse };
+        return { status: 0, stdout: connections[args[1] as keyof typeof connections] };
+      },
+      runPrismaCommand: (args, connection) => {
+        prismaCalls.push({ args, connection });
+        return { status: 0, stdout: args[1] === "status" ? statusOutput : "" };
       },
       stdout: {
         write: (chunk: string) => {
@@ -101,29 +126,80 @@ describe("Prisma baseline verification command", () => {
       } as NodeJS.WriteStream,
     });
 
+    return { exitCode, neonCalls, prismaCalls, output, errorOutput };
+  }
+
+  it("passes the database URL through the child environment, not command arguments", () => {
+    const databaseUrl = "postgresql://ep-verify-check.neon.tech/neondb";
+    let command = "";
+    let args: string[] = [];
+    let childEnv: NodeJS.ProcessEnv = {};
+
+    const result = runPrisma(
+      ["db", "verify", "--json", "--config", "config/prisma-baseline-verify.config.ts"],
+      databaseUrl,
+      (spawnCommand, spawnArgs, options) => {
+        command = spawnCommand;
+        args = spawnArgs;
+        childEnv = options.env;
+        return { status: 0 };
+      },
+    );
+
+    expect(command).toBe("npm");
+    expect(args).toContain("config/prisma-baseline-verify.config.ts");
+    expect(args).not.toContain(databaseUrl);
+    expect(childEnv.PRISMA_BASELINE_VERIFY_DATABASE_URL).toBe(databaseUrl);
+    expect(result.status).toBe(0);
+    expect(verifyConfig).toContain("parent: false");
+    expect(verifyConfig).toContain('contract: "../db/prisma/contract.prisma"');
+    expect(verifyConfig).toContain('migrations: { dir: "../migrations" }');
+    expect(verifyConfig).toContain("PRISMA_BASELINE_VERIFY_DATABASE_URL");
+  });
+
+  it("resolves distinct ready verification branches and keeps connection URLs out of arguments", () => {
+    const { exitCode, neonCalls, prismaCalls, output, errorOutput } = runWithStatus(appliedStatus);
+
     expect(exitCode).toBe(0);
-    expect(calls).toEqual([
-      ["db", "verify", "--db", env.PRISMA_SIGNED_DATABASE_URL],
-      ["migration", "status", "--db", env.PRISMA_SIGNED_DATABASE_URL],
-      ["db", "verify", "--db", env.PRISMA_EMPTY_DATABASE_URL],
-      ["migration", "status", "--db", env.PRISMA_EMPTY_DATABASE_URL],
+    expect(neonCalls[0]).toEqual(["branches", "list", "--project-id", "purple-cake-39243248", "--output", "json"]);
+    expect(neonCalls).toContainEqual([
+      "connection-string",
+      env.PRISMA_SIGNED_DATABASE_BRANCH_ID,
+      "--project-id",
+      "purple-cake-39243248",
     ]);
-    expect(output).toContain("signed verification database: schema and migration status verified.");
+    expect(prismaCalls).toHaveLength(4);
+    expect(prismaCalls.map(({ args }) => args)).toEqual([
+      ["db", "verify", "--json", "--config", "config/prisma-baseline-verify.config.ts"],
+      ["migration", "status", "--space", "app", "--json", "--config", "config/prisma-baseline-verify.config.ts"],
+      ["db", "verify", "--json", "--config", "config/prisma-baseline-verify.config.ts"],
+      ["migration", "status", "--space", "app", "--json", "--config", "config/prisma-baseline-verify.config.ts"],
+    ]);
+    expect(JSON.stringify([...neonCalls, ...prismaCalls.map(({ args }) => args)])).not.toContain("neon.tech");
+    expect(output).toContain("signed verification branch: schema and migration status verified.");
     expect(errorOutput).toBe("");
   });
 
-  it("rejects an identical database without invoking Prisma", () => {
-    let called = false;
+  it("rejects a fixed Preview branch and pooled Neon connections", () => {
+    let prismaCalled = false;
     let errorOutput = "";
 
     const exitCode = verifyPrismaBaseline({
-      env: {
-        ...env,
-        PRISMA_EMPTY_DATABASE_URL: "postgresql://verify.example/db?sslmode=require",
+      env,
+      runNeonCommand: (args) => {
+        if (args[0] === "branches") {
+          return {
+            status: 0,
+            stdout: JSON.stringify({
+              branches: [{ id: env.PRISMA_SIGNED_DATABASE_BRANCH_ID, name: "preview", state: "ready" }],
+            }),
+          };
+        }
+        return { status: 0, stdout: "" };
       },
-      run: () => {
-        called = true;
-        return { status: 0 };
+      runPrismaCommand: () => {
+        prismaCalled = true;
+        return { status: 0, stdout: appliedStatus };
       },
       stderr: {
         write: (chunk: string) => {
@@ -134,16 +210,65 @@ describe("Prisma baseline verification command", () => {
     });
 
     expect(exitCode).toBe(2);
-    expect(called).toBe(false);
-    expect(errorOutput).toContain("must be different databases");
-    expect(errorOutput).not.toContain("secret");
+    expect(prismaCalled).toBe(false);
+    expect(errorOutput).toContain("fixed Preview and Production branches");
+
+    const branchId = env.PRISMA_SIGNED_DATABASE_BRANCH_ID;
+    const pooledExit = verifyPrismaBaseline({
+      env,
+      runNeonCommand: (args) => {
+        if (args[0] === "branches") return { status: 0, stdout: branchResponse };
+        return {
+          status: 0,
+          stdout:
+            args[1] === branchId
+              ? "postgresql://ep-signed-check-pooler.us-east-1.aws.neon.tech/neondb"
+              : connections[args[1] as keyof typeof connections],
+        };
+      },
+      runPrismaCommand: (args) => ({ status: 0, stdout: args[1] === "status" ? appliedStatus : "" }),
+      stderr: { write: (chunk: string) => (errorOutput += chunk) } as NodeJS.WriteStream,
+    });
+    expect(pooledExit).toBe(2);
+    expect(errorOutput).toContain("Pooled Neon connections cannot be used");
   });
 
-  it("stops on Prisma failure without printing its potentially sensitive output", () => {
+  it("rejects two Branch IDs that resolve to the same Direct database endpoint", () => {
+    let prismaCalled = false;
     let errorOutput = "";
     const exitCode = verifyPrismaBaseline({
       env,
-      run: () => ({ status: 4, stdout: "hidden-output", stderr: "hidden-connection-string" }),
+      runNeonCommand: (args) => {
+        if (args[0] === "branches") return { status: 0, stdout: branchResponse };
+        return { status: 0, stdout: connections[env.PRISMA_SIGNED_DATABASE_BRANCH_ID] };
+      },
+      runPrismaCommand: () => {
+        prismaCalled = true;
+        return { status: 0, stdout: appliedStatus };
+      },
+      stderr: {
+        write: (chunk: string) => {
+          errorOutput += chunk;
+          return true;
+        },
+      } as NodeJS.WriteStream,
+    });
+
+    expect(exitCode).toBe(2);
+    expect(prismaCalled).toBe(false);
+    expect(errorOutput).toContain("resolve to the same database endpoint");
+    expect(errorOutput).not.toContain("neon.tech");
+  });
+
+  it("hides raw Prisma errors when a verification command fails", () => {
+    let errorOutput = "";
+    const exitCode = verifyPrismaBaseline({
+      env,
+      runNeonCommand: (args) => {
+        if (args[0] === "branches") return { status: 0, stdout: branchResponse };
+        return { status: 0, stdout: connections[args[1] as keyof typeof connections] };
+      },
+      runPrismaCommand: () => ({ status: 4, stdout: "hidden-output", stderr: "hidden-connection-string" }),
       stderr: {
         write: (chunk: string) => {
           errorOutput += chunk;
@@ -153,7 +278,42 @@ describe("Prisma baseline verification command", () => {
     });
 
     expect(exitCode).toBe(1);
-    expect(errorOutput).toContain("signed verification database: Prisma verify failed (exit 4).");
+    expect(errorOutput).toContain("Prisma verify failed (exit 4)");
     expect(errorOutput).not.toContain("hidden");
+  });
+
+  it.each([
+    {
+      name: "diagnostics",
+      output: JSON.stringify({
+        kind: "result",
+        envelope: {
+          ok: true,
+          diagnostics: [{ code: "MIGRATION.MARKER_NOT_IN_HISTORY" }],
+          result: { ok: true, diagnostics: [], spaces: [{ migrations: [{ status: "applied" }] }] },
+        },
+      }),
+    },
+    {
+      name: "pending",
+      output: JSON.stringify({
+        kind: "result",
+        envelope: {
+          ok: true,
+          diagnostics: [],
+          result: { ok: true, diagnostics: [], spaces: [{ migrations: [{ status: "pending" }] }] },
+        },
+      }),
+    },
+    { name: "invalid JSON", output: "not-json" },
+    { name: "missing result", output: JSON.stringify({ kind: "result", envelope: { ok: true, diagnostics: [] } }) },
+  ])("fails closed when migration status contains $name", ({ output: statusOutput }) => {
+    const result = runWithStatus(statusOutput);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toBe("");
+    expect(result.errorOutput).toMatch(/migration status|pending/i);
+    expect(result.errorOutput).not.toContain("MIGRATION.MARKER_NOT_IN_HISTORY");
+    expect(result.errorOutput).not.toContain("neon.tech");
   });
 });

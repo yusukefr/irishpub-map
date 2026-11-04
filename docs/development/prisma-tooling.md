@@ -9,6 +9,7 @@ Prisma 8 RCは互換性を保証する正式版ではありません。2026-10-1
 ## 配置
 
 - `prisma.config.ts`: Prisma 8設定。Contractと出力先を定義します。意図的に既定DB接続先を設定しません。
+- `config/prisma-baseline-verify.config.ts`: 隔離Baseline検証コマンド専用設定。`parent: false`で既定設定を継承せず、ContractとMigration directoryを明示し、環境変数からDirect endpointを読み取ります。
 - `db/prisma/contract.prisma`: Prisma 8形式のContract。Productionの現行Schemaとの照合は[Contract audit](prisma-contract-audit.md)に記録しています。
 - `generated/prisma8/`: `contract emit`が生成するContract artifactと型の出力先。
 
@@ -29,3 +30,5 @@ npm run prisma:contract:emit
 この設定では`db.connection`を設定しません。`contract emit`はDBへ接続しませんが、DBを使うPrisma CLIコマンドには既定の接続先がありません。Prisma CLIは`--db`で任意の接続先を明示できるため、本Repositoryでは直接CLIへProduction接続情報を与えてDBコマンドを実行しないでください。Production認証情報は開発者の一般シェルや直接起動するCLIへ配布しません。
 
 後続IssueでDB操作を追加する場合は、標準実行経路が`config/neon-targets.json`と既存`resolveNeonTarget()`によりTarget・Branch状態・直接接続を確認し、ProductionにはProduction Guardと明示承認を適用する必要があります。Production認証情報を一般のPrisma CLIから使えないよう権限・credentialの配置範囲も設計します。接続文字列はCLI引数、ログ、Git管理ファイルへ出しません。Prisma 8 RCに対するDB操作を追加する前に、対象バージョンのCLI仕様と操作の副作用を確認してください。詳しくは[Prisma CLI設定](https://www.prisma.io/docs/cli/configuration)を参照してください。
+
+`npm run prisma:baseline:verify`は例外的なread-only検証経路です。設定Project内のBranch IDをNeon CLIで解決し、固定Preview / Productionを拒否してDirect endpointを選びます。接続文字列は一時的な子プロセス環境変数として専用configへ渡し、コマンドライン引数やログへ含めません。操作は`db verify`と`migration status`に限定されます。
