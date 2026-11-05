@@ -7,21 +7,26 @@ import { toPubFeatureCollection } from "../../apps/mobile/app/pub-map-data";
 const maplibreProps = vi.hoisted(() => ({
   cameraInitialViewState: undefined as unknown,
   geoJsonData: undefined as unknown,
+  sourceData: {} as Record<string, unknown>,
+  cameraFlyTo: vi.fn(),
 }));
 
 vi.mock("@maplibre/maplibre-react-native", async () => {
   const React = await import("react");
   return {
-    Camera: ({ initialViewState }: { initialViewState: unknown }) => {
+    Camera: React.forwardRef(({ initialViewState }: { initialViewState: unknown }, ref) => {
       maplibreProps.cameraInitialViewState = initialViewState;
+      React.useImperativeHandle(ref, () => ({ flyTo: maplibreProps.cameraFlyTo }));
       return null;
-    },
+    }),
     GeoJSONSource: ({
       children,
       onPress,
       data,
-    }: React.PropsWithChildren<{ onPress: (event: unknown) => void; data: unknown }>) => {
+      id,
+    }: React.PropsWithChildren<{ onPress: (event: unknown) => void; data: unknown; id: string }>) => {
       maplibreProps.geoJsonData = data;
+      maplibreProps.sourceData[id] = data;
       return React.createElement(
         "div",
         null,
@@ -33,10 +38,20 @@ vi.mock("@maplibre/maplibre-react-native", async () => {
       );
     },
     Layer: () => null,
-    Map: ({ children, onDidFailLoadingMap, attribution }: React.PropsWithChildren<Record<string, unknown>>) =>
+    Map: ({
+      children,
+      onDidFailLoadingMap,
+      onDidFinishLoadingMap,
+      attribution,
+    }: React.PropsWithChildren<Record<string, unknown>>) =>
       React.createElement(
         "div",
         { "data-attribution": attribution },
+        React.createElement(
+          "button",
+          { type: "button", onClick: onDidFinishLoadingMap as () => void },
+          "finish map load",
+        ),
         React.createElement(
           "button",
           { type: "button", onClick: onDidFailLoadingMap as () => void },
@@ -208,5 +223,54 @@ describe("Mobile pub map", () => {
     expect(maplibreProps.geoJsonData).toMatchObject({
       features: [{ properties: { pubId: "pub-2" } }, { properties: { pubId: "pub-1" } }],
     });
+  });
+
+  it("shows nearby pubs and a separate current location marker without changing the pub source", () => {
+    maplibreProps.cameraFlyTo.mockClear();
+    const locationState = { status: "success" as const, coordinates: { latitude: 35.68, longitude: 139.76 } };
+    render(
+      <PubMap
+        pubs={[osakaPub, pub]}
+        dataReady
+        locale="ja"
+        selectedPubId={null}
+        locationState={locationState}
+        onSelectPub={vi.fn()}
+        onOpenPub={vi.fn()}
+      />,
+    );
+
+    expect(maplibreProps.sourceData["current-location"]).toEqual({
+      type: "FeatureCollection",
+      features: [{ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [139.76, 35.68] } }],
+    });
+    expect(maplibreProps.sourceData.pubs).toMatchObject({
+      features: [{ properties: { pubId: "pub-2" } }, { properties: { pubId: "pub-1" } }],
+    });
+    expect(screen.getByText("近くのパブ")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "The Green Harp, 0 m" })).toBeTruthy();
+    fireEvent.click(screen.getByText("finish map load"));
+    expect(maplibreProps.cameraFlyTo).toHaveBeenCalledWith({ center: [139.76, 35.68], zoom: 13.5, duration: 1000 });
+  });
+
+  it("keeps the map usable after permission denial and offers device settings when blocked", () => {
+    const onOpenLocationSettings = vi.fn();
+    render(
+      <PubMap
+        pubs={[pub]}
+        dataReady
+        locale="ja"
+        selectedPubId={null}
+        locationState={{ status: "permission-denied", canAskAgain: false }}
+        onSelectPub={vi.fn()}
+        onOpenPub={vi.fn()}
+        onOpenLocationSettings={onOpenLocationSettings}
+      />,
+    );
+    expect(screen.getByText("端末設定で位置情報を許可してください。")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "設定を開く" })).toBeTruthy();
+    expect(screen.getByText("1 件のパブ")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "設定を開く" }));
+    expect(onOpenLocationSettings).toHaveBeenCalledOnce();
   });
 });

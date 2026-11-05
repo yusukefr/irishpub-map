@@ -40,6 +40,8 @@ MapLibreなどNative依存を追加・更新した節目でiOS EAS Buildを行�
 
 MobileからNeonへ直接接続せず、Database URL、DB credential、Server secretをアプリへ含めません。Client bundleに固定API KeyなどのSecretを含めません。Public Pub APIは全環境で固定Client Secret不要のRead-only APIとして公開し、公開Fieldの限定、locale Validation、Query allowlistを適用します。共有Cacheは明示locale `ja` / `en` の正規Queryだけに使い、locale省略時は既定の `ja` を返してCacheしません。分散Rate Limitは導入していません。
 
+Mobileの現在地は「現在地を表示」の明示操作後にだけ `expo-location` のForeground権限を要求し、一度取得します。座標は現在地Markerと近い順のPub表示に使うメモリ状態で、APIや永続Storageへ送りません。拒否・取得失敗でもPub検索と地図を利用できます。app config pluginでは利用目的を説明し、iOS / AndroidのBackground位置情報を無効にします。権限文字列やNative設定を変えた場合はDevelopment Buildの作り直しが必要です。
+
 UI ComponentはWebとMobileで共有せず、共有するのは型や純粋ロジックを中心とします。Public API Clientの共有・配置はAPI Contract整理Issue #541で既存コード量とPlatform依存を見て決定します。
 
 WebとMobileのPub検索・Filterは `packages/shared/pub-search` のPure Functionを共有し、locale別に取得したPub表示名・kana・タグkeyへ同じ正規化とAND条件を適用します。Mobileは都道府県選択をJISコードで保持して、Localeを切り替えても同じ都道府県Filterを維持します。検索条件は取得済みPubに対して処理し、Filter操作でAPIを再取得しません。

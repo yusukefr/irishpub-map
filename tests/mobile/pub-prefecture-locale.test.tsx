@@ -6,6 +6,7 @@ import HomeScreen from "../../apps/mobile/app/index";
 
 const { getPubs, mapState } = vi.hoisted(() => ({ getPubs: vi.fn(), mapState: { geoJsonData: undefined as unknown } }));
 
+vi.mock("../../apps/mobile/lib/current-location", () => ({ getCurrentLocation: vi.fn() }));
 vi.mock("@irishpub-map/api-client", () => ({ getPubs }));
 vi.mock("../../apps/mobile/lib/router", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@maplibre/maplibre-react-native", async () => {

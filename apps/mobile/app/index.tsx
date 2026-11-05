@@ -1,9 +1,10 @@
 import { getPubs } from "@irishpub-map/api-client";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale, type Pub } from "@irishpub-map/shared";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, Text, View } from "react-native";
 import { PubMap } from "./pub-map";
 import { useRouter } from "../lib/router";
+import { getCurrentLocation, type CurrentLocationResult } from "../lib/current-location";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "https://irishpub-map-web.vercel.app";
 
@@ -33,6 +34,7 @@ const messages = {
 } satisfies Record<Locale, MobileMessages>;
 
 type LoadState = { status: "loading" } | { status: "success"; pubs: Pub[] } | { status: "error" };
+type LocationState = { status: "idle" | "requesting" } | CurrentLocationResult;
 
 /** 端末Localeから初期表示Localeを決め、非対応値は日本語にします。 */
 export function resolveInitialLocale(languageTag?: string): Locale {
@@ -47,6 +49,7 @@ export default function HomeScreen() {
   const [retryCount, setRetryCount] = useState(0);
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
   const [selectedPubId, setSelectedPubId] = useState<string | null>(null);
+  const [locationState, setLocationState] = useState<LocationState>({ status: "idle" });
   const copy = messages[locale];
 
   useEffect(() => {
@@ -64,6 +67,19 @@ export default function HomeScreen() {
   }, [locale, retryCount]);
 
   const pubs = loadState.status === "success" ? loadState.pubs : [];
+
+  async function requestLocation() {
+    setLocationState({ status: "requesting" });
+    setLocationState(await getCurrentLocation());
+  }
+
+  async function openLocationSettings() {
+    try {
+      await Linking.openSettings();
+    } catch {
+      setLocationState({ status: "error" });
+    }
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -115,7 +131,10 @@ export default function HomeScreen() {
         dataReady={loadState.status === "success"}
         locale={locale}
         selectedPubId={selectedPubId}
+        locationState={locationState}
         onSelectPub={setSelectedPubId}
+        onRequestLocation={() => void requestLocation()}
+        onOpenLocationSettings={() => void openLocationSettings()}
         onOpenPub={(pubId) => router.push({ pathname: "/pub/[id]", params: { id: pubId, locale } })}
       />
     </View>
