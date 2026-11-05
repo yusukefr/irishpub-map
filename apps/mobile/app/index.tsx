@@ -3,7 +3,7 @@ import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale, type Pub } from "@irish
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { PubMap } from "./pub-map";
-import { useRouter } from "./router";
+import { useRouter } from "../lib/router";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "https://irishpub-map-web.vercel.app";
 

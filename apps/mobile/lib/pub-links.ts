@@ -19,9 +19,7 @@ export async function openExternalUrl(value: string): Promise<boolean> {
   if (!isSafeExternalUrl(value)) return false;
 
   try {
-    const canOpen = await Linking.canOpenURL(value);
-    if (!canOpen) return false;
-    await Linking.openURL(value);
+    await Linking.openURL(new URL(value.trim()).href);
     return true;
   } catch {
     return false;

@@ -2,8 +2,8 @@ import { getPubs } from "@irishpub-map/api-client";
 import { DEFAULT_LOCALE, isUuid, type Locale, type Pub } from "@irishpub-map/shared";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
-import { isSafeExternalUrl, openExternalUrl } from "../pub-links";
-import { useLocalSearchParams, useRouter } from "../router";
+import { isSafeExternalUrl, openExternalUrl } from "../../lib/pub-links";
+import { useLocalSearchParams, useRouter } from "../../lib/router";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "https://irishpub-map-web.vercel.app";
 

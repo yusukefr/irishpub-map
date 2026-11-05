@@ -99,7 +99,7 @@ vi.mock("react-native", async () => {
     View: ({ children }: React.PropsWithChildren) => React.createElement("div", null, children),
   };
 });
-vi.mock("../../apps/mobile/app/router", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("../../apps/mobile/lib/router", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 const pub: Pub = {
   id: "00000000-0000-4000-8000-000000000001",

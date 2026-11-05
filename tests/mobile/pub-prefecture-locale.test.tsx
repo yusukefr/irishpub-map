@@ -7,7 +7,7 @@ import HomeScreen from "../../apps/mobile/app/index";
 const { getPubs, mapState } = vi.hoisted(() => ({ getPubs: vi.fn(), mapState: { geoJsonData: undefined as unknown } }));
 
 vi.mock("@irishpub-map/api-client", () => ({ getPubs }));
-vi.mock("../../apps/mobile/app/router", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("../../apps/mobile/lib/router", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@maplibre/maplibre-react-native", async () => {
   const React = await import("react");
   return {
