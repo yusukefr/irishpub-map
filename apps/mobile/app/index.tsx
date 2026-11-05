@@ -3,6 +3,7 @@ import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale, type Pub } from "@irish
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { PubMap } from "./pub-map";
+import { useRouter } from "../lib/router";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "https://irishpub-map-web.vercel.app";
 
@@ -41,6 +42,7 @@ export function resolveInitialLocale(languageTag?: string): Locale {
 }
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [locale, setLocale] = useState<Locale>(resolveInitialLocale);
   const [retryCount, setRetryCount] = useState(0);
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
@@ -114,6 +116,7 @@ export default function HomeScreen() {
         locale={locale}
         selectedPubId={selectedPubId}
         onSelectPub={setSelectedPubId}
+        onOpenPub={(pubId) => router.push({ pathname: "/pub/[id]", params: { id: pubId, locale } })}
       />
     </View>
   );

@@ -46,7 +46,7 @@ Public Pub APIは全環境で固定Client Secret不要のRead-only APIです。�
 | --- | --- | --- | --- |
 | SDK 58のReact 19.3.0統一後、Expo DoctorのReact重複警告は解消。SDK 58対応Development Buildでアプリ初期画面・実行時エラーを確認する | #542 | #542 | いいえ（Smoke Test継続） |
 | Native MapLibreのAndroid Development BuildとiOS Native Buildで地図表示・Attribution・通信をSmoke Testする | #544, #548 | #548 | No（EAS Buildにはユーザーの都度承認が必要） |
-| Mobileの位置情報Permission文言・Platform別挙動、外部リンク起動失敗時のUIが未実装 | #546, #547 | #546 / #547 | No |
+| Mobileの位置情報Permission文言・Platform別挙動が未実装 | #547 | #547 | No |
 
 採用Version、Native Build、初期Route、OS下限は[Mobile Architecture](../architecture/mobile.md)を参照してください。SDK 58のReact / React Native依存整合は確認済みですが、SDK指定Native Buildでの実行時確認は#542に残っています。Native MapのTile Policy / User-Agent / Attributionは現在の[Map Provider方針](../operations/map-provider.md)を読み、MapLibre Native利用時に#544 / #548で再確認します。位置情報は利用者の明示操作後にForegroundで取得し、アプリサーバーやDBへ座標を保存しません。地図をその位置へ移動すると周辺Tile識別子がProviderへ送られ得ます。詳細は[Privacy文書](../operations/privacy-and-external-transmission.md)を参照してください。
 

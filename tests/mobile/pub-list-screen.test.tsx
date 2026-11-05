@@ -14,18 +14,30 @@ vi.mock("../../apps/mobile/app/pub-map", async () => {
       locale,
       selectedPubId,
       onSelectPub,
+      onOpenPub,
     }: {
       pubs: Pub[];
       locale: string;
       selectedPubId: string | null;
       onSelectPub: (pubId: string) => void;
+      onOpenPub: (pubId: string) => void;
     }) =>
       React.createElement(
         "section",
         { "aria-label": "Pub map" },
         React.createElement("span", null, locale === "ja" ? `${pubs.length} 件のパブ` : `${pubs.length} pubs`),
         pubs.map((item) =>
-          React.createElement("button", { key: item.id, onClick: () => onSelectPub(item.id) }, item.name),
+          React.createElement(
+            "button",
+            {
+              key: item.id,
+              onClick: () => {
+                onSelectPub(item.id);
+                onOpenPub(item.id);
+              },
+            },
+            item.name,
+          ),
         ),
         selectedPubId ? React.createElement("output", null, selectedPubId) : null,
       ),
@@ -64,7 +76,18 @@ vi.mock("react-native", async () => {
       onPress?: () => void;
       accessibilityRole?: string;
       accessibilityState?: { selected?: boolean };
-    }) => React.createElement("button", { ...props, type: "button", onClick: onPress }, children),
+    }) =>
+      React.createElement(
+        "button",
+        {
+          ...props,
+          type: "button",
+          role: accessibilityRole,
+          "aria-pressed": accessibilityState?.selected,
+          onClick: onPress,
+        },
+        children,
+      ),
     Text: ({
       children,
       accessibilityRole,
@@ -76,6 +99,7 @@ vi.mock("react-native", async () => {
     View: ({ children }: React.PropsWithChildren) => React.createElement("div", null, children),
   };
 });
+vi.mock("../../apps/mobile/lib/router", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 const pub: Pub = {
   id: "00000000-0000-4000-8000-000000000001",

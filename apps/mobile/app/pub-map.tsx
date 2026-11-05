@@ -69,6 +69,7 @@ type PubMapProps = {
   locale: Locale;
   selectedPubId: string | null;
   onSelectPub: (pubId: string) => void;
+  onOpenPub: (pubId: string) => void;
 };
 
 type PrefectureFilterOption = {
@@ -78,7 +79,7 @@ type PrefectureFilterOption = {
 };
 
 /** OpenFreeMap上にPubをまとめて描画し、選択中の店舗情報と読み込み失敗を表示します。 */
-export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub }: PubMapProps) {
+export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub, onOpenPub }: PubMapProps) {
   const [mapFailed, setMapFailed] = useState(false);
   const [mapAttempt, setMapAttempt] = useState(0);
   const [query, setQuery] = useState("");
@@ -286,12 +287,18 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub }: 
         {dataReady && pubs.length === 0 ? <Text>{labels.noPubs}</Text> : null}
         {dataReady && pubs.length > 0 && filteredPubs.length === 0 ? <Text>{labels.noMatches}</Text> : null}
         {selectedPub ? (
-          <View accessibilityLiveRegion="polite" style={{ gap: 4 }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={locale === "ja" ? `${selectedPub.name}の詳細` : `Details for ${selectedPub.name}`}
+            onPress={() => onOpenPub(selectedPub.id)}
+            accessibilityLiveRegion="polite"
+            style={{ gap: 4, minHeight: 44, justifyContent: "center" }}
+          >
             <Text accessibilityRole="header" style={{ fontWeight: "700" }}>
               {selectedPub.name}
             </Text>
             <Text>{selectedPub.address}</Text>
-          </View>
+          </Pressable>
         ) : null}
       </View>
     </View>
