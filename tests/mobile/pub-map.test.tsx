@@ -9,6 +9,8 @@ const maplibreProps = vi.hoisted(() => ({
   geoJsonData: undefined as unknown,
   sourceData: {} as Record<string, unknown>,
   cameraFlyTo: vi.fn(),
+  mapMinHeight: undefined as unknown,
+  nearbyListMaxHeight: undefined as unknown,
 }));
 
 vi.mock("@maplibre/maplibre-react-native", async () => {
@@ -43,8 +45,10 @@ vi.mock("@maplibre/maplibre-react-native", async () => {
       onDidFailLoadingMap,
       onDidFinishLoadingMap,
       attribution,
-    }: React.PropsWithChildren<Record<string, unknown>>) =>
-      React.createElement(
+      style,
+    }: React.PropsWithChildren<Record<string, unknown>>) => {
+      maplibreProps.mapMinHeight = (style as { minHeight?: unknown }).minHeight;
+      return React.createElement(
         "div",
         { "data-attribution": attribution },
         React.createElement(
@@ -58,7 +62,8 @@ vi.mock("@maplibre/maplibre-react-native", async () => {
           "simulate map failure",
         ),
         children,
-      ),
+      );
+    },
     TransformRequestManager: { addHeader: vi.fn() },
   };
 });
@@ -93,8 +98,11 @@ vi.mock("react-native", async () => {
       }),
     View: ({ children, accessibilityRole, ...props }: React.ComponentProps<"div"> & { accessibilityRole?: string }) =>
       React.createElement("div", { ...props, role: accessibilityRole }, children),
-    ScrollView: ({ children, ...props }: React.PropsWithChildren<React.ComponentProps<"div">>) =>
-      React.createElement("div", props, children),
+    ScrollView: ({ children, style, ...props }: React.PropsWithChildren<React.ComponentProps<"div">>) => {
+      const maxHeight = (style as { maxHeight?: unknown } | undefined)?.maxHeight;
+      if (maxHeight !== undefined) maplibreProps.nearbyListMaxHeight = maxHeight;
+      return React.createElement("div", props, children);
+    },
   };
 });
 
@@ -249,8 +257,15 @@ describe("Mobile pub map", () => {
     });
     expect(screen.getByText("近くのパブ")).toBeTruthy();
     expect(screen.getByRole("button", { name: "The Green Harp, 0 m" })).toBeTruthy();
+    expect(maplibreProps.mapMinHeight).toBe(280);
+    expect(maplibreProps.nearbyListMaxHeight).toBe(144);
     fireEvent.click(screen.getByText("finish map load"));
     expect(maplibreProps.cameraFlyTo).toHaveBeenCalledWith({ center: [139.76, 35.68], zoom: 13.5, duration: 1000 });
+
+    fireEvent.click(screen.getByRole("button", { name: "料理" }));
+    expect(maplibreProps.sourceData.pubs).toMatchObject({ features: [{ properties: { pubId: "pub-2" } }] });
+    expect(screen.getByRole("button", { name: /大阪エール/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /The Green Harp/ })).toBeNull();
   });
 
   it("keeps the map usable after permission denial and offers device settings when blocked", () => {

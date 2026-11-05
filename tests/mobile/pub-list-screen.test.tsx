@@ -67,6 +67,7 @@ vi.mock("react-native", async () => {
           ? data.map((item) => React.createElement(React.Fragment, { key: item.id }, renderItem({ item })))
           : ListEmptyComponent,
       ),
+    ScrollView: ({ children }: React.PropsWithChildren) => React.createElement("div", null, children),
     Pressable: ({
       children,
       onPress,

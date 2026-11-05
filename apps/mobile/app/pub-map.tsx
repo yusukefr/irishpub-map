@@ -187,8 +187,8 @@ export function PubMap({
   const labels = copy[locale];
   const coordinates = locationState.status === "success" ? locationState.coordinates : null;
   const nearbyPubs = useMemo(
-    () => (coordinates ? sortPubsByDistance(pubs, coordinates).slice(0, 3) : []),
-    [pubs, coordinates],
+    () => (coordinates ? sortPubsByDistance(filteredPubs, coordinates).slice(0, 3) : []),
+    [filteredPubs, coordinates],
   );
   const locationFeature = useMemo(
     () => ({
@@ -393,7 +393,7 @@ export function PubMap({
             setMapFailed(true);
             setMapReady(false);
           }}
-          style={{ flex: 1 }}
+          style={{ flex: 1, minHeight: 280 }}
         >
           <Camera
             ref={camera}
@@ -456,22 +456,24 @@ export function PubMap({
           <View>
             <Text accessibilityRole="header">{labels.nearby}</Text>
             {nearbyPubs.length === 0 ? <Text>{labels.noNearby}</Text> : null}
-            {nearbyPubs.map(({ pub: nearbyPub, distanceKm }) => (
-              <Pressable
-                key={nearbyPub.id}
-                accessibilityRole="button"
-                accessibilityLabel={`${nearbyPub.name}, ${labels.distance(distanceKm)}`}
-                onPress={() => {
-                  onSelectPub(nearbyPub.id);
-                  onOpenPub(nearbyPub.id);
-                }}
-                style={{ minHeight: 44, justifyContent: "center" }}
-              >
-                <Text>
-                  {nearbyPub.name} · {labels.distance(distanceKm)}
-                </Text>
-              </Pressable>
-            ))}
+            <ScrollView style={{ maxHeight: 144 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+              {nearbyPubs.map(({ pub: nearbyPub, distanceKm }) => (
+                <Pressable
+                  key={nearbyPub.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${nearbyPub.name}, ${labels.distance(distanceKm)}`}
+                  onPress={() => {
+                    onSelectPub(nearbyPub.id);
+                    onOpenPub(nearbyPub.id);
+                  }}
+                  style={{ minHeight: 44, justifyContent: "center" }}
+                >
+                  <Text>
+                    {nearbyPub.name} · {labels.distance(distanceKm)}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
         ) : null}
       </View>
