@@ -33,4 +33,4 @@ npm run prisma:contract:emit
 
 `npm run prisma:baseline:verify`は例外的なread-only検証経路です。設定Project内のBranch IDをNeon CLIで解決し、固定Preview / Productionを拒否してDirect endpointを選びます。接続文字列は一時的な子プロセス環境変数として専用configへ渡し、コマンドライン引数やログへ含めません。操作は`db verify`と`migration status`に限定されます。
 
-差分Migration、Graph合流、drift・失敗系、Contractを戻すMigrationの検証シナリオは[差分Migration・復旧シナリオ](prisma-migration-validation.md)に従います。既存のBaseline再確認Scriptはread-only専用であり、Migration適用を行いません。DB操作時にBranch IDを検証してTarget Guardを行うPrisma Migration Runnerはまだありません。Runnerが実装されるまでPrisma DB接続・Migration適用・DB検証は実行できません。Production credentialを通常のPrisma CLIへ渡さず、Production / fixed previewへ直接接続しません。
+差分Migration、Graph合流、drift・失敗系、Contractを戻すMigrationの検証シナリオは[差分Migration・復旧シナリオ](prisma-migration-validation.md)に従います。既存のBaseline再確認Scriptはread-only専用です。実DBを使う差分検証では`npm run prisma:migration:validation`を通し、明示Branch ID・Branch名・ready状態・data-free確認を満たす専用Branchだけに接続します。Runnerは接続先を自動で作成したり、data-free状態を判定したりしません。Production credentialを通常のPrisma CLIへ渡さず、Production / fixed previewへ直接接続しません。
