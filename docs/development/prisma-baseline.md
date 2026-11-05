@@ -31,6 +31,16 @@ Production Schemaを比較する場合は、Productionからデータを含め�
 3. 接続先を明示して`prisma db sign --db "$DATABASE_URL"`を実行する。
 4. `prisma db verify --db "$DATABASE_URL"`と`prisma migration status --db "$DATABASE_URL"`で署名・Schema・Migration stateを確認する。
 
+署名済みの隔離BranchとBaseline適用済み空Branchを、現在のemit済みContractに対して再確認するときは、Neon CLIで認証したうえで各Branch IDを指定します。
+
+```bash
+PRISMA_SIGNED_DATABASE_BRANCH_ID="<署名済み隔離Branch ID>" \
+PRISMA_EMPTY_DATABASE_BRANCH_ID="<Baseline適用済み空Branch ID>" \
+npm run prisma:baseline:verify
+```
+
+このコマンドは設定済みNeon ProjectからBranch IDを照合し、Branchが`ready`で固定Preview / Productionでないことを確認します。Neon CLIからDirect endpointを解決し、Poolerと同一endpointを拒否してから、各Branchに`db verify`とJSON形式の`migration status`を順に実行します。URLは専用の[Prisma verify config](../../config/prisma-baseline-verify.config.ts)が子プロセス環境変数から読み取ります。URLはコマンドライン引数・ログへ出力しません。Migration statusにdiagnostic、pending、不正なJSONがあれば失敗します。旧`schema_migrations`は署名済みBranchに保持するため、余剰objectまで拒否する`db verify --strict`は使いません。SignやMigrationの実行はこの確認コマンドに含めません。
+
 Signが失敗した場合はdriftを調べ、Signで不一致を覆い隠しません。Prismaが作る管理Marker/Ledgerは旧`schema_migrations`と別物です。旧LedgerをPrisma Contractへ加えたり、Baselineで再作成・初期化したりしません。
 
 ## 空DBの再構築
@@ -56,7 +66,7 @@ code,prefecture_name,municipality_name,prefecture_kana,municipality_kana,unused_
 
 ## Schema照合
 
-既存Schemaの署名DBと空DBの両方で、PostgreSQL catalogから次を比較します。
+既存Schemaの署名DBと空DBの両方を上記コマンドでContractへ照合します。BaselineのDESC Indexと遅延FKはContractで表現されないため、Baseline raw SQLのCatalog postcheckと独立したCatalog照合も確認します。完全なSchema比較ではPostgreSQL catalogから次を照合します。
 
 - table、column、型、NULL可否、DEFAULT
 - primary / unique / foreign key、delete action、遅延可能属性
