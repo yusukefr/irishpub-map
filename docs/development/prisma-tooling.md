@@ -32,3 +32,5 @@ npm run prisma:contract:emit
 後続IssueでDB操作を追加する場合は、標準実行経路が`config/neon-targets.json`と既存`resolveNeonTarget()`によりTarget・Branch状態・直接接続を確認し、ProductionにはProduction Guardと明示承認を適用する必要があります。Production認証情報を一般のPrisma CLIから使えないよう権限・credentialの配置範囲も設計します。接続文字列はCLI引数、ログ、Git管理ファイルへ出しません。Prisma 8 RCに対するDB操作を追加する前に、対象バージョンのCLI仕様と操作の副作用を確認してください。詳しくは[Prisma CLI設定](https://www.prisma.io/docs/cli/configuration)を参照してください。
 
 `npm run prisma:baseline:verify`は例外的なread-only検証経路です。設定Project内のBranch IDをNeon CLIで解決し、固定Preview / Productionを拒否してDirect endpointを選びます。接続文字列は一時的な子プロセス環境変数として専用configへ渡し、コマンドライン引数やログへ含めません。操作は`db verify`と`migration status`に限定されます。
+
+差分Migration、Graph合流、drift・失敗系、Contractを戻すMigrationの検証シナリオは[差分Migration・復旧シナリオ](prisma-migration-validation.md)に従います。既存のBaseline再確認Scriptはread-only専用であり、Migration適用を行いません。DB操作時にBranch IDを検証してTarget Guardを行うPrisma Migration Runnerはまだありません。Runnerが実装されるまでPrisma DB接続・Migration適用・DB検証は実行できません。Production credentialを通常のPrisma CLIへ渡さず、Production / fixed previewへ直接接続しません。

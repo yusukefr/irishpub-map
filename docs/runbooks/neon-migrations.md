@@ -75,6 +75,8 @@ Vercelは`db/migrations/`を自動適用しません。アプリをデプロイ�
 - アプリケーションだけをrollbackする場合、公開状態や下書きを失わないよう、追加済みcolumnやconstraintを安易に削除しない。
 - 失敗時は対象Branch、適用済みSQL、verify結果を確認し、必要に応じて専用Issueで回復策を決める。
 
+Prisma 8 Migration Graphを使う差分検証は、既存の`db/migrations/`用Runnerとは別系統です。Prismaへの所有権切替前は、このRunbookのSQL Migration手順をProduction / 固定Previewに適用し、Prisma検証用Branchを流用しません。PrismaのContractを以前の形へ戻す方法と、Neon Restoreによる行データ復旧の分担は[差分Migration・復旧シナリオ](../development/prisma-migration-validation.md)を参照します。
+
 ## Security notes
 
 - Connection String、Password、API Key、Token、query結果に含まれる機微情報を文書、ログ、Issue、PRへ残さない。CLIは接続文字列を表示しない。

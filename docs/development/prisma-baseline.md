@@ -43,6 +43,8 @@ npm run prisma:baseline:verify
 
 Signが失敗した場合はdriftを調べ、Signで不一致を覆い隠しません。Prismaが作る管理Marker/Ledgerは旧`schema_migrations`と別物です。旧LedgerをPrisma Contractへ加えたり、Baselineで再作成・初期化したりしません。
 
+Baseline後の追加・変更・削除、Graph分岐・合流、失敗系、および以前のContractへ戻す検証は[差分Migration・復旧シナリオ](prisma-migration-validation.md)を参照してください。Schemaを戻すMigrationと行データを復元するNeon Restoreは別の責務です。
+
 ## 空DBの再構築
 
 Production dataを含まない空の新規DBを用意し、BranchとDBの名前・ID・状態を確認してから次を実行します。
