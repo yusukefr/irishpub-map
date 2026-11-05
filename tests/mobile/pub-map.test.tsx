@@ -50,8 +50,20 @@ vi.mock("@maplibre/maplibre-react-native", async () => {
 vi.mock("react-native", async () => {
   const React = await import("react");
   return {
-    Pressable: ({ children, onPress, ...props }: React.ComponentProps<"button"> & { onPress?: () => void }) =>
-      React.createElement("button", { ...props, type: "button", onClick: onPress }, children),
+    Pressable: ({
+      children,
+      onPress,
+      accessibilityLabel,
+      ...props
+    }: React.ComponentProps<"button"> & {
+      onPress?: () => void;
+      accessibilityLabel?: string;
+    }) =>
+      React.createElement(
+        "button",
+        { ...props, "aria-label": accessibilityLabel, type: "button", onClick: onPress },
+        children,
+      ),
     Text: ({ children, accessibilityRole, ...props }: React.ComponentProps<"span"> & { accessibilityRole?: string }) =>
       React.createElement("span", { ...props, role: accessibilityRole === "alert" ? "alert" : undefined }, children),
     TextInput: ({
@@ -121,13 +133,16 @@ describe("Mobile pub map", () => {
 
   it("shows an empty state, selects a Pub, and offers a retry after map failure", () => {
     const onSelectPub = vi.fn();
+    const onOpenPub = vi.fn();
     const pubs = [pub];
     const { rerender } = render(
-      <PubMap pubs={[]} dataReady onSelectPub={onSelectPub} locale="ja" selectedPubId={null} />,
+      <PubMap pubs={[]} dataReady onSelectPub={onSelectPub} onOpenPub={onOpenPub} locale="ja" selectedPubId={null} />,
     );
     expect(screen.getByText("地図に表示できるパブはありません。")).toBeTruthy();
 
-    rerender(<PubMap pubs={pubs} dataReady onSelectPub={onSelectPub} locale="ja" selectedPubId={null} />);
+    rerender(
+      <PubMap pubs={pubs} dataReady onSelectPub={onSelectPub} onOpenPub={onOpenPub} locale="ja" selectedPubId={null} />,
+    );
     expect(screen.getByText("1 件のパブ")).toBeTruthy();
     expect(screen.getByText("simulate map failure").parentElement?.getAttribute("data-attribution")).toBe("true");
     const firstFeatureCollection = maplibreProps.geoJsonData;
@@ -136,11 +151,22 @@ describe("Mobile pub map", () => {
       padding: { top: 16, right: 16, bottom: 16, left: 16 },
     });
 
-    rerender(<PubMap pubs={pubs} dataReady onSelectPub={onSelectPub} locale="ja" selectedPubId={pub.id} />);
+    rerender(
+      <PubMap
+        pubs={pubs}
+        dataReady
+        onSelectPub={onSelectPub}
+        onOpenPub={onOpenPub}
+        locale="ja"
+        selectedPubId={pub.id}
+      />,
+    );
     expect(maplibreProps.geoJsonData).toBe(firstFeatureCollection);
 
     fireEvent.click(screen.getByRole("button", { name: "" }));
     expect(onSelectPub).toHaveBeenCalledWith(pub.id);
+    fireEvent.click(screen.getByRole("button", { name: "The Green Harpの詳細" }));
+    expect(onOpenPub).toHaveBeenCalledWith(pub.id);
 
     fireEvent.click(screen.getByText("simulate map failure"));
     expect(screen.getByRole("alert")).toHaveTextContent("地図を読み込めませんでした。");
@@ -149,7 +175,16 @@ describe("Mobile pub map", () => {
   });
 
   it("filters markers by search, prefecture, and every selected tag without losing reset", () => {
-    render(<PubMap pubs={[pub, osakaPub]} dataReady onSelectPub={vi.fn()} locale="ja" selectedPubId={null} />);
+    render(
+      <PubMap
+        pubs={[pub, osakaPub]}
+        dataReady
+        onSelectPub={vi.fn()}
+        onOpenPub={vi.fn()}
+        locale="ja"
+        selectedPubId={null}
+      />,
+    );
     const input = screen.getByRole("textbox", { name: "パブ名・読み方・地域を検索" });
 
     fireEvent.change(input, { target: { value: "  ｵｵｻｶ  " } });
