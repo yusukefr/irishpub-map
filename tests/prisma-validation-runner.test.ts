@@ -13,6 +13,51 @@ import {
 const branchId = "br-issue639-validation";
 const branchName = "validation/issue-639/isolated";
 const databaseUrl = "postgresql://ep-issue639.neon.tech/neondb";
+const credentialUrl = new URL(databaseUrl);
+credentialUrl.username = "validation";
+credentialUrl.password = "p@ssword";
+const decodedPassword = decodeURIComponent(credentialUrl.password);
+
+function prismaResult(result: Record<string, unknown>, diagnostics: unknown[] = []) {
+  return JSON.stringify({
+    kind: "result",
+    envelope: {
+      ok: true,
+      exitCode: 0,
+      diagnostics,
+      result: { ok: true, ...result },
+    },
+  });
+}
+
+const appliedStatus = prismaResult({
+  diagnostics: [],
+  summary: "Up to date",
+  spaces: [
+    {
+      space: "app",
+      currentContract: "contract-hash",
+      targetContract: "contract-hash",
+      migrations: [{ status: "applied" }],
+    },
+  ],
+});
+
+function runStatus(output: string) {
+  let stdout = "";
+  let stderr = "";
+  const exitCode = runPrismaValidation({
+    argv: ["--branch-id", branchId, "--confirm-data-free", branchId, "status"],
+    runNeonCli: (args) =>
+      args[0] === "branches"
+        ? { status: 0, stdout: JSON.stringify({ branches: [makeBranch()] }) }
+        : { status: 0, stdout: databaseUrl },
+    runPrismaCli: () => ({ status: 0, stdout: output }),
+    stdout: { write: (chunk: string) => (stdout += chunk) } as unknown as NodeJS.WriteStream,
+    stderr: { write: (chunk: string) => (stderr += chunk) } as unknown as NodeJS.WriteStream,
+  });
+  return { exitCode, stdout, stderr };
+}
 
 function makeBranch(overrides: Record<string, unknown> = {}) {
   return {
@@ -110,17 +155,32 @@ describe("Prisma validation runner secret handling", () => {
     expect(childEnv.PRISMA_VALIDATION_DATABASE_URL).toBe(databaseUrl);
     expect(childEnv.DATABASE_URL).toBeUndefined();
     expect(childEnv.DIRECT_URL).toBeUndefined();
+    expect(childEnv.CI).toBe("true");
     expect(result.status).toBe(0);
   });
 
   it.each([
-    ["preview", ["db", "migrate", "--show"]],
-    ["apply", ["db", "migrate", "--advance-ref", "db"]],
-    ["verify", ["db", "verify"]],
-    ["verifyStrict", ["db", "verify", "--schema-only", "--strict"]],
-    ["status", ["migration", "status"]],
-    ["log", ["migration", "log"]],
-  ] as const)("maps the %s mode to an allowlisted Prisma invocation", (mode, expectedArgs) => {
+    ["preview", ["db", "migrate", "--show", "--json"], { migrations: [] }],
+    ["apply", ["db", "migrate", "--advance-ref", "db", "--json"], { migrationsApplied: 1, migrationsTotal: 1 }],
+    ["verify", ["db", "verify", "--json"], {}],
+    ["verifyStrict", ["db", "verify", "--schema-only", "--strict", "--json"], {}],
+    [
+      "status",
+      ["migration", "status", "--space", "app", "--json"],
+      {
+        diagnostics: [],
+        spaces: [
+          {
+            space: "app",
+            currentContract: "contract-hash",
+            targetContract: "contract-hash",
+            migrations: [{ status: "applied" }],
+          },
+        ],
+      },
+    ],
+    ["log", ["migration", "log", "--json"], {}],
+  ] as const)("maps the %s mode to an allowlisted Prisma invocation", (mode, expectedArgs, cliResult) => {
     let configContents = "";
     let prismaArgs: string[] = [];
     let prismaEnv: NodeJS.ProcessEnv = {};
@@ -131,17 +191,130 @@ describe("Prisma validation runner secret handling", () => {
       runPrismaCli: (args, env) => {
         prismaArgs = args;
         prismaEnv = env;
-        return { status: 0, stdout: `ran ${mode}` };
+        return { status: 0, stdout: prismaResult(cliResult as Record<string, unknown>) };
       },
     });
 
     expect(prismaArgs.slice(0, expectedArgs.length)).toEqual(expectedArgs);
     expect(prismaArgs).toContain("--config");
-    expect(prismaEnv).toEqual({ PRISMA_VALIDATION_DATABASE_URL: databaseUrl });
+    expect(prismaEnv.PRISMA_VALIDATION_DATABASE_URL).toBe(databaseUrl);
     expect(configContents).toContain("parent: false");
     expect(configContents).toContain("PRISMA_VALIDATION_DATABASE_URL");
     expect(configContents).not.toContain(databaseUrl);
-    expect(result.stdout).toBe(`ran ${mode}`);
+    expect(result.failure).toBe(false);
+    expect(result.summary).not.toContain("ep-issue639.neon.tech");
+  });
+
+  it("fails status when exit code is zero but Prisma reports a warning", () => {
+    const output = prismaResult(
+      {
+        diagnostics: [],
+        spaces: [
+          {
+            space: "app",
+            currentContract: "contract-hash",
+            targetContract: "contract-hash",
+            migrations: [{ status: "applied" }],
+          },
+        ],
+      },
+      [{ code: "MIGRATION.MARKER_NOT_IN_HISTORY", severity: "warn" }],
+    );
+    const result = runStatus(output);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(/diagnostics/);
+  });
+
+  it("fails status when diagnostics are attached to the result", () => {
+    const output = prismaResult({
+      diagnostics: [{ code: "MIGRATION.MARKER_NOT_IN_HISTORY", severity: "warn" }],
+      spaces: [
+        {
+          space: "app",
+          currentContract: "contract-hash",
+          targetContract: "contract-hash",
+          migrations: [{ status: "applied" }],
+        },
+      ],
+    });
+    const result = runStatus(output);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(/unsuccessful result or diagnostics/);
+  });
+
+  it("fails status when exit code is zero but an app migration is pending", () => {
+    const output = prismaResult({
+      diagnostics: [],
+      spaces: [
+        {
+          space: "app",
+          currentContract: "previous-contract",
+          targetContract: "contract-hash",
+          migrations: [{ status: "applied" }, { status: "pending" }],
+        },
+      ],
+    });
+    const result = runStatus(output);
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(/not up to date|pending/);
+  });
+
+  it("fails closed when status output is malformed or has an unknown migration state", () => {
+    expect(runStatus("not json").exitCode).not.toBe(0);
+    const unknownState = prismaResult({
+      diagnostics: [],
+      spaces: [
+        {
+          space: "app",
+          currentContract: "contract-hash",
+          targetContract: "contract-hash",
+          migrations: [{ status: "unknown" }],
+        },
+      ],
+    });
+    expect(runStatus(unknownState).exitCode).not.toBe(0);
+  });
+
+  it("accepts structured progress events but requires exactly one result record", () => {
+    const output = [
+      JSON.stringify({ kind: "step-started", step: "Verifying database marker" }),
+      JSON.stringify({ kind: "step-finished", step: "Verifying database marker", outcome: "ok" }),
+      prismaResult({ summary: "Database marker and schema match contract" }),
+    ].join("\n");
+    const result = runValidationCommand("verify", databaseUrl, {
+      writeConfig: () => {},
+      runPrismaCli: () => ({ status: 0, stdout: output }),
+    });
+    expect(result.failure).toBe(false);
+    expect(result.summary).toBe("Database marker and schema match the contract.");
+  });
+
+  it("never prints raw CLI output containing the database URL or decoded password", () => {
+    let stdout = "";
+    let stderr = "";
+    const exitCode = runPrismaValidation({
+      argv: ["--branch-id", branchId, "--confirm-data-free", branchId, "verify"],
+      runNeonCli: (args) =>
+        args[0] === "branches"
+          ? { status: 0, stdout: JSON.stringify({ branches: [makeBranch()] }) }
+          : { status: 0, stdout: credentialUrl.toString() },
+      runPrismaCli: () => ({
+        status: 1,
+        stdout: `failed for ${credentialUrl.toString()}`,
+        stderr: `password=${decodedPassword}`,
+      }),
+      stdout: { write: (chunk: string) => (stdout += chunk) } as unknown as NodeJS.WriteStream,
+      stderr: { write: (chunk: string) => (stderr += chunk) } as unknown as NodeJS.WriteStream,
+    });
+
+    expect(exitCode).not.toBe(0);
+    expect(stdout).toBe("");
+    expect(stderr).toContain("Prisma verify failed");
+    expect(stderr).not.toContain(credentialUrl.toString());
+    expect(stderr).not.toContain(decodedPassword);
   });
 
   it("does not invoke Prisma before validating the Branch identity", () => {
@@ -185,7 +358,7 @@ describe("Prisma validation runner secret handling", () => {
       runPrismaCli: (args, env) => {
         prismaArgs = args;
         prismaEnv = env;
-        return { status: 0, stdout: `previewed ${databaseUrl}` };
+        return { status: 0, stdout: prismaResult({ migrations: [] }), stderr: `warning ${databaseUrl}` };
       },
       stdout: {
         write: (chunk: string) => {
@@ -208,8 +381,8 @@ describe("Prisma validation runner secret handling", () => {
     expect(neonCalls[1]).toEqual(["connection-string", branchId, "--project-id", "purple-cake-39243248"]);
     expect(prismaArgs).not.toContain(databaseUrl);
     expect(prismaEnv.PRISMA_VALIDATION_DATABASE_URL).toBe(databaseUrl);
-    expect(output).toContain(`validated Branch ${branchName} (${branchId})`);
-    expect(output).toContain("[REDACTED DATABASE URL]");
+    expect(output).toContain(`validated Branch ID ${branchId}`);
+    expect(output).toContain("Preview reports 0 migration(s)");
     expect(output).not.toContain("ep-issue639.neon.tech");
     expect(errorOutput).toBe("");
     expect(existsSync(dirname(configPath))).toBe(false);

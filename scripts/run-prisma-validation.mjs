@@ -11,12 +11,12 @@ const projectId = neonConfig.projectId;
 const targetBranchNames = new Set([neonConfig.targets.production.branchName, neonConfig.targets.preview.branchName]);
 const validationBranchPrefix = "validation/issue-639/";
 const commands = {
-  preview: ["db", "migrate", "--show"],
-  apply: ["db", "migrate", "--advance-ref", "db"],
-  verify: ["db", "verify"],
-  verifyStrict: ["db", "verify", "--schema-only", "--strict"],
-  status: ["migration", "status"],
-  log: ["migration", "log"],
+  preview: ["db", "migrate", "--show", "--json"],
+  apply: ["db", "migrate", "--advance-ref", "db", "--json"],
+  verify: ["db", "verify", "--json"],
+  verifyStrict: ["db", "verify", "--schema-only", "--strict", "--json"],
+  status: ["migration", "status", "--space", "app", "--json"],
+  log: ["migration", "log", "--json"],
 };
 
 /**
@@ -97,7 +97,7 @@ export function resolveValidationConnection(branch, runNeonCli = runNeon) {
  * @param {string} databaseUrl Neon Direct endpoint.
  * @param {(file: string, contents: string) => boolean|void} writeConfig Config writer for tests; true marks the generated directory as owned by this invocation.
  * @param {(args: string[], env: NodeJS.ProcessEnv) => {status: number|null, stdout?: string, stderr?: string, error?: Error}} runPrismaCli Injected Prisma CLI runner.
- * @returns {{status: number|null, stdout: string, stderr: string}}
+ * @returns {{status: number|null, summary: string, failure: boolean}}
  */
 export function runValidationCommand(
   command,
@@ -130,11 +130,8 @@ export default definePrismaConfig({
     const result = runPrismaCli([...commands[command], "--config", configPath], {
       PRISMA_VALIDATION_DATABASE_URL: databaseUrl,
     });
-    return {
-      status: result.status,
-      stdout: (result.stdout ?? "").replaceAll(databaseUrl, "[REDACTED DATABASE URL]"),
-      stderr: (result.stderr ?? "").replaceAll(databaseUrl, "[REDACTED DATABASE URL]"),
-    };
+    if (result.error || result.status !== 0) return { status: result.status, summary: "", failure: true };
+    return { status: result.status, summary: summarizePrismaResult(command, result.stdout ?? ""), failure: false };
   } finally {
     if (configCreated) rmSync(configDirectory, { recursive: true, force: true });
   }
@@ -169,14 +166,12 @@ export function runPrismaValidation({
     const branch = validateValidationBranch(branches, branchId);
     const connection = resolveValidationConnection(branch, runNeonCli);
     const result = runValidationCommand(command, connection, { runPrismaCli });
-    if (result.stdout) stdout.write(result.stdout);
-    if (result.stderr) stderr.write(result.stderr);
-    if (result.error || result.status !== 0) {
+    if (result.failure || result.status !== 0) {
       const exitCode = result.status ?? 1;
-      stderr.write(`Prisma ${command} failed on validated Branch ${branch.name} (exit ${exitCode}).\n`);
+      stderr.write(`Prisma ${command} failed on validated Branch ID ${branch.id} (exit ${exitCode}).\n`);
       return exitCode;
     }
-    stdout.write(`Prisma ${command} completed on validated Branch ${branch.name} (${branch.id}).\n`);
+    stdout.write(`Prisma ${command} completed on validated Branch ID ${branch.id}. ${result.summary}\n`);
     return 0;
   } catch (error) {
     stderr.write(`${error.message}\n`);
@@ -189,11 +184,12 @@ function runNeon(args) {
     cwd: repositoryRoot,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, CI: "true" },
   });
 }
 
 export function runPrisma(args, validationEnvironment, spawn = spawnSync) {
-  const env = { ...process.env, ...validationEnvironment };
+  const env = { ...process.env, ...validationEnvironment, CI: "true" };
   delete env.DATABASE_URL;
   delete env.DIRECT_URL;
   return spawn("npm", ["exec", "--no", "--", "prisma", ...args], {
@@ -202,6 +198,88 @@ export function runPrisma(args, validationEnvironment, spawn = spawnSync) {
     stdio: ["ignore", "pipe", "pipe"],
     env,
   });
+}
+
+function parsePrismaResult(stdout) {
+  const lines = stdout.trim().split(/\r?\n/).filter(Boolean);
+  if (lines.length === 0) throw new Error("Prisma returned an invalid result.");
+  const outputs = lines.map((line) => {
+    try {
+      return JSON.parse(line);
+    } catch {
+      throw new Error("Prisma returned an invalid result.");
+    }
+  });
+  if (outputs.some((output) => !["result", "step-started", "step-finished"].includes(output?.kind))) {
+    throw new Error("Prisma returned an invalid result.");
+  }
+  const results = outputs.filter((output) => output.kind === "result");
+  if (results.length !== 1) throw new Error("Prisma returned an invalid result.");
+  const output = results[0];
+  const envelope = output?.kind === "result" ? output.envelope : undefined;
+  const result = envelope?.result;
+  if (
+    envelope?.ok !== true ||
+    envelope.exitCode !== 0 ||
+    !Array.isArray(envelope.diagnostics) ||
+    envelope.diagnostics.length > 0 ||
+    result?.ok !== true ||
+    (result.diagnostics !== undefined && (!Array.isArray(result.diagnostics) || result.diagnostics.length > 0))
+  ) {
+    throw new Error("Prisma reported an unsuccessful result or diagnostics.");
+  }
+  return result;
+}
+
+function summarizePrismaResult(command, stdout) {
+  const result = parsePrismaResult(stdout);
+  if (command === "status") return assertMigrationStatus(result);
+  if (command === "preview") {
+    if (!Array.isArray(result.migrations)) throw new Error("Prisma preview omitted migration data.");
+    return `Preview reports ${result.migrations.length} migration(s); review the migration package before applying.`;
+  }
+  if (command === "apply") {
+    if (
+      !Number.isInteger(result.migrationsApplied) ||
+      !Number.isInteger(result.migrationsTotal) ||
+      result.migrationsApplied !== result.migrationsTotal
+    ) {
+      throw new Error("Prisma apply did not confirm all migrations.");
+    }
+    return `Applied ${result.migrationsApplied} of ${result.migrationsTotal} migration(s).`;
+  }
+  if (command === "verify" || command === "verifyStrict") {
+    return "Database marker and schema match the contract.";
+  }
+  return "Command result was successful.";
+}
+
+function assertMigrationStatus(result) {
+  if (!Array.isArray(result.diagnostics) || result.diagnostics.length > 0) {
+    throw new Error("Prisma migration status reported diagnostics.");
+  }
+  if (!Array.isArray(result.spaces) || result.spaces.length !== 1 || result.spaces[0]?.space !== "app") {
+    throw new Error("Prisma migration status omitted the app contract space.");
+  }
+
+  const space = result.spaces[0];
+  if (
+    typeof space.currentContract !== "string" ||
+    space.currentContract.length === 0 ||
+    space.currentContract !== space.targetContract ||
+    !Array.isArray(space.migrations)
+  ) {
+    throw new Error("Prisma migration status is not up to date.");
+  }
+
+  let appliedCount = 0;
+  for (const migration of space.migrations) {
+    if (migration.status === "pending") throw new Error("Prisma migration status includes pending migrations.");
+    if (migration.status === "applied") appliedCount += 1;
+    else if (migration.status !== null) throw new Error("Prisma migration status has an unknown migration state.");
+  }
+  if (appliedCount === 0) throw new Error("Prisma migration status did not confirm an applied migration.");
+  return "Migration status is up to date with no diagnostics.";
 }
 
 function writeValidationConfig(configPath, contents) {

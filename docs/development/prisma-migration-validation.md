@@ -16,6 +16,8 @@ ContractとMigration Graphを一時作業コピーで変更し、検証後に成
 
 接続文字列はNeon CLIから取得し、一時Prisma configの子プロセス環境へだけ渡します。URIをコマンド引数やログへ出しません。`--db`、`--config`や任意Prisma引数はRunnerで拒否されます。固定Production / Previewや既存の別Issue Branchを使わず、Branch名は`validation/issue-639/`で始まるものに限定します。
 
+RunnerはPrisma CLIをJSONモードで起動します。`status`は`app` spaceのMigration状態、Contract hashの一致、applied/pending状態、envelopeとresult双方のdiagnosticを検証し、warning・pending・未知状態・不正JSONを非0終了にします。Prisma CLIのstdout / stderrはそのまま表示せず、成功時もBranchと安全な要約だけを出します。`preview`はMigration数だけを表示するため、適用前に必ずofflineの`prisma migration show <migration-directory>`でSQLと操作をレビューします。
+
 1. Productionデータを含まない空の専用DB Branchに現在のBaselineを適用し、Runner経由で`verify`と`status`が成功する状態を用意します。既存Schemaを持つ署名用Branchには適用しません。
 2. 検証用の小さな変更を一度に一種類だけContractへ加えます。追加・変更・削除は別々に計画し、まずはnullable column、既存columnの型/制約変更、削除の順に影響を確認します。削除・型変更のSQLに既存行の消失や変換がないかをレビューします。
 3. Contractをemitし、Migrationを計画します。
@@ -66,7 +68,7 @@ npm exec --no -- prisma migration status --from <branch-B-tip> --to @contract
 
 失敗系は、それぞれ独立した使い捨て検証Branchで実行します。正常ケース用Branchへ不正DDLを適用しません。
 
-- **未適用Migration:** statusがpendingを示すことを確認します。Runnerの`preview`から対象・操作を確認してから適用し、再度statusで解消を確認します。
+- **未適用Migration:** statusがpendingを示してRunnerが非0終了することを確認します。Runnerの`preview`から適用経路を確認し、offlineの`migration show`で操作をレビューしてから適用します。適用後に再度statusを実行し、合格へ変わることを確認します。
 - **Managed Schema drift:** Contract管理対象のcolumnやconstraintの定義を変え、Runnerの`verify`がschema不一致を返すことを確認します。失敗を覆い隠すために`db sign`を実行しません。
 - **Extra objects:** Contractにないtable等の余剰objectは、通常のverifyではなくRunnerの`verifyStrict`（`db verify --schema-only --strict`）または独立したPostgres Catalog照合で検出します。`--strict`は他の余剰Schema要素も失敗扱いにするため、旧`schema_migrations`やPrisma管理objectが存在する署名済みBranchには適用せず、対象objectが限定された空の専用DBで使います。
 
