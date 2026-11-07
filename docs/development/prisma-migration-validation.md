@@ -12,9 +12,13 @@ Prisma CLIとPostgreSQL packageはlockfileで固定した版を使います。Co
 
 ContractとMigration Graphを一時作業コピーで変更し、検証後に成果物を破棄します。既存Baselineや現在の作業中Contractに検証用DDLを混ぜません。
 
-**現在、このRepositoryにはDB操作時にBranch IDを検証するPrisma Migration Runnerがありません。`prisma.config.ts`にもDB接続先はありません。そのため、以下の手順にあるNeon上の適用・verify・status・失敗系操作はRunnerが実装されるまで実行不可です。** DB URLを任意の環境変数や`--db`引数で直接Prisma CLIへ渡さず、Production・固定Preview・既存の別Issue Branchへ接続しません。オフラインのMigration計画・Graph検査だけを実行できます。
+`prisma.config.ts`には既定DB接続先を設定していません。Neon上の実DB操作は専用の[Prisma validation runner](../../scripts/run-prisma-validation.mjs)を通します。Runnerは設定Project内の明示Branch ID、用途名、`ready`状態を照合し、Production・固定Preview・別用途Branchを拒否します。data-freeの確認は呼び出し側の明示確認として要求します。Runnerは接続先の行データがないことを判定しないため、NeonのBranch名・親Branch・DB内容を事前に確認し、Productionの業務データを含まない空Branchだけを指定してください。
 
-1. 事前条件として、Productionデータを含まない空の専用DB Branchに現在のBaselineが適用され、`db verify`と`migration status`が成功する状態を用意します。既存Schemaを持つ署名用Branchには適用しません。現状は専用Runnerがないため、この準備作業も実行しません。
+接続文字列はNeon CLIから取得し、一時Prisma configの子プロセス環境へだけ渡します。URIをコマンド引数やログへ出しません。`--db`、`--config`や任意Prisma引数はRunnerで拒否されます。固定Production / Previewや既存の別Issue Branchを使わず、Branch名は`validation/issue-639/`で始まるものに限定します。
+
+RunnerはPrisma CLIをJSONモードで起動します。`status`は`app` spaceのMigration状態、Contract hashの一致、applied/pending状態、envelopeとresult双方のdiagnosticを検証し、warning・pending・未知状態・不正JSONを非0終了にします。Prisma CLIのstdout / stderrはそのまま表示せず、成功時もBranchと安全な要約だけを出します。`preview`はMigration数だけを表示するため、適用前に必ずofflineの`prisma migration show <migration-directory>`でSQLと操作をレビューします。
+
+1. Productionデータを含まない空の専用DB Branchに現在のBaselineを適用し、Runner経由で`verify`と`status`が成功する状態を用意します。既存Schemaを持つ署名用Branchには適用しません。
 2. 検証用の小さな変更を一度に一種類だけContractへ加えます。追加・変更・削除は別々に計画し、まずはnullable column、既存columnの型/制約変更、削除の順に影響を確認します。削除・型変更のSQLに既存行の消失や変換がないかをレビューします。
 3. Contractをemitし、Migrationを計画します。
 
@@ -26,11 +30,24 @@ ContractとMigration Graphを一時作業コピーで変更し、検証後に成
    ```
 
 4. Migrationの`from` / `to`、生成操作、SQL preview、precheck / postcheck、およびデータ影響を確認します。承認できないDROP、truncate、暗黙変換、データ損失があれば適用せず、Contractを修正して再計画します。
-5. 実DB検証はBranch IDを設定Project内で検証し、`ready`・固定Production/Preview以外・用途を確認した後にだけDirect endpointを子プロセス環境へ渡す専用Runnerで行う必要があります。Runnerが未実装の現状では`db migrate`、`db verify`、DBを読む`migration status` / `migration log`は実行しません。Runnerが実装された後は適用経路を先に確認し、Migration適用後にverify / statusで目標Contract stateとpendingの有無を確認します。
+5. 検証Branch IDをNeonで確認し、同じBranch IDをdata-free確認値として指定します。まず`preview`で適用経路をレビューし、承認後に`apply`を実行します。
 
-6. 追加・変更・削除の各シナリオで、期待したCatalog差分と行データへの影響を専用DB上で確認します。検証後に専用Branchを保持する場合は用途・有効期限を記録し、破棄が必要ならNeonの対象Branch名・IDを再確認してから別途行います。
+   ```bash
+   VALIDATION_BRANCH_ID="br-<branch-id>" # 専用Branchの実IDに置き換える
+   npm run prisma:migration:validation -- --branch-id "$VALIDATION_BRANCH_ID" --confirm-data-free "$VALIDATION_BRANCH_ID" preview
+   npm run prisma:migration:validation -- --branch-id "$VALIDATION_BRANCH_ID" --confirm-data-free "$VALIDATION_BRANCH_ID" apply
+   ```
 
-既存`prisma.config.ts`にはDB接続先を設定していません。将来Runnerを追加する場合は利用中のCLI helpに合わせ、Target / Branch検証後にのみ接続先を子プロセス環境へ渡します。Production credentialを通常のPrisma CLIへ渡さず、固定Targetへ直接接続しません。
+6. 同じBranchを指定して`verify`と`status`を実行します。statusが目標Contract stateでappliedとなり、pending migration・diagnosticがないことを確認します。終了コードだけで成功と判断しません。
+
+   ```bash
+   npm run prisma:migration:validation -- --branch-id "$VALIDATION_BRANCH_ID" --confirm-data-free "$VALIDATION_BRANCH_ID" verify
+   npm run prisma:migration:validation -- --branch-id "$VALIDATION_BRANCH_ID" --confirm-data-free "$VALIDATION_BRANCH_ID" status
+   ```
+
+7. 追加・変更・削除の各シナリオで、期待したCatalog差分と行データへの影響を専用DB上で確認します。検証後に専用Branchを保持する場合は用途・有効期限を記録し、破棄が必要ならNeonの対象Branch名・IDを再確認してから別途行います。
+
+既存`prisma.config.ts`にはDB接続先を設定していません。RunnerはTarget / Branch検証後にだけ接続先を一時configの子プロセス環境へ渡します。Production credentialを通常のPrisma CLIへ渡さず、固定Targetへ直接接続しません。
 
 ## Graph分岐・合流
 
@@ -45,23 +62,28 @@ npm exec --no -- prisma migration status --from <branch-A-tip> --to @contract
 npm exec --no -- prisma migration status --from <branch-B-tip> --to @contract
 ```
 
-ここでの`migration status --from ... --to @contract`はofflineでGraph上の到達経路を確認します。DBに記録されたstateと適用経路を比較する確認は専用Runner実装まで保留します。行き止まりMigrationや到達不能stateが残る場合は必要な合流Migrationを計画します。Migrationは時刻順の一覧ではないため、ディレクトリ名だけで適用順を判断しません。
+ここでの`migration status --from ... --to @contract`はofflineでGraph上の到達経路を確認します。DBに記録されたstateと適用経路はRunnerの`status` / `preview`で照合します。行き止まりMigrationや到達不能stateが残る場合は必要な合流Migrationを計画します。Migrationは時刻順の一覧ではないため、ディレクトリ名だけで適用順を判断しません。
 
 ## Driftと不正Migrationの失敗確認
 
-失敗系は、それぞれ独立した使い捨て検証Branchで実行するシナリオです。Runner実装前はDB接続・書込みを行わず、以下の結果を実証済みとして報告しません。
+失敗系は、それぞれ独立した使い捨て検証Branchで実行します。正常ケース用Branchへ不正DDLを適用しません。
 
-- **未適用Migration:** statusがpendingを示すことを確認します。専用Runnerで`db migrate --show`から対象・操作を確認してから適用し、再度statusで解消を確認します。
-- **Managed Schema drift:** Contract管理対象のcolumnやconstraintの定義を変え、通常の`db verify`がschema不一致を返すことを確認します。失敗を覆い隠すために`db sign`を実行しません。
-- **Extra objects:** Contractにないtable等の余剰objectは、通常の`db verify`ではなく`db verify --schema-only --strict`または独立したPostgres Catalog照合で検出します。`--strict`は他の余剰Schema要素も失敗扱いにするため、旧`schema_migrations`やPrisma管理objectが存在する署名済みBranchには適用せず、対象objectが限定された空の専用DBで使います。
+- **未適用Migration:** statusがpendingを示してRunnerが非0終了することを確認します。Runnerの`preview`から適用経路を確認し、offlineの`migration show`で操作をレビューしてから適用します。適用後に再度statusを実行し、合格へ変わることを確認します。
+- **Managed Schema drift:** Contract管理対象のcolumnやconstraintの定義を変え、Runnerの`verify`がschema不一致を返すことを確認します。失敗を覆い隠すために`db sign`を実行しません。
+- **Extra objects:** Contractにないtable等の余剰objectは、通常のverifyではなくRunnerの`verifyStrict`（`db verify --schema-only --strict`）または独立したPostgres Catalog照合で検出します。`--strict`は他の余剰Schema要素も失敗扱いにするため、旧`schema_migrations`やPrisma管理objectが存在する署名済みBranchには適用せず、対象objectが限定された空の専用DBで使います。
+
+  ```bash
+  npm run prisma:migration:validation -- --branch-id "$VALIDATION_BRANCH_ID" --confirm-data-free "$VALIDATION_BRANCH_ID" verifyStrict
+  ```
+
 - **不正な制約変更:** データが既存制約を満たさない状態を作り、制約追加Migrationのprecheck / 実行が失敗して不整合を残さないことを確認します。
 - **非互換DDL:** 破壊的な変更を含むMigrationを`--delete`等の明示的なデータ損失指定なしで計画し、PrismaがMigration作成を拒否することを確認します。専用Branchで、想定した危険なOperationのpreview・precheckが表示され、実行時に失敗して不整合を残さないケースも確認します。`--delete`を使うケースは使い捨てBranchに限定し、実行前に影響する行数・列・データ変換を確認します。
 
-専用Runnerで検証した際は、CLIの終了コード、診断種別、migration ledger、Contract marker、DB Catalogの確認結果を記録します。接続先、SQL実データ、credentialは出力・Issue・PRへ記録せず、ケース名、結果、影響件数だけを残します。
+Runnerの終了コード、診断種別、migration ledger、Contract marker、DB Catalogの確認結果を記録します。接続先、SQL実データ、credentialは出力・Issue・PRへ記録せず、ケース名、結果、影響件数だけを残します。
 
 ## Contractを以前の状態へ戻す
 
-Contractを以前の形に戻すときも、適用済みMigrationを編集・削除しません。Migration Graphの現在stateから旧Contract stateを目標にする新しい逆向きMigrationをオフラインで計画・レビューします。DBへの適用は専用Runner実装まで行いません。
+Contractを以前の形に戻すときも、適用済みMigrationを編集・削除しません。Migration Graphの現在stateから旧Contract stateを目標にする新しい逆向きMigrationをオフラインで計画・レビューし、Runnerの`preview`で対象DBへの経路と操作を確認してから`apply`します。
 
 ```bash
 npm exec --no -- prisma migration plan \
@@ -72,7 +94,7 @@ npm exec --no -- prisma migration check
 npm exec --no -- prisma migration show <restore-migration-directory>
 ```
 
-これらはMigration Graphを作るoffline手順です。DBへの適用は専用Runner実装まで行いません。逆向きMigrationはSchemaを以前の形に近づける操作であり、削除済み・上書き済みの行データや過去時点の値を復元しません。DROP column、型変換、制約強化などでデータが失われた場合は、対象Branchの状態を固定してからNeonのRestore / Branch復旧でデータを戻す必要があります。Restoreは別の回復操作として扱い、戻す時刻・対象Branch・復旧後の分岐をNeon側で確認します。Prisma Migrationをデータ復元の代替に使いません。
+逆向きMigrationはSchemaを以前の形に近づける操作であり、削除済み・上書き済みの行データや過去時点の値を復元しません。DROP column、型変換、制約強化などでデータが失われた場合は、対象Branchの状態を固定してからNeonのRestore / Branch復旧でデータを戻す必要があります。Restoreは別の回復操作として扱い、戻す時刻・対象Branch・復旧後の分岐をNeon側で確認します。Prisma Migrationをデータ復元の代替に使いません。
 
 ## 完了記録
 
