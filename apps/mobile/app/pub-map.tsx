@@ -1,5 +1,13 @@
-import { Camera, GeoJSONSource, Layer, Map, TransformRequestManager } from "@maplibre/maplibre-react-native";
 import {
+  Camera,
+  GeoJSONSource,
+  Layer,
+  Map,
+  TransformRequestManager,
+  type CameraRef,
+} from "@maplibre/maplibre-react-native";
+import {
+  sortPubsByDistance,
   filterPubs,
   getAvailablePrefectures,
   getAvailableTags,
@@ -7,10 +15,11 @@ import {
   type Locale,
   type Pub,
 } from "@irishpub-map/shared";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import mobileAppConfig from "../app.json";
 import { toPubFeatureCollection } from "./pub-map-data";
+import type { CurrentLocationResult } from "../lib/current-location";
 
 const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
 const APP_VERSION = mobileAppConfig.expo.version;
@@ -34,6 +43,20 @@ const copy = {
     clearSearch: "検索語を解除",
     mapError: "地図を読み込めませんでした。通信状況を確認して、もう一度お試しください。",
     retry: "地図を再読み込み",
+    locate: "現在地を表示",
+    locating: "現在地を取得中…",
+    privacy:
+      "現在地はこの操作中だけ利用し、サーバーへ送信・保存しません。地図タイルの位置情報はOpenFreeMapへ送信されます。",
+    denied: "位置情報が許可されませんでした。検索や地図は引き続き利用できます。",
+    blocked: "端末設定で位置情報を許可してください。",
+    settings: "設定を開く",
+    servicesDisabled: "端末の位置情報サービスを有効にしてください。",
+    locationTimeout: "現在地を取得できませんでした。もう一度お試しください。",
+    locationError: "現在地を利用できません。端末の設定を確認してください。",
+    nearby: "近くのパブ",
+    noNearby: "周辺に掲載パブはありません。",
+    distance: (distanceKm: number) =>
+      distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`,
   },
   en: {
     count: (count: number) => `${count} pubs`,
@@ -46,6 +69,20 @@ const copy = {
     clearSearch: "Clear search text",
     mapError: "The map could not be loaded. Check your connection and try again.",
     retry: "Reload map",
+    locate: "Show my location",
+    locating: "Getting your location…",
+    privacy:
+      "Your location is used only for this action and is not sent to or stored by our server. Map tile requests reveal the viewed area to OpenFreeMap.",
+    denied: "Location permission was not granted. Search and the map remain available.",
+    blocked: "Allow location access in your device settings.",
+    settings: "Open settings",
+    servicesDisabled: "Turn on location services on your device.",
+    locationTimeout: "Could not get your location. Please try again.",
+    locationError: "Location is unavailable. Check your device settings.",
+    nearby: "Nearby pubs",
+    noNearby: "There are no listed pubs nearby.",
+    distance: (distanceKm: number) =>
+      distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`,
   },
 } satisfies Record<
   Locale,
@@ -60,6 +97,18 @@ const copy = {
     clearSearch: string;
     mapError: string;
     retry: string;
+    locate: string;
+    locating: string;
+    privacy: string;
+    denied: string;
+    blocked: string;
+    settings: string;
+    servicesDisabled: string;
+    locationTimeout: string;
+    locationError: string;
+    nearby: string;
+    noNearby: string;
+    distance: (distanceKm: number) => string;
   }
 >;
 
@@ -68,8 +117,11 @@ type PubMapProps = {
   dataReady: boolean;
   locale: Locale;
   selectedPubId: string | null;
+  locationState?: { status: "idle" | "requesting" } | CurrentLocationResult;
   onSelectPub: (pubId: string) => void;
   onOpenPub: (pubId: string) => void;
+  onRequestLocation?: () => void;
+  onOpenLocationSettings?: () => void;
 };
 
 type PrefectureFilterOption = {
@@ -79,8 +131,20 @@ type PrefectureFilterOption = {
 };
 
 /** OpenFreeMap上にPubをまとめて描画し、選択中の店舗情報と読み込み失敗を表示します。 */
-export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub, onOpenPub }: PubMapProps) {
+export function PubMap({
+  pubs,
+  dataReady,
+  locale,
+  selectedPubId,
+  locationState = { status: "idle" },
+  onSelectPub,
+  onOpenPub,
+  onRequestLocation = () => undefined,
+  onOpenLocationSettings = () => undefined,
+}: PubMapProps) {
   const [mapFailed, setMapFailed] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  const camera = useRef<CameraRef>(null);
   const [mapAttempt, setMapAttempt] = useState(0);
   const [query, setQuery] = useState("");
   const [selectedPrefectureId, setSelectedPrefectureId] = useState<string | null>(null);
@@ -121,7 +185,35 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub, on
   const selectedPub = filteredPubs.find((pub) => pub.id === selectedPubId);
   const features = useMemo(() => toPubFeatureCollection(filteredPubs), [filteredPubs]);
   const labels = copy[locale];
+  const coordinates = locationState.status === "success" ? locationState.coordinates : null;
+  const nearbyPubs = useMemo(
+    () => (coordinates ? sortPubsByDistance(filteredPubs, coordinates).slice(0, 3) : []),
+    [filteredPubs, coordinates],
+  );
+  const locationFeature = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: coordinates
+        ? [
+            {
+              type: "Feature" as const,
+              properties: {},
+              geometry: {
+                type: "Point" as const,
+                coordinates: [coordinates.longitude, coordinates.latitude] as [number, number],
+              },
+            },
+          ]
+        : [],
+    }),
+    [coordinates],
+  );
   const hasFilters = Boolean(query.trim() || activePrefectureId || selectedTags.length);
+
+  useEffect(() => {
+    if (mapReady && coordinates)
+      camera.current?.flyTo({ center: [coordinates.longitude, coordinates.latitude], zoom: 13.5, duration: 1000 });
+  }, [mapReady, coordinates]);
 
   function toggleTag(tag: string) {
     setSelectedTags((current) =>
@@ -231,6 +323,45 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub, on
           </Pressable>
         ) : null}
       </View>
+      <View style={{ paddingHorizontal: 16, paddingTop: 8, gap: 8 }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={labels.locate}
+          accessibilityState={{ disabled: locationState.status === "requesting" }}
+          disabled={locationState.status === "requesting"}
+          onPress={onRequestLocation}
+          style={{
+            minHeight: 44,
+            justifyContent: "center",
+            paddingHorizontal: 12,
+            borderWidth: 1,
+            borderRadius: 8,
+            alignSelf: "flex-start",
+          }}
+        >
+          <Text>{locationState.status === "requesting" ? labels.locating : labels.locate}</Text>
+        </Pressable>
+        <Text>{labels.privacy}</Text>
+        {locationState.status === "permission-denied" ? (
+          <View accessibilityRole="alert" style={{ gap: 8 }}>
+            <Text>{locationState.canAskAgain ? labels.denied : labels.blocked}</Text>
+            {!locationState.canAskAgain ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onOpenLocationSettings}
+                style={{ minHeight: 44, justifyContent: "center" }}
+              >
+                <Text>{labels.settings}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+        {locationState.status === "services-disabled" ? (
+          <Text accessibilityRole="alert">{labels.servicesDisabled}</Text>
+        ) : null}
+        {locationState.status === "timeout" ? <Text accessibilityRole="alert">{labels.locationTimeout}</Text> : null}
+        {locationState.status === "error" ? <Text accessibilityRole="alert">{labels.locationError}</Text> : null}
+      </View>
       {mapFailed ? (
         <View
           accessibilityRole="alert"
@@ -254,11 +385,18 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub, on
           accessibilityLabel={locale === "ja" ? "パブの地図" : "Pub map"}
           mapStyle={MAP_STYLE_URL}
           attribution
-          onDidFinishLoadingMap={() => setMapFailed(false)}
-          onDidFailLoadingMap={() => setMapFailed(true)}
-          style={{ flex: 1 }}
+          onDidFinishLoadingMap={() => {
+            setMapFailed(false);
+            setMapReady(true);
+          }}
+          onDidFailLoadingMap={() => {
+            setMapFailed(true);
+            setMapReady(false);
+          }}
+          style={{ flex: 1, minHeight: 280 }}
         >
           <Camera
+            ref={camera}
             initialViewState={{ bounds: [122, 24, 147, 46], padding: { top: 16, right: 16, bottom: 16, left: 16 } }}
           />
           <GeoJSONSource
@@ -280,6 +418,20 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub, on
               }}
             />
           </GeoJSONSource>
+          {coordinates ? (
+            <GeoJSONSource id="current-location" data={locationFeature} onPress={() => undefined}>
+              <Layer
+                id="current-location-marker"
+                type="circle"
+                paint={{
+                  "circle-color": "#2563eb",
+                  "circle-radius": 9,
+                  "circle-stroke-color": "#ffffff",
+                  "circle-stroke-width": 3,
+                }}
+              />
+            </GeoJSONSource>
+          ) : null}
         </Map>
       )}
       <View style={{ padding: 16, gap: 8, borderTopWidth: 1 }}>
@@ -299,6 +451,30 @@ export function PubMap({ pubs, dataReady, locale, selectedPubId, onSelectPub, on
             </Text>
             <Text>{selectedPub.address}</Text>
           </Pressable>
+        ) : null}
+        {coordinates ? (
+          <View>
+            <Text accessibilityRole="header">{labels.nearby}</Text>
+            {nearbyPubs.length === 0 ? <Text>{labels.noNearby}</Text> : null}
+            <ScrollView style={{ maxHeight: 144 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+              {nearbyPubs.map(({ pub: nearbyPub, distanceKm }) => (
+                <Pressable
+                  key={nearbyPub.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${nearbyPub.name}, ${labels.distance(distanceKm)}`}
+                  onPress={() => {
+                    onSelectPub(nearbyPub.id);
+                    onOpenPub(nearbyPub.id);
+                  }}
+                  style={{ minHeight: 44, justifyContent: "center" }}
+                >
+                  <Text>
+                    {nearbyPub.name} · {labels.distance(distanceKm)}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
         ) : null}
       </View>
     </View>

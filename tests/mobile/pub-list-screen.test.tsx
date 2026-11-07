@@ -4,6 +4,7 @@ import type { Pub } from "@irishpub-map/shared";
 import HomeScreen, { resolveInitialLocale } from "../../apps/mobile/app/index";
 
 const { getPubs } = vi.hoisted(() => ({ getPubs: vi.fn() }));
+vi.mock("../../apps/mobile/lib/current-location", () => ({ getCurrentLocation: vi.fn() }));
 
 vi.mock("@irishpub-map/api-client", () => ({ getPubs }));
 vi.mock("../../apps/mobile/app/pub-map", async () => {
@@ -66,6 +67,7 @@ vi.mock("react-native", async () => {
           ? data.map((item) => React.createElement(React.Fragment, { key: item.id }, renderItem({ item })))
           : ListEmptyComponent,
       ),
+    ScrollView: ({ children }: React.PropsWithChildren) => React.createElement("div", null, children),
     Pressable: ({
       children,
       onPress,

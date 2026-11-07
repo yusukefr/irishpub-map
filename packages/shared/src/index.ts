@@ -13,6 +13,7 @@ export {
   sortPubsByMunicipalityCode,
 } from "./pub-search";
 export type { Coordinates, PubFilters } from "./pub-search";
+export { calculateDistanceKm, sortPubsByDistance } from "./pub-distance";
 export { PUB_STATUS_DEFINITIONS, getPubStatusCode, getPubStatusValue } from "./status";
 export { isUuid, UUID_PATTERN } from "./uuid";
 export type { MunicipalityOption, PrefectureOption, PubStatusOption, PubTypeOption, TagOption } from "./admin-master";
