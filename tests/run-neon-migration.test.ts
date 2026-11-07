@@ -17,16 +17,27 @@ describe("parseMigrationArguments", () => {
     expect(() => parseMigrationArguments(["--target", "production", "db/migration.sql"])).toThrow(
       "Production migration requires --confirm-production.",
     );
-    expect(parseMigrationArguments(["--target", "production", "--confirm-production", "db/migration.sql"])).toEqual({
+    expect(
+      parseMigrationArguments(["--target", "production", "--confirm-production", "db/migrations/025_existing_up.sql"]),
+    ).toEqual({
       target: "production",
-      migrationPath: "db/migration.sql",
+      migrationPath: "db/migrations/025_existing_up.sql",
     });
   });
 
   it("requires an explicit target and rejects production confirmation for Preview", () => {
     expect(() => parseMigrationArguments(["db/migration.sql"])).toThrow("Usage:");
-    expect(() => parseMigrationArguments(["--target", "preview", "--confirm-production", "db/migration.sql"])).toThrow(
-      "--confirm-production is only valid for production.",
+    expect(() =>
+      parseMigrationArguments(["--target", "preview", "--confirm-production", "db/migrations/025_existing_up.sql"]),
+    ).toThrow("--confirm-production is only valid for production.");
+  });
+
+  it("refuses new or out-of-scope SQL migrations", () => {
+    expect(() => parseMigrationArguments(["--target", "preview", "db/migrations/026_new_up.sql"])).toThrow(
+      "db:migrate is restricted to existing legacy migrations 001-025",
+    );
+    expect(() => parseMigrationArguments(["--target", "preview", "db/custom.sql"])).toThrow(
+      "db:migrate is restricted to existing legacy migrations 001-025",
     );
   });
 });

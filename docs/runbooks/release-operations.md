@@ -20,12 +20,14 @@ CIは`main`へのpush、`main`向けPull Requestの更新、`workflow_dispatch`�
 
 | 変更内容 | `Lint, Typecheck, Test, Build`で実行する処理 | PRのE2E / Storybook browser tests |
 | --- | --- | --- |
-| Code変更（workflowを含む） | Sensitive data check、LLM security check、Markdown / `.mmd` のMermaid構文 check、npm ci、Format、OpenAPI lint、Lint、Typecheck、Unit Test、Next.js Build、Storybook Build | UI / E2E関連変更があれば実行 |
+| Code変更（workflowを含む） | Sensitive data check、LLM security check、Markdown / `.mmd` のMermaid構文 check、npm ci、Prisma Contract emit / offline plan / Migration Graph check、Format、OpenAPI lint、Lint、Typecheck、Unit Test、Next.js Build、Storybook Build | UI / E2E関連変更があれば実行 |
 | `docs/specs/openapi/**`のみ（通常文書との混在を含む） | Markdown / `.mmd` のPrettier check、Mermaid構文 check、Sensitive data check、LLM security check、OpenAPI lint、代表RouteのOpenAPI runtime contract test | アプリの全Test / Buildを省略 |
 | docs-only | Markdown / `.mmd` のPrettier check、Mermaid構文 check、Sensitive data check、LLM security check | Unit Test、ESLint、Typecheck、Next.js / Storybook Build、E2Eを省略 |
 | `workflow_dispatch` | Code変更と同じFull CI | デフォルトで省略。`run_e2e=true`の場合だけ実行 |
 
 docs-onlyは`docs/**`（OpenAPIを除く）のMarkdownと`.mmd`、rootの`README.md` / `AGENTS.md` / `LICENSE`、`.agents/**`、`.codex/**`のMarkdownと`.mmd`に限定します。OpenAPI変更では文書チェックとOpenAPI lintを実行し、アプリ配下のMarkdown/MDXやそれ以外の未知パスはFull CIとして扱います。MermaidはMarkdown内の`mermaid` fenceと追跡対象の独立`.mmd`を構文検証します。軽量チェックは`tools/docs-check`の専用lockfileでPrettierとMermaid parserだけを導入します。PRのE2E対象はWebの画面・コンポーネント・スタイル・静的素材・`packages/shared/**`・StorybookとPlaywrightのテスト・設定です。API routeや明確なserver専用処理だけの変更は対象外です。比較元を取得できないPRは安全側でE2Eを実行します。手動でE2Eを確認する場合は対象branchの`workflow_dispatch`で`run_e2e`を指定します。
+
+Prisma検査はContractをemitし、固定されたMigration Graphのterminal contractをoriginとしてoffline planを行って未commit候補を検出した後、`migration check --space app`を実行します。PR runnerにはNeon credentialやDB接続権限を渡さず、`db verify`やMigration applyをCIで起動しません。Neon接続の`status` / `preview` / `apply` / `verify`は[Neon Migration Runbook](neon-migrations.md)のTarget Resolver付き手順に従い、Production適用にはBranch状態確認、Preview検証、main向けPR review / merge、個別の明示承認が必要です。
 
 `main`へのdocs-only pushでは、未Releaseの成果物変更が残っていない場合にE2EとStorybook browser testsを省略します。未Releaseの成果物変更が残る場合はFull CI、E2E、Production Releaseを従来どおり実行します。明示された`workflow_dispatch`の`run_e2e=true`も引き続き実行します。Production ReleaseはFull CIとE2Eの成功を引き続き条件とします。
 

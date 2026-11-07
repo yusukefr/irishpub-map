@@ -65,6 +65,14 @@ jobs:
         if: steps.changes.outputs.full_ci == 'true' || steps.changes.outputs.openapi_changed == 'true'
         run: npm ci
 
+      - name: Check Prisma Contract and Migration Graph
+        if: steps.changes.outputs.full_ci == 'true'
+        env:
+          DATABASE_URL: ""
+          DIRECT_URL: ""
+          NEON_API_KEY: ""
+        run: npm run prisma:migration:check
+
       - name: Install documentation check tools
         run: npm ci --prefix tools/docs-check --ignore-scripts
 

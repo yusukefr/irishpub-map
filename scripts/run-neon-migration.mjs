@@ -32,7 +32,15 @@ export function parseMigrationArguments(inputArgs) {
   if (target !== "production" && confirmProduction)
     throw new Error("--confirm-production is only valid for production.");
 
-  return { target, migrationPath: positional[0] };
+  const migrationPath = positional[0].replaceAll("\\", "/");
+  const legacyMigration = migrationPath.match(/^db\/migrations\/(\d{3})_[a-z0-9_]+_(?:up|verify|down)\.sql$/);
+  if (!legacyMigration || Number(legacyMigration[1]) > 25) {
+    throw new Error(
+      "db:migrate is restricted to existing legacy migrations 001-025; create and apply new schema changes with Prisma 8.",
+    );
+  }
+
+  return { target, migrationPath };
 }
 
 /**

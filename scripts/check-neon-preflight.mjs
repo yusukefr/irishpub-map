@@ -20,6 +20,11 @@ export function parsePreflightArguments(inputArgs) {
   if (!target || !requiredMigration || !/^[0-9]{3}_[a-z0-9_]+$/.test(requiredMigration)) {
     throw new Error("Usage: npm run db:preflight -- --target preview|production --required-migration <version_name>");
   }
+  if (Number(requiredMigration.slice(0, 3)) > 25) {
+    throw new Error(
+      "db:preflight only checks legacy SQL migration history 001-025; use Prisma 8 for new schema changes.",
+    );
+  }
   if (target !== "preview" && target !== "production") throw new Error("--target must be preview or production.");
   return { target, requiredMigration };
 }
@@ -33,7 +38,7 @@ export async function getRequiredMigrationVersions(
   const versions = filenames
     .filter((filename) => /^\d{3}_[a-z0-9_]+_up\.sql$/.test(filename))
     .map((filename) => filename.slice(0, -"_up.sql".length))
-    .filter((version) => Number(version.slice(0, 3)) >= 6)
+    .filter((version) => Number(version.slice(0, 3)) >= 6 && Number(version.slice(0, 3)) <= 25)
     .sort();
   const requiredIndex = versions.indexOf(requiredMigration);
   if (requiredIndex < 0) throw new Error(`Unknown repository migration: ${requiredMigration}.`);
