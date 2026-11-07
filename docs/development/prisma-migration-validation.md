@@ -29,7 +29,7 @@ RunnerはPrisma CLIをJSONモードで起動します。`status`は`app` space�
    npm exec --no -- prisma migration show <migration-directory>
    ```
 
-4. Migrationの`from` / `to`、生成操作、SQL preview、precheck / postcheck、およびデータ影響を確認します。承認できないDROP、truncate、暗黙変換、データ損失があれば適用せず、Contractを修正して再計画します。
+4. Migrationの`from` / `to`、生成操作、SQL preview、precheck / postcheck、およびデータ影響を確認します。データを失う操作を`--delete`で計画する場合、これは失われる値を許容する明示的な承認です。実行時の安全判定ではなく、操作が失敗する保証もありません。たとえばPostgreSQLの`text`から`varchar(n)`への明示castは、長い値を`n`文字に切り詰めて成功することがあります。`--delete`なしで計画が拒否されるケース、実行時に失敗してrollbackするケース、明示承認後に成功して値が変わるケースを区別し、実行前にSQL、対象行数、変換後の値を検証用コピーで確認します。
 5. 検証Branch IDをNeonで確認し、同じBranch IDをdata-free確認値として指定します。まず`preview`で適用経路をレビューし、承認後に`apply`を実行します。
 
    ```bash
@@ -77,7 +77,8 @@ npm exec --no -- prisma migration status --from <branch-B-tip> --to @contract
   ```
 
 - **不正な制約変更:** データが既存制約を満たさない状態を作り、制約追加Migrationのprecheck / 実行が失敗して不整合を残さないことを確認します。
-- **非互換DDL:** 破壊的な変更を含むMigrationを`--delete`等の明示的なデータ損失指定なしで計画し、PrismaがMigration作成を拒否することを確認します。専用Branchで、想定した危険なOperationのpreview・precheckが表示され、実行時に失敗して不整合を残さないケースも確認します。`--delete`を使うケースは使い捨てBranchに限定し、実行前に影響する行数・列・データ変換を確認します。
+- **CHECK式とPostgreSQLの正規化:** Prismaの`contract emit`が`PN_EXACT_NAME_BODY_COMPARISON`を出した場合、`map:`で指定したCHECK式がPostgreSQLの再表示する式と完全一致するか確認します。PostgreSQLが式を正規化し、手書きの式と異なるとMigration適用時のdestination schema verificationが`MIGRATION.SCHEMA_VERIFY_FAILED`となり、transactionがrollbackされる場合があります。この警告はすべての`map:`定義が誤りという意味ではありません。DBから取得した式・名前をそのまま保持する定義と手書き定義を区別し、Catalogの`pg_get_constraintdef`とdestination Contractを照合します。物理名を固定する必要がない手書きCHECKでは、`name:`を使ってPrismaに物理名を管理させる方法も検討します。
+- **非互換DDL / データ損失:** `--delete`や`--rename`なしでは、計画時に`CLI.CONSENT_REQUIRED`で拒否されるケースがあります。明示した後の適用は、データが制約に違反していてtransaction rollbackすることも、変換が成功して値を失うこともあります。たとえば`text`から`varchar(120)`へのcastは、121文字値を120文字に切り詰めて成功しました。期待結果を決めた使い捨てBranchで、Runnerの`preview`とofflineの`migration show`を照合してから適用し、失敗時はCatalog・marker・ledger・行データがrollbackされていること、成功した場合は実際の変換結果を確認します。`--delete`を使うケースは使い捨てBranchに限定します。
 
 Runnerの終了コード、診断種別、migration ledger、Contract marker、DB Catalogの確認結果を記録します。接続先、SQL実データ、credentialは出力・Issue・PRへ記録せず、ケース名、結果、影響件数だけを残します。
 
