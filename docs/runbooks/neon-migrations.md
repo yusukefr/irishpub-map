@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`db/migrations/`にあるSQL migrationを対象Neon Branchへ安全に適用し、schemaとアプリケーションの互換性を確認します。migration履歴とSQLは`db/migrations/`がSource of Truthです。
+新しいSchema変更はPrisma 8 Contract / Migration Graphを対象Neon Branchへ適用し、SchemaとApplicationの互換性を確認します。`migrations/`が新規Schema変更のSource of Truthです。`db/migrations/`と`schema_migrations`は旧SQL方式の001〜025を保持する履歴資産であり、新しいSQL Migrationを追加・適用しません。
 
 ## When to use
 
@@ -16,41 +16,52 @@
 - 対象が検証用Branch、Preview用固定Branch、Productionのどれかを明確にしている。
 - Repositoryの固定バージョンNeon CLIはdevDependencyとして管理する。managed worktreeでは`npm ci`で導入し、Global installは不要。LocalではCLI Profile、AI / Remoteでは`NEON_API_KEY` Secret Injectionで認証する。Project-scoped Credentialを優先する。
 - `config/neon-targets.json` にProject IDとPreview / Production Branch名が定義されている。Branch IDは保存せず、Resolverが実行時にNeonから取得する。
-- migration SQLと対応する`*_verify.sql`を確認済みである。
+- Contractと生成されたMigration packageをPRでレビューしている。
 - `.env.local` / `.env.development.local` はApplicationのローカル開発用であり、Migration / Schema操作では使用しない。
 - Productionへ直接試行せず、先に通常Neon BranchまたはSchema-only Branchで検証している。
 
 ## Procedure
 
-1. 変更対象Migrationまでの履歴と接続先を、書き込み前に読み取り専用Preflightで確認する。
+1. Contractを変更し、Artifactをemitし、Migrationをローカルで計画します。CLIはDBへ接続しません。
 
 ```bash
-npm run db:preflight -- --target preview --required-migration 024_add_pub_types
+npm run prisma:contract:emit
+npm exec --no -- prisma migration plan --name <migration-name>
+npm exec --no -- prisma migration show <migration-directory>
+npm exec --no -- prisma migration check --space app
 ```
 
-`--required-migration`には`db/migrations/`内の`*_up.sql`ファイル名から`_up.sql`を除いた値を指定します。PreflightはRepository内のMigration一覧と`schema_migrations`を比較し、対象より前に適用が必要なMigrationのうち未適用のものを列挙して停止します。対象Migration自身は適用前でも成功します。DBへは`BEGIN READ ONLY`のSELECTだけを行い、Branch作成・切替やSchema変更をしません。Preflightが成功しても対象SQLの内容確認とverify SQLの実行は必要です。
-
-2. 共通ResolverがRepository設定からProject / Branch名を読み、Neon CLIで認証・Branch ID・ready状態・Direct / Unpooled接続先を解決・検証する。Preflightの結果で接続する正確なBranch名とIDを確認する。
-3. Previewでup SQLとverify SQLを順に適用する。
+2. Migration packageをレビューします。`migration plan`が新しいpackageを作ったら、操作・DDL・data transform・precheck・postcheckを同じPRへ含めて再度checkします。通常PR CIはContract artifact再生成、offline plan、Migration Graph checkを実行し、Neon credentialやDB接続権限を持ちません。
+3. Preview TargetのBranch名・ID・ready状態を確認し、`status`と`preview`を実行して適用前状態と計画を記録します。
 
 ```bash
-npm run db:connection-check -- --target preview
-npm run db:migrate -- --target preview db/migrations/<migration>_up.sql
-npm run db:migrate -- --target preview db/migrations/<migration>_verify.sql
+npm run prisma:migration:run -- --target preview status
+npm run prisma:migration:run -- --target preview preview
 ```
 
-4. table、constraint、index、外部キー、必要な参照データ、`schema_migrations`をverify SQLで確認する。新規作成・更新するverify SQLは、結果行の目視確認に依存せず、不足や不整合があれば`RAISE EXCEPTION`で失敗する自己検証型にする。006 / 007のverify SQLをこの形式の例とする。Migration Runnerは結果行や機微なDBデータを出力しません。
-5. 関連するアプリケーション、unit test、E2Eを検証する。
-6. Preview検証に成功し、Production適用への明示承認がある場合だけ、Production Guard付きでup / verifyを実行する。PreviewとProductionではMigration履歴が異なる可能性があるため、それぞれのTargetで適用前にPreflightを実行する。Previewの成功をProductionの履歴確認の代わりにしない。
+4. Previewへ適用し、Migration statusとContract verifyを確認します。
 
 ```bash
-npm run db:preflight -- --target production --required-migration 024_add_pub_types
-npm run db:connection-check -- --target production
-npm run db:migrate -- --target production --confirm-production db/migrations/<migration>_up.sql
-npm run db:migrate -- --target production --confirm-production db/migrations/<migration>_verify.sql
+npm run prisma:migration:run -- --target preview apply
+npm run prisma:migration:run -- --target preview status
+npm run prisma:migration:run -- --target preview verify
 ```
 
-Production Migrationは`--target production`と`--confirm-production`の両方が必須です。
+5. Application test/buildと必要なPreview smoke checkを完了し、適用前後の状態・Migration・verify結果をPRへ記録します。
+6. Productionでは、対象Branchの現在stateとMigration planを改めて確認し、Preview適用成功・PRレビュー・mainへのmerge後に個別の適用承認を得ます。状態確認後に別の変更が入った場合は、差分とplanを再確認してから明示承認します。適用コマンドのconfirmationはその1回だけ有効です。
+
+```bash
+npm run prisma:migration:run -- --target production status
+npm run prisma:migration:run -- --target production preview
+# state確認、PR review / merge、個別の明示承認後に実行
+npm run prisma:migration:run -- --target production --confirm-production <configured-production-branch-name> apply
+npm run prisma:migration:run -- --target production status
+npm run prisma:migration:run -- --target production verify
+```
+
+Production対象のapplyは`--confirm-production`が要求され、設定済みProduction Branch名と一致しない場合は拒否します。PR CI、Release workflow、VercelからMigrationを自動実行しません。確認したBranch state・review済みPR・適用対象migration・個別承認を作業記録に含めます。
+
+`prisma db sign`は通常Runnerに含まれず、このIssueの作業中にもProductionで実行しません。将来Productionで既存SchemaのSignが必要な場合は、read-only Schema / marker状態の照合結果を保存し、専用PRで操作対象と影響をレビューし、merge後に対象Branchを再照合してから個別の明示承認を得ます。SignはPrisma marker / ledger / refを書き込むため、Migration applyと同じ本番ゲートを通し、承認後にその1回だけ実行します。状態がレビュー時から変わった場合は再レビュー・再承認します。
 
 Schema文書を更新するときはProductionをSource of Truthとして生成します。
 
@@ -59,12 +70,13 @@ npm run db:schema -- --target production
 npm run check:database-schema
 ```
 
-Vercelは`db/migrations/`を自動適用しません。アプリをデプロイする前に、対象Branchへの適用と検証を完了します。
+VercelはPrisma Migrationを自動適用しません。アプリをdeployする前に、対象Branchへの適用と検証を手動運用で完了します。
 
 ## Validation
 
-- 自己検証型のverify SQLは正常終了する。
-- 既存のSELECT結果確認型verify SQL（例: `001_pubs_columns_verify.sql`、`002_normalize_pub_metadata_verify.sql`）は、Migration Runnerの終了コードだけで検証完了と判断しない。Runnerは結果行を表示しないため、別途安全なSQLクライアントで結果を確認するか、実行前に自己検証型へ更新する。
+- `migration check --space app`は正常終了する。
+- Prisma migrationのprecheck、operations、postcheckが意図したSchemaとData Contractを保つ。
+- 適用後の`status`がpending / diagnosticなしを示し、`verify`がContract一致を確認する。
 - 接続先が意図したNeon Branchである。
 - 必要なアプリケーション検証が成功する。
 - schema documentationを更新する必要がある場合は、現行Neon schemaから再生成し、差分を確認する。
@@ -75,7 +87,7 @@ Vercelは`db/migrations/`を自動適用しません。アプリをデプロイ�
 - アプリケーションだけをrollbackする場合、公開状態や下書きを失わないよう、追加済みcolumnやconstraintを安易に削除しない。
 - 失敗時は対象Branch、適用済みSQL、verify結果を確認し、必要に応じて専用Issueで回復策を決める。
 
-Prisma 8 Migration Graphを使う差分検証は、既存の`db/migrations/`用Runnerとは別系統です。Prismaへの所有権切替前は、このRunbookのSQL Migration手順をProduction / 固定Previewに適用し、Prisma検証用Branchを流用しません。PrismaのContractを以前の形へ戻す方法と、Neon Restoreによる行データ復旧の分担は[差分Migration・復旧シナリオ](../development/prisma-migration-validation.md)を参照します。
+`db:migrate`は旧`db/migrations/001`〜`025`内の既存SQLだけを実行でき、新しい番号・任意SQL pathは拒否します。`db:preflight`は旧`schema_migrations`履歴の確認専用です。既存SQL方式とPrisma方式を同じSchema変更へ二重適用しません。PrismaのContractを以前の形へ戻す方法と、Neon Restoreによる行データ復旧の分担は[差分Migration・復旧シナリオ](../development/prisma-migration-validation.md)を参照します。
 
 ## Security notes
 

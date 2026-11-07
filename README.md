@@ -49,7 +49,8 @@ irishpub-map
 ├── .github              # GitHub Actions・Issue・PR設定
 ├── apps/web             # Next.js Webアプリ
 ├── data                 # 市区町村コードのマスタ
-├── db/migrations        # Neon PostgresのMigration
+├── db/migrations        # 既存SQL Migration履歴（001-025）
+├── migrations           # Prisma Contract / Migration Graph
 ├── docs                 # 仕様・設計・開発・運用文書
 ├── packages/shared      # Web・モバイル共通の型とロジック
 ├── scripts              # 開発・運用スクリプト
