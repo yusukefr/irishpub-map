@@ -24,6 +24,9 @@ describe("parsePreflightArguments", () => {
     expect(() => parsePreflightArguments(["--target", "main", "--required-migration", "024_add_pub_types"])).toThrow(
       "--target must be preview or production",
     );
+    expect(() => parsePreflightArguments(["--target", "preview", "--required-migration", "026_new_schema"])).toThrow(
+      "db:preflight only checks legacy SQL migration history 001-025",
+    );
   });
 });
 
@@ -36,6 +39,7 @@ describe("getRequiredMigrationVersions", () => {
         "001_legacy_up.sql",
         "025_future_up.sql",
         "024_add_pub_types_verify.sql",
+        "026_new_schema_up.sql",
       ]),
       cwd: "/workspace",
     });

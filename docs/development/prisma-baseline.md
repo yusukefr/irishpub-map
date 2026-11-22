@@ -12,8 +12,8 @@ Node.js 24とlockfileどおりの依存関係を使います。
 
 ```bash
 npm run prisma:contract:emit
-npx prisma migration plan --name baseline
-npx prisma migration check
+npm exec --no -- prisma migration plan --name baseline
+npm exec --no -- prisma migration check --space app
 ```
 
 `migration plan`はdatabaseへ接続せず、既存Migrationが空のときに現在のContractから初回Baselineを自動生成します。`migrations/app/<timestamp>_baseline/`と`migrations/snapshots/<contract-hash>/`をContractと同じ変更でcommitします。生成先が既にある場合は、同じBaselineを重複生成せず既存Migration graphを確認します。Contract変更後の再生成は新しい差分migrationを作る手順に従います。
@@ -28,8 +28,8 @@ Production Schemaを比較する場合は、Productionからデータを含め�
 
 1. Contractをemitする。
 2. 隔離DBの現在Schemaを確認し、Contractと一致することを確認する。
-3. 接続先を明示して`prisma db sign --db "$DATABASE_URL"`を実行する。
-4. `prisma db verify --db "$DATABASE_URL"`と`prisma migration status --db "$DATABASE_URL"`で署名・Schema・Migration stateを確認する。
+3. `prisma db sign`は通常運用Runnerにallowlistされていません。Signを必要とするBaseline作業は専用BranchのID・Schema・データ内容を確認する個別Runbook / 承認で行い、Productionで実行しません。
+4. `prisma:baseline:verify`でSchema・Migration stateを再確認する。
 
 署名済みの隔離BranchとBaseline適用済み空Branchを、現在のemit済みContractに対して再確認するときは、Neon CLIで認証したうえで各Branch IDを指定します。
 
@@ -39,7 +39,7 @@ PRISMA_EMPTY_DATABASE_BRANCH_ID="<Baseline適用済み空Branch ID>" \
 npm run prisma:baseline:verify
 ```
 
-このコマンドは設定済みNeon ProjectからBranch IDを照合し、Branchが`ready`で固定Preview / Productionでないことを確認します。Neon CLIからDirect endpointを解決し、Poolerと同一endpointを拒否してから、各Branchに`db verify`とJSON形式の`migration status`を順に実行します。URLは専用の[Prisma verify config](../../config/prisma-baseline-verify.config.ts)が子プロセス環境変数から読み取ります。URLはコマンドライン引数・ログへ出力しません。Migration statusにdiagnostic、pending、不正なJSONがあれば失敗します。旧`schema_migrations`は署名済みBranchに保持するため、余剰objectまで拒否する`db verify --strict`は使いません。SignやMigrationの実行はこの確認コマンドに含めません。
+この専用コマンドは設定済みNeon ProjectからBranch IDを照合し、Branchが`ready`で固定Preview / Productionでないことを確認します。Neon CLIからDirect endpointを解決し、Poolerと同一endpointを拒否してから、各Branchに`db verify`とJSON形式の`migration status`を順に実行します。URLは専用configの子プロセス環境変数だけで扱い、コマンドライン引数・ログへ出力しません。Migration statusにdiagnostic、pending、不正なJSONがあれば失敗します。旧`schema_migrations`は署名済みBranchに保持するため、余剰objectまで拒否する`db verify --strict`は使いません。SignやMigrationの実行はこの確認コマンドに含めません。
 
 Signが失敗した場合はdriftを調べ、Signで不一致を覆い隠しません。Prismaが作る管理Marker/Ledgerは旧`schema_migrations`と別物です。旧LedgerをPrisma Contractへ加えたり、Baselineで再作成・初期化したりしません。
 
@@ -47,16 +47,9 @@ Baseline後の追加・変更・削除、Graph分岐・合流、失敗系、お�
 
 ## 空DBの再構築
 
-Production dataを含まない空の新規DBを用意し、BranchとDBの名前・ID・状態を確認してから次を実行します。
+Production dataを含まない空の新規DBを用意し、BranchとDBの名前・ID・状態を確認します。Baseline適用を要する場合は本Runbookの通常Migration操作の対象外として、専用Branch・認証・個別承認を整えた作業として実施します。Productionまたは固定PreviewへBaselineを適用しません。
 
-```bash
-npx prisma migration status --db "$DATABASE_URL"
-npx prisma db migrate --db "$DATABASE_URL"
-npx prisma migration status --db "$DATABASE_URL"
-npx prisma db verify --db "$DATABASE_URL"
-```
-
-接続URIはCLI引数へ直接書かず、Secret Injectionされた環境変数を使います。ログ・Issue・PRへ値を記録しません。`db migrate`は空DBにBaselineを適用するためのものです。既存Schemaには使わず、既存Schemaは前節のSignで採用します。
+接続URIをCLI引数や`.env`へ置かず、専用の隔離検証Runbookを使います。`db migrate`は空DBにBaselineを適用するためのものです。既存Schemaには使わず、既存Schemaは専用Sign手順で採用します。
 
 Baselineの適用後、空DBに対して`db/prisma/seed-reference-data.sql`をpsqlで1回実行し、Applicationが必要とする参照データを投入します。このscriptは業務データがすでに存在するとtransactionを中止します。日本語自治体名がないため、`data/市区町村コード.csv`が別途必要です。ファイルはRepositoryへ含めず、[総務省の全国地方公共団体コード](https://www.soumu.go.jp/denshijiti/code.html)から取得した6桁コード、都道府県・市区町村名、半角カナを使い、次の7列のUTF-8 CSVへ整形します。都道府県コードと名称は既存の[003 migration](../../db/migrations/003_municipality_codes_up.sql)が使うレイアウトと同じです。
 

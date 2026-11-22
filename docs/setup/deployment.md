@@ -73,7 +73,7 @@ npm run build
 npm run check:sensitive-data
 ```
 
-依存関係を変更した場合は、追加で`npm audit --omit=dev`を実行します。データ構造を変更する場合は、アプリをデプロイする前に[Neon migration Runbook](../runbooks/neon-migrations.md)で対象Branchのmigrationと検証を完了します。
+依存関係を変更した場合は、追加で`npm audit --omit=dev`を実行します。データ構造を変更する場合は、アプリをデプロイする前に[Neon migration Runbook](../runbooks/neon-migrations.md)でPrisma Migration Graphを対象Branchへ適用し、検証を完了します。Release Workflow / 通常PR CIはDB Migrationを実行しません。
 
 ## 詳細Runbook
 

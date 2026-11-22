@@ -69,7 +69,7 @@ Agent向け文書を変更した場合は`npm run check:llm-security`を実行�
 
 ### Neon Migration
 
-Schema変更はProduction Branchへ直接適用せず、Branch-firstで検証します。具体的なMigrationの適用、Schema確認、接続先の切替、復旧手順は[Neon Migration Runbook](../runbooks/neon-migrations.md)を参照してください。
+新しいSchema変更はPrisma 8 Migration Graphだけで作成・適用し、Production Branchへ直接試行せずBranch-firstで検証します。通常PR CIにはDB credentialを渡さず、DB MigrationはCIから実行しません。既存の`db:migrate` / `db:preflight`はSQL Migration 001〜025の履歴資産専用です。具体的なPrisma Migrationの適用、Production承認、復旧手順は[Neon Migration Runbook](../runbooks/neon-migrations.md)を参照してください。
 
 ### Neon Branchの利用方針
 

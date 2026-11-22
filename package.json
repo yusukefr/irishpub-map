@@ -19,6 +19,8 @@
     "prisma:version": "prisma --version",
     "prisma:help": "prisma --help",
     "prisma:contract:emit": "prisma contract emit && prettier --write generated/prisma8/contract.json generated/prisma8/contract.d.ts",
+    "prisma:migration:check": "node scripts/check-prisma-migration-graph.mjs",
+    "prisma:migration:run": "node scripts/run-prisma-migration.mjs",
     "prisma:baseline:verify": "node scripts/verify-prisma-baseline.mjs",
     "prisma:migration:validation": "node scripts/run-prisma-validation.mjs",
     "validate:production-env": "node scripts/validate-production-env.mjs",
