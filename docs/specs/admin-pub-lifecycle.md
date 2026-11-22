@@ -15,7 +15,7 @@
 
 ## DBとの境界
 
-下書きに必要なNULL許容、公開状態、参照整合性はDBでも保持します。物理Schema、制約、Migration履歴はこの文書に重複させず、[生成済みスキーマ](../generated/database-schema.md)と `db/migrations` を参照してください。
+下書きに必要なNULL許容、公開状態、参照整合性はDBでも保持します。物理Schemaはこの文書に重複させず、[生成済みスキーマ](../generated/database-schema.md)とPrisma Contract / Migration Graphを参照してください。
 
 ## 下書き保存条件
 

@@ -11,8 +11,6 @@
     "build": "npm run build -w apps/web",
     "import-pubs": "node scripts/import-pubs.mjs",
     "db:connection-check": "node scripts/check-neon-connection.mjs",
-    "db:preflight": "node scripts/check-neon-preflight.mjs",
-    "db:migrate": "node scripts/run-neon-migration.mjs",
     "db:schema": "node scripts/generate-database-schema.mjs",
     "generate:database-schema": "node scripts/generate-database-schema.mjs --target production",
     "check:database-schema": "node scripts/generate-database-schema.mjs --target production --check",

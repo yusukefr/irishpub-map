@@ -2,7 +2,7 @@
 
 ## Purpose
 
-新しいSchema変更はPrisma 8 Contract / Migration Graphを対象Neon Branchへ適用し、SchemaとApplicationの互換性を確認します。`migrations/`が新規Schema変更のSource of Truthです。`db/migrations/`と`schema_migrations`は旧SQL方式の001〜025を保持する履歴資産であり、新しいSQL Migrationを追加・適用しません。
+Schema変更はPrisma 8 Contract / Migration Graphから対象Neon Branchへ適用し、SchemaとApplicationの互換性を確認します。`migrations/`がSchema変更のSource of Truthです。旧SQL MigrationのファイルとRunnerは削除済みです。既存Branchの`schema_migrations`テーブルと履歴行は過去の運用データとして保持し、Prisma ContractやBaselineで作成・変更しません。
 
 ## When to use
 
@@ -85,9 +85,9 @@ VercelはPrisma Migrationを自動適用しません。アプリをdeployする�
 
 - Productionで失敗を試行してrollbackする運用は行わない。検証Branchで手順と影響を確認する。
 - アプリケーションだけをrollbackする場合、公開状態や下書きを失わないよう、追加済みcolumnやconstraintを安易に削除しない。
-- 失敗時は対象Branch、適用済みSQL、verify結果を確認し、必要に応じて専用Issueで回復策を決める。
+- 失敗時は対象Branch、適用済みMigration、verify結果を確認し、必要に応じて専用Issueで回復策を決める。
 
-`db:migrate`は旧`db/migrations/001`〜`025`内の既存SQLだけを実行でき、新しい番号・任意SQL pathは拒否します。`db:preflight`は旧`schema_migrations`履歴の確認専用です。既存SQL方式とPrisma方式を同じSchema変更へ二重適用しません。PrismaのContractを以前の形へ戻す方法と、Neon Restoreによる行データ復旧の分担は[差分Migration・復旧シナリオ](../development/prisma-migration-validation.md)を参照します。
+Migration操作の前に`npm run prisma:migration:run -- --target <preview|production> status`でTarget、Branch状態、ContractとMigration履歴を確認します。Prisma Migration適用と`schema_migrations`の既存履歴は別管理です。PrismaのContractを以前の形へ戻す方法と、Neon Restoreによる行データ復旧の分担は[差分Migration・復旧シナリオ](../development/prisma-migration-validation.md)を参照します。
 
 ## Security notes
 
@@ -106,7 +106,6 @@ VercelはPrisma Migrationを自動適用しません。アプリをdeployする�
 | `NEON_BRANCH_NOT_FOUND` | Targetと`config/neon-targets.json`のBranch名、Project IDを確認する。 |
 | `NEON_BRANCH_NOT_READY` | 表示されたBranch状態をMCPまたはNeon Consoleで確認し、readyになるまで停止する。 |
 | `NEON_CONNECTION_FAILED` | Direct endpoint、接続権限、ネットワークを確認する。CLI stderrや接続URIは共有しない。 |
-| `MIGRATION_PREREQUISITE_MISSING` | 表示された不足Migrationを対象Branchに順番に適用・検証してから再度Preflightする。 |
 
 ## Local Application Development
 
@@ -119,8 +118,8 @@ VercelはPrisma Migrationを自動適用しません。アプリをdeployする�
 - Neon MCPがAgentに公開されている場合、CLI障害時の読み取り専用補助経路として使用できます。`config/neon-targets.json`の`projectId`を指定し、`list_branches(project_id)`でBranch名・ID・状態を確認します。Project一覧取得Toolの公開を前提にしません。Project IDはRepository設定を使い、MCPがProject-scopedであっても設定値と一致するか確認します。
 - CLIとMCPの認証および公開Tool範囲は別です。CLIの認証がMCPを有効にするわけではなく、MCPの読み取りToolだけでRepository CLIのDB接続や書込みが可能になるわけでもありません。MCPが読み取り専用の場合、別の書込経路やProductionへ暗黙に切り替えません。
 - `preview` Targetは`config/neon-targets.json`に固定されたBranch名を指します。PRごとの`preview/<branch>`と同一とは限らず、Resolverは設定Branchがない場合やreadyでない場合に停止します。PR Branchを調査するときはBranch名/IDを明示して読み取り確認し、Target設定を変更したり別Branchへ自動切替したりしません。
-- 「接続できない」で終了する前に、順に確認します: (1) `npm ci`後のローカルCLI起動、(2) `NEON_API_KEY` Secretまたはローカルでの`neon auth`、(3) `config/neon-targets.json`のTarget / Project ID、(4) 正確なBranch名・IDと`ready`状態、(5) `db:preflight`のMigration履歴、(6) Neon MCPのTool公開状況とProject指定の読み取り代替可否。秘密値やCLI stderrはログに残さず、原因分類と次の対処を使います。
-- Preflightの失敗を受けてBranchを作成・削除・復元したり、Migrationを適用したりしません。これらは独立した承認とRunbook手順が必要です。
+- 「接続できない」で終了する前に、順に確認します: (1) `npm ci`後のローカルCLI起動、(2) `NEON_API_KEY` Secretまたはローカルでの`neon auth`、(3) `config/neon-targets.json`のTarget / Project ID、(4) 正確なBranch名/IDと`ready`状態、(5) `prisma:migration:run status`のMigration履歴と診断結果、(6) Neon MCPのTool公開状況とProject指定の読み取り代替可否。秘密値やCLI stderrはログに残さず、原因分類と次の対処を使います。
+- Target解決やstatusの失敗を受けてBranchを作成・削除・復元したり、Migrationを適用したりしません。これらは独立した承認とRunbook手順が必要です。
 
 ## Related docs
 

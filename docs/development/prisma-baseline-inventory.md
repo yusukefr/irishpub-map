@@ -2,6 +2,12 @@
 
 この文書はIssue #635の2026-10-13時点の読み取り専用調査結果です。Branch状態と履歴は変化するため、Baseline作成時にNeonの現況を再確認してください。Productionの実データ、接続情報、認証情報は記録しません。
 
+## 2026-11-22 再確認と旧資産整理（Issue #641）
+
+Prisma Baselineと差分Migration検証、Prisma運用への切替（Issue #639 / #640）が完了した後に、ProjectのBranch一覧と各対象の`schema_migrations`を読み取り専用で再確認しました。Production `main` と稼働中のPR Preview Branchは006〜025を記録しています。固定`preview`はarchivedで、017・018・025がありませんが、現在の利用対象ではありません。
+
+001〜005は旧Ledger開始前のため、引き続き適用履歴を証明できません。現行Schemaの空DB再構築はPrisma Baselineと参照データseedを使います。006〜025の旧SQL、SQL Runner、過去SQL文字列の検査テストはGitから削除し、Git履歴から参照できます。既存Branchの`schema_migrations`、Schema、実データ、Branchは変更していません。現在の手順は[Prisma Baseline再構築ガイド](prisma-baseline.md)と[Neon Migration Runbook](../runbooks/neon-migrations.md)を参照してください。
+
 ## 調査結果
 
 ### Neon Branch

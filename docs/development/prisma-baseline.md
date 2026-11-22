@@ -2,7 +2,7 @@
 
 ## 対象と境界
 
-`migrations/app/`のBaselineはPrisma Contractから生成するApplication Schemaです。現在のBaselineは24 tables、139 columns、60 CHECK constraints、22 foreign keys、55 physical indexesを再現します。`schema_migrations`、Neon管理Schema、店舗・Quiz・Content・Media・Calendar等の運用データは含みません。既存環境の旧migration履歴はそのまま保持します。
+`migrations/app/`のBaselineはPrisma Contractから生成するApplication Schemaです。現在のBaselineは24 tables、139 columns、60 CHECK constraints、22 foreign keys、55 physical indexesを再現します。`schema_migrations`、Neon管理Schema、店舗・Quiz・Content・Media・Calendar等の運用データは含みません。既存環境の`schema_migrations`テーブルと履歴行は変更しません。
 
 Baseline適用は空の専用DBだけで行います。Production Branchへ適用したり、既存ProductionのtableをBaselineで作り直したりしません。`db sign`はschema検証後にPrismaの署名Marker、Snapshot、Refを対象DBへ書き込みます。この操作はread-onlyではないため、Productionでは実行しません。
 
@@ -39,9 +39,9 @@ PRISMA_EMPTY_DATABASE_BRANCH_ID="<Baseline適用済み空Branch ID>" \
 npm run prisma:baseline:verify
 ```
 
-この専用コマンドは設定済みNeon ProjectからBranch IDを照合し、Branchが`ready`で固定Preview / Productionでないことを確認します。Neon CLIからDirect endpointを解決し、Poolerと同一endpointを拒否してから、各Branchに`db verify`とJSON形式の`migration status`を順に実行します。URLは専用configの子プロセス環境変数だけで扱い、コマンドライン引数・ログへ出力しません。Migration statusにdiagnostic、pending、不正なJSONがあれば失敗します。旧`schema_migrations`は署名済みBranchに保持するため、余剰objectまで拒否する`db verify --strict`は使いません。SignやMigrationの実行はこの確認コマンドに含めません。
+この専用コマンドは設定済みNeon ProjectからBranch IDを照合し、Branchが`ready`で固定Preview / Productionでないことを確認します。Neon CLIからDirect endpointを解決し、Poolerと同一endpointを拒否してから、各Branchに`db verify`とJSON形式の`migration status`を順に実行します。URLは専用configの子プロセス環境変数だけで扱い、コマンドライン引数・ログへ出力しません。Migration statusにdiagnostic、pending、不正なJSONがあれば失敗します。既存環境では`schema_migrations`が残るため、余剰objectまで拒否する`db verify --strict`は使いません。SignやMigrationの実行はこの確認コマンドに含めません。
 
-Signが失敗した場合はdriftを調べ、Signで不一致を覆い隠しません。Prismaが作る管理Marker/Ledgerは旧`schema_migrations`と別物です。旧LedgerをPrisma Contractへ加えたり、Baselineで再作成・初期化したりしません。
+Signが失敗した場合はdriftを調べ、Signで不一致を覆い隠しません。Prismaが作る管理Marker/Ledgerは既存`schema_migrations`と別物です。既存LedgerをPrisma Contractへ加えたり、Baselineで再作成・初期化したりしません。
 
 Baseline後の追加・変更・削除、Graph分岐・合流、失敗系、および以前のContractへ戻す検証は[差分Migration・復旧シナリオ](prisma-migration-validation.md)を参照してください。Schemaを戻すMigrationと行データを復元するNeon Restoreは別の責務です。
 
@@ -51,7 +51,7 @@ Production dataを含まない空の新規DBを用意し、BranchとDBの名前�
 
 接続URIをCLI引数や`.env`へ置かず、専用の隔離検証Runbookを使います。`db migrate`は空DBにBaselineを適用するためのものです。既存Schemaには使わず、既存Schemaは専用Sign手順で採用します。
 
-Baselineの適用後、空DBに対して`db/prisma/seed-reference-data.sql`をpsqlで1回実行し、Applicationが必要とする参照データを投入します。このscriptは業務データがすでに存在するとtransactionを中止します。日本語自治体名がないため、`data/市区町村コード.csv`が別途必要です。ファイルはRepositoryへ含めず、[総務省の全国地方公共団体コード](https://www.soumu.go.jp/denshijiti/code.html)から取得した6桁コード、都道府県・市区町村名、半角カナを使い、次の7列のUTF-8 CSVへ整形します。都道府県コードと名称は既存の[003 migration](../../db/migrations/003_municipality_codes_up.sql)が使うレイアウトと同じです。
+Baselineの適用後、空DBに対して`db/prisma/seed-reference-data.sql`をpsqlで1回実行し、Applicationが必要とする参照データを投入します。このscriptは業務データがすでに存在するとtransactionを中止します。日本語自治体名がないため、`data/市区町村コード.csv`が別途必要です。ファイルはRepositoryへ含めず、[総務省の全国地方公共団体コード](https://www.soumu.go.jp/denshijiti/code.html)から取得した6桁コード、都道府県・市区町村名、半角カナを使い、次の7列のUTF-8 CSVへ整形します。
 
 ```text
 code,prefecture_name,municipality_name,prefecture_kana,municipality_kana,unused_column_1,unused_column_2
@@ -68,7 +68,7 @@ code,prefecture_name,municipality_name,prefecture_kana,municipality_kana,unused_
 - CHECK constraintの名前と式
 - Indexの名前、列、並び方向、部分predicate
 
-空DBは`schema_migrations`がなくても正常です。既存DBの旧Ledger行数や値を空DBへ移植せず、運用データも移しません。Quiz統合確認ではtransaction内で先に正解Choice IDを持つQuestionをINSERTし、その後ChoiceをINSERTしてtransactionをcommitできることを確認します。Catalog差分をすべて解決してからBaselineの再現検証を完了とし、結果はIssue/PRへ件数と差分の有無だけ記録します。
+空DBは`schema_migrations`がなくても正常です。既存DBの履歴や値を空DBへ移植せず、運用データも移しません。Quiz統合確認ではtransaction内で先に正解Choice IDを持つQuestionをINSERTし、その後ChoiceをINSERTしてtransactionをcommitできることを確認します。Catalog差分をすべて解決してからBaselineの再現検証を完了とし、結果はIssue/PRへ件数と差分の有無だけ記録します。
 
 ## 関連文書
 
