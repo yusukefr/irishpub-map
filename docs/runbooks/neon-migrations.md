@@ -32,7 +32,7 @@ npm exec --no -- prisma migration check --space app
 ```
 
 2. Migration packageをレビューします。`migration plan`が新しいpackageを作ったら、操作・DDL・data transform・precheck・postcheckを同じPRへ含めて再度checkします。通常PR CIはContract artifact再生成、offline plan、Migration Graph checkを実行し、Neon credentialやDB接続権限を持ちません。
-3. Preview TargetのBranch名・ID・ready状態を確認し、`status`と`preview`を実行して適用前状態と計画を記録します。
+3. Preview TargetのBranch名・ID・ready状態を確認し、`status`と`preview`を実行して適用前状態と計画を記録します。`status`は適用済みstateのみを成功とし、未適用Migration、current/target Contract不一致、未知の状態、Prisma diagnosticがあれば非0で終了します。適用前にpendingがある場合の非0終了はあり得ます。その場合は表示されたcurrent/target hashとpending件数をMigration planと照合し、想定外の差分やdiagnosticがあれば停止します。
 
 ```bash
 npm run prisma:migration:run -- --target preview status
@@ -59,7 +59,7 @@ npm run prisma:migration:run -- --target production status
 npm run prisma:migration:run -- --target production verify
 ```
 
-Production対象のapplyは`--confirm-production`が要求され、設定済みProduction Branch名と一致しない場合は拒否します。PR CI、Release workflow、VercelからMigrationを自動実行しません。確認したBranch state・review済みPR・適用対象migration・個別承認を作業記録に含めます。
+Production対象のapplyは`--confirm-production`が要求され、設定済みProduction Branch名と一致しない場合は拒否します。Productionの`status`、`preview`、`verify`、`log`は確認フラグなしで実行できる読み取り操作です。適用後の`status`はcurrent/target Contract一致かつpending 0件で成功し、`verify`はContract markerとlive schemaの両方を照合します。PR CI、Release workflow、VercelからMigrationを自動実行しません。確認したBranch state・review済みPR・適用対象migration・個別承認を作業記録に含めます。
 
 `prisma db sign`は通常Runnerに含まれず、このIssueの作業中にもProductionで実行しません。将来Productionで既存SchemaのSignが必要な場合は、read-only Schema / marker状態の照合結果を保存し、専用PRで操作対象と影響をレビューし、merge後に対象Branchを再照合してから個別の明示承認を得ます。SignはPrisma marker / ledger / refを書き込むため、Migration applyと同じ本番ゲートを通し、承認後にその1回だけ実行します。状態がレビュー時から変わった場合は再レビュー・再承認します。
 

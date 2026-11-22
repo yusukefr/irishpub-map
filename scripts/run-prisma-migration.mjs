@@ -7,10 +7,10 @@ import process from "node:process";
 import { assertDirectConnection, resolveNeonTarget } from "./lib/resolve-neon-target.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const commandArguments = {
+export const PRISMA_COMMAND_ARGUMENTS = {
   preview: ["db", "migrate", "--show", "--json"],
   apply: ["db", "migrate", "--advance-ref", "db", "--json"],
-  verify: ["db", "verify", "--schema-only", "--json"],
+  verify: ["db", "verify", "--json"],
   status: ["migration", "status", "--space", "app", "--json"],
   log: ["migration", "log", "--json"],
 };
@@ -32,7 +32,7 @@ export function parsePrismaMigrationArguments(args) {
     else if (command) throw new Error("Select exactly one Prisma operation.");
     else command = value;
   }
-  if (!target || !["preview", "production"].includes(target) || !Object.hasOwn(commandArguments, command)) {
+  if (!target || !["preview", "production"].includes(target) || !Object.hasOwn(PRISMA_COMMAND_ARGUMENTS, command)) {
     throw new Error(
       "Usage: npm run prisma:migration:run -- --target preview|production [--confirm-production <branch-name>] preview|apply|verify|status|log",
     );
@@ -54,7 +54,11 @@ export async function runPrismaMigration(args = process.argv.slice(2), dependenc
   const resolveTarget = dependencies.resolveTarget ?? resolveNeonTarget;
   const execute = dependencies.execute ?? executePrisma;
   const resolved = await resolveTarget(parsed.target);
-  if (parsed.target === "production" && parsed.productionConfirmation !== resolved.branchName) {
+  if (
+    parsed.target === "production" &&
+    parsed.command === "apply" &&
+    parsed.productionConfirmation !== resolved.branchName
+  ) {
     throw new Error("Production confirmation must exactly match the configured Production branch name.");
   }
   assertDirectConnection(resolved.connectionString);
@@ -96,18 +100,22 @@ export default definePrismaConfig({
     delete env.DIRECT_URL;
     delete env.PRISMA_VALIDATION_DATABASE_URL;
     delete env.PRISMA_BASELINE_VERIFY_DATABASE_URL;
-    return spawnSync("npm", ["exec", "--no", "--", "prisma", ...commandArguments[command], "--config", configPath], {
-      cwd: repositoryRoot,
-      encoding: "utf8",
-      env,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    return spawnSync(
+      "npm",
+      ["exec", "--no", "--", "prisma", ...PRISMA_COMMAND_ARGUMENTS[command], "--config", configPath],
+      {
+        cwd: repositoryRoot,
+        encoding: "utf8",
+        env,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
   } finally {
     rmSync(configDirectory, { recursive: true, force: true });
   }
 }
 
-function summarizeResult(command, stdout) {
+export function summarizeResult(command, stdout) {
   const lines = stdout.trim().split(/\r?\n/).filter(Boolean);
   let messages;
   try {
@@ -144,8 +152,7 @@ function summarizeResult(command, stdout) {
   }
   if (command === "preview") {
     if (!Array.isArray(result.migrations)) throw new Error("Prisma preview omitted migration data.");
-    const summary = typeof result.summary === "string" ? ` ${result.summary}` : "";
-    return `Preview contains ${result.migrations.length} migration(s); review before apply.${summary}`;
+    return `Preview contains ${result.migrations.length} migration(s); review before apply.`;
   }
   if (command === "status") {
     if (!Array.isArray(result.spaces) || result.spaces.length !== 1 || result.spaces[0]?.space !== "app") {
@@ -153,17 +160,33 @@ function summarizeResult(command, stdout) {
     }
     const space = result.spaces[0];
     if (
-      typeof space.currentContract !== "string" ||
-      typeof space.targetContract !== "string" ||
+      !isContractHash(space.currentContract) ||
+      !isContractHash(space.targetContract) ||
       !Array.isArray(space.migrations)
     ) {
       throw new Error("Prisma status omitted the current or target contract state.");
     }
-    const pending = space.migrations.filter((migration) => migration.status === "pending").length;
-    return `Contract ${space.currentContract} -> ${space.targetContract}; ${pending} pending migration(s).`;
+    let pending = 0;
+    for (const migration of space.migrations) {
+      if (migration.status === "pending") pending += 1;
+      else if (migration.status !== "applied" && migration.status !== null) {
+        throw new Error("Prisma status returned an unknown migration state.");
+      }
+    }
+    if (space.currentContract !== space.targetContract || pending > 0) {
+      throw new Error(
+        `Prisma status is not up to date: current ${space.currentContract}, target ${space.targetContract}, ${pending} pending migration(s).`,
+      );
+    }
+    return "The app contract is current with no pending migrations.";
   }
-  if (typeof result.summary === "string" && result.summary.length > 0) return result.summary;
-  return "No diagnostics reported.";
+  if (command === "verify") return "The database contract marker and schema match.";
+  if (command === "log") return "The migration log was read successfully.";
+  throw new Error("Prisma returned a result for an unsupported operation.");
+}
+
+function isContractHash(value) {
+  return typeof value === "string" && /^[a-f0-9]{64}$/i.test(value);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
