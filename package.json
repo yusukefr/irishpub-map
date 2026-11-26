@@ -71,7 +71,7 @@
     "neon": "9.7.2",
     "prettier": "^3.9.9",
     "prisma": "8.0.0-rc.22",
-    "react": "19.3.0",
+    "react": "19.3.1",
     "react-dom": "19.3.1",
     "storybook": "^10.6.3",
     "vitest": "^5.0.3",
