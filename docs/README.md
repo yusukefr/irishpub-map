@@ -51,7 +51,7 @@ Living Documentationには現在の状態を記載します。実装履歴は原
 | Import pubs | [Pub Import](runbooks/import-pubs.md) | Current。import scriptと対象DBを優先 |
 | Update visual snapshots | [Visual Regression](runbooks/visual-regression.md) | Current。E2E設定とReference Screensを優先 |
 | Browser UI check | [Browser check](runbooks/browser-check.md) | Current。Public UIの実装とDesign Systemを優先 |
-| Neon migration | [Neon migrations](runbooks/neon-migrations.md) | Current。migration SQLと現行Neon schemaを優先 |
+| Neon migration | [Neon migrations](runbooks/neon-migrations.md) | Current。Prisma Migration Graphと現行Neon schemaを優先 |
 | Neon Preview DB | [Neon Preview DB](runbooks/neon-preview-branch.md) | Current。Vercel / Neonの現行設定を優先 |
 | Vercel Preview protection | [Vercel Preview Protection](runbooks/vercel-preview-protection.md) | Current。Vercelの現行設定を優先 |
 | Admin access setup | [Admin access](runbooks/admin-access.md) | Current。認証実装と環境変数を優先 |

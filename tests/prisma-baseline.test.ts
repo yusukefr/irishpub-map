@@ -16,7 +16,7 @@ const verifyConfig = readFileSync("config/prisma-baseline-verify.config.ts", "ut
 const allSql = operations.flatMap((operation) => operation.execute.map((step) => step.sql)).join("\n");
 
 describe("Prisma 8 baseline", () => {
-  it("recreates the emitted Application schema without copying the legacy ledger", () => {
+  it("covers the Application schema and excludes database history from the baseline", () => {
     expect(operations).toHaveLength(78);
     expect(operations.filter(({ id }) => id.startsWith("table."))).toHaveLength(24);
     expect(operations.filter(({ id }) => id.startsWith("foreignKey."))).toHaveLength(22);

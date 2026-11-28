@@ -5,7 +5,7 @@
 ## 対象範囲と再現方針
 
 - Prisma Contract対象はProduction `public`内の24 Application tableです。Neon AuthなどPlatform管理Schemaは除外します。
-- 旧`schema_migrations`は旧Migration履歴として保持し、Contract、Baseline、初期化処理へ含めません。
+- 既存`schema_migrations`は履歴データとして保持し、Contract、Baseline、初期化処理へ含めません。
 - CLIの`contract infer`は`--db <url>`を必須とします。Repositoryの[Prisma tooling方針](prisma-tooling.md)はProduction資格情報を一般のPrisma CLIへ渡すことを禁じています。従ってこの作業では、Project IDとProduction Branch IDを明示したNeon MCP読み取り専用introspectionを使ってContractを作成し、その後固定CLIの`contract emit`で検証しました。inferのProduction CLI実行はしていません。
 - `generated/prisma8/contract.json` と`contract.d.ts`はContractとともにGit管理します。再生成は`npm run prisma:contract:emit`で行い、差分をレビューできます。生成物は編集しません。
 
@@ -51,7 +51,7 @@ Contract artifactは24 table / 139 columns / 24 PK / 10 UNIQUE / 22 FK / 60 CHEC
 | `quiz_questions_correct_choice_fkey`の`DEFERRABLE INITIALLY DEFERRED` | FKと列・参照先・名前は保持。遅延可能属性はPSL Relationで宣言できない。 | Baselineの`rawSql` operationで遅延属性を作成し、`pg_constraint` postcheckとQuestion→Choiceのtransaction試験で確認済み。Contractで表現可能になるまでは、当該FKを含むMigrationで属性を手動維持する。 |
 | 7つの部分Index | 全て`where` predicateをContractへ保持。 | Baseline emit / migration planningで定義差分がないことを別Issueで検証する。 |
 | CHECK 60件 | 60件全て名前・式をContractへ保持。 | Baseline SQL比較でPostgresが再表示する式と照合する。 |
-| `schema_migrations`旧Ledger | 意図的にContract対象外。現在のテーブル・行は変更しない。 | 維持する。Baselineから再作成しない。 |
+| 既存`schema_migrations` Ledger | 意図的にContract対象外。現在のテーブル・行は変更しない。 | 維持する。Baselineから再作成しない。 |
 | `public.show_db_tree()` | Neon作成のSchema閲覧補助関数でApplication Contract対象外。 | 既存環境に保持し、空DB Baselineでは再現対象にしない。 |
 
 Expression Indexはありません。Productionの現在Schema・履歴・データは変更していません。隔離Sign DBとBaseline適用後の空DBはContractに一致し、特殊な4 Indexと遅延FKの定義もProductionと一致しました。Productionへの`db sign`・migration・Contract marker書込みは行いません。

@@ -2,7 +2,7 @@
 
 ## 対象と前提
 
-この手順はPrisma 8 RC Migration Graphの操作を隔離DBで実証するためのものです。既存の`db/migrations/`を使うNeon migration runbookとは別の管理系統であり、PrismaへのMigration所有権切替が完了するまでは、ここで作るMigrationをProductionまたは固定Previewへ適用しません。
+この手順はPrisma 8 RC Migration Graphの操作を隔離DBで実証するためのものです。Production・固定Previewへ適用する前に、本手順で検証し、[Neon Migration Runbook](../runbooks/neon-migrations.md)に従います。
 
 検証にはProductionの実データを含まない、今回の検証専用Neon Branchを使います。既存の署名済みSchema BranchとBaseline適用済み空Branchは用途が違うため、差分適用には専用Branchを用意します。Branch名、Branch ID、親Branch、状態をNeonから読み取り確認し、固定`main` / `preview` Branch、別Issue用Branch、Production由来の行データを含むBranchは使いません。専用Branchがない場合は作成・復元を行わず、環境準備を別途行うまでDB検証を保留します。
 
